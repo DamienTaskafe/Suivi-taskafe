@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>TASKAFÉ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="IMG_5077.jpg">
+  <link rel="apple-touch-icon" href="IMG_5077.jpg">
+  <meta name="theme-color" content="#000000">
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background: #f4f4f4;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    input, select, textarea {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: url('IMG_5077.jpg') center center / cover no-repeat;
+      opacity: 0.10;
+      filter: blur(2px);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.10);
+      z-index: -1;
+    }
+
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+      color: white;
+    }
+
+    .logo-wrap {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .logo-wrap img {
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 28px;
+      opacity: 0;
+      transform: scale(0.8);
+      animation: appearZoom 1.6s ease-out forwards;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    .logo-wrap::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 32px;
+      background: conic-gradient(
+        from 0deg,
+        rgba(255,255,255,0) 0deg,
+        rgba(255,215,120,0.18) 60deg,
+        rgba(255,255,255,0.45) 120deg,
+        rgba(255,215,120,0.12) 180deg,
+        rgba(255,255,255,0) 360deg
+      );
+      filter: blur(10px);
+      opacity: 0.9;
+      animation: spinOnce 1.6s linear forwards;
+    }
+
+    @keyframes appearZoom {
+      0% { opacity: 0; transform: scale(0.75); }
+      60% { opacity: 1; transform: scale(1.08); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes spinOnce {
+      0% { transform: rotate(0deg); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: rotate(360deg); opacity: 0; }
+    }
+
+    #splash h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      letter-spacing: 2px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    #splash p {
+      opacity: 0.7;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    header {
+      background: black;
+      color: white;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .header-title {
+      font-size: 22px;
+      font-family: 'Playfair Display', serif;
+      font-weight: 600;
+      letter-spacing: 3px;
+    }
+
+    .header-menu-wrap {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .header-menu-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      width: auto;
+      margin: 0;
+      padding: 0 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .header-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 36px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.22);
+      overflow: hidden;
+      min-width: 220px;
+    }
+
+    .header-menu button {
+      background: white;
+      color: black;
+      width: 100%;
+      border: none;
+      padding: 12px 14px;
+      text-align: left;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    .header-menu button:hover {
+      background: #f2f2f2;
+    }
+
+    .container {
+      padding: 15px;
+    }
+
+    button {
+      padding: 10px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 8px;
+      background: black;
+      color: white;
+      width: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:hover {
+      opacity: 0.88;
+      cursor: pointer;
+    }
+
+    input, select {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: white;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid rgba(0,0,0,0.12);
+      margin: 16px 0;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+    }
+
+    .card {
+      background: white;
+      padding: 18px;
+      margin-bottom: 16px;
+      border-radius: 16px;
+      min-height: 120px;
+      box-shadow:
+        0 8px 16px rgba(0,0,0,0.08),
+        0 3px 6px rgba(0,0,0,0.06);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow:
+        0 14px 24px rgba(0,0,0,0.12),
+        0 6px 10px rgba(0,0,0,0.08);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -50%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(
+        to right,
+        transparent,
+        rgba(255,255,255,0.28),
+        transparent
+      );
+      transform: skewX(-20deg);
+      transition: 0.5s;
+    }
+
+    .card:hover::before {
+      left: 120%;
+    }
+
+    .card b {
+      display: block;
+      margin-right: 34px;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    .menu-wrap {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: #333;
+      cursor: pointer;
+      width: auto;
+      margin: 0;
+      padding: 0 6px;
+    }
+
+    .menu {
+      display: none;
+      position: absolute;
+      top: 30px;
+      right: 0;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      overflow: hidden;
+      z-index: 100;
+      min-width: 150px;
+    }
+
+    .menu button {
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      background: white;
+      color: black;
+      text-align: left;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    .menu button:hover {
+      background: #f2f2f2;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 7px 12px;
+      border-radius: 14px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 0.4px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      border: 1px solid rgba(255,255,255,0.25);
+      background-image:
+        linear-gradient(
+          135deg,
+          rgba(255,255,255,0.38) 0%,
+          rgba(255,255,255,0.12) 28%,
+          rgba(192,192,192,0.18) 50%,
+          rgba(255,255,255,0.04) 72%,
+          rgba(255,255,255,0.18) 100%
+        );
+      background-blend-mode: screen;
+      box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.22),
+        0 2px 6px rgba(0,0,0,0.16);
+    }
+
+    .badge.ORO { background-color: #f39a1e; }
+    .badge.RIO { background-color: #1f78ff; }
+    .badge.ESPRESSO { background-color: #d52a2a; }
+    .badge.CLASSIC { background-color: #6b4329; }
+    .badge.SANTOS { background-color: #161616; }
+    .badge.SUCRE { background-color: #e6d3a3; color: black; }
+
+    #category {
+      color: white;
+      font-weight: bold;
+      border: 1px solid rgba(255,255,255,0.25);
+      background-image:
+        linear-gradient(
+          135deg,
+          rgba(255,255,255,0.38) 0%,
+          rgba(255,255,255,0.12) 28%,
+          rgba(192,192,192,0.18) 50%,
+          rgba(255,255,255,0.04) 72%,
+          rgba(255,255,255,0.18) 100%
+        );
+      background-blend-mode: screen;
+      box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.22),
+        0 2px 6px rgba(0,0,0,0.16);
+    }
+
+    #category.ORO { background-color: #f39a1e; }
+    #category.RIO { background-color: #1f78ff; }
+    #category.ESPRESSO { background-color: #d52a2a; }
+    #category.CLASSIC { background-color: #6b4329; }
+    #category.SANTOS { background-color: #161616; }
+    #category.SUCRE { background-color: #e6d3a3; color: black; }
+
+    #category option[value="ORO"] { background: #f39a1e; color: white; }
+    #category option[value="RIO"] { background: #1f78ff; color: white; }
+    #category option[value="ESPRESSO"] { background: #d52a2a; color: white; }
+    #category option[value="CLASSIC"] { background: #6b4329; color: white; }
+    #category option[value="SANTOS"] { background: #161616; color: white; }
+    #category option[value="SUCRE"] { background: #e6d3a3; color: black; }
+
+    .paid {
+      color: green;
+      font-weight: bold;
+    }
+
+    .unpaid {
+      color: red;
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .line {
+      line-height: 1.8;
+    }
+
+    .date-field {
+      margin: 8px 0 10px;
+    }
+
+    .date-field label {
+      display: block;
+      font-size: 14px;
+      color: #444;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .date-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .date-actions input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .small-btn {
+      width: auto;
+      white-space: nowrap;
+      padding: 10px 14px;
+      margin: 5px 0;
+      border-radius: 8px;
+      background: black;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="splash">
+    <div class="logo-wrap">
+      <img src="IMG_5077.jpg" alt="TASKAFÉ">
+    </div>
+    <h2>TASKAFÉ</h2>
+    <p>Chargement...</p>
+  </div>
+
+  <header>
+    <div class="header-title">TASKAFÉ</div>
+
+    <div class="header-menu-wrap">
+      <button class="header-menu-btn" onclick="toggleHeaderMenu(event)">⋯</button>
+      <div class="header-menu" id="headerMenu">
+        <button onclick="confirmResetFilters()">Réinitialiser les filtres</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <button onclick="show('sales')">Ventes</button>
+    <button onclick="show('clients')">Clients</button>
+
+    <hr>
+
+    <div id="sales">
+      <h3>Nouvelle vente</h3>
+
+      <select id="clientSelect"></select>
+
+      <input id="kilos" type="number" placeholder="Kilos">
+
+      <select id="category" onchange="updateCategoryStyle()">
+        <option value="ORO">ORO</option>
+        <option value="RIO">RIO</option>
+        <option value="ESPRESSO">ESPRESSO</option>
+        <option value="CLASSIC">CLASSIC</option>
+        <option value="SANTOS">SANTOS</option>
+        <option value="SUCRE">SUCRE</option>
+      </select>
+
+      <div class="date-field">
+        <label for="datetime">📅 Choisir votre date</label>
+        <div class="date-actions">
+          <input type="datetime-local" id="datetime">
+          <button type="button" class="small-btn" onclick="setNow()">Aujourd’hui</button>
+        </div>
+      </div>
+
+      <label>
+        <input type="checkbox" id="paid"> Payé
+      </label>
+
+      <button onclick="addSale()">Ajouter vente</button>
+
+      <hr>
+
+      <h3>Filtres</h3>
+
+      <select id="filterClient" onchange="render()"></select>
+
+      <select id="filterCategory" onchange="render()">
+        <option value="">Toutes catégories</option>
+        <option>ORO</option>
+        <option>RIO</option>
+        <option>ESPRESSO</option>
+        <option>CLASSIC</option>
+        <option>SANTOS</option>
+        <option>SUCRE</option>
+      </select>
+
+      <input type="date" id="filterDate" onchange="render()">
+
+      <hr>
+
+      <h3>Ventes</h3>
+      <div id="list"></div>
+
+      <h3>Total kilos: <span id="total">0</span></h3>
+    </div>
+
+    <div id="clients" class="hidden">
+      <h3>Nouveau client</h3>
+
+      <input id="clientName" placeholder="Nom client">
+      <input id="clientAddress" placeholder="Adresse">
+      <input id="clientICE" placeholder="ICE">
+
+      <button onclick="addClient()">Ajouter client</button>
+
+      <hr>
+
+      <h3>Liste clients</h3>
+      <div id="clientList"></div>
+    </div>
+
+  </div>
+
+  <script>
+    setTimeout(() => {
+      document.getElementById("splash").style.display = "none";
+    }, 2000);
+
+    const state = {
+      sales: JSON.parse(localStorage.getItem("sales") || "[]"),
+      clients: JSON.parse(localStorage.getItem("clients") || "[]")
+    };
+
+    function save() {
+      localStorage.setItem("sales", JSON.stringify(state.sales));
+      localStorage.setItem("clients", JSON.stringify(state.clients));
+    }
+
+    function show(tab) {
+      document.getElementById("sales").classList.add("hidden");
+      document.getElementById("clients").classList.add("hidden");
+      document.getElementById(tab).classList.remove("hidden");
+      closeAllMenus();
+    }
+
+    function addClient() {
+      const name = document.getElementById("clientName").value.trim();
+      const address = document.getElementById("clientAddress").value.trim();
+      const ice = document.getElementById("clientICE").value.trim();
+
+      if (!name) {
+        alert("❌ Nom client obligatoire");
+        return;
+      }
+
+      if (state.clients.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        alert("❌ Client déjà existant");
+        return;
+      }
+
+      state.clients.push({ name, address, ice });
+      save();
+
+      document.getElementById("clientName").value = "";
+      document.getElementById("clientAddress").value = "";
+      document.getElementById("clientICE").value = "";
+
+      loadClients();
+      renderClients();
+    }
+
+    function confirmDeleteClient(index) {
+      const client = state.clients[index];
+      const ok = confirm(`Voulez-vous vraiment supprimer le client "${client.name}" et toutes ses commandes ?`);
+      if (!ok) return;
+      deleteClient(index);
+    }
+
+    function deleteClient(index) {
+      const clientName = state.clients[index].name;
+      state.clients.splice(index, 1);
+      state.sales = state.sales.filter(s => s.client !== clientName);
+      save();
+      loadClients();
+      renderClients();
+      render();
+    }
+
+    function loadClients() {
+      const sel = document.getElementById("clientSelect");
+      const fil = document.getElementById("filterClient");
+
+      sel.innerHTML = "";
+      fil.innerHTML = "<option value=''>Tous clients</option>";
+
+      state.clients.forEach(c => {
+        sel.innerHTML += `<option>${escapeHtml(c.name)}</option>`;
+        fil.innerHTML += `<option>${escapeHtml(c.name)}</option>`;
+      });
+    }
+
+    function renderClients() {
+      let html = "";
+
+      state.clients.forEach((c, i) => {
+        html += `
+          <div class="card">
+            <div class="menu-wrap">
+              <button class="menu-btn" onclick="toggleMenu(event, 'c${i}')">⋯</button>
+              <div class="menu" id="c${i}">
+                <button onclick="confirmDeleteClient(${i})">Supprimer</button>
+              </div>
+            </div>
+
+            <b>${escapeHtml(c.name)}</b>
+            <div class="line">
+              ${c.address ? `${escapeHtml(c.address)}<br>` : ""}
+              ICE: ${escapeHtml(c.ice || "")}
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById("clientList").innerHTML = html;
+    }
+
+    function addSale() {
+      const client = document.getElementById("clientSelect").value;
+      const kilos = parseFloat(document.getElementById("kilos").value);
+      const category = document.getElementById("category").value;
+      const rawDate = document.getElementById("datetime").value;
+      const datetime = rawDate ? new Date(rawDate).toISOString() : new Date().toISOString();
+      const paid = document.getElementById("paid").checked;
+
+      if (!client) {
+        alert("❌ Choisir un client");
+        return;
+      }
+
+      if (isNaN(kilos) || kilos <= 0) {
+        alert("❌ Kilos invalides");
+        return;
+      }
+
+      if (!category) {
+        alert("❌ Choisir une catégorie");
+        return;
+      }
+
+      state.sales.push({ client, kilos, category, datetime, paid });
+      save();
+
+      document.getElementById("kilos").value = "";
+      document.getElementById("datetime").value = "";
+      document.getElementById("paid").checked = false;
+
+      render();
+    }
+
+    function confirmDeleteSale(index) {
+      const ok = confirm("Voulez-vous vraiment supprimer cette commande ?");
+      if (!ok) return;
+      deleteSale(index);
+    }
+
+    function deleteSale(index) {
+      state.sales.splice(index, 1);
+      save();
+      render();
+    }
+
+    function getFiltered() {
+      const c = document.getElementById("filterClient").value;
+      const cat = document.getElementById("filterCategory").value;
+      const date = document.getElementById("filterDate").value;
+
+      return state.sales.filter(s =>
+        (!c || s.client === c) &&
+        (!cat || s.category === cat) &&
+        (!date || new Date(s.datetime).toISOString().slice(0, 10) === date)
+      );
+    }
+
+    function render() {
+      let html = "";
+      let total = 0;
+      const data = getFiltered();
+
+      data.forEach((s) => {
+        const realIndex = state.sales.indexOf(s);
+        total += s.kilos;
+
+        html += `
+          <div class="card">
+            <div class="menu-wrap">
+              <button class="menu-btn" onclick="toggleMenu(event, 's${realIndex}')">⋯</button>
+              <div class="menu" id="s${realIndex}">
+                <button onclick="confirmDeleteSale(${realIndex})">Supprimer</button>
+              </div>
+            </div>
+
+            <b>${escapeHtml(s.client)}</b>
+            <span class="badge ${escapeHtml(s.category)}">${escapeHtml(s.category)}</span>
+            <div class="line">
+              ${s.kilos} kg<br>
+              ${new Date(s.datetime).toLocaleString()}<br>
+              ${s.paid ? '<span class="paid">PAYÉ</span>' : '<span class="unpaid">NON PAYÉ</span>'}
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById("list").innerHTML = html;
+      document.getElementById("total").innerText = total;
+    }
+
+    function confirmResetFilters() {
+      closeAllMenus();
+      const ok = confirm("Voulez-vous vraiment réinitialiser les filtres ?");
+      if (!ok) return;
+      resetFilters();
+    }
+
+    function resetFilters() {
+      document.getElementById("filterClient").value = "";
+      document.getElementById("filterCategory").value = "";
+      document.getElementById("filterDate").value = "";
+      render();
+    }
+
+    function toggleMenu(event, id) {
+      event.stopPropagation();
+
+      const el = document.getElementById(id);
+      const isOpen = el.style.display === "block";
+
+      closeAllMenus();
+
+      if (!isOpen) {
+        el.style.display = "block";
+      }
+    }
+
+    function toggleHeaderMenu(event) {
+      event.stopPropagation();
+
+      const menu = document.getElementById("headerMenu");
+      const isOpen = menu.style.display === "block";
+
+      closeAllMenus();
+
+      if (!isOpen) {
+        menu.style.display = "block";
+      }
+    }
+
+    function closeAllMenus() {
+      document.querySelectorAll(".menu, .header-menu").forEach(m => {
+        m.style.display = "none";
+      });
+    }
+
+    function updateCategoryStyle() {
+      const select = document.getElementById("category");
+      const value = select.value;
+
+      select.classList.remove("ORO", "RIO", "ESPRESSO", "CLASSIC", "SANTOS", "SUCRE");
+      select.classList.add(value);
+    }
+
+    function setNow() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      const local = new Date(now.getTime() - offset * 60000)
+        .toISOString()
+        .slice(0, 16);
+
+      document.getElementById("datetime").value = local;
+    }
+
+    document.addEventListener("click", () => {
+      closeAllMenus();
+    });
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    loadClients();
+    renderClients();
+    render();
+    updateCategoryStyle();
+  </script>
+
+</body>
+</html>
