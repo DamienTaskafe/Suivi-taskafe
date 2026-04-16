@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>TASKAFÉ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="manifest" href="manifest.json">
+
+  <!-- POLICE PREMIUM -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      overflow-x: hidden;
+    }
+
+    /* BACKGROUND FULL SCREEN */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('IMG_5077.jpg') no-repeat center center;
+      background-size: cover;
+      opacity: 0.08;
+      z-index: -1;
+    }
+
+    /* overlay premium */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.12);
+      z-index: -1;
+    }
+
+    /* SPLASH */
+    #splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+      color: white;
+    }
+
+    .logo-wrap {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .logo-wrap img {
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 50%;
+
+      opacity: 0;
+      transform: scale(0.8);
+      animation: appearZoom 1.6s ease-out forwards;
+    }
+
+    .logo-wrap::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+
+      background: conic-gradient(
+        from 0deg,
+        rgba(255,255,255,0) 0deg,
+        rgba(255,255,255,0.1) 60deg,
+        rgba(255,255,255,0.6) 120deg,
+        rgba(255,255,255,0.1) 180deg,
+        rgba(255,255,255,0) 360deg
+      );
+
+      filter: blur(10px);
+      opacity: 0.9;
+
+      animation: spinOnce 1.6s linear forwards;
+    }
+
+    @keyframes appearZoom {
+      0% { opacity: 0; transform: scale(0.75); }
+      60% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes spinOnce {
+      0% { transform: rotate(0deg); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: rotate(360deg); opacity: 0; }
+    }
+
+    #splash h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+
+    #splash p {
+      opacity: 0.7;
+      font-size: 14px;
+    }
+
+    header {
+      background: black;
+      color: white;
+      padding: 16px;
+      text-align: center;
+      font-size: 22px;
+      font-family: 'Playfair Display', serif;
+      font-weight: 600;
+      letter-spacing: 3px;
+    }
+
+    .container {
+      padding: 15px;
+    }
+
+    button {
+      padding: 10px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 8px;
+      background: black;
+      color: white;
+      width: 100%;
+    }
+
+    button:hover {
+      opacity: 0.85;
+      cursor: pointer;
+    }
+
+    input, select {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+    }
+
+    .card {
+      background: white;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .paid { color: green; font-weight: bold; }
+    .unpaid { color: red; font-weight: bold; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="logo-wrap">
+    <img src="IMG_5077.jpg" />
+  </div>
+  <h2>TASKAFÉ</h2>
+  <p>Chargement...</p>
+</div>
+
+<header>TASKAFÉ</header>
+
+<div class="container">
+
+<button onclick="show('sales')">Ventes</button>
+<button onclick="show('clients')">Clients</button>
+
+<hr>
+
+<!-- SALES -->
+<div id="sales">
+
+  <h3>Nouvelle vente</h3>
+
+  <select id="clientSelect"></select>
+
+  <input id="kilos" type="number" placeholder="Kilos">
+
+  <select id="category">
+    <option>ORO</option>
+    <option>RIO</option>
+    <option>ESPRESSO</option>
+    <option>CLASSIC</option>
+    <option>SANTOS</option>
+    <option>SUCRE</option>
+  </select>
+
+  <input type="datetime-local" id="datetime">
+
+  <label>
+    <input type="checkbox" id="paid"> Payé
+  </label>
+
+  <button onclick="addSale()">Ajouter vente</button>
+
+  <hr>
+
+  <h3>Filtres</h3>
+
+  <select id="filterClient" onchange="render()"></select>
+
+  <select id="filterCategory" onchange="render()">
+    <option value="">Toutes catégories</option>
+    <option>ORO</option>
+    <option>RIO</option>
+    <option>ESPRESSO</option>
+    <option>CLASSIC</option>
+    <option>SANTOS</option>
+    <option>SUCRE</option>
+  </select>
+
+  <input type="date" id="filterDate" onchange="render()">
+
+  <button onclick="resetFilters()">Reset</button>
+
+  <hr>
+
+  <h3>Ventes</h3>
+  <div id="list"></div>
+
+  <h3>Total kilos: <span id="total"></span></h3>
+
+</div>
+
+<!-- CLIENTS -->
+<div id="clients" class="hidden">
+
+  <h3>Nouveau client</h3>
+
+  <input id="clientName" placeholder="Nom client">
+  <input id="clientAddress" placeholder="Adresse">
+  <input id="clientICE" placeholder="ICE">
+
+  <button onclick="addClient()">Ajouter client</button>
+
+  <hr>
+
+  <h3>Liste clients</h3>
+  <div id="clientList"></div>
+
+</div>
+
+</div>
+
+<script>
+setTimeout(() => {
+  document.getElementById("splash").style.display = "none";
+}, 2000);
+
+const state = {
+  sales: JSON.parse(localStorage.getItem("sales") || "[]"),
+  clients: JSON.parse(localStorage.getItem("clients") || "[]")
+};
+
+function save(){
+  localStorage.setItem("sales", JSON.stringify(state.sales));
+  localStorage.setItem("clients", JSON.stringify(state.clients));
+}
+
+function show(tab){
+  document.getElementById("sales").classList.add("hidden");
+  document.getElementById("clients").classList.add("hidden");
+  document.getElementById(tab).classList.remove("hidden");
+}
+
+/* CLIENTS */
+function addClient(){
+  const name = document.getElementById("clientName").value.trim();
+  const address = document.getElementById("clientAddress").value.trim();
+  const ice = document.getElementById("clientICE").value.trim();
+
+  if(!name) return alert("Nom obligatoire");
+
+  if(state.clients.some(c => c.name.toLowerCase() === name.toLowerCase()))
+    return alert("Client existe déjà");
+
+  state.clients.push({name,address,ice});
+  save();
+
+  loadClients();
+  renderClients();
+}
+
+function deleteClient(index){
+  const name = state.clients[index].name;
+
+  state.clients.splice(index,1);
+  state.sales = state.sales.filter(s => s.client !== name);
+
+  save();
+  loadClients();
+  renderClients();
+  render();
+}
+
+function loadClients(){
+  const sel = document.getElementById("clientSelect");
+  const fil = document.getElementById("filterClient");
+
+  sel.innerHTML = "";
+  fil.innerHTML = "<option value=''>Tous clients</option>";
+
+  state.clients.forEach(c=>{
+    sel.innerHTML += `<option>${c.name}</option>`;
+    fil.innerHTML += `<option>${c.name}</option>`;
+  });
+}
+
+function renderClients(){
+  let html = "";
+
+  state.clients.forEach((c,i)=>{
+    html += `
+      <div class="card">
+        <b>${c.name}</b><br>
+        ${c.address || ""}<br>
+        ICE: ${c.ice || ""}<br><br>
+        <button style="background:red" onclick="deleteClient(${i})">Supprimer</button>
+      </div>
+    `;
+  });
+
+  document.getElementById("clientList").innerHTML = html;
+}
+
+/* SALES */
+function addSale(){
+  const client = document.getElementById("clientSelect").value;
+  const kilos = parseFloat(document.getElementById("kilos").value);
+  const category = document.getElementById("category").value;
+  const datetime = document.getElementById("datetime").value || new Date().toISOString();
+  const paid = document.getElementById("paid").checked;
+
+  if(!client) return alert("Choisir client");
+  if(isNaN(kilos) || kilos <= 0) return alert("Kilos invalides");
+
+  state.sales.push({client,kilos,category,datetime,paid});
+  save();
+
+  document.getElementById("kilos").value = "";
+  document.getElementById("paid").checked = false;
+
+  render();
+}
+
+/* FILTER */
+function getFiltered(){
+  const c = document.getElementById("filterClient").value;
+  const cat = document.getElementById("filterCategory").value;
+  const date = document.getElementById("filterDate").value;
+
+  return state.sales.filter(s =>
+    (!c || s.client === c) &&
+    (!cat || s.category === cat) &&
+    (!date || new Date(s.datetime).toISOString().slice(0,10) === date)
+  );
+}
+
+function render(){
+  let html = "";
+  let total = 0;
+
+  getFiltered().forEach(s=>{
+    total += s.kilos;
+
+    html += `
+      <div class="card">
+        <b>${s.client}</b><br>
+        ${s.category} - ${s.kilos} kg<br>
+        ${new Date(s.datetime).toLocaleString()}<br>
+        ${s.paid ? '<span class="paid">PAYÉ</span>' : '<span class="unpaid">NON PAYÉ</span>'}
+      </div>
+    `;
+  });
+
+  document.getElementById("list").innerHTML = html;
+  document.getElementById("total").innerText = total;
+}
+
+function resetFilters(){
+  document.getElementById("filterClient").value = "";
+  document.getElementById("filterCategory").value = "";
+  document.getElementById("filterDate").value = "";
+  render();
+}
+
+/* INIT */
+loadClients();
+renderClients();
+render();
+</script>
+
+</body>
+</html>
