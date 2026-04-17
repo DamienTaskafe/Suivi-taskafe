@@ -1354,12 +1354,12 @@
     document.getElementById('loginEmail').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
     document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
     window.addEventListener('resize', initAccordions);
-
+  
     const { data: initial } = await supabase.auth.getSession();
     await bootFromSession(initial.session);
     supabase.auth.onAuthStateChange(async (_event, session) => {
       await bootFromSession(session);
     });
-  </script>
+<d</script>
 </body>
 </html>
