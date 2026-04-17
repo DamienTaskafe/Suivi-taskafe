@@ -357,32 +357,39 @@
       font-weight: 700;
     }
 
-    .date-actions {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 145px;
-      gap: 8px;
-      align-items: stretch;
-      width: 100%;
-    }
+    ..date-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 145px;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+}
 
-    .date-actions input,
-    #filterDate {
-      width: 100%;
-      min-width: 0;
-      max-width: 100%;
-      margin: 0;
-      display: block;
-      -webkit-appearance: none;
-      appearance: none;
-    }
+.date-actions input,
+#filterDate {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 52px;
+  padding: 13px 14px;
+  border-radius: 14px;
+}
 
-    .small-btn {
-      width: 145px;
-      white-space: nowrap;
-      padding: 12px 14px;
-      margin: 0;
-      border-radius: 14px;
-    }
+.small-btn {
+  width: 145px;
+  white-space: nowrap;
+  height: 52px;
+  padding: 0 14px;
+  margin: 0;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
     /* CARD */
     .card {
