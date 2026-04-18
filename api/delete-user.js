@@ -133,40 +133,53 @@ module.exports = async (req, res) => {
   }
 
   // ── Step 5 : Check caller has admin role ─────────────────────────────────
-  const { data: callerProfile, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', caller.id)
-    .single();
+  // Use a direct REST fetch with explicit service-role headers so that the
+  // Supabase JS client's internal session state (set during auth.getUser above)
+  // cannot interfere with the query — this was the root cause of the
+  // "impossible de lire le profil appelant" error.
+  let callerRole = null;
 
-  if (profileError) {
-    const isNotFound = profileError.code === 'PGRST116';
-    console.error('[delete-user] Erreur lecture profil appelant :', {
-      callerId: caller.id,
-      code: profileError.code,
-      message: profileError.message,
-      notFound: isNotFound
+  try {
+    const profileUrl = `${supabaseUrl}/rest/v1/profiles?select=role&id=eq.${encodeURIComponent(caller.id)}&limit=1`;
+    const profileResp = await fetch(profileUrl, {
+      headers: {
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Accept': 'application/json'
+      }
     });
-    const msg = isNotFound
-      ? 'Accès refusé : profil appelant introuvable dans la table profiles'
-      : 'Accès refusé : impossible de lire le profil appelant';
-    return res.status(403).json({ error: msg });
+
+    if (profileResp.ok) {
+      const rows = await profileResp.json();
+      if (Array.isArray(rows) && rows.length > 0) {
+        callerRole = String(rows[0].role || '').toLowerCase();
+      } else {
+        console.warn('[delete-user] Profil appelant introuvable dans profiles pour id =', caller.id);
+      }
+    } else {
+      const errText = await profileResp.text().catch(() => '');
+      console.error('[delete-user] REST profiles échoué :', profileResp.status, errText);
+    }
+  } catch (fetchErr) {
+    console.error('[delete-user] Exception lors de la lecture REST du profil :', fetchErr.message);
   }
 
-  if (!callerProfile) {
-    console.error('[delete-user] Profil appelant absent (sans erreur Supabase) pour id =', caller.id);
-    return res.status(403).json({ error: 'Accès refusé : profil appelant introuvable' });
+  // Fallback: role stored in app_metadata (server-controlled, set by create-user API)
+  if (!callerRole) {
+    const metaRole = String(caller.app_metadata?.role || '').toLowerCase();
+    if (metaRole) {
+      callerRole = metaRole;
+      console.log('[delete-user] Rôle obtenu depuis app_metadata (fallback) :', callerRole);
+    }
   }
 
-  // Case-insensitive comparison to match frontend behaviour (isAdmin uses .toLowerCase())
-  const callerRole = String(callerProfile.role || '').toLowerCase();
   if (callerRole !== 'admin') {
-    console.error('[delete-user] Rôle insuffisant :', {
-      callerId: caller.id,
-      roleInDB: callerProfile.role,
-      roleNormalized: callerRole
+    console.error('[delete-user] Accès refusé :', { callerId: caller.id, callerRole });
+    return res.status(403).json({
+      error: callerRole
+        ? `Accès refusé : rôle admin requis (rôle actuel : ${callerRole})`
+        : 'Accès refusé : profil appelant introuvable ou rôle non défini'
     });
-    return res.status(403).json({ error: `Accès refusé : rôle admin requis (rôle actuel : ${callerProfile.role || 'non défini'})` });
   }
 
   // Prevent an admin from deleting their own account

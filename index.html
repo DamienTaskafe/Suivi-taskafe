@@ -1524,10 +1524,36 @@
       statusEl.style.color = '';
 
       try {
+        // Get the current session token (required for the admin auth check)
+        let accessToken;
+        try {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError && refreshData?.session?.access_token) {
+            accessToken = refreshData.session.access_token;
+          } else if (refreshError) {
+            console.warn('[createNewUser] refreshSession échoué :', refreshError?.message);
+          }
+        } catch (_) { /* ignore */ }
+        if (!accessToken) {
+          try {
+            const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+            accessToken = sessionData?.session?.access_token;
+            if (sessionError) console.warn('[createNewUser] getSession échoué :', sessionError?.message);
+          } catch (_) { /* ignore */ }
+        }
+        if (!accessToken) {
+          statusEl.textContent = '❌ Session invalide. Reconnectez-vous.';
+          statusEl.style.color = '#e53935';
+          return;
+        }
+
         // Call the secure backend API — the service role key never leaves the server
         const resp = await fetch('/api/create-user', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
           body: JSON.stringify({ email, password, full_name: fullName, role })
         });
 
