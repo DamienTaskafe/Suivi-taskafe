@@ -6,11 +6,20 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
+const SUPABASE_URL_FALLBACK = 'https://ogjljdjphawcminawtlv.supabase.co';
+
 module.exports = async (req, res) => {
   // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // ── Step 1 : Require admin Authorization header ───────────────────────────
+  const authHeader = (req.headers['authorization'] || '').trim();
+  if (!authHeader || !/^bearer\s+\S/i.test(authHeader)) {
+    return res.status(401).json({ error: 'En-tête Authorization manquant ou invalide' });
+  }
+  const callerToken = authHeader.replace(/^Bearer\s+/i, '').trim();
 
   const { email, password, full_name, role } = req.body || {};
 
@@ -29,19 +38,60 @@ module.exports = async (req, res) => {
   const allowedRoles = ['employee', 'manager', 'admin'];
   const safeRole = allowedRoles.includes(role) ? role : 'employee';
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const envUrl = (process.env.SUPABASE_URL || '').trim();
+  if (!envUrl) {
+    console.warn('[create-user] SUPABASE_URL non définie — utilisation de la valeur de secours.');
+  }
+  const supabaseUrl = envUrl || SUPABASE_URL_FALLBACK;
+  const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!serviceRoleKey) {
+    console.error('[create-user] SUPABASE_SERVICE_ROLE_KEY manquante');
     return res
       .status(500)
-      .json({ error: 'Configuration serveur manquante (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)' });
+      .json({ error: 'Configuration serveur manquante (SUPABASE_SERVICE_ROLE_KEY)' });
   }
 
   // Admin client — never returned to the browser
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
+
+  // ── Step 2 : Verify caller is admin ──────────────────────────────────────
+  // Use a direct REST fetch with explicit service-role headers so the caller's
+  // session state cannot interfere with the admin role check.
+  let callerRole = null;
+  try {
+    const { data: callerData, error: callerError } = await supabaseAdmin.auth.getUser(callerToken);
+    if (callerError || !callerData?.user) {
+      return res.status(401).json({ error: 'Token invalide ou expiré' });
+    }
+    const caller = callerData.user;
+
+    const profileUrl = `${supabaseUrl}/rest/v1/profiles?select=role&id=eq.${encodeURIComponent(caller.id)}&limit=1`;
+    const profileResp = await fetch(profileUrl, {
+      headers: {
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Accept': 'application/json'
+      }
+    });
+    if (profileResp.ok) {
+      const rows = await profileResp.json();
+      callerRole = String(rows?.[0]?.role || '').toLowerCase();
+    }
+    // Fallback to app_metadata if profiles table query failed or returned no role
+    if (!callerRole) {
+      callerRole = String(caller.app_metadata?.role || '').toLowerCase();
+    }
+  } catch (e) {
+    console.error('[create-user] Erreur vérification appelant :', e.message);
+    return res.status(503).json({ error: 'Service d\'authentification inaccessible, réessayez' });
+  }
+
+  if (callerRole !== 'admin') {
+    return res.status(403).json({ error: 'Accès refusé : rôle admin requis' });
+  }
 
   let authData;
   try {
@@ -74,6 +124,12 @@ module.exports = async (req, res) => {
   const newUserId = authData?.user?.id;
 
   if (newUserId) {
+    // Store role in app_metadata (server-controlled) so the delete-user API can
+    // verify admin role even if the profiles table query fails.
+    await supabaseAdmin.auth.admin.updateUserById(newUserId, {
+      app_metadata: { role: safeRole }
+    }).catch((e) => console.warn('[create-user] app_metadata update failed:', e?.message));
+
     const { error: profileError } = await supabaseAdmin.from('profiles').insert({
       id: newUserId,
       email,
