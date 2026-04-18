@@ -1564,7 +1564,7 @@
       }
 
       try {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+        const res = await fetch('/api/delete-user', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
