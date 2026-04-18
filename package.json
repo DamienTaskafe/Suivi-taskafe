@@ -1,0 +1,12 @@
+{
+  "name": "suivi-taskafe",
+  "version": "1.0.0",
+  "description": "Suivi Taskafe — application de gestion interne",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
