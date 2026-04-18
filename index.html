@@ -87,6 +87,7 @@
     .session-status.show { display: block; }
     .session-status.success { background: rgba(52,199,89,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
     .session-status.error { background: rgba(213,42,42,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+    .session-status.info { background: rgba(50,130,215,0.95); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
 
     @keyframes slideIn { from { transform: translateX(-400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     .hidden { display: none !important; }
@@ -1377,7 +1378,7 @@
             user.id === state.session?.user?.id
               ? '<span style="font-size:11px;">TOI</span>'
               : isAdmin()
-                ? `<button class="danger" style="width: 80px" onclick="deleteUser('${user.id}')">🗑️</button>`
+                ? `<button class="danger" style="width: 80px" onclick="deleteUser('${user.id}', this)">🗑️</button>`
                 : ''
           }
         </div>
@@ -1551,11 +1552,18 @@
       }
     };
 
-    window.deleteUser = async function (userId) {
+    window.deleteUser = async function (userId, btn) {
       if (!requireAdmin('Supprimer un utilisateur')) return;
       const target = state.allUsers.find(u => u.id === userId);
       const label = target?.full_name || target?.email || userId;
       if (!confirm(`Supprimer définitivement "${label}" ?\n\n⚠️ Le compte de connexion et le profil seront supprimés. Cette action est irréversible.`)) return;
+
+      // Disable the button and show loading state immediately after confirmation
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳';
+      }
+      showSessionStatus('⏳ Suppression en cours…', 'info', 30000);
 
       // Always obtain the freshest possible token before a privileged API call.
       // refreshSession() forces a round-trip to Supabase to exchange the refresh
@@ -1577,7 +1585,8 @@
       }
       const accessToken = freshSession?.access_token;
       if (!accessToken) {
-        alert('❌ Session invalide. Reconnectez-vous.');
+        if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+        showSessionStatus('❌ Session invalide. Reconnectez-vous.', 'error');
         return;
       }
 
@@ -1591,10 +1600,16 @@
           body: JSON.stringify({ userId })
         });
 
-        const result = await res.json();
+        let result;
+        try {
+          result = await res.json();
+        } catch (_parseErr) {
+          showSessionStatus('❌ Réponse inattendue du serveur', 'error');
+          return;
+        }
 
         if (!res.ok) {
-          alert('❌ ' + (result?.error || 'Erreur lors de la suppression'));
+          showSessionStatus('❌ ' + (result?.error || 'Erreur lors de la suppression'), 'error');
           return;
         }
 
@@ -1602,7 +1617,9 @@
         renderUsersList();
         showSessionStatus(`✅ Compte de "${label}" supprimé`, 'success');
       } catch (err) {
-        alert('❌ Erreur réseau : ' + (err instanceof Error ? err.message : 'Impossible de contacter le serveur'));
+        showSessionStatus('❌ Erreur réseau : ' + (err instanceof Error ? err.message : 'Impossible de contacter le serveur'), 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
       }
     };
 
