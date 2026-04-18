@@ -712,7 +712,8 @@
           <option value="employee">Employé</option>
           <option value="admin">Admin</option>
         </select>
-        <button onclick="createNewUser()">✅ Créer</button>
+        <button id="createUserBtn" onclick="createNewUser()">✅ Créer</button>
+        <div id="createUserStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
       </div>
       <hr />
       <h4>Utilisateurs actuels</h4>
@@ -1464,6 +1465,12 @@
 
     window.createNewUser = async function () {
       if (!requireAdmin('Créer un utilisateur')) return;
+
+      const btn = document.getElementById('createUserBtn');
+      const statusEl = document.getElementById('createUserStatus');
+
+      if (btn.disabled) return;
+
       const email = document.getElementById('newUserEmail').value.trim();
       const password = document.getElementById('newUserPassword').value;
       const fullName = document.getElementById('newUserName').value.trim();
@@ -1472,40 +1479,65 @@
       if (!email || !password) return alert('❌ Email et mot de passe obligatoires');
       if (password.length < 6) return alert('❌ Mot de passe minimum 6 caractères');
 
-      // Save admin session tokens so we can restore them after signUp
-      const savedAccessToken = state.session?.access_token;
-      const savedRefreshToken = state.session?.refresh_token;
+      btn.disabled = true;
+      btn.textContent = '⏳ Création en cours…';
+      statusEl.textContent = '';
+      statusEl.style.color = '';
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) return alert('❌ ' + error.message);
+      try {
+        // Save admin session tokens so we can restore them after signUp
+        const savedAccessToken = state.session?.access_token;
+        const savedRefreshToken = state.session?.refresh_token;
 
-      const newUserId = data.user?.id;
+        const { data, error } = await supabase.auth.signUp({ email, password });
 
-      // Restore admin session if signUp replaced it
-      if (savedAccessToken && savedRefreshToken) {
-        await supabase.auth.setSession({
-          access_token: savedAccessToken,
-          refresh_token: savedRefreshToken
-        });
+        if (error) {
+          const msg = error.message || 'Erreur inconnue';
+          statusEl.textContent = '❌ ' + msg;
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Échec création utilisateur', 'error', 5000);
+          return;
+        }
+
+        const newUserId = data.user?.id;
+
+        // Restore admin session if signUp replaced it
+        if (savedAccessToken && savedRefreshToken) {
+          await supabase.auth.setSession({
+            access_token: savedAccessToken,
+            refresh_token: savedRefreshToken
+          });
+        }
+
+        if (newUserId) {
+          const { error: profileError } = await supabase.from('profiles').upsert({
+            id: newUserId,
+            email,
+            full_name: fullName,
+            role
+          });
+          if (profileError) console.warn('Profile insert warning:', profileError.message);
+        }
+
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPassword').value = '';
+        document.getElementById('newUserName').value = '';
+
+        const needsConfirmation = !data.session;
+        const successMsg = needsConfirmation
+          ? `✅ Utilisateur créé — un email de confirmation a été envoyé à ${email}`
+          : `✅ Utilisateur créé : ${email}`;
+
+        statusEl.textContent = successMsg;
+        statusEl.style.color = '#2e7d32';
+        showSessionStatus('✅ Utilisateur créé', 'success');
+
+        await loadAllUsers();
+        renderUsersList();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Créer';
       }
-
-      if (newUserId) {
-        const { error: profileError } = await supabase.from('profiles').upsert({
-          id: newUserId,
-          email,
-          full_name: fullName,
-          role
-        });
-        if (profileError) console.warn('Profile insert warning:', profileError.message);
-      }
-
-      document.getElementById('newUserEmail').value = '';
-      document.getElementById('newUserPassword').value = '';
-      document.getElementById('newUserName').value = '';
-
-      await loadAllUsers();
-      renderUsersList();
-      showSessionStatus('✅ Utilisateur créé', 'success');
     };
 
     window.deleteUser = async function (userId) {
