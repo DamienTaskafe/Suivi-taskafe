@@ -35,7 +35,8 @@
       --transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+    input, textarea, [contenteditable], [contenteditable="true"] { -webkit-user-select: auto; user-select: auto; }
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow-x: hidden; }
 
     body {
@@ -1554,16 +1555,37 @@
       if (!requireAdmin('Supprimer un utilisateur')) return;
       const target = state.allUsers.find(u => u.id === userId);
       const label = target?.full_name || target?.email || userId;
-      if (!confirm(`Supprimer le profil de "${label}" ?\n\nSeul le profil sera supprimé — le compte de connexion reste actif.`)) return;
-      const { error } = await supabase.from('profiles').delete().eq('id', userId);
-      if (error) {
-        alert('❌ Suppression échouée : ' + error.message);
+      if (!confirm(`Supprimer définitivement "${label}" ?\n\n⚠️ Le compte de connexion et le profil seront supprimés. Cette action est irréversible.`)) return;
+
+      const accessToken = state.session?.access_token;
+      if (!accessToken) {
+        alert('❌ Session invalide. Reconnectez-vous.');
         return;
       }
-      // Reload from DB to confirm deletion then re-render
-      await loadAllUsers();
-      renderUsersList();
-      showSessionStatus(`✅ Profil de "${label}" supprimé`, 'success');
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ userId })
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          alert('❌ ' + (result?.error || 'Erreur lors de la suppression'));
+          return;
+        }
+
+        await loadAllUsers();
+        renderUsersList();
+        showSessionStatus(`✅ Compte de "${label}" supprimé`, 'success');
+      } catch (err) {
+        alert('❌ Erreur réseau : ' + (err instanceof Error ? err.message : 'Impossible de contacter le serveur'));
+      }
     };
 
     window.exportData = async function () {
