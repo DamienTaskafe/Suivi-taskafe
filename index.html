@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>TASKAFÉ Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-512.png.PNG" />
+  <link rel="apple-touch-icon" href="icon-512.png.PNG" />
+  <meta name="theme-color" content="#000000" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 12px;
+      --spacing-lg: 16px;
+      --spacing-xl: 20px;
+      --spacing-2xl: 24px;
+      --radius-sm: 12px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --radius-xl: 22px;
+      --color-primary: #000;
+      --color-secondary: #1b1b1b;
+      --color-bg: #f4efe8;
+      --color-card: #fff9f3;
+      --color-text: #171717;
+      --color-text-muted: #6b5d55;
+      --color-border: rgba(0,0,0,0.06);
+      --color-success: #34c759;
+      --color-warning: #ff9500;
+      --color-error: #d52a2a;
+      --transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: url("icon-512.png.PNG") center center / cover no-repeat;
+      opacity: 0.08;
+      filter: blur(2px);
+      transform: scale(1.05);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.03), rgba(0,0,0,0.08));
+      z-index: -1;
+    }
+
+    .session-status {
+      position: fixed;
+      bottom: var(--spacing-lg);
+      left: var(--spacing-lg);
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 5000;
+      display: none;
+      animation: slideIn 0.3s ease;
+      max-width: 300px;
+      word-break: break-word;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    .session-status.show {
+      display: block;
+    }
+
+    .session-status.success {
+      background: rgba(52, 199, 89, 0.95);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .session-status.error {
+      background: rgba(213, 42, 42, 0.95);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(-400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .hidden { display: none !important; }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    input[type="month"],
+    input[type="datetime-local"],
+    select,
+    textarea {
+      width: 100%;
+      padding: var(--spacing-md) var(--spacing-lg);
+      margin: var(--spacing-md) 0;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--color-text);
+      outline: none;
+      font-size: 16px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: var(--transition);
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(0, 0, 0, 0.2);
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* CHECKBOXES - IMPORTANT */
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      padding: 0;
+      cursor: pointer;
+      accent-color: var(--color-primary);
+      -webkit-appearance: checkbox;
+      appearance: checkbox;
+    }
+
+    .checkbox-line {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin: var(--spacing-md) 0;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .checkbox-line input[type="checkbox"] {
+      flex-shrink: 0;
+    }
+
+    button {
+      width: 100%;
+      padding: var(--spacing-md) var(--spacing-lg);
+      margin: var(--spacing-md) 0;
+      border: none;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #1a1a1a 0%, #000 100%);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    button:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.secondary { background: rgba(255, 255, 255, 0.16); color: var(--color-text); border: 1px solid var(--color-border); box-shadow: none; }
+    button.danger { background: linear-gradient(180deg, #8f1111 0%, #5e0808 100%); }
+    button.soft { background: linear-gradient(180deg, #4d3b2f 0%, #2f231b 100%); }
+
+    h1, h2, h3 { font-family: "Playfair Display", serif; margin: 0; }
+    h3 { margin: var(--spacing-lg) 0 var(--spacing-lg); font-size: 20px; color: var(--color-text); }
+    h4 { margin: var(--spacing-md) 0 var(--spacing-sm); font-size: 14px; color: var(--color-secondary); }
+
+    label {
+      display: block;
+      margin-top: var(--spacing-md);
+      margin-bottom: var(--spacing-sm);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    hr { border: none; border-top: 1px solid var(--color-border); margin: var(--spacing-xl) 0; }
+    .muted { font-size: 12px; color: var(--color-text-muted); line-height: 1.6; }
+
+    .auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-2xl);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 430px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
+      color: white;
+    }
+
+    .auth-brand {
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .auth-brand img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .auth-brand h1 {
+      margin: 0 0 var(--spacing-sm);
+      font-size: 32px;
+      letter-spacing: 1px;
+    }
+
+    .auth-brand p {
+      margin: 0;
+      opacity: 0.86;
+      font-size: 13px;
+    }
+
+    .auth-card label { color: rgba(255, 255, 255, 0.9); }
+
+    .auth-error {
+      display: none;
+      margin-top: var(--spacing-md);
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-md);
+      background: rgba(213, 42, 42, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      font-weight: 700;
+      font-size: 13px;
+      animation: slideIn 0.3s ease;
+    }
+
+    header.banner-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.92);
+      overflow: visible;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(8px);
+    }
+
+    .header-banner {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 100px;
+      object-fit: cover;
+    }
+
+    .header-menu-wrap {
+      position: absolute;
+      right: var(--spacing-lg);
+      top: var(--spacing-lg);
+      z-index: 1200;
+    }
+
+    .header-menu-btn {
+      background: rgba(0, 0, 0, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: white;
+      font-size: 24px;
+      width: auto;
+      margin: 0;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .header-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: min(280px, calc(100vw - var(--spacing-lg) * 2));
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+      border: 1px solid var(--color-border);
+      transform: translateY(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+    }
+
+    .header-menu.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .header-menu button {
+      width: 100%;
+      margin: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--color-text);
+      text-align: left;
+      padding: var(--spacing-md) var(--spacing-lg);
+      box-shadow: none;
+      border-bottom: 1px solid var(--color-border);
+      font-size: 13px;
+    }
+
+    .header-menu button:last-child { border-bottom: none; }
+    .header-menu button:hover { background: rgba(0, 0, 0, 0.04); transform: none; }
+
+    .user-chip {
+      padding: var(--spacing-lg);
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.01));
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .user-chip strong {
+      display: block;
+      color: var(--color-text);
+      margin-bottom: var(--spacing-xs);
+      font-size: 15px;
+    }
+
+    .user-chip span {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-2xl);
+    }
+
+    .top-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .tab-btn {
+      position: relative;
+      overflow: hidden;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(180deg, #2a2a2a 0%, #101010 100%);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .tab-badge {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: var(--color-error);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: none;
+    }
+
+    .section-shell {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .date-actions {
+      display: grid;
+      grid-template-columns: 1fr 145px;
+      gap: var(--spacing-md);
+      align-items: stretch;
+    }
+
+    .date-actions input, #filterDate {
+      margin: var(--spacing-md) 0;
+      height: 48px;
+    }
+
+    .small-btn {
+      width: 145px;
+      height: 48px;
+      white-space: nowrap;
+      padding: 0 var(--spacing-lg);
+      margin: var(--spacing-md) 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .accordion {
+      margin-bottom: var(--spacing-md);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .accordion-header {
+      padding: var(--spacing-lg);
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: rgba(20, 20, 20, 0.92);
+      color: white;
+      font-family: "Playfair Display", serif;
+      font-size: 15px;
+      user-select: none;
+    }
+
+    .accordion-header .arrow {
+      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .accordion.open .arrow { transform: rotate(180deg); }
+
+    .accordion-inner {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.38s ease, opacity 0.28s ease, padding 0.28s ease;
+      padding: 0 var(--spacing-lg);
+    }
+
+    .accordion.open .accordion-inner {
+      opacity: 1;
+      padding: var(--spacing-lg);
+    }
+
+    .card {
+      background: rgba(255, 249, 243, 0.98);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.03);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .card-title {
+      display: block;
+      margin-right: 40px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: var(--spacing-md);
+      color: var(--color-text);
+    }
+
+    .line {
+      line-height: 1.8;
+      font-size: 13px;
+      color: var(--color-secondary);
+      margin: var(--spacing-sm) 0;
+    }
+
+    .menu-wrap {
+      position: absolute;
+      top: var(--spacing-md);
+      right: var(--spacing-md);
+    }
+
+    .menu-btn {
+      background: rgba(255, 255, 255, 0.4);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      font-size: 20px;
+      color: var(--color-text);
+      cursor: pointer;
+      width: auto;
+      margin: 0;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      box-shadow: none;
+    }
+
+    .menu {
+      display: none;
+      position: absolute;
+      top: 34px;
+      right: 0;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      z-index: 100;
+      min-width: 200px;
+      border: 1px solid var(--color-border);
+    }
+
+    .menu button {
+      width: 100%;
+      padding: var(--spacing-sm) var(--spacing-lg);
+      border: none;
+      background: transparent;
+      color: var(--color-text);
+      text-align: left;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+      border-bottom: 1px solid var(--color-border);
+      font-size: 12px;
+    }
+
+    .menu button:last-child { border-bottom: none; }
+    .menu button:hover { background: rgba(0, 0, 0, 0.04); transform: none; }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: var(--spacing-md);
+      text-transform: uppercase;
+      color: white;
+      letter-spacing: 0.2px;
+    }
+
+    .badge.ORO { background-color: #f39a1e; }
+    .badge.RIO { background-color: #1f78ff; }
+    .badge.ESPRESSO { background-color: #d52a2a; }
+    .badge.CLASSIC { background-color: #6b4329; color: #f4d27a; }
+    .badge.SANTOS { background-color: #161616; color: #d4af37; }
+    .badge.SUCRE { background-color: #e6d3a3; color: black; }
+
+    #category.ORO { background-color: #f39a1e; color: white; }
+    #category.RIO { background-color: #1f78ff; color: white; }
+    #category.ESPRESSO { background-color: #d52a2a; color: white; }
+    #category.CLASSIC { background-color: #6b4329; color: #f4d27a; }
+    #category.SANTOS { background-color: #161616; color: #d4af37; }
+    #category.SUCRE { background-color: #e6d3a3; color: black; }
+
+    .paid { color: #148c37; font-weight: 700; }
+    .unpaid { color: #cc2d2d; font-weight: 700; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-md);
+      margin: var(--spacing-lg) 0;
+    }
+
+    .summary-box {
+      background: rgba(252, 246, 239, 0.96);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+    }
+
+    .summary-box .label {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-bottom: var(--spacing-sm);
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .summary-box .value {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .prices-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-md);
+    }
+
+    .prices-grid > div label { margin: 0 0 var(--spacing-sm); }
+
+    .client-head {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--spacing-lg);
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .client-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-md);
+      margin: var(--spacing-lg) 0;
+    }
+
+    .mini-box {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      text-align: center;
+    }
+
+    .mini-box .k {
+      font-size: 10px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: var(--spacing-xs);
+      letter-spacing: 0.3px;
+    }
+
+    .mini-box .v {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .invoice-tools {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--spacing-md);
+      margin: var(--spacing-lg) 0;
+    }
+
+    .sales-sublist {
+      display: grid;
+      gap: var(--spacing-md);
+    }
+
+    .sale-item {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(0, 0, 0, 0.03);
+      padding: var(--spacing-md);
+    }
+
+    .logs-list {
+      display: grid;
+      gap: var(--spacing-md);
+    }
+
+    .log-item {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(0, 0, 0, 0.03);
+      padding: var(--spacing-lg);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-xl);
+      z-index: 4000;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-xl);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.22);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .close-x {
+      width: auto;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 20px;
+    }
+
+    .settings-option {
+      background: rgba(248, 243, 236, 0.96);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .settings-option .title {
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--spacing-sm);
+      font-size: 15px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-xl);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--color-text-muted);
+      border: 1px dashed var(--color-border);
+      font-size: 13px;
+    }
+
+    .users-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-md);
+      margin: var(--spacing-lg) 0;
+    }
+
+    .user-row {
+      background: rgba(255, 255, 255, 0.88);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md) var(--spacing-lg);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--spacing-lg);
+    }
+
+    .user-info { flex: 1; }
+
+    .user-email {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--color-text);
+    }
+
+    .user-role {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      margin-top: var(--spacing-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+
+    @media (max-width: 760px) {
+      .top-actions,
+      .summary-grid,
+      .prices-grid,
+      .client-stats,
+      .invoice-tools {
+        grid-template-columns: 1fr;
+      }
+
+      .date-actions { grid-template-columns: 1fr; }
+      .date-actions input, .small-btn { width: 100%; max-width: 100%; }
+      .container { padding: var(--spacing-lg); }
+      .auth-card { padding: var(--spacing-xl); }
+      .modal-card { padding: var(--spacing-lg); }
+      .user-row { flex-direction: column; align-items: flex-start; }
+      .user-row button { width: 100%; }
+    }
+
+    @media (max-width: 480px) {
+      .top-actions { grid-template-columns: repeat(2, 1fr); }
+      h3 { font-size: 18px; }
+      .tab-btn { font-size: 12px; padding: var(--spacing-sm) var(--spacing-md); }
+      .small-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sessionStatus" class="session-status"></div>
+
+  <div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <img src="icon-512.png.PNG" alt="TASKAFÉ" />
+        <h1>TASKAFÉ</h1>
+        <p>Gestion de ventes cloud sécurisée</p>
+      </div>
+      <label for="loginEmail">📧 Email</label>
+      <input id="loginEmail" type="email" placeholder="Email" autocomplete="username" />
+      <label for="loginPassword">🔐 Mot de passe</label>
+      <input id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password" />
+      
+      <div class="checkbox-line">
+        <input id="rememberSession" type="checkbox" checked />
+        <label for="rememberSession" style="margin: 0; flex: 1;">Rester connecté</label>
+      </div>
+      
+      <!-- NOTE: on garde l'id="loginBtn" mais on ne dépend plus du onclick; le JS bind le click -->
+      <button id="loginBtn" type="button">Se connecter</button>
+      <div id="authError" class="auth-error"></div>
+      <div class="muted">Tes données restent sécurisées sur Supabase.</div>
+    </div>
+  </div>
+
+  <div id="appShell" class="hidden">
+    <header class="banner-header">
+      <img src="IMG_5089.jpeg" alt="TASKAFÉ" class="header-banner" />
+      <div class="header-menu-wrap">
+        <button class="header-menu-btn" onclick="toggleHeaderMenu(event)">⋯</button>
+        <div class="header-menu" id="headerMenu">
+          <div class="user-chip">
+            <strong id="menuUserName">—</strong>
+            <span id="menuUserRole">—</span>
+          </div>
+          <button onclick="openProfileModal()">👤 Mon profil</button>
+          <button onclick="openSettingsHubModal()">⚙️ Paramètres</button>
+          <button id="usersBtn" onclick="openUsersModal()" class="hidden">👥 Gérer utilisateurs</button>
+          <button onclick="confirmResetFilters()">🔄 Réinitialiser</button>
+          <button onclick="logout()">🚪 Déconnexion</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="top-actions">
+        <button id="btnSales" class="tab-btn active" onclick="show('sales')">💰 Ventes</button>
+        <button id="btnClients" class="tab-btn" onclick="show('clients')">👥 Clients</button>
+        <button id="btnStock" class="tab-btn" onclick="show('stock')">📦 Stock <span id="stockAlert" class="tab-badge"></span></button>
+        <button id="btnLogs" class="tab-btn hidden" onclick="show('logs')">📋 Logs</button>
+      </div>
+
+      <div id="sales" class="section-shell">
+        <h3>💵 Nouvelle vente</h3>
+        <label for="clientSelect">Sélectionner un client</label>
+        <select id="clientSelect" onchange="updatePreview()"></select>
+        <label for="quantityInput">Quantité</label>
+        <input id="quantityInput" type="number" step="0.01" placeholder="Quantité" oninput="updatePreview()" />
+        <label for="category">Catégorie</label>
+        <select id="category" onchange="updateCategoryStyle(); updatePreview(); updateQuantityPlaceholder();">
+          <option value="ORO">ORO</option>
+          <option value="RIO">RIO</option>
+          <option value="ESPRESSO">ESPRESSO</option>
+          <option value="CLASSIC">CLASSIC</option>
+          <option value="SANTOS">SANTOS</option>
+          <option value="SUCRE">SUCRE</option>
+        </select>
+        <div class="date-field">
+          <label for="datetime">📅 Date & Heure</label>
+          <div class="date-actions">
+            <input type="datetime-local" id="datetime" />
+            <button type="button" class="small-btn" onclick="setNow()">Maintenant</button>
+          </div>
+        </div>
+        
+        <div class="checkbox-line">
+          <input type="checkbox" id="paid" />
+          <label for="paid" style="margin: 0; flex: 1;">✅ Payé</label>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-box"><div class="label">Prix unitaire</div><div class="value" id="previewUnitPrice">0 DHS</div></div>
+          <div class="summary-box"><div class="label">Total</div><div class="value" id="previewTotalPrice">0 DHS</div></div>
+          <div class="summary-box"><div class="label">Client</div><div class="value" id="previewClientName">—</div></div>
+        </div>
+
+        <button onclick="addSale()">✅ Ajouter vente</button>
+
+        <hr />
+
+        <div class="accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)"><span>🔍 Filtres</span><span class="arrow">▼</span></div>
+          <div class="accordion-inner">
+            <label for="filterClient">Client</label>
+            <select id="filterClient" onchange="renderSales()"></select>
+            <label for="filterCategory">Catégorie</label>
+            <select id="filterCategory" onchange="renderSales()">
+              <option value="">Toutes catégories</option>
+              <option value="ORO">ORO</option>
+              <option value="RIO">RIO</option>
+              <option value="ESPRESSO">ESPRESSO</option>
+              <option value="CLASSIC">CLASSIC</option>
+              <option value="SANTOS">SANTOS</option>
+              <option value="SUCRE">SUCRE</option>
+            </select>
+            <label for="filterDate">📅 Date</label>
+            <input type="date" id="filterDate" onchange="renderSales()" />
+          </div>
+        </div>
+
+        <h3>📊 Ventes récentes</h3>
+        <div id="salesList"></div>
+
+        <div class="accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📈 Résumé</span><span class="arrow">▼</span></div>
+          <div class="accordion-inner">
+            <div class="summary-grid">
+              <div class="summary-box"><div class="label">Total quantité</div><div class="value" id="totalQty">0</div></div>
+              <div class="summary-box"><div class="label">Revenu total</div><div class="value" id="totalDh">0 DHS</div></div>
+              <div class="summary-box"><div class="label">Non payé</div><div class="value" id="unpaidDh">0 DHS</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="clients" class="section-shell hidden">
+        <h3>➕ Nouveau client</h3>
+        <label for="clientName">Nom</label>
+        <input id="clientName" placeholder="Nom du client" />
+        <label for="clientAddress">Adresse</label>
+        <input id="clientAddress" placeholder="Adresse (optionnel)" />
+        <label for="clientICE">ICE</label>
+        <input id="clientICE" placeholder="Numéro ICE (optionnel)" />
+
+        <h4>💰 Prix personnalisés</h4>
+        <div class="prices-grid">
+          <div>
+            <label for="priceORO">ORO</label>
+            <input id="priceORO" type="number" placeholder="130 DHS" />
+          </div>
+          <div>
+            <label for="priceRIO">RIO</label>
+            <input id="priceRIO" type="number" placeholder="135 DHS" />
+          </div>
+          <div>
+            <label for="priceESPRESSO">ESPRESSO</label>
+            <input id="priceESPRESSO" type="number" placeholder="140 DHS" />
+          </div>
+          <div>
+            <label for="priceCLASSIC">CLASSIC</label>
+            <input id="priceCLASSIC" type="number" placeholder="150 DHS" />
+          </div>
+          <div>
+            <label for="priceSANTOS">SANTOS</label>
+            <input id="priceSANTOS" type="number" placeholder="180 DHS" />
+          </div>
+          <div>
+            <label for="priceSUCRE">SUCRE</label>
+            <input id="priceSUCRE" type="number" placeholder="100 DHS" />
+          </div>
+        </div>
+        <div class="muted">Laisse vide pour utiliser les prix standard.</div>
+        <button onclick="addClient()">✅ Créer client</button>
+        <hr />
+        <h3>👥 Fiches clients</h3>
+        <div id="clientList"></div>
+      </div>
+
+      <div id="stock" class="section-shell hidden">
+        <h3>📦 Gestion du stock</h3>
+        <div class="muted">Utilise le menu ⋯ pour gérer le stock. SUCRE est en paquets, autres en kg.</div>
+        <div id="stockList"></div>
+      </div>
+
+      <div id="logs" class="section-shell hidden">
+        <h3>📋 Historique des actions</h3>
+        <div class="muted">Visible admin uniquement. Dernières 200 actions.</div>
+        <div id="logsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <div id="profileModal" class="modal-backdrop" onclick="backdropClose(event, 'profileModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>👤 Mon profil</h3><button class="close-x" onclick="closeModal('profileModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title" id="profileName">—</div>
+        <div id="profileUsername" class="muted">—</div>
+        <div id="profileRole" class="muted">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="usersModal" class="modal-backdrop" onclick="backdropClose(event, 'usersModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>👥 Gérer utilisateurs</h3><button class="close-x" onclick="closeModal('usersModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title">Créer nouvel utilisateur</div>
+        <label for="newUserEmail">📧 Email</label>
+        <input id="newUserEmail" type="email" placeholder="Email" />
+        <label for="newUserPassword">🔐 Mot de passe</label>
+        <input id="newUserPassword" type="password" placeholder="Min 6 caractères" />
+        <label for="newUserName">👤 Nom complet</label>
+        <input id="newUserName" type="text" placeholder="Nom complet" />
+        <label for="newUserRole">🎖️ Rôle</label>
+        <select id="newUserRole">
+          <option value="employee">Employé</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button onclick="createNewUser()">✅ Créer</button>
+      </div>
+      <hr />
+      <h4>Utilisateurs actuels</h4>
+      <div id="usersList" class="users-grid"></div>
+    </div>
+  </div>
+
+  <div id="settingsHubModal" class="modal-backdrop" onclick="backdropClose(event, 'settingsHubModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>⚙️ Paramètres</h3><button class="close-x" onclick="closeModal('settingsHubModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title">🔒 Sécurité</div>
+        <div class="muted">Modifier ton mot de passe.</div>
+        <button onclick="closeModal('settingsHubModal'); openPasswordModal();">Changer mot de passe</button>
+      </div>
+      <div class="settings-option">
+        <div class="title">☁️ Export cloud</div>
+        <div class="muted">Télécharger une sauvegarde JSON complète.</div>
+        <button onclick="exportData()">📥 Exporter données</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="passwordModal" class="modal-backdrop" onclick="backdropClose(event, 'passwordModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔐 Changer mot de passe</h3><button class="close-x" onclick="closeModal('passwordModal')">✕</button></div>
+      <label for="newPassword">Nouveau mot de passe</label>
+      <input id="newPassword" type="password" placeholder="Min 6 caractères" />
+      <button onclick="changeMyPassword()">✅ Mettre à jour</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <!-- Message B begins at the next line: <script type="module"> -->
