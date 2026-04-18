@@ -139,9 +139,34 @@ module.exports = async (req, res) => {
     .eq('id', caller.id)
     .single();
 
-  if (profileError || !callerProfile || callerProfile.role !== 'admin') {
-    console.error('[delete-user] Accès refusé :', profileError?.message, callerProfile?.role);
-    return res.status(403).json({ error: 'Accès refusé : rôle admin requis' });
+  if (profileError) {
+    const isNotFound = profileError.code === 'PGRST116';
+    console.error('[delete-user] Erreur lecture profil appelant :', {
+      callerId: caller.id,
+      code: profileError.code,
+      message: profileError.message,
+      notFound: isNotFound
+    });
+    const msg = isNotFound
+      ? 'Accès refusé : profil appelant introuvable dans la table profiles'
+      : 'Accès refusé : impossible de lire le profil appelant';
+    return res.status(403).json({ error: msg });
+  }
+
+  if (!callerProfile) {
+    console.error('[delete-user] Profil appelant absent (sans erreur Supabase) pour id =', caller.id);
+    return res.status(403).json({ error: 'Accès refusé : profil appelant introuvable' });
+  }
+
+  // Case-insensitive comparison to match frontend behaviour (isAdmin uses .toLowerCase())
+  const callerRole = String(callerProfile.role || '').toLowerCase();
+  if (callerRole !== 'admin') {
+    console.error('[delete-user] Rôle insuffisant :', {
+      callerId: caller.id,
+      roleInDB: callerProfile.role,
+      roleNormalized: callerRole
+    });
+    return res.status(403).json({ error: `Accès refusé : rôle admin requis (rôle actuel : ${callerProfile.role || 'non défini'})` });
   }
 
   // Prevent an admin from deleting their own account

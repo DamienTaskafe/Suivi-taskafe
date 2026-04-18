@@ -59,9 +59,41 @@ Deno.serve(async (req: Request) => {
       .eq('id', caller.id)
       .single()
 
-    if (profileError || !callerProfile || callerProfile.role !== 'admin') {
+    if (profileError) {
+      const isNotFound = (profileError as { code?: string }).code === 'PGRST116'
+      console.error('Erreur lecture profil appelant :', {
+        callerId: caller.id,
+        code: (profileError as { code?: string }).code,
+        message: profileError.message,
+        notFound: isNotFound
+      })
+      const msg = isNotFound
+        ? 'Accès refusé : profil appelant introuvable dans la table profiles'
+        : 'Accès refusé : impossible de lire le profil appelant'
       return new Response(
-        JSON.stringify({ error: 'Accès refusé : rôle admin requis' }),
+        JSON.stringify({ error: msg }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!callerProfile) {
+      console.error('Profil appelant absent (sans erreur Supabase) pour id =', caller.id)
+      return new Response(
+        JSON.stringify({ error: 'Accès refusé : profil appelant introuvable' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Case-insensitive comparison to match frontend behaviour (isAdmin uses .toLowerCase())
+    const callerRole = String(callerProfile.role || '').toLowerCase()
+    if (callerRole !== 'admin') {
+      console.error('Rôle insuffisant :', {
+        callerId: caller.id,
+        roleInDB: callerProfile.role,
+        roleNormalized: callerRole
+      })
+      return new Response(
+        JSON.stringify({ error: `Accès refusé : rôle admin requis (rôle actuel : ${callerProfile.role || 'non défini'})` }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
