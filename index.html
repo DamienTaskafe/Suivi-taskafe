@@ -1,0 +1,207 @@
+<script>
+  // ... (tout ton code au-dessus)
+
+  async function logout() {
+    closeAllMenus();
+    try { await supabase.auth.signOut(); } catch {}
+    $("appShell").classList.add("hidden");
+    $("authScreen").classList.remove("hidden");
+    $("loginPassword").value = "";
+  }
+
+  // ===== CRUD minimal : clients & ventes =====
+  function readCustomPrice(id) {
+    const value = $(id).value;
+    if (value === "") return null;
+    const n = Number(value);
+    return Number.isNaN(n) || n <= 0 ? null : n;
+  }
+
+  async function addClient() {
+    const name = $("clientName").value.trim();
+    const address = $("clientAddress").value.trim();
+    const ice = $("clientICE").value.trim();
+    if (!name) return alert("❌ Nom client obligatoire");
+
+    const payload = {
+      name,
+      address,
+      ice,
+      prices: {
+        ORO: readCustomPrice("priceORO"),
+        RIO: readCustomPrice("priceRIO"),
+        ESPRESSO: readCustomPrice("priceESPRESSO"),
+        CLASSIC: readCustomPrice("priceCLASSIC"),
+        SANTOS: readCustomPrice("priceSANTOS"),
+        SUCRE: readCustomPrice("priceSUCRE"),
+      }
+    };
+
+    const { error } = await supabase.from("clients").insert(payload);
+    if (error) return alert(error.message);
+
+    ["clientName","clientAddress","clientICE","priceORO","priceRIO","priceESPRESSO","priceCLASSIC","priceSANTOS","priceSUCRE"]
+      .forEach(id => { const el = $(id); if (el) el.value = ""; });
+
+    await loadCloudData();
+    paintApp();
+    showSessionStatus("✅ Client créé", "success");
+  }
+
+  async function addSale() {
+    const clientName = $("clientSelect").value;
+    const quantity = parseFloat($("quantityInput").value);
+    const category = $("category").value;
+    const rawDate = $("datetime").value;
+    const paid = $("paid").checked;
+
+    const client = state.clients.find(c => c.name === clientName);
+    const createdAt = rawDate ? new Date(rawDate).toISOString() : new Date().toISOString();
+
+    if (!clientName) return alert("❌ Choisir un client");
+    if (Number.isNaN(quantity) || quantity <= 0) return alert(`❌ ${category === "SUCRE" ? "Nombre de paquets" : "Kilos"} invalide`);
+    if (Number(state.stocks[category] || 0) < quantity) return alert(`❌ Stock insuffisant pour ${category}`);
+
+    const unitPrice = getClientPrice(clientName, category);
+    const totalPrice = Number((quantity * unitPrice).toFixed(2));
+
+    const { error: saleError } = await supabase.from("sales").insert({
+      client_id: client?.id || null,
+      client_name: clientName,
+      category,
+      quantity,
+      unit_price: unitPrice,
+      total_price: totalPrice,
+      paid,
+      created_by: state.session?.user?.id || null,
+      created_at: createdAt
+    });
+    if (saleError) return alert(saleError.message);
+
+    const { error: stockError } = await supabase.from("stocks").upsert({
+      category,
+      quantity: Number(state.stocks[category] || 0) - quantity
+    }, { onConflict: "category" });
+    if (stockError) return alert(stockError.message);
+
+    $("quantityInput").value = "";
+    $("datetime").value = "";
+    $("paid").checked = false;
+
+    await loadCloudData();
+    paintApp();
+    showSessionStatus("✅ Vente ajoutée", "success");
+  }
+
+  // ===== INVOICE =====
+  // IMPORTANT: ton fichier doit contenir generateInvoice() COMPLET avant.
+  // Si tu l'avais déjà au-dessus, laisse-le.
+
+  // ===== BOOT / EVENTS =====
+  async function bootFromSession(session) {
+    state.session = session;
+
+    if (!session?.user) {
+      $("authScreen").classList.remove("hidden");
+      $("appShell").classList.add("hidden");
+      return;
+    }
+
+    await loadProfile(session.user.id);
+
+    $("authScreen").classList.add("hidden");
+    $("appShell").classList.remove("hidden");
+
+    try {
+      await loadCloudData();
+      paintApp();
+    } catch (e) {
+      console.error(e);
+      showSessionStatus("❌ Erreur de chargement: " + safeMessage(e), "error", 6000);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    // header menu
+    $("headerMenuBtn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      $("headerMenu").classList.toggle("show");
+    });
+
+    // tabs
+    $("btnSales").addEventListener("click", () => showTab("sales"));
+    $("btnClients").addEventListener("click", () => showTab("clients"));
+    $("btnStock").addEventListener("click", () => showTab("stock"));
+    $("btnLogs").addEventListener("click", () => showTab("logs"));
+
+    // accordions
+    $("filtersHeader").addEventListener("click", () => toggleAccordion($("filtersHeader")));
+    $("summaryHeader").addEventListener("click", () => toggleAccordion($("summaryHeader")));
+
+    // preview
+    $("clientSelect").addEventListener("change", updatePreview);
+    $("quantityInput").addEventListener("input", updatePreview);
+    $("category").addEventListener("change", () => { updateCategoryStyle(); updatePreview(); updateQuantityPlaceholder(); });
+
+    // filters
+    $("filterClient").addEventListener("change", renderSales);
+    $("filterCategory").addEventListener("change", renderSales);
+    $("filterDate").addEventListener("change", renderSales);
+
+    // now
+    $("btnNow").addEventListener("click", setNow);
+
+    // login
+    $("loginBtn").addEventListener("click", login);
+    $("loginEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+    $("loginPassword").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+
+    // logout / reset
+    $("btnLogout").addEventListener("click", logout);
+    $("btnReset").addEventListener("click", () => {
+      $("filterClient").value = "";
+      $("filterCategory").value = "";
+      $("filterDate").value = "";
+      renderSales();
+      showSessionStatus("✅ Filtres réinitialisés", "success");
+    });
+
+    // CRUD
+    $("btnAddClient").addEventListener("click", addClient);
+    $("btnAddSale").addEventListener("click", addSale);
+
+    // thresholds
+    $("thresholdsBtn").addEventListener("click", async () => {
+      if (!requireAdmin("Seuils stock")) return;
+      await loadThresholds();
+      renderThresholdsEditor();
+      openModal("thresholdsModal");
+    });
+    $("closeThresholds").addEventListener("click", () => closeModal("thresholdsModal"));
+    $("btnSaveThresholds").addEventListener("click", saveThresholds);
+
+    // invoice
+    $("invoiceBtn").addEventListener("click", () => {
+      const now = new Date();
+      const first = new Date(now.getFullYear(), now.getMonth(), 1);
+      $("invoiceFrom").value = toISODateOnly(first);
+      $("invoiceTo").value = toISODateOnly(now);
+      $("invoiceHint").textContent = "";
+      openModal("invoiceModal");
+    });
+    $("closeInvoice").addEventListener("click", () => closeModal("invoiceModal"));
+    $("btnGenerateInvoice").addEventListener("click", generateInvoice);
+
+    // close menus on outside click
+    document.addEventListener("click", closeAllMenus);
+
+    // boot
+    const { data } = await supabase.auth.getSession();
+    await bootFromSession(data.session);
+    supabase.auth.onAuthStateChange(async (_event, session) => {
+      await bootFromSession(session);
+    });
+  });
+</script>
+</body>
+</html>
