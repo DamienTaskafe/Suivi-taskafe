@@ -59,7 +59,8 @@ module.exports = async (req, res) => {
     // Log clearly so the misconfiguration is visible in Vercel function logs
     console.warn('[delete-user] SUPABASE_URL non définie — utilisation de la valeur de secours intégrée.');
   }
-  const supabaseUrl = envUrl || SUPABASE_URL_FALLBACK;
+  // Remove any accidental trailing slash to avoid double-slash in REST URLs
+  const supabaseUrl = (envUrl || SUPABASE_URL_FALLBACK).replace(/\/+$/, '');
   const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
   if (!serviceRoleKey) {
@@ -133,12 +134,14 @@ module.exports = async (req, res) => {
   }
 
   // ── Step 5 : Check caller has admin role ─────────────────────────────────
-  // Use a direct REST fetch with explicit service-role headers so that the
-  // Supabase JS client's internal session state (set during auth.getUser above)
-  // cannot interfere with the query — this was the root cause of the
-  // "impossible de lire le profil appelant" error.
+  // Four cascading fallbacks so that any single point of failure is covered:
+  //   5a. REST fetch by id   (service-role key → bypasses RLS)
+  //   5b. REST fetch by email (handles id mismatch between profiles & auth.users)
+  //   5c. supabaseAdmin SDK  (alternative PostgREST path)
+  //   5d. app_metadata.role  (set by create-user API, server-controlled)
   let callerRole = null;
 
+  // ── 5a : REST fetch by id ─────────────────────────────────────────────────
   try {
     const profileUrl = `${supabaseUrl}/rest/v1/profiles?select=role&id=eq.${encodeURIComponent(caller.id)}&limit=1`;
     const profileResp = await fetch(profileUrl, {
@@ -153,32 +156,86 @@ module.exports = async (req, res) => {
       const rows = await profileResp.json();
       if (Array.isArray(rows) && rows.length > 0) {
         callerRole = String(rows[0].role || '').toLowerCase();
+        console.log('[delete-user] Rôle obtenu via REST id :', callerRole, '| callerId =', caller.id);
       } else {
-        console.warn('[delete-user] Profil appelant introuvable dans profiles pour id =', caller.id);
+        console.warn('[delete-user] 5a: Profil introuvable par id =', caller.id, '| email =', caller.email);
       }
     } else {
       const errText = await profileResp.text().catch(() => '');
-      console.error('[delete-user] REST profiles échoué :', profileResp.status, errText);
+      console.error('[delete-user] 5a: REST profiles échoué :', profileResp.status, errText);
     }
   } catch (fetchErr) {
-    console.error('[delete-user] Exception lors de la lecture REST du profil :', fetchErr.message);
+    console.error('[delete-user] 5a: Exception REST id :', fetchErr.message);
   }
 
-  // Fallback: role stored in app_metadata (server-controlled, set by create-user API)
+  // ── 5b : REST fetch by email (fallback for id mismatch) ───────────────────
+  // email is unique in auth.users, so this lookup is safe when id-based lookup
+  // returns empty (e.g. profiles.id was set incorrectly during manual repair).
+  if (!callerRole && caller.email) {
+    try {
+      const emailUrl = `${supabaseUrl}/rest/v1/profiles?select=role&email=eq.${encodeURIComponent(caller.email)}&limit=1`;
+      const emailResp = await fetch(emailUrl, {
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (emailResp.ok) {
+        const emailRows = await emailResp.json();
+        if (Array.isArray(emailRows) && emailRows.length > 0) {
+          callerRole = String(emailRows[0].role || '').toLowerCase();
+          console.log('[delete-user] Rôle obtenu via REST email (fallback 5b) :', callerRole);
+        } else {
+          console.warn('[delete-user] 5b: Profil introuvable par email =', caller.email);
+        }
+      } else {
+        const errText2 = await emailResp.text().catch(() => '');
+        console.error('[delete-user] 5b: REST email échoué :', emailResp.status, errText2);
+      }
+    } catch (emailFetchErr) {
+      console.error('[delete-user] 5b: Exception REST email :', emailFetchErr.message);
+    }
+  }
+
+  // ── 5c : supabaseAdmin SDK (alternative PostgREST path) ───────────────────
+  if (!callerRole) {
+    try {
+      const { data: sdkProfile, error: sdkErr } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', caller.id)
+        .maybeSingle();
+
+      if (sdkErr) {
+        console.warn('[delete-user] 5c: SDK query erreur :', sdkErr.message);
+      } else if (sdkProfile?.role) {
+        callerRole = String(sdkProfile.role).toLowerCase();
+        console.log('[delete-user] Rôle obtenu via SDK (fallback 5c) :', callerRole);
+      } else {
+        console.warn('[delete-user] 5c: SDK — profil non trouvé ou rôle vide pour id =', caller.id);
+      }
+    } catch (sdkException) {
+      console.error('[delete-user] 5c: Exception SDK :', sdkException.message);
+    }
+  }
+
+  // ── 5d : app_metadata.role (server-controlled, set by create-user API) ────
   if (!callerRole) {
     const metaRole = String(caller.app_metadata?.role || '').toLowerCase();
     if (metaRole) {
       callerRole = metaRole;
-      console.log('[delete-user] Rôle obtenu depuis app_metadata (fallback) :', callerRole);
+      console.log('[delete-user] Rôle obtenu depuis app_metadata (fallback 5d) :', callerRole);
     }
   }
 
   if (callerRole !== 'admin') {
-    console.error('[delete-user] Accès refusé :', { callerId: caller.id, callerRole });
+    console.error('[delete-user] Accès refusé :', { callerId: caller.id, callerEmail: caller.email, callerRole });
     return res.status(403).json({
       error: callerRole
         ? `Accès refusé : rôle admin requis (rôle actuel : ${callerRole})`
-        : 'Accès refusé : profil appelant introuvable ou rôle non défini'
+        : 'Accès refusé : profil admin introuvable ou rôle non défini'
     });
   }
 

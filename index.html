@@ -1606,6 +1606,8 @@
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         if (!refreshError && refreshData?.session?.access_token) {
           accessToken = refreshData.session.access_token;
+          // Keep state.session up to date with the refreshed session
+          state.session = refreshData.session;
         }
       } catch (e) { console.warn('[deleteUser] refreshSession échoué :', e?.message); /* ignore — fallback below */ }
 
@@ -1613,6 +1615,7 @@
         try {
           const { data: sessionData } = await supabase.auth.getSession();
           accessToken = sessionData?.session?.access_token;
+          if (sessionData?.session) state.session = sessionData.session;
         } catch (e) { console.warn('[deleteUser] getSession échoué :', e?.message); /* ignore */ }
       }
 
@@ -1620,6 +1623,25 @@
         if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
         showSessionStatus('❌ Session invalide. Reconnectez-vous.', 'error');
         return;
+      }
+
+      // Re-verify that the current user is still admin by reloading their profile.
+      // This catches stale state (profile changed since last load) and ensures the
+      // backend receives a token that matches a known admin profile.
+      const currentUserId = state.session?.user?.id;
+      if (currentUserId) {
+        try {
+          const freshProfile = await loadProfile(currentUserId);
+          if (!freshProfile || String(freshProfile.role || '').toLowerCase() !== 'admin') {
+            if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+            showSessionStatus('❌ Profil admin introuvable — reconnectez-vous et réessayez.', 'error');
+            return;
+          }
+        } catch (profileErr) {
+          // Non-blocking: if the profile reload fails, we still attempt the API call
+          // because the backend will re-verify independently.
+          console.warn('[deleteUser] Rechargement profil échoué (non bloquant) :', profileErr?.message);
+        }
       }
 
       // AbortController gives us a hard 15-second timeout so the function
@@ -1725,7 +1747,11 @@
       // TOKEN_REFRESHED is fired by refreshSession() inside deleteUser —
       // the Supabase client already updated its internal token; no need
       // to trigger a full boot cycle which would cause a concurrent UI reload.
-      if (event === 'TOKEN_REFRESHED') return;
+      // However we do keep state.session in sync so the stored token stays fresh.
+      if (event === 'TOKEN_REFRESHED') {
+        if (session) state.session = session;
+        return;
+      }
       await bootFromSession(session);
     });
   </script>
