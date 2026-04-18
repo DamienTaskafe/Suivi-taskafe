@@ -1513,38 +1513,24 @@
       statusEl.style.color = '';
 
       try {
-        // Save admin session tokens so we can restore them after signUp
-        const savedAccessToken = state.session?.access_token;
-        const savedRefreshToken = state.session?.refresh_token;
+        // Call the secure backend API — the service role key never leaves the server
+        const resp = await fetch('/api/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, full_name: fullName, role })
+        });
 
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const result = await resp.json();
 
-        if (error) {
-          const msg = error.message || 'Erreur inconnue';
-          statusEl.textContent = '❌ ' + msg;
-          statusEl.style.color = '#e53935';
+        if (!resp.ok) {
+          const msg = result?.error || 'Erreur inconnue';
+          const isAlreadyExists = resp.status === 409 || msg.toLowerCase().includes('already');
+          statusEl.textContent = isAlreadyExists
+            ? `⚠️ Cet email est déjà utilisé : ${email}`
+            : '❌ ' + msg;
+          statusEl.style.color = isAlreadyExists ? '#e65100' : '#e53935';
           showSessionStatus('❌ Échec création utilisateur', 'error', 5000);
           return;
-        }
-
-        const newUserId = data.user?.id;
-
-        // Restore admin session if signUp replaced it
-        if (savedAccessToken && savedRefreshToken) {
-          await supabase.auth.setSession({
-            access_token: savedAccessToken,
-            refresh_token: savedRefreshToken
-          });
-        }
-
-        if (newUserId) {
-          const { error: profileError } = await supabase.from('profiles').upsert({
-            id: newUserId,
-            email,
-            full_name: fullName,
-            role
-          });
-          if (profileError) console.warn('Profile insert warning:', profileError.message);
         }
 
         document.getElementById('newUserEmail').value = '';
@@ -1552,12 +1538,7 @@
         document.getElementById('newUserName').value = '';
         document.getElementById('newUserRole').value = 'employee';
 
-        const needsConfirmation = !data.session;
-        const successMsg = needsConfirmation
-          ? `✅ Utilisateur créé — un email de confirmation a été envoyé à ${email}`
-          : `✅ Utilisateur créé : ${email}`;
-
-        statusEl.textContent = successMsg;
+        statusEl.textContent = `✅ Utilisateur créé : ${email}`;
         statusEl.style.color = '#2e7d32';
         showSessionStatus('✅ Utilisateur créé', 'success');
 
