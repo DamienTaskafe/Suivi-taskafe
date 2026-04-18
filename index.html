@@ -1557,9 +1557,10 @@
       const label = target?.full_name || target?.email || userId;
       if (!confirm(`Supprimer définitivement "${label}" ?\n\n⚠️ Le compte de connexion et le profil seront supprimés. Cette action est irréversible.`)) return;
 
-      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.getSession();
+      state.session = freshSession;
       const accessToken = freshSession?.access_token;
-      if (!accessToken) {
+      if (sessionError || !accessToken) {
         alert('❌ Session invalide. Reconnectez-vous.');
         return;
       }
