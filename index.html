@@ -1557,7 +1557,8 @@
       const label = target?.full_name || target?.email || userId;
       if (!confirm(`Supprimer définitivement "${label}" ?\n\n⚠️ Le compte de connexion et le profil seront supprimés. Cette action est irréversible.`)) return;
 
-      const accessToken = state.session?.access_token;
+      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      const accessToken = freshSession?.access_token;
       if (!accessToken) {
         alert('❌ Session invalide. Reconnectez-vous.');
         return;
