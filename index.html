@@ -793,11 +793,13 @@
       allUsers: []
     };
 
+    let _statusTimer = null;
     function showSessionStatus(message, type = 'success', duration = 3500) {
       const el = document.getElementById('sessionStatus');
+      if (_statusTimer) { clearTimeout(_statusTimer); _statusTimer = null; }
       el.textContent = message;
       el.className = `session-status show ${type}`;
-      setTimeout(() => el.classList.remove('show'), duration);
+      _statusTimer = setTimeout(() => { el.classList.remove('show'); _statusTimer = null; }, duration);
     }
 
     function formatDh(value) {
@@ -1139,26 +1141,33 @@
       initAccordions();
     }
 
+    let _bootInProgress = false;
     async function bootFromSession(session) {
-      state.session = session;
-
-      if (!session?.user) {
-        document.getElementById('authScreen').classList.remove('hidden');
-        document.getElementById('appShell').classList.add('hidden');
-        return;
-      }
-
-      await loadProfile(session.user.id);
-
-      document.getElementById('authScreen').classList.add('hidden');
-      document.getElementById('appShell').classList.remove('hidden');
-
+      if (_bootInProgress) return;
+      _bootInProgress = true;
       try {
-        await loadCloudData();
-        paintApp();
-      } catch (error) {
-        console.error('Boot error:', error);
-        showSessionStatus('❌ Erreur de chargement', 'error', 5000);
+        state.session = session;
+
+        if (!session?.user) {
+          document.getElementById('authScreen').classList.remove('hidden');
+          document.getElementById('appShell').classList.add('hidden');
+          return;
+        }
+
+        await loadProfile(session.user.id);
+
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('appShell').classList.remove('hidden');
+
+        try {
+          await loadCloudData();
+          paintApp();
+        } catch (error) {
+          console.error('Boot error:', error);
+          showSessionStatus('❌ Erreur de chargement', 'error', 5000);
+        }
+      } finally {
+        _bootInProgress = false;
       }
     }
 
@@ -1563,32 +1572,34 @@
         btn.disabled = true;
         btn.textContent = '⏳';
       }
-      showSessionStatus('⏳ Suppression en cours…', 'info', 30000);
+      showSessionStatus('⏳ Suppression en cours…', 'info', 16000);
 
-      // Always obtain the freshest possible token before a privileged API call.
-      // refreshSession() forces a round-trip to Supabase to exchange the refresh
-      // token for a brand-new access token, eliminating stale-session failures.
-      // If the refresh itself fails (e.g. refresh token expired), fall back to
-      // getSession() so the subsequent empty-token check can still catch it.
-      let freshSession;
+      // Obtain the freshest possible token before a privileged API call.
+      let accessToken;
       try {
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         if (!refreshError && refreshData?.session?.access_token) {
-          freshSession = refreshData.session;
-        } else {
-          const { data: sessionData } = await supabase.auth.getSession();
-          freshSession = sessionData?.session;
+          accessToken = refreshData.session.access_token;
         }
-      } catch (_refreshEx) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        freshSession = sessionData?.session;
+      } catch (e) { console.warn('[deleteUser] refreshSession échoué :', e?.message); /* ignore — fallback below */ }
+
+      if (!accessToken) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          accessToken = sessionData?.session?.access_token;
+        } catch (e) { console.warn('[deleteUser] getSession échoué :', e?.message); /* ignore */ }
       }
-      const accessToken = freshSession?.access_token;
+
       if (!accessToken) {
         if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
         showSessionStatus('❌ Session invalide. Reconnectez-vous.', 'error');
         return;
       }
+
+      // AbortController gives us a hard 15-second timeout so the function
+      // can never be stuck in "suppression en cours" indefinitely.
+      const controller = new AbortController();
+      const fetchTimeout = setTimeout(() => controller.abort(), 15000);
 
       try {
         const res = await fetch('/api/delete-user', {
@@ -1597,7 +1608,8 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`
           },
-          body: JSON.stringify({ userId })
+          body: JSON.stringify({ userId }),
+          signal: controller.signal
         });
 
         let result;
@@ -1613,12 +1625,20 @@
           return;
         }
 
-        await loadAllUsers();
-        renderUsersList();
+        // Refresh user list — errors here must not block the success path
+        try {
+          await loadAllUsers();
+          renderUsersList();
+        } catch (e) { console.warn('[deleteUser] Rechargement liste utilisateurs échoué :', e?.message); /* list will be refreshed at next load */ }
+
         showSessionStatus(`✅ Compte de "${label}" supprimé`, 'success');
       } catch (err) {
-        showSessionStatus('❌ Erreur réseau : ' + (err instanceof Error ? err.message : 'Impossible de contacter le serveur'), 'error');
+        const msg = err?.name === 'AbortError'
+          ? 'Délai dépassé — réessayez dans quelques instants'
+          : (err instanceof Error ? err.message : 'Impossible de contacter le serveur');
+        showSessionStatus('❌ ' + msg, 'error');
       } finally {
+        clearTimeout(fetchTimeout);
         if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
       }
     };
@@ -1675,7 +1695,11 @@
 
     const { data: initial } = await supabase.auth.getSession();
     await bootFromSession(initial.session);
-    supabase.auth.onAuthStateChange(async (_event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      // TOKEN_REFRESHED is fired by refreshSession() inside deleteUser —
+      // the Supabase client already updated its internal token; no need
+      // to trigger a full boot cycle which would cause a concurrent UI reload.
+      if (event === 'TOKEN_REFRESHED') return;
       await bootFromSession(session);
     });
   </script>
