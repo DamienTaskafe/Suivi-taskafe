@@ -1530,6 +1530,8 @@
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
           if (!refreshError && refreshData?.session?.access_token) {
             accessToken = refreshData.session.access_token;
+            // Keep state.session up to date with the refreshed session
+            state.session = refreshData.session;
           } else if (refreshError) {
             console.warn('[createNewUser] refreshSession échoué :', refreshError?.message);
           }
@@ -1538,6 +1540,7 @@
           try {
             const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
             accessToken = sessionData?.session?.access_token;
+            if (sessionData?.session) state.session = sessionData.session;
             if (sessionError) console.warn('[createNewUser] getSession échoué :', sessionError?.message);
           } catch (_) { /* ignore */ }
         }
