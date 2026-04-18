@@ -6,12 +6,20 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
+// Supabase project URL — same value already hardcoded in index.html (not a secret)
 const SUPABASE_URL_FALLBACK = 'https://ogjljdjphawcminawtlv.supabase.co';
+
+// Anon key — already present in the public frontend JS, safe to use server-side.
+// Used as fallback for the getUser() validation call if the service_role key fails.
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
+  'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9namxqZGpwaGF3Y21pbmF3dGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzQ5MjUsImV4cCI6MjA5MTk1MDkyNX0.' +
+  'WVgrgx8Q1c9j_1UyNX7e2ilvttMBSHY2vnrBw_Ga05A';
 
 module.exports = async (req, res) => {
   // Only allow POST
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Méthode non autorisée' });
   }
 
   // ── Step 1 : Require admin Authorization header ───────────────────────────
@@ -20,6 +28,13 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'En-tête Authorization manquant ou invalide' });
   }
   const callerToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+
+  // Basic JWT structure check (3 base64url parts separated by dots)
+  const jwtParts = callerToken.split('.');
+  if (jwtParts.length !== 3) {
+    console.error('[create-user] Token JWT malformé, parties =', jwtParts.length);
+    return res.status(401).json({ error: 'Token JWT malformé' });
+  }
 
   const { email, password, full_name, role } = req.body || {};
 
@@ -42,7 +57,8 @@ module.exports = async (req, res) => {
   if (!envUrl) {
     console.warn('[create-user] SUPABASE_URL non définie — utilisation de la valeur de secours.');
   }
-  const supabaseUrl = envUrl || SUPABASE_URL_FALLBACK;
+  // Remove any accidental trailing slashes to avoid double-slash in REST URLs
+  const supabaseUrl = (envUrl || SUPABASE_URL_FALLBACK).replace(/\/+$/, '');
   const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
   if (!serviceRoleKey) {
@@ -57,17 +73,69 @@ module.exports = async (req, res) => {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  // ── Step 2 : Verify caller is admin ──────────────────────────────────────
-  // Use a direct REST fetch with explicit service-role headers so the caller's
-  // session state cannot interfere with the admin role check.
+  // ── Step 2 : Verify caller identity via JWT ───────────────────────────────
+  // Try with the service_role client first; if that fails, retry with the
+  // anon key client (same endpoint, different apikey header) for robustness.
+  let caller;
+  try {
+    const { data, error: err1 } = await supabaseAdmin.auth.getUser(callerToken);
+
+    if (err1 || !data?.user) {
+      console.error('[create-user] getUser (service_role) échoué :', {
+        error: err1?.message,
+        status: err1?.status,
+        supabaseUrl,
+        tokenStart: callerToken.substring(0, 10) + '…',
+        tokenLength: callerToken.length
+      });
+
+      // Fallback: try with the anon key
+      const supabaseAnon = createClient(supabaseUrl, SUPABASE_ANON_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false }
+      });
+      const { data: data2, error: err2 } = await supabaseAnon.auth.getUser(callerToken);
+
+      if (err2 || !data2?.user) {
+        console.error('[create-user] getUser (anon) également échoué :', err2?.message);
+
+        // Decode JWT payload for diagnostic
+        try {
+          const payload = JSON.parse(
+            Buffer.from(jwtParts[1], 'base64url').toString('utf8')
+          );
+          const now = Math.floor(Date.now() / 1000);
+          const expired = payload.exp < now;
+          console.error('[create-user] JWT payload diagnostic :', {
+            sub: payload.sub ? payload.sub.substring(0, 8) + '…' : null,
+            role: payload.role,
+            exp: payload.exp,
+            now,
+            expired
+          });
+          if (expired) {
+            return res.status(401).json({ error: 'Token expiré. Reconnectez-vous puis réessayez.' });
+          }
+        } catch (decodeErr) {
+          console.error('[create-user] Impossible de décoder le payload JWT :', decodeErr.message);
+        }
+
+        return res.status(401).json({ error: 'Token invalide ou expiré' });
+      }
+
+      caller = data2.user;
+    } else {
+      caller = data.user;
+    }
+  } catch (e) {
+    console.error('[create-user] Exception lors de la vérification du token :', e.message);
+    return res.status(503).json({ error: 'Service d\'authentification inaccessible, réessayez' });
+  }
+
+  // ── Step 3 : Verify caller has admin role ────────────────────────────────
+  // 1. REST fetch profiles by caller.id (service-role key → bypasses RLS)
+  // 2. Fallback to app_metadata.role (server-controlled, set by create-user)
   let callerRole = null;
   try {
-    const { data: callerData, error: callerError } = await supabaseAdmin.auth.getUser(callerToken);
-    if (callerError || !callerData?.user) {
-      return res.status(401).json({ error: 'Token invalide ou expiré' });
-    }
-    const caller = callerData.user;
-
     const profileUrl = `${supabaseUrl}/rest/v1/profiles?select=role&id=eq.${encodeURIComponent(caller.id)}&limit=1`;
     const profileResp = await fetch(profileUrl, {
       headers: {
@@ -78,19 +146,35 @@ module.exports = async (req, res) => {
     });
     if (profileResp.ok) {
       const rows = await profileResp.json();
-      callerRole = String(rows?.[0]?.role || '').toLowerCase();
+      if (Array.isArray(rows) && rows.length > 0) {
+        callerRole = String(rows[0].role || '').toLowerCase();
+        console.log('[create-user] Rôle obtenu via profiles :', callerRole, '| callerId =', caller.id);
+      } else {
+        console.warn('[create-user] Profil introuvable en table profiles pour id =', caller.id);
+      }
+    } else {
+      const errText = await profileResp.text().catch(() => '');
+      console.error('[create-user] REST profiles échoué :', profileResp.status, errText);
     }
     // Fallback to app_metadata if profiles table query failed or returned no role
     if (!callerRole) {
       callerRole = String(caller.app_metadata?.role || '').toLowerCase();
+      if (callerRole) {
+        console.log('[create-user] Rôle obtenu depuis app_metadata (fallback) :', callerRole);
+      }
     }
   } catch (e) {
-    console.error('[create-user] Erreur vérification appelant :', e.message);
+    console.error('[create-user] Erreur vérification rôle appelant :', e.message);
     return res.status(503).json({ error: 'Service d\'authentification inaccessible, réessayez' });
   }
 
   if (callerRole !== 'admin') {
-    return res.status(403).json({ error: 'Accès refusé : rôle admin requis' });
+    console.error('[create-user] Accès refusé :', { callerId: caller.id, callerEmail: caller.email, callerRole });
+    return res.status(403).json({
+      error: callerRole
+        ? `Accès refusé : rôle admin requis (rôle actuel : ${callerRole})`
+        : 'Accès refusé : rôle admin non défini ou introuvable'
+    });
   }
 
   let authData;
