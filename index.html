@@ -710,6 +710,7 @@
         <label for="newUserRole">🎖️ Rôle</label>
         <select id="newUserRole">
           <option value="employee">Employé</option>
+          <option value="manager">Manager (sous-admin)</option>
           <option value="admin">Admin</option>
         </select>
         <button id="createUserBtn" onclick="createNewUser()">✅ Créer</button>
@@ -819,6 +820,15 @@
       return String(state.profile?.role || '').toLowerCase() === 'admin';
     }
 
+    function isManager() {
+      return String(state.profile?.role || '').toLowerCase() === 'manager';
+    }
+
+    function isManagerOrAdmin() {
+      const r = String(state.profile?.role || '').toLowerCase();
+      return r === 'admin' || r === 'manager';
+    }
+
     function closeAllMenus() {
       document.querySelectorAll('.menu').forEach(m => m.style.display = 'none');
       document.querySelectorAll('.header-menu').forEach(m => m.classList.remove('show'));
@@ -827,6 +837,14 @@
     function requireAdmin(label) {
       if (!isAdmin()) {
         alert(`❌ Action réservée à l'admin : ${label}`);
+        return false;
+      }
+      return true;
+    }
+
+    function requireManagerOrAdmin(label) {
+      if (!isManagerOrAdmin()) {
+        alert(`❌ Action réservée au manager ou à l'admin : ${label}`);
         return false;
       }
       return true;
@@ -909,9 +927,9 @@
               <button class="menu-btn" onclick="toggleMenu(event, 'clientMenu${i}')">⋯</button>
               <div class="menu" id="clientMenu${i}">
                 ${
-                  isAdmin()
+                  isManagerOrAdmin()
                     ? `<button onclick="deleteClient('${c.id}')">🗑️ Supprimer</button>`
-                    : `<button onclick="alert('❌ Réservé à l\\'admin')">Suppression admin</button>`
+                    : ''
                 }
               </div>
             </div>
@@ -954,9 +972,9 @@
               <div class="menu" id="saleMenu${s.id}">
                 <button onclick="togglePaid('${s.id}', ${!s.paid})">${s.paid ? '❌ NON PAYÉ' : '✅ PAYÉ'}</button>
                 ${
-                  isAdmin()
+                  isManagerOrAdmin()
                     ? `<button onclick="deleteSale('${s.id}')">🗑️ Supprimer</button>`
-                    : `<button onclick="alert('❌ Réservé à l\\'admin')">Suppression admin</button>`
+                    : ''
                 }
               </div>
             </div>
@@ -989,12 +1007,12 @@
               <button class="menu-btn" onclick="toggleMenu(event, 'stockMenu${cat}')">⋯</button>
               <div class="menu" id="stockMenu${cat}">
                 ${
-                  isAdmin()
+                  isManagerOrAdmin()
                     ? `
                   <button onclick="addToStock('${cat}')">➕ Ajouter</button>
                   <button onclick="setStock('${cat}')">🔧 Définir</button>
                 `
-                    : `<button onclick="alert('❌ Réservé à l\\'admin')">Gestion admin</button>`
+                    : ''
                 }
               </div>
             </div>
@@ -1046,9 +1064,10 @@
 
         const menuRole = document.getElementById('menuUserRole');
         if (menuRole) {
-          menuRole.innerText = String(data.role || '').toLowerCase() === 'admin'
+          const r = String(data.role || '').toLowerCase();
+          menuRole.innerText = r === 'admin'
             ? '👑 Admin (DB)'
-            : `👤 ${data.role || 'employee'} (DB)`;
+            : r === 'manager' ? '🔑 Manager (DB)' : `👤 ${data.role || 'employee'} (DB)`;
         }
 
         return data;
@@ -1062,7 +1081,7 @@
     }
 
     async function loadAllUsers() {
-      if (!isAdmin()) return;
+      if (!isManagerOrAdmin()) return;
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       if (!error) state.allUsers = data || [];
     }
@@ -1110,10 +1129,10 @@
       const roleEl = document.getElementById('menuUserRole');
       const current = String(roleEl?.innerText || '');
       if (roleEl && !current.startsWith('⚠️')) {
-        roleEl.innerText = isAdmin() ? '👑 Admin' : '👤 Employé';
+        roleEl.innerText = isAdmin() ? '👑 Admin' : isManager() ? '🔑 Manager' : '👤 Employé';
       }
 
-      document.getElementById('usersBtn').classList.toggle('hidden', !isAdmin());
+      document.getElementById('usersBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
       initAccordions();
     }
@@ -1272,7 +1291,7 @@
     };
 
     window.deleteSale = async function (saleId) {
-      if (!requireAdmin('Supprimer une vente')) return;
+      if (!requireManagerOrAdmin('Supprimer une vente')) return;
       if (!confirm('Voulez-vous vraiment supprimer cette commande ?')) return;
 
       const sale = state.sales.find(s => s.id === saleId);
@@ -1293,7 +1312,7 @@
     };
 
     window.deleteClient = async function (clientId) {
-      if (!requireAdmin('Supprimer un client')) return;
+      if (!requireManagerOrAdmin('Supprimer un client')) return;
       if (!confirm('Voulez-vous vraiment supprimer ce client ?')) return;
       const { error } = await supabase.from('clients').delete().eq('id', clientId);
       if (error) return alert(error.message);
@@ -1303,7 +1322,7 @@
     };
 
     window.addToStock = async function (category) {
-      if (!requireAdmin('Modifier le stock')) return;
+      if (!requireManagerOrAdmin('Modifier le stock')) return;
       closeAllMenus();
       const value = prompt(`Ajouter combien de ${category === 'SUCRE' ? 'paquets' : 'kg'} ?`, '0');
       if (value === null) return;
@@ -1322,7 +1341,7 @@
     };
 
     window.setStock = async function (category) {
-      if (!requireAdmin('Définir le stock')) return;
+      if (!requireManagerOrAdmin('Définir le stock')) return;
       closeAllMenus();
       const value = prompt(`Définir la quantité pour ${category}`, String(state.stocks[category] || 0));
       if (value === null) return;
@@ -1341,19 +1360,28 @@
       const list = document.getElementById('usersList');
       list.innerHTML = state.allUsers
         .map(
-          user => `
+          user => {
+            const roleLabel = user.role === 'admin'
+              ? '👑 Admin'
+              : user.role === 'manager'
+                ? '🔑 Manager'
+                : 'Employé';
+            return `
         <div class="user-row">
           <div class="user-info">
             <div class="user-email">${user.full_name || user.email}</div>
-            <div class="user-role">👤 ${user.email} • ${user.role === 'admin' ? '👑 Admin' : 'Employé'}</div>
+            <div class="user-role">👤 ${user.email} • ${roleLabel}</div>
           </div>
           ${
-            user.id !== state.session?.user?.id
-              ? `<button class="danger" style="width: 80px" onclick="deleteUser('${user.id}')">🗑️</button>`
-              : '<span style="font-size:11px;">TOI</span>'
+            user.id === state.session?.user?.id
+              ? '<span style="font-size:11px;">TOI</span>'
+              : isAdmin()
+                ? `<button class="danger" style="width: 80px" onclick="deleteUser('${user.id}')">🗑️</button>`
+                : ''
           }
         </div>
-      `
+      `;
+          }
         )
         .join('');
     }
@@ -1367,7 +1395,7 @@
       document.getElementById('profileName').innerText =
         state.profile?.full_name || state.session?.user?.email || 'Utilisateur';
       document.getElementById('profileUsername').innerText = `📧 ${state.session?.user?.email || '—'}`;
-      document.getElementById('profileRole').innerText = `🎖️ ${isAdmin() ? 'Admin' : 'Employé'}`;
+      document.getElementById('profileRole').innerText = `🎖️ ${isAdmin() ? 'Admin' : isManager() ? 'Manager' : 'Employé'}`;
       openModal('profileModal');
     };
 
@@ -1522,6 +1550,7 @@
         document.getElementById('newUserEmail').value = '';
         document.getElementById('newUserPassword').value = '';
         document.getElementById('newUserName').value = '';
+        document.getElementById('newUserRole').value = 'employee';
 
         const needsConfirmation = !data.session;
         const successMsg = needsConfirmation
@@ -1542,12 +1571,18 @@
 
     window.deleteUser = async function (userId) {
       if (!requireAdmin('Supprimer un utilisateur')) return;
-      if (!confirm('Supprimer cet utilisateur ?')) return;
+      const target = state.allUsers.find(u => u.id === userId);
+      const label = target?.full_name || target?.email || userId;
+      if (!confirm(`Supprimer le profil de "${label}" ?\n\nSeul le profil sera supprimé — le compte de connexion reste actif.`)) return;
       const { error } = await supabase.from('profiles').delete().eq('id', userId);
-      if (error) return alert('❌ ' + error.message);
-      state.allUsers = state.allUsers.filter(u => u.id !== userId);
+      if (error) {
+        alert('❌ Suppression échouée : ' + error.message);
+        return;
+      }
+      // Reload from DB to confirm deletion then re-render
+      await loadAllUsers();
       renderUsersList();
-      showSessionStatus('✅ Utilisateur supprimé', 'success');
+      showSessionStatus(`✅ Profil de "${label}" supprimé`, 'success');
     };
 
     window.exportData = async function () {
