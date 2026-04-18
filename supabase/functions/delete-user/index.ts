@@ -1,13 +1,14 @@
 // Supabase Edge Function — suppression admin sécurisée d'un utilisateur
 // Déploiement : supabase functions deploy delete-user
-// Variable requise (Supabase secret) : SUPABASE_SERVICE_ROLE_KEY
-//   supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<votre_service_role_key>
+// Variable requise (Supabase secret) : SERVICE_ROLE_KEY
+//   supabase secrets set SERVICE_ROLE_KEY=<votre_service_role_key>
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 Deno.serve(async (req: Request) => {
@@ -26,11 +27,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY') ?? ''
 
     if (!serviceRoleKey) {
       return new Response(
-        JSON.stringify({ error: 'Configuration serveur incomplète (SUPABASE_SERVICE_ROLE_KEY manquante)' }),
+        JSON.stringify({ error: 'Configuration serveur incomplète (SERVICE_ROLE_KEY manquante)' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
