@@ -1557,7 +1557,24 @@
       const label = target?.full_name || target?.email || userId;
       if (!confirm(`Supprimer définitivement "${label}" ?\n\n⚠️ Le compte de connexion et le profil seront supprimés. Cette action est irréversible.`)) return;
 
-      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      // Always obtain the freshest possible token before a privileged API call.
+      // refreshSession() forces a round-trip to Supabase to exchange the refresh
+      // token for a brand-new access token, eliminating stale-session failures.
+      // If the refresh itself fails (e.g. refresh token expired), fall back to
+      // getSession() so the subsequent empty-token check can still catch it.
+      let freshSession;
+      try {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError && refreshData?.session?.access_token) {
+          freshSession = refreshData.session;
+        } else {
+          const { data: sessionData } = await supabase.auth.getSession();
+          freshSession = sessionData?.session;
+        }
+      } catch (_refreshEx) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        freshSession = sessionData?.session;
+      }
       const accessToken = freshSession?.access_token;
       if (!accessToken) {
         alert('❌ Session invalide. Reconnectez-vous.');
