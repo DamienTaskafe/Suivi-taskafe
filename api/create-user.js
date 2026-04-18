@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
   }
   // Validate email format — Supabase validates further server-side
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  if (!emailRegex.test(email)) {
+  if (!emailRegex.test(String(email))) {
     return res.status(400).json({ error: 'Format d\'email invalide' });
   }
   if (password.length < 6) {
@@ -83,7 +83,7 @@ module.exports = async (req, res) => {
 
     if (profileError) {
       // Profile creation failed — roll back the Auth user to avoid an orphaned account
-      console.error('[create-user] Profile upsert failed, rolling back auth user:', profileError.message);
+      console.error('[create-user] Profile insert failed, rolling back auth user:', profileError.message);
       await supabaseAdmin.auth.admin.deleteUser(newUserId).catch((e) =>
         console.error('[create-user] Rollback deleteUser failed:', e)
       );
