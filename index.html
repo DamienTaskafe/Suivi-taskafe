@@ -44,8 +44,6 @@
       background: var(--color-bg);
       color: var(--color-text);
       min-height: 100vh;
-      -webkit-user-select: none;
-      user-select: none;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
@@ -115,6 +113,8 @@
       font-family: inherit;
       -webkit-appearance: none;
       appearance: none;
+      -webkit-user-select: text;
+      user-select: text;
     }
 
     input:focus, select:focus, textarea:focus {
@@ -522,10 +522,12 @@
       </div>
 
       <label for="loginEmail">📧 Email</label>
-      <input id="loginEmail" type="email" placeholder="Email" autocomplete="username" />
+      <input id="loginEmail" type="email" placeholder="Email" autocomplete="username"
+             autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" />
 
       <label for="loginPassword">🔐 Mot de passe</label>
-      <input id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password" />
+      <input id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password"
+             autocapitalize="none" autocorrect="off" spellcheck="false" />
 
       <div class="checkbox-line">
         <input id="rememberSession" type="checkbox" checked />
@@ -1459,6 +1461,105 @@
       closeAllMenus();
       show('logs');
     };
+
+    window.createNewUser = async function () {
+      if (!requireAdmin('Créer un utilisateur')) return;
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+      const fullName = document.getElementById('newUserName').value.trim();
+      const role = document.getElementById('newUserRole').value;
+
+      if (!email || !password) return alert('❌ Email et mot de passe obligatoires');
+      if (password.length < 6) return alert('❌ Mot de passe minimum 6 caractères');
+
+      // Save admin session tokens so we can restore them after signUp
+      const savedAccessToken = state.session?.access_token;
+      const savedRefreshToken = state.session?.refresh_token;
+
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) return alert('❌ ' + error.message);
+
+      const newUserId = data.user?.id;
+
+      // Restore admin session if signUp replaced it
+      if (savedAccessToken && savedRefreshToken) {
+        await supabase.auth.setSession({
+          access_token: savedAccessToken,
+          refresh_token: savedRefreshToken
+        });
+      }
+
+      if (newUserId) {
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: newUserId,
+          email,
+          full_name: fullName,
+          role
+        });
+        if (profileError) console.warn('Profile insert warning:', profileError.message);
+      }
+
+      document.getElementById('newUserEmail').value = '';
+      document.getElementById('newUserPassword').value = '';
+      document.getElementById('newUserName').value = '';
+
+      await loadAllUsers();
+      renderUsersList();
+      showSessionStatus('✅ Utilisateur créé', 'success');
+    };
+
+    window.deleteUser = async function (userId) {
+      if (!requireAdmin('Supprimer un utilisateur')) return;
+      if (!confirm('Supprimer cet utilisateur ?')) return;
+      const { error } = await supabase.from('profiles').delete().eq('id', userId);
+      if (error) return alert('❌ ' + error.message);
+      state.allUsers = state.allUsers.filter(u => u.id !== userId);
+      renderUsersList();
+      showSessionStatus('✅ Utilisateur supprimé', 'success');
+    };
+
+    window.exportData = async function () {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        clients: state.clients,
+        sales: state.sales,
+        stocks: state.stocks
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `taskafe-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showSessionStatus('✅ Export téléchargé', 'success');
+    };
+
+    window.openPasswordModal = function () {
+      closeAllMenus();
+      openModal('passwordModal');
+    };
+
+    window.changeMyPassword = async function () {
+      const newPassword = document.getElementById('newPassword').value;
+      if (!newPassword || newPassword.length < 6) return alert('❌ Mot de passe minimum 6 caractères');
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return alert('❌ ' + error.message);
+      document.getElementById('newPassword').value = '';
+      closeModal('passwordModal');
+      showSessionStatus('✅ Mot de passe mis à jour', 'success');
+    };
+
+    // iOS PWA: ensure virtual keyboard opens reliably on login fields
+    ['loginEmail', 'loginPassword'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('touchend', function () {
+        setTimeout(() => this.focus(), 50);
+      }, { passive: true });
+    });
 
     document.getElementById('loginBtn')?.addEventListener('click', () => window.login());
     document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
