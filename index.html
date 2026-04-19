@@ -966,17 +966,11 @@
     .vr-sale-total { font-size: 15px; font-weight: 700; }
     .vr-sale-total.paid { color: var(--color-success); }
     .vr-sale-total.unpaid { color: var(--color-error); }
-    .vr-sale-meta { font-size: 12px; color: var(--color-text-muted); margin-bottom: 8px; }
-    .vr-sale-actions { display: flex; gap: 8px; flex-wrap: nowrap; }
-    .vr-sale-actions button {
-      flex: 1;
-      min-width: 0;
-      padding: 8px 10px;
-      font-size: 13px;
-      margin: 0;
-      width: auto;
-    }
-    .vr-sale-actions .btn-danger { position: absolute; top: 10px; right: 10px; flex: none; min-width: 0; width: auto; padding: 8px 11px; margin: 0; background: linear-gradient(180deg,#8f1111 0%,#5e0808 100%); }
+    .vr-sale-meta { font-size: 12px; color: var(--color-text-muted); margin-bottom: 4px; }
+    /* overflow menu positioned at top-right of each sale card */
+    .vr-sale-item .menu-wrap { position: absolute; top: 8px; right: 8px; }
+    .vr-sale-item .menu-wrap .menu-btn { background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.09); padding: 3px 9px; font-size: 18px; }
+    body.dark .vr-sale-item .menu-wrap .menu-btn { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.12); }
 
     /* ── Splash screen ── */
     #splashScreen {
@@ -1064,7 +1058,7 @@
     })();
   </script>
   <div id="offlineBanner" class="offline-banner" style="display:none;">
-    📶 Hors ligne&ensp;<span id="offlinePendingCount"></span>
+    <span id="offlineBannerText">📶 Hors ligne&ensp;</span><span id="offlinePendingCount"></span>
   </div>
   <div id="sessionStatus" class="session-status"></div>
   <div id="pullIndicator">
@@ -1573,49 +1567,107 @@
       return 'local_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
     }
 
+    // Sync state: 'idle' | 'syncing' | 'error'
+    let _syncState = 'idle';
+    let _syncErrorCount = 0;
+
     async function updateOfflineBanner() {
       const banner = document.getElementById('offlineBanner');
+      const textEl = document.getElementById('offlineBannerText');
       const countEl = document.getElementById('offlinePendingCount');
       if (!banner) return;
+      const n = await countPendingOps().catch(() => 0);
       if (!navigator.onLine) {
-        const n = await countPendingOps().catch(() => 0);
         banner.style.display = 'block';
+        banner.style.background = '#e65100';
+        if (textEl) textEl.textContent = '📶 Hors ligne\u2002';
         countEl.textContent = n > 0 ? `· ${n} action(s) en attente` : '';
+      } else if (_syncState === 'syncing') {
+        banner.style.display = 'block';
+        banner.style.background = '#1565c0';
+        if (textEl) textEl.textContent = '🔄 Synchronisation…\u2002';
+        countEl.textContent = n > 0 ? `· ${n} restante(s)` : '';
+      } else if (_syncState === 'error' && _syncErrorCount > 0) {
+        banner.style.display = 'block';
+        banner.style.background = '#b71c1c';
+        if (textEl) textEl.textContent = '⚠️ Synchro échouée\u2002';
+        countEl.textContent = `· ${_syncErrorCount} erreur(s) — vérifiez la connexion`;
+      } else if (n > 0) {
+        banner.style.display = 'block';
+        banner.style.background = '#1565c0';
+        if (textEl) textEl.textContent = '🔄 En attente de synchro\u2002';
+        countEl.textContent = `· ${n} action(s)`;
       } else {
-        const n = await countPendingOps().catch(() => 0);
-        if (n > 0) {
-          banner.style.display = 'block';
-          banner.style.background = '#1565c0';
-          countEl.textContent = `· ${n} action(s) à synchroniser`;
-        } else {
-          banner.style.display = 'none';
-          banner.style.background = '';
-        }
+        banner.style.display = 'none';
+        banner.style.background = '';
+        _syncState = 'idle';
+        _syncErrorCount = 0;
       }
     }
 
+    let _isSyncing = false;
     async function syncPendingOps() {
+      if (_isSyncing) return;
+      _isSyncing = true;
+      _syncState = 'syncing';
+      _syncErrorCount = 0;
+      await updateOfflineBanner();
+
+      // Ensure Supabase session is still valid before attempting sync
+      try {
+        const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+        if (sessionErr || !sessionData?.session) {
+          // Try to refresh
+          const { error: refreshErr } = await supabase.auth.refreshSession();
+          if (refreshErr) {
+            console.warn('[sync] session refresh failed:', refreshErr.message);
+            _syncState = 'error';
+            _syncErrorCount = -1; // session error flag
+            _isSyncing = false;
+            showSessionStatus('⚠️ Session expirée — reconnectez-vous pour synchroniser', 'error', 8000);
+            await updateOfflineBanner();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[sync] session check failed:', e?.message);
+      }
+
       const ops = await getPendingOps();
-      if (ops.length === 0) { updateOfflineBanner(); return; }
+      if (ops.length === 0) {
+        _syncState = 'idle';
+        _isSyncing = false;
+        await updateOfflineBanner();
+        return;
+      }
       showSessionStatus(`⏳ Synchronisation de ${ops.length} action(s)…`, 'info', 15000);
       let done = 0, failed = 0;
+      const errors = [];
       for (const op of ops) {
         try {
           await _executePendingOp(op);
           await removePendingOp(op.id);
           done++;
         } catch (err) {
-          console.error('[sync] op failed:', op.type, op.id, err?.message);
+          const msg = err?.message || err?.details || String(err);
+          console.error('[sync] op failed:', op.type, op.id, msg);
+          errors.push(`${op.type}: ${msg}`);
           failed++;
         }
       }
       try { await loadCloudData(); paintApp(); } catch(e) { /* ignore */ }
       if (failed === 0) {
+        _syncState = 'idle';
+        _syncErrorCount = 0;
         showSessionStatus(`✅ ${done} action(s) synchronisée(s)`, 'success');
       } else {
-        showSessionStatus(`⚠️ ${done} synchro, ${failed} en échec`, 'error');
+        _syncState = 'error';
+        _syncErrorCount = failed;
+        const detail = errors.slice(0, 2).join(' | ');
+        showSessionStatus(`⚠️ ${done} synchro, ${failed} en échec — ${detail}`, 'error', 10000);
       }
-      updateOfflineBanner();
+      _isSyncing = false;
+      await updateOfflineBanner();
     }
 
     async function _executePendingOp(op) {
@@ -1879,6 +1931,14 @@
             const creatorName = s.created_by ? (state.allUsers.find(u=>u.id===s.created_by)?.full_name || 'Utilisateur') : 'Inconnu';
             html += `
               <div class="vr-sale-item">
+                <div class="menu-wrap">
+                  <button class="menu-btn" onclick="toggleMenu(event,'saleMenu${s.id}')">⋯</button>
+                  <div class="menu" id="saleMenu${s.id}">
+                    <button onclick="closeAllMenus();openEditSale('${s.id}')">✏️ Modifier</button>
+                    <button onclick="closeAllMenus();togglePaid('${s.id}',${!s.paid})">${s.paid ? '❌ Marquer impayé' : '✅ Marquer payé'}</button>
+                    ${isManagerOrAdmin() ? `<button class="danger" onclick="closeAllMenus();deleteSale('${s.id}')">🗑️ Supprimer</button>` : ''}
+                  </div>
+                </div>
                 <div class="vr-sale-row">
                   <span class="badge ${s.category}" style="padding:2px 7px;font-size:10px;margin:0;">${s.category}</span>
                   <span class="vr-sale-qty">${formatStockValue(s.category, s.quantity)}</span>
@@ -1886,11 +1946,6 @@
                   <span style="margin-left:auto;">${s.paid ? '✅' : '❌'}</span>
                 </div>
                 <div class="vr-sale-meta">📅 ${dateStr} · 👤 ${creatorName}</div>
-                <div class="vr-sale-actions">
-                  <button class="secondary" onclick="openEditSale('${s.id}')">✏️ Modifier</button>
-                  <button class="secondary" onclick="togglePaid('${s.id}', ${!s.paid})">${s.paid ? '❌ Impayé' : '✅ Payé'}</button>
-                  ${isManagerOrAdmin() ? `<button class="btn-danger" onclick="deleteSale('${s.id}')">🗑️</button>` : ''}
-                </div>
               </div>`;
           });
           html += `</div>`;
@@ -3223,15 +3278,18 @@
         }, animated ? 300 : 0);
       }
 
-      // Check if any ancestor of el is a scrollable container with content.
+      // Check if any ancestor of el is a scrollable container that is currently scrolled.
+      // We allow PTR when the scrollable ancestor is at its own top (scrollTop === 0).
       const SCROLL_TOLERANCE = 1;
       function isInsideScrollable(el) {
         let node = el.parentElement;
         while (node && node !== document.documentElement) {
           const s = getComputedStyle(node);
           const ov = s.overflowY || s.overflow;
-          if ((ov === 'auto' || ov === 'scroll') && node.scrollHeight > node.clientHeight + SCROLL_TOLERANCE) {
-            return true;
+          if ((ov === 'auto' || ov === 'scroll') &&
+              node.scrollHeight > node.clientHeight + SCROLL_TOLERANCE &&
+              node.scrollTop > SCROLL_TOLERANCE) {
+            return true; // only block if the container is actually scrolled away from top
           }
           node = node.parentElement;
         }
@@ -3807,13 +3865,15 @@
     await initOfflineDB().catch(e => console.warn('[offline-db] init failed:', e?.message));
 
     window.addEventListener('offline', () => {
+      _syncState = 'idle';
       updateOfflineBanner();
       showSessionStatus('📶 Hors ligne — les modifications sont enregistrées localement', 'info', 5000);
     });
 
-    window.addEventListener('online', async () => {
+    window.addEventListener('online', () => {
       showSessionStatus('✅ Connexion rétablie — synchronisation…', 'success', 4000);
-      await syncPendingOps();
+      // Small delay: let navigator.onLine stabilize and let network actually become usable
+      setTimeout(() => syncPendingOps(), 800);
     });
 
     const { data: initial } = await supabase.auth.getSession();
