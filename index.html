@@ -2873,20 +2873,26 @@
     (function() {
       let startY = 0, startX = 0;
       let pulling = false;
-      const THRESHOLD = 80;   // px drag needed to trigger refresh
-      const MAX_OFFSET = 68;  // max translateY when dragging
-      const CIRC = 100.5;     // 2π×16 (SVG arc circumference)
+      const THRESHOLD = 80;               // px drag needed to trigger refresh
+      const MAX_OFFSET = 68;              // max translateY when dragging
+      const CIRC = 100.5;                 // 2π×16 (SVG arc circumference)
+      const RUBBER_BAND_COEFF = 5.2;      // sqrt multiplier — gives Chrome-like diminishing resistance
+      const FADE_IN_DISTANCE = 18;        // px of offset at which indicator is fully opaque
+      const ARC_MAX_RATIO = 0.82;         // max visible arc fraction (avoids full-circle on drag)
+      const HORIZONTAL_SWIPE_THRESHOLD = 0.9; // dx/dy ratio above which gesture is treated as horizontal
 
       const ind = document.getElementById('pullIndicator');
       const arc = document.getElementById('pullArc');
 
-      // Check if any ancestor of el is a scrollable container with content
+      // Check if any ancestor of el is a scrollable container with content.
+      // A 1-pixel tolerance prevents false-negatives caused by sub-pixel rounding.
+      const SCROLL_TOLERANCE = 1;
       function isInsideScrollable(el) {
         let node = el.parentElement;
         while (node && node !== document.documentElement) {
           const s = getComputedStyle(node);
           const ov = s.overflowY || s.overflow;
-          if ((ov === 'auto' || ov === 'scroll') && node.scrollHeight > node.clientHeight + 1) {
+          if ((ov === 'auto' || ov === 'scroll') && node.scrollHeight > node.clientHeight + SCROLL_TOLERANCE) {
             return true;
           }
           node = node.parentElement;
@@ -2910,22 +2916,22 @@
         const dx = e.touches[0].clientX - startX;
         if (!pulling) {
           if (dy < 8) return;
-          if (Math.abs(dx) > dy * 0.9) return; // horizontal swipe — ignore
+          if (Math.abs(dx) > dy * HORIZONTAL_SWIPE_THRESHOLD) return; // horizontal swipe — ignore
           pulling = true;
         }
         if (dy <= 0) { pulling = false; return; }
 
         // Rubber-band resistance: sqrt gives diminishing returns like Chrome
-        const offset = Math.min(Math.sqrt(dy) * 5.2, MAX_OFFSET);
+        const offset = Math.min(Math.sqrt(dy) * RUBBER_BAND_COEFF, MAX_OFFSET);
 
         if (ind) {
           ind.style.transition = 'none';
           ind.style.transform = `translateX(-50%) translateY(${offset - 52}px)`;
-          ind.style.opacity = Math.min(offset / 18, 1).toString();
+          ind.style.opacity = Math.min(offset / FADE_IN_DISTANCE, 1).toString();
         }
         if (arc) {
           const progress = Math.min(dy / THRESHOLD, 1);
-          const arcLen = progress * CIRC * 0.82;
+          const arcLen = progress * CIRC * ARC_MAX_RATIO;
           arc.style.strokeDasharray = `${arcLen} ${CIRC}`;
           arc.setAttribute('transform', `rotate(${-90 + progress * 300} 22 22)`);
         }
