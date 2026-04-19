@@ -187,7 +187,7 @@
     hr { border: none; border-top: 1px solid var(--color-border); margin: var(--spacing-xl) 0; }
     .muted { font-size: 12px; color: var(--color-text-muted); line-height: 1.6; }
 
-    .auth-screen { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: var(--spacing-2xl); padding-top: max(var(--spacing-2xl), 10vh); }
+    .auth-screen { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: max(var(--spacing-2xl), 10vh) var(--spacing-2xl) var(--spacing-2xl); }
     .auth-card {
       width: 100%;
       max-width: 430px;
@@ -874,8 +874,8 @@
     }
 
     /* ── Ventes récentes accordion ── */
-    .vr-acc .accordion-inner { padding: 0 !important; }
-    .vr-acc.open .accordion-inner { padding: 0 !important; }
+    .vr-acc .accordion-inner,
+    .vr-acc.open .accordion-inner { padding: 0; }
     .vr-acc .sales-scroll-area { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
 
     /* ── Ventes récentes: client groups & sale items ── */
