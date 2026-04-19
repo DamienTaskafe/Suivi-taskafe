@@ -1,4 +1,4 @@
-// TASKAFÉ — IndexedDB offline layer
+// TASKAFE — IndexedDB offline layer
 // Provides local cache for clients/sales/stocks and a pending operations queue.
 
 const DB_NAME = 'taskafe-offline';

@@ -1605,7 +1605,7 @@
           await removePendingOp(op.id);
           done++;
         } catch (err) {
-          console.error('[sync] op failed:', op.type, err?.message);
+          console.error('[sync] op failed:', op.type, op.id, err?.message);
           failed++;
         }
       }
@@ -3091,8 +3091,9 @@
       if (!navigator.onLine) {
         Object.assign(sale, updatedSaleData);
         if (stockChanged && stockOldPayload && stockNewPayload) {
-          state.stocks[sale.category] = stockOldPayload.quantity;
-          state.stocks[category] = stockNewPayload.quantity;
+          // Use payload categories (not sale.category which was just mutated by Object.assign)
+          state.stocks[stockOldPayload.category] = stockOldPayload.quantity;
+          state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
         }
         const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
         await saveRecords('sales', state.sales).catch(() => {});
@@ -3109,8 +3110,10 @@
       }
 
       if (stockChanged) {
-        await supabase.from('stocks').upsert(stockOldPayload);
-        await supabase.from('stocks').upsert(stockNewPayload);
+        const { error: stockErr1 } = await supabase.from('stocks').upsert(stockOldPayload);
+        if (stockErr1) return alert('❌ ' + stockErr1.message);
+        const { error: stockErr2 } = await supabase.from('stocks').upsert(stockNewPayload);
+        if (stockErr2) return alert('❌ ' + stockErr2.message);
       }
 
       const { error } = await supabase.from('sales').update(updatedSaleData).eq('id', saleId);
