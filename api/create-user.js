@@ -6,6 +6,9 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
+// Timeout (ms) for the admin-role REST fetch to avoid silent hangs on slow networks
+const ROLE_VERIFICATION_TIMEOUT_MS = 8000;
+
 // Supabase project URL — same value already hardcoded in index.html (not a secret)
 const SUPABASE_URL_FALLBACK = 'https://ogjljdjphawcminawtlv.supabase.co';
 
@@ -21,6 +24,8 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' });
   }
+
+  console.log('[create-user] → Entrée dans la fonction', { method: req.method, ts: new Date().toISOString() });
 
   // ── Step 1 : Require admin Authorization header ───────────────────────────
   const authHeader = (req.headers['authorization'] || '').trim();
@@ -131,19 +136,30 @@ module.exports = async (req, res) => {
     return res.status(503).json({ error: 'Service d\'authentification inaccessible, réessayez' });
   }
 
+  console.log('[create-user] Token validé, appelant =', caller.id, '| email =', caller.email);
+
   // ── Step 3 : Verify caller has admin role ────────────────────────────────
   // 1. REST fetch profiles by caller.id (service-role key → bypasses RLS)
   // 2. Fallback to app_metadata.role (server-controlled, set by create-user)
   let callerRole = null;
   try {
     const profileUrl = `${supabaseUrl}/rest/v1/profiles?select=role&id=eq.${encodeURIComponent(caller.id)}&limit=1`;
-    const profileResp = await fetch(profileUrl, {
-      headers: {
-        'apikey': serviceRoleKey,
-        'Authorization': `Bearer ${serviceRoleKey}`,
-        'Accept': 'application/json'
-      }
-    });
+    console.log('[create-user] Vérification du rôle admin via profiles REST...');
+    const roleAbort = new AbortController();
+    const roleTimeout = setTimeout(() => roleAbort.abort(), ROLE_VERIFICATION_TIMEOUT_MS);
+    let profileResp;
+    try {
+      profileResp = await fetch(profileUrl, {
+        signal: roleAbort.signal,
+        headers: {
+          'apikey': serviceRoleKey,
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Accept': 'application/json'
+        }
+      });
+    } finally {
+      clearTimeout(roleTimeout);
+    }
     if (profileResp.ok) {
       const rows = await profileResp.json();
       if (Array.isArray(rows) && rows.length > 0) {
@@ -165,7 +181,12 @@ module.exports = async (req, res) => {
     }
   } catch (e) {
     console.error('[create-user] Erreur vérification rôle appelant :', e.message);
-    return res.status(503).json({ error: 'Service d\'authentification inaccessible, réessayez' });
+    const isTimeout = e.name === 'AbortError';
+    return res.status(503).json({
+      error: isTimeout
+        ? 'Délai dépassé lors de la vérification du rôle, réessayez'
+        : 'Service d\'authentification inaccessible, réessayez'
+    });
   }
 
   if (callerRole !== 'admin') {
@@ -180,6 +201,7 @@ module.exports = async (req, res) => {
   let authData;
   try {
     // Create Auth user with admin API — bypasses email rate-limits and confirmation emails
+    console.log('[create-user] Lancement de supabaseAdmin.auth.admin.createUser pour :', email);
     const { data, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -200,6 +222,7 @@ module.exports = async (req, res) => {
     }
 
     authData = data;
+    console.log('[create-user] createUser réussi, newUserId =', authData?.user?.id);
   } catch (networkError) {
     console.error('[create-user] Supabase admin API unreachable:', networkError);
     return res.status(502).json({ error: 'Service d\'authentification inaccessible, réessayez dans quelques instants' });
@@ -214,6 +237,7 @@ module.exports = async (req, res) => {
       app_metadata: { role: safeRole }
     }).catch((e) => console.warn('[create-user] app_metadata update failed:', e?.message));
 
+    console.log('[create-user] Insertion du profil en table profiles...');
     const { error: profileError } = await supabaseAdmin.from('profiles').insert({
       id: newUserId,
       email,
@@ -229,6 +253,7 @@ module.exports = async (req, res) => {
       );
       return res.status(500).json({ error: 'Échec de la création du profil : ' + profileError.message });
     }
+    console.log('[create-user] Profil inséré avec succès pour', newUserId);
   }
 
   return res.status(201).json({
