@@ -356,6 +356,21 @@
 
     .tab-badge { position: absolute; top: 6px; right: 8px; background: var(--color-error); width: 10px; height: 10px; border-radius: 50%; display: none; }
 
+    /* ── Low-stock card badge ── */
+    .stock-low-badge {
+      display: inline-block;
+      background: var(--color-error);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
     .section-shell {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -480,11 +495,11 @@
 
     .badge {
       display: inline-block;
-      padding: 6px 12px;
-      border-radius: 12px;
-      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 9px;
+      font-size: 10px;
       font-weight: 700;
-      margin-bottom: var(--spacing-md);
+      margin-bottom: 4px;
       text-transform: uppercase;
       color: white;
       letter-spacing: 0.2px;
@@ -851,22 +866,24 @@
     /* ── Address fields clean layout ── */
     .addr-grid {
       display: grid;
-      grid-template-columns: 60px 90px 1fr;
+      grid-template-columns: 52px 1fr;
       gap: 6px;
       margin-bottom: var(--spacing-sm);
       align-items: start;
     }
     .addr-grid input, .addr-grid select { margin: 0; }
+    .addr-grid > *:nth-child(3) { grid-column: 1 / -1; }
 
     /* ── Client edit modal: address grid ── */
     .edit-addr-grid {
       display: grid;
-      grid-template-columns: 60px 90px 1fr;
+      grid-template-columns: 52px 1fr;
       gap: 6px;
       margin-bottom: var(--spacing-sm);
       align-items: start;
     }
     .edit-addr-grid input, .edit-addr-grid select { margin: 0; }
+    .edit-addr-grid > *:nth-child(3) { grid-column: 1 / -1; }
 
     /* ── Nouveau client: Nom field larger ── */
     #clientName { height: 88px; min-height: 88px; }
@@ -932,7 +949,7 @@
       margin: 0;
       width: auto;
     }
-    .vr-sale-actions .btn-danger { flex: 0; min-width: 0; padding: 8px 12px; background: linear-gradient(180deg,#8f1111 0%,#5e0808 100%); }
+    .vr-sale-actions .btn-danger { flex: 0; min-width: 0; padding: 8px 12px; margin-left: auto; background: linear-gradient(180deg,#8f1111 0%,#5e0808 100%); }
 
     /* ── Splash screen ── */
     #splashScreen {
@@ -1196,7 +1213,6 @@
 
       <div id="stock" class="section-shell hidden">
         <h3>📦 Gestion du stock</h3>
-        <div class="muted">Utilise le menu ⋯ pour gérer le stock. SUCRE est en paquets, autres en kg.</div>
         <div id="stockList"></div>
       </div>
 
@@ -1257,6 +1273,18 @@
         <div class="title">☁️ Export cloud</div>
         <div class="muted">Télécharger une sauvegarde JSON complète.</div>
         <button onclick="exportData()">📥 Exporter données</button>
+      </div>
+      <div class="settings-option">
+        <div class="title">📦 Alertes stock bas</div>
+        <div class="checkbox-line" style="margin-top:8px;">
+          <input type="checkbox" id="lowStockEnabled" aria-label="Activer les alertes de stock bas — affiche une pastille quand le stock est sous le seuil" onchange="saveLowStockSettings()" />
+          <label for="lowStockEnabled" style="margin:0;flex:1;">Activer les alertes stock bas</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label for="lowStockThreshold" style="margin:0;font-size:12px;text-transform:none;letter-spacing:0;flex-shrink:0;">Seuil :</label>
+          <input id="lowStockThreshold" type="number" min="0" max="9999" step="0.5" value="5" style="width:80px;margin:0;" oninput="saveLowStockSettings()" />
+          <span style="font-size:12px;color:var(--color-text-muted);">kg / paquet</span>
+        </div>
       </div>
     </div>
   </div>
@@ -1439,6 +1467,9 @@
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
     const PURCHASE_PRICES = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
+    const LS_LOW_STOCK_ENABLED = 'lowStockEnabled';
+    const LS_LOW_STOCK_THRESHOLD = 'lowStockThreshold';
+    const LOW_STOCK_DEFAULT = 5;
 
     const rememberCheckbox = document.getElementById('rememberSession');
     const customStorage = {
@@ -1729,9 +1760,14 @@
 
     function renderStock() {
       const list = document.getElementById('stockList');
+      const lowEnabled = localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true';
+      const lowThreshold = parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT);
+      let anyLow = false;
       let html = '';
       Object.keys(DEFAULT_STOCKS).forEach(cat => {
         const qty = Number(state.stocks[cat] || 0);
+        const isLow = lowEnabled && qty <= lowThreshold;
+        if (isLow) anyLow = true;
         html += `
           <div class="card">
             <div class="menu-wrap">
@@ -1747,12 +1783,18 @@
                 }
               </div>
             </div>
-            <span class="card-title">${cat}</span>
+            <span class="card-title">${cat}${isLow ? '<span class="stock-low-badge">⚠️ Bas</span>' : ''}</span>
             <span class="badge ${cat}">${cat}</span>
             <div class="line">📦 ${formatStockValue(cat, qty)} restant</div>
           </div>`;
       });
       list.innerHTML = html;
+
+      // Update Stock tab badge
+      const tabBadge = document.getElementById('stockAlert');
+      if (tabBadge) {
+        tabBadge.style.display = anyLow ? 'inline-block' : 'none';
+      }
     }
 
     function renderLogs() {
@@ -2356,7 +2398,24 @@
       openModal('profileModal');
     };
 
-    window.openSettingsHubModal = function () { openModal('settingsHubModal'); };
+    window.openSettingsHubModal = function () {
+      // Restore low-stock settings in UI
+      const enabled = localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true';
+      const threshold = parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT);
+      const cbEl = document.getElementById('lowStockEnabled');
+      const thEl = document.getElementById('lowStockThreshold');
+      if (cbEl) cbEl.checked = enabled;
+      if (thEl) thEl.value = threshold;
+      openModal('settingsHubModal');
+    };
+
+    window.saveLowStockSettings = function () {
+      const cbEl = document.getElementById('lowStockEnabled');
+      const thEl = document.getElementById('lowStockThreshold');
+      if (cbEl) localStorage.setItem(LS_LOW_STOCK_ENABLED, cbEl.checked ? 'true' : 'false');
+      if (thEl) localStorage.setItem(LS_LOW_STOCK_THRESHOLD, thEl.value);
+      renderStock();
+    };
 
     window.openResumeModal = function () { openModal('resumeModal'); };
 
