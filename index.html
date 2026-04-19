@@ -949,8 +949,8 @@
       height: 200px;
       border-radius: 50%;
       overflow: hidden;
-      transform: scale(1.2);
-      animation: splashLogoShrink 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
+      transform: scale(1.2); /* starts 20% larger than final logo */
+      animation: splashLogoShrink 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards; /* ends at ~1.0s */
       box-shadow: 0 0 40px 10px rgba(210,175,100,0.5), 0 0 80px 20px rgba(210,175,100,0.2);
     }
     .splash-logo-wrap img {
@@ -1418,6 +1418,8 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/+esm';
 
     // ── Splash screen countdown (starts as early as possible) ─────────────────
+    // CSS: logo shrinks at 0.4s delay for 0.6s → done at ~1.0s
+    // JS: fade starts at 1.1s (slight pause after shrink), removed 0.46s later
     (function() {
       const splash = document.getElementById('splashScreen');
       if (!splash) return;
@@ -1425,8 +1427,8 @@
         splash.classList.add('splash-done');
         setTimeout(function() {
           if (splash.parentNode) splash.parentNode.removeChild(splash);
-        }, 460);
-      }, 1100);
+        }, 460); // matches transition: opacity 0.45s ease
+      }, 1100); // start fade after shrink animation completes (~1.0s)
     })();
 
     const SUPABASE_URL = 'https://ogjljdjphawcminawtlv.supabase.co';
