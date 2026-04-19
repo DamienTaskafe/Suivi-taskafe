@@ -1494,7 +1494,7 @@
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/+esm';
-    import { initOfflineDB, saveRecords, loadRecords, putRecord, deleteRecord, addPendingOp, getPendingOps, removePendingOp, countPendingOps } from './offline-db.js';
+    import { initOfflineDB, saveRecords, loadRecords, putRecord, deleteRecord, addPendingOp, getPendingOps, removePendingOp, updatePendingOp, countPendingOps } from './offline-db.js';
 
     // ── Splash screen countdown (starts as early as possible) ─────────────────
     // CSS: logo stays large for 2.4s (halo rotation visible), shrinks over 0.9s → done at ~3.3s
@@ -1570,6 +1570,10 @@
     // Sync state: 'idle' | 'syncing' | 'error'
     let _syncState = 'idle';
     let _syncErrorCount = 0;
+    // Delay before triggering sync at boot (ms) — lets the network stabilize
+    const BOOT_SYNC_DELAY_MS = 1200;
+    // How long to hold the logout guard against spurious auth-state-change re-boots (ms)
+    const LOGOUT_GUARD_DURATION_MS = 2000;
 
     async function updateOfflineBanner() {
       const banner = document.getElementById('offlineBanner');
@@ -1643,9 +1647,37 @@
       showSessionStatus(`⏳ Synchronisation de ${ops.length} action(s)…`, 'info', 15000);
       let done = 0, failed = 0;
       const errors = [];
-      for (const op of ops) {
+      // idMapping accumulates { 'local_xxx': 'real-uuid' } as addSale/addClient ops resolve.
+      // Each op is rewritten with accumulated mappings before execution; this is a no-op
+      // on the first iteration when idMapping is still empty.
+      const idMapping = {};
+      let salesDirty = false, clientsDirty = false;
+      for (let opIdx = 0; opIdx < ops.length; opIdx++) {
+        const op = ops[opIdx];
+        _applyIdRemapping(op, idMapping); // apply all previously gathered id remaps
         try {
-          await _executePendingOp(op);
+          const mapping = await _executePendingOp(op);
+          if (mapping) {
+            const { localId, realId, storeKey } = mapping;
+            idMapping[localId] = realId;
+            // Update state in memory (deferred batch save after the loop)
+            if (storeKey === 'sales') {
+              const rec = state.sales.find(s => s.id === localId);
+              if (rec) { rec.id = realId; salesDirty = true; }
+            } else if (storeKey === 'clients') {
+              const rec = state.clients.find(c => c.id === localId);
+              if (rec) { rec.id = realId; clientsDirty = true; }
+            }
+            // Update only the *remaining* pending ops in IndexedDB so future sync
+            // retries use real IDs — persist before removing the current op so
+            // the queue stays consistent even if the process is interrupted.
+            for (let i = opIdx + 1; i < ops.length; i++) {
+              if (_applyIdRemapping(ops[i], { [localId]: realId })) {
+                await updatePendingOp(ops[i]).catch(e =>
+                  console.warn('[sync] updatePendingOp failed:', e?.message));
+              }
+            }
+          }
           await removePendingOp(op.id);
           done++;
         } catch (err) {
@@ -1655,6 +1687,9 @@
           failed++;
         }
       }
+      // Batch-persist state changes from ID remapping (one write per store if needed)
+      if (salesDirty) await saveRecords('sales', state.sales).catch(() => {});
+      if (clientsDirty) await saveRecords('clients', state.clients).catch(() => {});
       try { await loadCloudData(); paintApp(); } catch(e) { /* ignore */ }
       if (failed === 0) {
         _syncState = 'idle';
@@ -1670,13 +1705,40 @@
       await updateOfflineBanner();
     }
 
+    // Apply accumulated local->real id mappings to a pending op's payload in place.
+    // Returns true if any replacement was made, false otherwise.
+    function _applyIdRemapping(op, idMapping) {
+      if (!op || !idMapping) return false;
+      const keys = Object.keys(idMapping);
+      if (keys.length === 0) return false;
+      let changed = false;
+      const payload = op.payload;
+      if (!payload) return false;
+      if (payload.saleId && idMapping[payload.saleId]) {
+        payload.saleId = idMapping[payload.saleId]; changed = true;
+      }
+      if (payload.clientId && idMapping[payload.clientId]) {
+        payload.clientId = idMapping[payload.clientId]; changed = true;
+      }
+      if (payload.client_id && idMapping[payload.client_id]) {
+        payload.client_id = idMapping[payload.client_id]; changed = true;
+      }
+      if (payload.id && idMapping[payload.id]) {
+        payload.id = idMapping[payload.id]; changed = true;
+      }
+      return changed;
+    }
+
     async function _executePendingOp(op) {
       switch (op.type) {
         case 'addClient': {
-          const { id: _id, created_at: _ca, ...payload } = op.payload;
-          const { error } = await supabase.from('clients').insert(payload);
+          const { id: localId, created_at: _ca, ...payload } = op.payload;
+          const { data, error } = await supabase.from('clients').insert(payload).select('id').single();
           if (error) throw error;
-          break;
+          const realId = data?.id;
+          return (localId && realId && localId !== realId)
+            ? { localId, realId, storeKey: 'clients' }
+            : null;
         }
         case 'deleteClient': {
           if (String(op.payload.clientId).startsWith('local_')) break; // was never on server
@@ -1692,15 +1754,20 @@
           break;
         }
         case 'addSale': {
-          const { id: _id, created_at: _ca, client_id: rawClientId, ...salePayload } = op.payload;
+          const { id: localId, created_at: _ca, client_id: rawClientId, ...salePayload } = op.payload;
           // If client was created offline (temp ID), use null for client_id; client_name still links correctly
           const client_id = rawClientId && String(rawClientId).startsWith('local_') ? null : (rawClientId || null);
-          const { error: saleErr } = await supabase.from('sales').insert({ ...salePayload, client_id });
+          const { data: saleData, error: saleErr } = await supabase
+            .from('sales').insert({ ...salePayload, client_id }).select('id').single();
           if (saleErr) throw saleErr;
           if (op.stockPayload) {
-            await supabase.from('stocks').upsert(op.stockPayload);
+            const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload);
+            if (stockErr) console.warn('[sync] stock upsert warning (addSale):', stockErr.message);
           }
-          break;
+          const realId = saleData?.id;
+          return (localId && realId && localId !== realId)
+            ? { localId, realId, storeKey: 'sales' }
+            : null;
         }
         case 'deleteSale': {
           const { saleId } = op.payload;
@@ -1709,15 +1776,22 @@
             if (error) throw error;
           }
           if (op.stockPayload) {
-            await supabase.from('stocks').upsert(op.stockPayload);
+            const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload);
+            if (stockErr) console.warn('[sync] stock upsert warning (deleteSale):', stockErr.message);
           }
           break;
         }
         case 'updateSale': {
           const { saleId, stockOldPayload, stockNewPayload, ...salePayload } = op.payload;
           if (String(saleId).startsWith('local_')) break;
-          if (stockOldPayload) await supabase.from('stocks').upsert(stockOldPayload);
-          if (stockNewPayload) await supabase.from('stocks').upsert(stockNewPayload);
+          if (stockOldPayload) {
+            const { error: e1 } = await supabase.from('stocks').upsert(stockOldPayload);
+            if (e1) console.warn('[sync] stock upsert warning (updateSale old):', e1.message);
+          }
+          if (stockNewPayload) {
+            const { error: e2 } = await supabase.from('stocks').upsert(stockNewPayload);
+            if (e2) console.warn('[sync] stock upsert warning (updateSale new):', e2.message);
+          }
           const { error } = await supabase.from('sales').update(salePayload).eq('id', saleId);
           if (error) throw error;
           break;
@@ -2247,8 +2321,10 @@
     }
 
     let _bootInProgress = false;
+    let _loggedOut = false;
     async function bootFromSession(session) {
       if (_bootInProgress) return;
+      if (_loggedOut) return; // explicit logout in progress — do not re-enter
       _bootInProgress = true;
       try {
         state.session = session;
@@ -2272,6 +2348,14 @@
           paintApp();
           if (!navigator.onLine) {
             showSessionStatus('📶 Hors ligne — données locales chargées', 'info', 4000);
+          }
+          // If back online at boot and pending ops exist, replay the queue
+          await updateOfflineBanner();
+          if (navigator.onLine) {
+            const pending = await countPendingOps().catch(() => 0);
+            if (pending > 0) {
+              setTimeout(() => syncPendingOps(), BOOT_SYNC_DELAY_MS);
+            }
           }
         } catch (error) {
           console.error('Boot error:', error);
@@ -2321,17 +2405,25 @@
     };
 
     window.logout = async function () {
+      _loggedOut = true; // block any boot re-entry triggered by auth state change
       closeAllMenus();
       if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
-      await supabase.auth.signOut();
-      // Reset in-memory state to avoid stale session/profile data on next login
-      state.session = null;
-      state.profile = null;
-      const hsum = document.getElementById('headerSummary');
-      if (hsum) hsum.style.display = 'none';
-      document.getElementById('appShell').classList.add('hidden');
-      document.getElementById('authScreen').classList.remove('hidden');
-      document.getElementById('loginPassword').value = '';
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn('[logout] signOut error:', e?.message);
+      } finally {
+        state.session = null;
+        state.profile = null;
+        const hsum = document.getElementById('headerSummary');
+        if (hsum) hsum.style.display = 'none';
+        document.getElementById('appShell').classList.add('hidden');
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('loginPassword').value = '';
+        // LOGOUT_GUARD_DURATION_MS covers the SIGNED_OUT auth-state-change event that
+        // fires after signOut(); the flag prevents bootFromSession from re-entering.
+        setTimeout(() => { _loggedOut = false; }, LOGOUT_GUARD_DURATION_MS);
+      }
     };
 
     window.addClient = async function () {
@@ -3310,8 +3402,6 @@
 
       document.addEventListener('touchmove', e => {
         if (!isAtTop || isRefreshing) return;
-        // Abort if page scrolled during the gesture (e.g. inertia carried user to top)
-        if (window.scrollY > 2) { resetGesture(); return; }
 
         const dy = e.touches[0].clientY - startY;
         const dx = e.touches[0].clientX - startX;
@@ -3877,6 +3967,7 @@
     });
 
     const { data: initial } = await supabase.auth.getSession();
+    const _initialUserId = initial?.session?.user?.id || null;
     await bootFromSession(initial.session);
     supabase.auth.onAuthStateChange(async (event, session) => {
       // TOKEN_REFRESHED is fired by refreshSession() inside deleteUser —
@@ -3885,6 +3976,14 @@
       // However we do keep state.session in sync so the stored token stays fresh.
       if (event === 'TOKEN_REFRESHED') {
         if (session) state.session = session;
+        return;
+      }
+      // Prevent a duplicate boot for the same user session that was already
+      // booted above via getSession() — Supabase fires SIGNED_IN for the
+      // initial session restore, which would otherwise cause a redundant reload.
+      const incomingUserId = session?.user?.id || null;
+      if (event === 'SIGNED_IN' && incomingUserId && incomingUserId === _initialUserId && state.session) {
+        state.session = session; // keep token fresh but skip full re-boot
         return;
       }
       await bootFromSession(session);
