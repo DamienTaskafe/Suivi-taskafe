@@ -752,7 +752,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/+esm';
 
     const SUPABASE_URL = 'https://ogjljdjphawcminawtlv.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9namxqZGpwaGF3Y21pbmF3dGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzQ5MjUsImV4cCI6MjA5MTk1MDkyNX0.WVgrgx8Q1c9j_1UyNX7e2ilvttMBSHY2vnrBw_Ga05A';
@@ -1198,20 +1198,6 @@
           document.getElementById('authScreen').classList.remove('hidden');
           document.getElementById('appShell').classList.add('hidden');
           return;
-        }
-
-        // Proactively refresh the token at boot so any subsequent privileged
-        // operation (create/delete user) starts with a fresh JWT rather than
-        // the potentially near-expired one returned by the initial getSession().
-        try {
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          if (!refreshError && refreshData?.session) {
-            state.session = refreshData.session;
-          } else if (refreshError) {
-            console.warn('[boot] refreshSession au démarrage échoué (non bloquant) :', refreshError.message);
-          }
-        } catch (e) {
-          console.warn('[boot] refreshSession exception au démarrage :', e?.message);
         }
 
         await loadProfile(session.user.id);
