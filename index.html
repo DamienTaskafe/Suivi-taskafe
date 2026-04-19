@@ -325,15 +325,34 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
 
-    .date-actions { display: grid; grid-template-columns: 1fr 145px; gap: var(--spacing-md); align-items: stretch; }
-    .date-actions input, #filterDate { margin: var(--spacing-md) 0; height: 48px; }
+    .date-actions { display: grid; grid-template-columns: 3fr 1fr; gap: var(--spacing-md); align-items: stretch; }
+    .date-actions input, #filterDate { margin: var(--spacing-md) 0; height: 44px; }
 
     .small-btn {
-      width: 145px; height: 48px; white-space: nowrap;
-      padding: 0 var(--spacing-lg);
+      height: 44px; white-space: nowrap;
+      padding: 0 var(--spacing-md);
       margin: var(--spacing-md) 0;
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px;
+      font-size: 12px;
+    }
+
+    /* ── Compact new-sale form ── */
+    #sales label { margin-top: var(--spacing-sm); margin-bottom: 2px; }
+    #sales input, #sales select { margin: 2px 0 var(--spacing-sm); }
+    #sales .checkbox-line { margin: var(--spacing-sm) 0; }
+    #sales .preview-bar { margin: var(--spacing-sm) 0; }
+
+    /* ── Add sale button ── */
+    .add-sale-btn {
+      width: auto;
+      min-width: 160px;
+      max-width: 240px;
+      padding: 14px var(--spacing-xl);
+      margin: var(--spacing-md) auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
     }
 
     .accordion { margin-bottom: var(--spacing-md); border-radius: var(--radius-lg); overflow: hidden; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
@@ -505,8 +524,6 @@
 
     @media (max-width: 760px) {
       .top-actions, .summary-grid, .prices-grid, .client-stats { grid-template-columns: 1fr; }
-      .date-actions { grid-template-columns: 1fr; }
-      .date-actions input, .small-btn { width: 100%; max-width: 100%; }
       .container { padding: var(--spacing-lg); }
       .auth-card { padding: var(--spacing-xl); }
       .modal-card { padding: var(--spacing-lg); }
@@ -518,7 +535,6 @@
       .top-actions { grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm); }
       h3 { font-size: 18px; }
       .tab-btn { font-size: 12px; padding: 14px var(--spacing-sm); min-height: 56px; }
-      .small-btn { width: 100%; }
     }
 
     /* Address row layout */
@@ -653,6 +669,158 @@
 
     /* ── City search wrap ── */
     .city-search-wrap { position: relative; }
+
+    /* ── Header summary bar ── */
+    .header-summary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px var(--spacing-lg) 6px;
+      background: rgba(0,0,0,0.72);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .hsum-chip {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.09);
+      border: 1px solid rgba(255,255,255,0.12);
+      min-width: 60px;
+    }
+    .hsum-label { font-size: 9px; color: rgba(255,255,255,0.56); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; }
+    .hsum-val { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; }
+
+    /* ── Product prices btn in header menu ── */
+    #productPricesBtn { display: none; }
+
+    /* ── Compact price scroll row ── */
+    .price-scroll-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0 8px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .price-scroll-row::-webkit-scrollbar { display: none; }
+    .price-scroll-item {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 68px;
+    }
+    .price-compact-ctrl {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.9);
+      height: 28px;
+    }
+    .price-compact-ctrl input {
+      width: 36px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 0 2px;
+      margin: 0;
+      border: none;
+      background: transparent;
+      color: var(--color-text);
+      min-width: 0;
+      height: 28px;
+      box-shadow: none;
+      border-radius: 0;
+    }
+    .spin-btn-sm {
+      width: 20px;
+      height: 28px;
+      border-radius: 0;
+      margin: 0;
+      padding: 0;
+      font-size: 15px;
+      font-weight: 700;
+      background: rgba(0,0,0,0.06);
+      color: var(--color-text);
+      border: none;
+      box-shadow: none;
+      flex-shrink: 0;
+      min-width: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .spin-btn-sm:active { background: rgba(0,0,0,0.16); }
+    body.dark .price-compact-ctrl { background: rgba(40,36,32,0.9); }
+
+    /* ── Sale accordion cards ── */
+    .sale-acc {
+      margin-bottom: 6px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .sale-acc .accordion-header {
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .sale-acc-head {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex: 1;
+      min-width: 0;
+      margin-right: 6px;
+    }
+    .sale-acc-client { font-size: 13px; font-weight: 700; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sale-acc-total { font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .sale-acc-paid { font-size: 13px; }
+    .sale-acc-body { font-size: 12px; }
+    .sale-acc-detail { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; color: var(--color-secondary); }
+    .sale-acc-detail strong { color: var(--color-text); }
+    .sale-acc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sale-acc-actions button {
+      flex: 1;
+      min-width: 80px;
+      padding: 8px 6px;
+      font-size: 12px;
+      margin: 0;
+      width: auto;
+    }
+    .sale-acc-actions .btn-danger { background: linear-gradient(180deg, #8f1111 0%, #5e0808 100%); }
+    .sales-scroll-area { max-height: 420px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .sales-show-more { margin: 6px 0; font-size: 12px; }
+
+    /* ── Address fields clean layout ── */
+    .addr-grid {
+      display: grid;
+      grid-template-columns: 60px 90px 1fr;
+      gap: 6px;
+      margin-bottom: var(--spacing-sm);
+      align-items: start;
+    }
+    .addr-grid input, .addr-grid select { margin: 0; }
+
+    /* ── Client edit modal: address grid ── */
+    .edit-addr-grid {
+      display: grid;
+      grid-template-columns: 60px 90px 1fr;
+      gap: 6px;
+      margin-bottom: var(--spacing-sm);
+      align-items: start;
+    }
+    .edit-addr-grid input, .edit-addr-grid select { margin: 0; }
   </style>
 </head>
 
@@ -701,11 +869,18 @@
           <button onclick="openProfileModal()">👤 Mon profil</button>
           <button onclick="openSettingsHubModal()">⚙️ Paramètres</button>
           <button id="darkModeBtn" onclick="toggleDarkMode()">🌙 Mode sombre</button>
+          <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden">💲 Prix produits</button>
           <button id="usersBtn" onclick="openUsersModal()" class="hidden">👥 Gérer utilisateurs</button>
           <button id="resetAppBtn" class="hidden" onclick="openResetModal()">🔄 Réinitialiser filtres</button>
           <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()">📋 Logs</button>
           <button onclick="logout()">🚪 Déconnexion</button>
         </div>
+      </div>
+      <div class="header-summary" id="headerSummary" style="display:none;">
+        <div class="hsum-chip"><span class="hsum-label">Ventes</span><span class="hsum-val" id="hSumQty">—</span></div>
+        <div class="hsum-chip"><span class="hsum-label">Revenu</span><span class="hsum-val" id="hSumDh">—</span></div>
+        <div class="hsum-chip"><span class="hsum-label">Non payé</span><span class="hsum-val" id="hSumUnpaid">—</span></div>
+        <div class="hsum-chip"><span class="hsum-label">Clients</span><span class="hsum-val" id="hSumClients">—</span></div>
       </div>
     </header>
 
@@ -754,9 +929,35 @@
           <div class="preview-chip"><span class="pchip-label">Client</span><span class="pchip-val" id="previewClientName">—</span></div>
         </div>
 
-        <button onclick="addSale()">✅ Ajouter vente</button>
+        <div style="display:flex;justify-content:center;">
+          <button class="add-sale-btn" onclick="addSale()">✅ Ajouter vente</button>
+        </div>
 
         <hr />
+
+        <h3>📊 Ventes récentes</h3>
+        <div class="sales-scroll-area" id="salesScrollArea">
+          <div id="salesList"></div>
+        </div>
+        <button id="salesShowMoreBtn" class="secondary sales-show-more" onclick="showMoreSales()" style="display:none;">↕ Défiler pour voir plus</button>
+
+        <div class="accordion hidden" id="analyticsAccordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📈 Analytiques</span><span class="arrow">▼</span></div>
+          <div class="accordion-inner">
+            <div id="analyticsContent"></div>
+          </div>
+        </div>
+
+        <div class="accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📊 Résumé rapide</span><span class="arrow">▼</span></div>
+          <div class="accordion-inner">
+            <div class="summary-grid">
+              <div class="summary-box"><div class="label">Total quantité</div><div class="value" id="totalQty">0</div></div>
+              <div class="summary-box"><div class="label">Revenu total</div><div class="value" id="totalDh">0 DHS</div></div>
+              <div class="summary-box"><div class="label">Non payé</div><div class="value" id="unpaidDh">0 DHS</div></div>
+            </div>
+          </div>
+        </div>
 
         <div class="accordion">
           <div class="accordion-header" onclick="toggleAccordion(this)"><span>🔍 Filtres</span><span class="arrow">▼</span></div>
@@ -785,27 +986,6 @@
             </details>
           </div>
         </div>
-
-        <h3>📊 Ventes récentes</h3>
-        <div id="salesList"></div>
-
-        <div class="accordion">
-          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📊 Résumé rapide</span><span class="arrow">▼</span></div>
-          <div class="accordion-inner">
-            <div class="summary-grid">
-              <div class="summary-box"><div class="label">Total quantité</div><div class="value" id="totalQty">0</div></div>
-              <div class="summary-box"><div class="label">Revenu total</div><div class="value" id="totalDh">0 DHS</div></div>
-              <div class="summary-box"><div class="label">Non payé</div><div class="value" id="unpaidDh">0 DHS</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="accordion hidden" id="analyticsAccordion">
-          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📈 Analytiques</span><span class="arrow">▼</span></div>
-          <div class="accordion-inner">
-            <div id="analyticsContent"></div>
-          </div>
-        </div>
       </div>
 
       <div id="clients" class="section-shell hidden">
@@ -820,12 +1000,12 @@
             <input id="clientName" placeholder="Nom du client" />
 
             <label>Adresse</label>
-            <div class="addr-row" style="gap:6px;margin-bottom:4px;">
-              <input id="clientAddrNum" type="text" placeholder="N°" style="flex:0 0 54px;width:54px;padding:10px 6px;" />
-              <select id="clientAddrType" style="flex:0 0 80px;width:80px;padding:10px 6px;font-size:13px;">
+            <div class="addr-grid">
+              <input id="clientAddrNum" type="text" placeholder="N°" />
+              <select id="clientAddrType">
                 <option>Rue</option><option>Av</option><option>Bd</option><option>Imp</option><option>Chem</option><option>Res</option><option>Lot</option><option>Pass</option><option>Allée</option><option>Sq</option>
               </select>
-              <input id="clientAddrDetail" placeholder="Nom de voie" style="flex:1;min-width:0;" />
+              <input id="clientAddrDetail" placeholder="Nom de voie" />
             </div>
             <div class="city-search-wrap" id="citySearchWrap">
               <input id="clientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" />
@@ -836,13 +1016,13 @@
             <input id="clientICE" placeholder="Numéro ICE (facturation)" />
 
             <h4>💰 Prix personnalisés par gamme</h4>
-            <div class="prices-grid3">
-              <div class="price-spinner-cell"><span class="price-badge-label ORO">ORO</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceORO',-1)">−</button><input id="priceORO" type="number" value="130" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceORO',1)">+</button></div><span class="price-default-hint">défaut: 130</span></div>
-              <div class="price-spinner-cell"><span class="price-badge-label RIO">RIO</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceRIO',-1)">−</button><input id="priceRIO" type="number" value="135" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceRIO',1)">+</button></div><span class="price-default-hint">défaut: 135</span></div>
-              <div class="price-spinner-cell"><span class="price-badge-label ESPRESSO">ESPRESSO</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceESPRESSO',-1)">−</button><input id="priceESPRESSO" type="number" value="140" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceESPRESSO',1)">+</button></div><span class="price-default-hint">défaut: 140</span></div>
-              <div class="price-spinner-cell"><span class="price-badge-label CLASSIC">CLASSIC</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceCLASSIC',-1)">−</button><input id="priceCLASSIC" type="number" value="150" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceCLASSIC',1)">+</button></div><span class="price-default-hint">défaut: 150</span></div>
-              <div class="price-spinner-cell"><span class="price-badge-label SANTOS">SANTOS</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceSANTOS',-1)">−</button><input id="priceSANTOS" type="number" value="180" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceSANTOS',1)">+</button></div><span class="price-default-hint">défaut: 180</span></div>
-              <div class="price-spinner-cell"><span class="price-badge-label SUCRE">SUCRE</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceSUCRE',-1)">−</button><input id="priceSUCRE" type="number" value="100" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceSUCRE',1)">+</button></div><span class="price-default-hint">défaut: 100</span></div>
+            <div class="price-scroll-row">
+              <div class="price-scroll-item"><span class="price-badge-label ORO">ORO</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceORO',-1)">−</button><input id="priceORO" type="number" value="130" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceORO',1)">+</button></div><span class="price-default-hint">130</span></div>
+              <div class="price-scroll-item"><span class="price-badge-label RIO">RIO</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceRIO',-1)">−</button><input id="priceRIO" type="number" value="135" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceRIO',1)">+</button></div><span class="price-default-hint">135</span></div>
+              <div class="price-scroll-item"><span class="price-badge-label ESPRESSO">ESP</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceESPRESSO',-1)">−</button><input id="priceESPRESSO" type="number" value="140" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceESPRESSO',1)">+</button></div><span class="price-default-hint">140</span></div>
+              <div class="price-scroll-item"><span class="price-badge-label CLASSIC">CLA</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceCLASSIC',-1)">−</button><input id="priceCLASSIC" type="number" value="150" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceCLASSIC',1)">+</button></div><span class="price-default-hint">150</span></div>
+              <div class="price-scroll-item"><span class="price-badge-label SANTOS">SAN</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceSANTOS',-1)">−</button><input id="priceSANTOS" type="number" value="180" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceSANTOS',1)">+</button></div><span class="price-default-hint">180</span></div>
+              <div class="price-scroll-item"><span class="price-badge-label SUCRE">SUCRE</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceSUCRE',-1)">−</button><input id="priceSUCRE" type="number" value="100" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('priceSUCRE',1)">+</button></div><span class="price-default-hint">100</span></div>
             </div>
             <div class="muted">Laisse vide pour utiliser les prix standard.</div>
             <button onclick="addClient()">✅ Créer client</button>
@@ -1005,6 +1185,55 @@
       </div>
       <input type="hidden" id="editSaleId" />
       <button onclick="saveEditSale()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <div id="editClientModal" class="modal-backdrop" onclick="backdropClose(event, 'editClientModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
+      <input type="hidden" id="editClientId" />
+      <label for="editClientName">Nom du client</label>
+      <input id="editClientName" placeholder="Nom du client" />
+      <label>Adresse</label>
+      <div class="edit-addr-grid">
+        <input id="editClientAddrNum" type="text" placeholder="N°" />
+        <select id="editClientAddrType">
+          <option>Rue</option><option>Av</option><option>Bd</option><option>Imp</option><option>Chem</option><option>Res</option><option>Lot</option><option>Pass</option><option>Allée</option><option>Sq</option>
+        </select>
+        <input id="editClientAddrDetail" placeholder="Nom de voie" />
+      </div>
+      <div class="city-search-wrap" id="editCitySearchWrap">
+        <input id="editClientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onEditCityInput()" onfocus="showEditCityDrop()" />
+        <div class="client-search-drop" id="editCitySearchDrop"></div>
+      </div>
+      <label for="editClientICE">💳 ICE</label>
+      <input id="editClientICE" placeholder="Numéro ICE (facturation)" />
+      <h4>💰 Prix personnalisés par gamme</h4>
+      <div class="price-scroll-row">
+        <div class="price-scroll-item"><span class="price-badge-label ORO">ORO</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceORO',-1)">−</button><input id="editPriceORO" type="number" value="130" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceORO',1)">+</button></div><span class="price-default-hint">130</span></div>
+        <div class="price-scroll-item"><span class="price-badge-label RIO">RIO</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceRIO',-1)">−</button><input id="editPriceRIO" type="number" value="135" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceRIO',1)">+</button></div><span class="price-default-hint">135</span></div>
+        <div class="price-scroll-item"><span class="price-badge-label ESPRESSO">ESP</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceESPRESSO',-1)">−</button><input id="editPriceESPRESSO" type="number" value="140" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceESPRESSO',1)">+</button></div><span class="price-default-hint">140</span></div>
+        <div class="price-scroll-item"><span class="price-badge-label CLASSIC">CLA</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceCLASSIC',-1)">−</button><input id="editPriceCLASSIC" type="number" value="150" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceCLASSIC',1)">+</button></div><span class="price-default-hint">150</span></div>
+        <div class="price-scroll-item"><span class="price-badge-label SANTOS">SAN</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceSANTOS',-1)">−</button><input id="editPriceSANTOS" type="number" value="180" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceSANTOS',1)">+</button></div><span class="price-default-hint">180</span></div>
+        <div class="price-scroll-item"><span class="price-badge-label SUCRE">SUCRE</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceSUCRE',-1)">−</button><input id="editPriceSUCRE" type="number" value="100" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('editPriceSUCRE',1)">+</button></div><span class="price-default-hint">100</span></div>
+      </div>
+      <button onclick="saveEditClient()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <div id="productPricesModal" class="modal-backdrop" onclick="backdropClose(event, 'productPricesModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>💲 Prix d'achat produits</h3><button class="close-x" onclick="closeModal('productPricesModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;">Ces prix servent de base aux calculs de marge dans les analytiques.</div>
+      <div class="price-scroll-row" style="flex-wrap:wrap;gap:10px;">
+        <div class="price-scroll-item"><span class="price-badge-label ORO">ORO</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppORO',-1)">−</button><input id="ppORO" type="number" value="110" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppORO',1)">+</button></div></div>
+        <div class="price-scroll-item"><span class="price-badge-label RIO">RIO</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppRIO',-1)">−</button><input id="ppRIO" type="number" value="112" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppRIO',1)">+</button></div></div>
+        <div class="price-scroll-item"><span class="price-badge-label ESPRESSO">ESP</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppESPRESSO',-1)">−</button><input id="ppESPRESSO" type="number" value="115" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppESPRESSO',1)">+</button></div></div>
+        <div class="price-scroll-item"><span class="price-badge-label CLASSIC">CLA</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppCLASSIC',-1)">−</button><input id="ppCLASSIC" type="number" value="120" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppCLASSIC',1)">+</button></div></div>
+        <div class="price-scroll-item"><span class="price-badge-label SANTOS">SAN</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppSANTOS',-1)">−</button><input id="ppSANTOS" type="number" value="145" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppSANTOS',1)">+</button></div></div>
+        <div class="price-scroll-item"><span class="price-badge-label SUCRE">SUCRE</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppSUCRE',-1)">−</button><input id="ppSUCRE" type="number" value="75" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppSUCRE',1)">+</button></div></div>
+      </div>
+      <button onclick="saveProductPrices()">💾 Enregistrer</button>
     </div>
   </div>
 
@@ -1197,7 +1426,8 @@
                 <button onclick="generateClientMonthlyPDF('${c.id}')">📄 Facture mensuelle</button>
                 ${
                   isManagerOrAdmin()
-                    ? `<button onclick="deleteClient('${c.id}')">🗑️ Supprimer</button>`
+                    ? `<button onclick="openEditClient('${c.id}')">✏️ Modifier</button>
+                       <button onclick="deleteClient('${c.id}')">🗑️ Supprimer</button>`
                     : ''
                 }
               </div>
@@ -1222,53 +1452,79 @@
       list.innerHTML = html || `<div class="empty-state">Aucun client enregistré.</div>`;
     }
 
+    let _allSalesData = [];
+    const SALES_PAGE = 6;
+    let _salesShown = SALES_PAGE;
+
     function renderSales() {
-      const list = document.getElementById('salesList');
       const data = getFilteredSales().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      _allSalesData = data;
+      _salesShown = data.length; // render all, scrollable container limits visible area
+
+      const list = document.getElementById('salesList');
       let html = '';
-      let totalQty = 0;
-      let totalDh = 0;
-      let unpaidDh = 0;
 
       data.forEach(s => {
-        totalQty += Number(s.quantity || 0);
-        totalDh += Number(s.total_price || 0);
-        if (!s.paid) unpaidDh += Number(s.total_price || 0);
-
         const creatorName = s.created_by ? (state.allUsers.find(u=>u.id===s.created_by)?.full_name || 'Utilisateur') : 'Inconnu';
+        const dateStr = new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
         html += `
-          <div class="card sale-card-compact">
-            <div class="menu-wrap">
-              <button class="menu-btn" onclick="toggleMenu(event, 'saleMenu${s.id}')">⋯</button>
-              <div class="menu" id="saleMenu${s.id}">
-                <button onclick="openEditSale('${s.id}')">✏️ Modifier</button>
-                <button onclick="togglePaid('${s.id}', ${!s.paid})">${s.paid ? '❌ NON PAYÉ' : '✅ PAYÉ'}</button>
-                ${isManagerOrAdmin() ? `<button onclick="deleteSale('${s.id}')">🗑️ Supprimer</button>` : ''}
-                <button disabled style="opacity:0.5;cursor:default;font-size:11px;">👤 ${creatorName}</button>
+          <div class="accordion sale-acc">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+              <div class="sale-acc-head">
+                <span class="sale-acc-client">${s.client_name}</span>
+                <span class="badge ${s.category}" style="margin:0;padding:2px 7px;font-size:10px;">${s.category}</span>
+                <span class="sale-acc-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
+                <span class="sale-acc-paid">${s.paid ? '✅' : '❌'}</span>
               </div>
+              <span class="arrow">▼</span>
             </div>
-            <div class="sale-card-row1">
-              <span class="sale-client-name">${s.client_name}</span>
-              <span class="badge ${s.category}" style="margin:0;padding:3px 9px;font-size:10px;">${s.category}</span>
-            </div>
-            <div class="sale-card-row2">
-              <span>📦 ${formatStockValue(s.category, s.quantity)}</span>
-              <span>💵 ${formatDh(s.unit_price)}/${s.category === 'SUCRE' ? 'pcs' : 'kg'}</span>
-              <strong>💰 ${formatDh(s.total_price)}</strong>
-            </div>
-            <div class="sale-card-row3">
-              <span class="sale-date">📅 ${new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
-              ${s.paid ? '<span class="paid">✅</span>' : '<span class="unpaid">❌</span>'}
+            <div class="accordion-inner">
+              <div class="sale-acc-body">
+                <div class="sale-acc-detail">
+                  <span>📦 ${formatStockValue(s.category, s.quantity)}</span>
+                  <span>💵 ${formatDh(s.unit_price)}/${s.category === 'SUCRE' ? 'pcs' : 'kg'}</span>
+                  <span>📅 ${dateStr}</span>
+                  <span>👤 ${creatorName}</span>
+                </div>
+                <div class="sale-acc-actions">
+                  <button class="secondary" onclick="openEditSale('${s.id}')">✏️ Modifier</button>
+                  <button class="secondary" onclick="togglePaid('${s.id}', ${!s.paid})">${s.paid ? '❌ Impayé' : '✅ Payé'}</button>
+                  ${isManagerOrAdmin() ? `<button class="btn-danger" onclick="deleteSale('${s.id}')">🗑️</button>` : ''}
+                </div>
+              </div>
             </div>
           </div>`;
       });
 
       list.innerHTML = html || `<div class="empty-state">Aucune vente trouvée.</div>`;
+      document.getElementById('salesShowMoreBtn').style.display = data.length > SALES_PAGE ? 'block' : 'none';
+      if (data.length > SALES_PAGE) {
+        document.getElementById('salesShowMoreBtn').textContent = `↕ ${data.length} ventes — défiler`;
+      }
+      initAccordions();
+
+      let totalQty = 0;
+      let totalDh = 0;
+      let unpaidDh = 0;
+      data.forEach(s => {
+        totalQty += Number(s.quantity || 0);
+        totalDh += Number(s.total_price || 0);
+        if (!s.paid) unpaidDh += Number(s.total_price || 0);
+      });
       document.getElementById('totalQty').innerText = formatQty(totalQty);
       document.getElementById('totalDh').innerText = formatDh(totalDh);
       document.getElementById('unpaidDh').innerText = formatDh(unpaidDh);
+      updateHeaderSummary(totalQty, totalDh, unpaidDh);
       renderAnalytics(data);
     }
+
+    function renderSalesPage() {}  // kept for compatibility
+
+    window.showMoreSales = function() {
+      // scroll to end of sales area
+      const area = document.getElementById('salesScrollArea');
+      if (area) area.scrollTop = area.scrollHeight;
+    };
 
     function renderStock() {
       const list = document.getElementById('stockList');
@@ -1368,6 +1624,22 @@
       } catch(e) { /* non-blocking */ }
     }
 
+    // Update lastSeen periodically while app is active
+    let _lastSeenInterval = null;
+    function startLastSeenHeartbeat() {
+      if (_lastSeenInterval) clearInterval(_lastSeenInterval);
+      _lastSeenInterval = setInterval(() => { if (state.session?.user?.id) updateLastSeen(); }, 3 * 60 * 1000);
+    }
+
+    function updateHeaderSummary(totalQty, totalDh, unpaidDh) {
+      const qtyEl = document.getElementById('hSumQty');
+      const dhEl = document.getElementById('hSumDh');
+      const unpaidEl = document.getElementById('hSumUnpaid');
+      if (qtyEl) qtyEl.textContent = formatQty(totalQty);
+      if (dhEl) dhEl.textContent = formatDh(totalDh);
+      if (unpaidEl) unpaidEl.textContent = formatDh(unpaidDh);
+    }
+
     async function loadCloudData() {
       const requests = [
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
@@ -1417,8 +1689,18 @@
       document.getElementById('usersBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
       document.getElementById('resetAppBtn').classList.toggle('hidden', !isAdmin());
+      document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
+
+      // Show header summary bar
+      const hsum = document.getElementById('headerSummary');
+      if (hsum) hsum.style.display = 'flex';
+
+      // Update header summary client count
+      document.getElementById('hSumClients').textContent = state.clients.length;
+
       updateDarkModeBtn();
       initAccordions();
+      loadProductPrices();
     }
 
     // ── Shared token-retrieval helper ────────────────────────────────────────
@@ -1477,11 +1759,13 @@
         if (!session?.user) {
           document.getElementById('authScreen').classList.remove('hidden');
           document.getElementById('appShell').classList.add('hidden');
+          if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
           return;
         }
 
         await loadProfile(session.user.id);
         updateLastSeen();
+        startLastSeenHeartbeat();
 
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('appShell').classList.remove('hidden');
@@ -1538,10 +1822,13 @@
 
     window.logout = async function () {
       closeAllMenus();
+      if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
       await supabase.auth.signOut();
       // Reset in-memory state to avoid stale session/profile data on next login
       state.session = null;
       state.profile = null;
+      const hsum = document.getElementById('headerSummary');
+      if (hsum) hsum.style.display = 'none';
       document.getElementById('appShell').classList.add('hidden');
       document.getElementById('authScreen').classList.remove('hidden');
       document.getElementById('loginPassword').value = '';
@@ -1580,10 +1867,13 @@
       const { error } = await supabase.from('clients').insert(payload);
       if (error) return alert(error.message);
 
-      ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE', 'priceORO', 'priceRIO', 'priceESPRESSO', 'priceCLASSIC', 'priceSANTOS', 'priceSUCRE'].forEach(id => {
+      ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE'].forEach(id => {
         document.getElementById(id).value = '';
       });
       document.getElementById('clientAddrType').value = 'Rue';
+      // Reset prices to defaults
+      const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 150, priceSANTOS: 180, priceSUCRE: 100 };
+      Object.entries(defaults).forEach(([id, val]) => { document.getElementById(id).value = val; });
 
       await loadCloudData();
       paintApp();
@@ -1673,6 +1963,110 @@
       showSessionStatus('✅ Client supprimé', 'success');
     };
 
+    window.openEditClient = function(clientId) {
+      closeAllMenus();
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      document.getElementById('editClientId').value = clientId;
+      document.getElementById('editClientName').value = client.name || '';
+      document.getElementById('editClientICE').value = client.ice || '';
+
+      // Parse existing address string into parts (best-effort)
+      const addrParts = (client.address || '').split(',').map(s => s.trim());
+      let addrNum = '', addrType = 'Rue', addrDetail = '', addrCity = '';
+      if (addrParts.length >= 3) {
+        addrNum = addrParts[0];
+        const typeMatch = addrParts[1]?.match(/^(Rue|Av|Bd|Imp|Chem|Res|Lot|Pass|Allée|Sq)\s+(.*)$/i);
+        if (typeMatch) { addrType = typeMatch[1]; addrDetail = typeMatch[2]; } else { addrDetail = addrParts[1]; }
+        addrCity = addrParts.slice(2).join(', ');
+      } else if (addrParts.length === 2) {
+        const typeMatch = addrParts[0]?.match(/^(Rue|Av|Bd|Imp|Chem|Res|Lot|Pass|Allée|Sq)\s+(.*)$/i);
+        if (typeMatch) { addrType = typeMatch[1]; addrDetail = typeMatch[2]; } else { addrDetail = addrParts[0]; }
+        addrCity = addrParts[1];
+      } else if (addrParts.length === 1) {
+        addrDetail = addrParts[0];
+      }
+      document.getElementById('editClientAddrNum').value = addrNum;
+      document.getElementById('editClientAddrType').value = addrType;
+      document.getElementById('editClientAddrDetail').value = addrDetail;
+      document.getElementById('editClientAddrCity').value = addrCity;
+
+      // Load custom prices (or defaults)
+      const defaults = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
+      ['ORO','RIO','ESPRESSO','CLASSIC','SANTOS','SUCRE'].forEach(cat => {
+        const el = document.getElementById('editPrice' + cat);
+        if (el) el.value = (client.prices?.[cat] > 0) ? client.prices[cat] : defaults[cat];
+      });
+
+      openModal('editClientModal');
+    };
+
+    window.saveEditClient = async function() {
+      const clientId = document.getElementById('editClientId').value;
+      const name = document.getElementById('editClientName').value.trim();
+      const ice = document.getElementById('editClientICE').value.trim();
+      const addrNum = document.getElementById('editClientAddrNum').value.trim();
+      const addrType = document.getElementById('editClientAddrType').value;
+      const addrDetail = document.getElementById('editClientAddrDetail').value.trim();
+      const addrCity = document.getElementById('editClientAddrCity').value.trim();
+
+      if (!name) return alert('❌ Nom client obligatoire');
+
+      let addrParts = [];
+      if (addrNum) addrParts.push(addrNum);
+      if (addrDetail) addrParts.push(`${addrType} ${addrDetail}`);
+      if (addrCity) addrParts.push(addrCity);
+      const address = addrParts.join(', ');
+
+      const prices = {};
+      ['ORO','RIO','ESPRESSO','CLASSIC','SANTOS','SUCRE'].forEach(cat => {
+        const el = document.getElementById('editPrice' + cat);
+        const v = el ? parseInt(el.value, 10) : null;
+        prices[cat] = (v > 0) ? v : null;
+      });
+
+      const { error } = await supabase.from('clients').update({ name, address, ice, prices }).eq('id', clientId);
+      if (error) return alert('❌ ' + error.message);
+      closeModal('editClientModal');
+      await loadCloudData();
+      paintApp();
+      showSessionStatus('✅ Client modifié', 'success');
+    };
+
+    // City autocomplete for edit modal
+    window.onEditCityInput = function() {
+      const q = document.getElementById('editClientAddrCity').value.trim().toLowerCase();
+      renderEditCityDrop(q);
+    };
+    window.showEditCityDrop = function() {
+      const q = document.getElementById('editClientAddrCity').value.trim().toLowerCase();
+      renderEditCityDrop(q);
+    };
+    function renderEditCityDrop(q) {
+      const drop = document.getElementById('editCitySearchDrop');
+      if (!drop) return;
+      const filtered = q ? MOROCCO_CITIES.filter(c => c.toLowerCase().includes(q)) : MOROCCO_CITIES.slice(0, 15);
+      if (filtered.length === 0) { drop.classList.remove('open'); return; }
+      drop.innerHTML = filtered.map(c => {
+        const escaped = c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        return `<div class="csearch-item" data-city="${escaped}">${escaped}</div>`;
+      }).join('');
+      drop.querySelectorAll('.csearch-item').forEach(item => {
+        item.addEventListener('click', () => {
+          document.getElementById('editClientAddrCity').value = item.dataset.city;
+          drop.classList.remove('open');
+        });
+      });
+      drop.classList.add('open');
+      setTimeout(() => {
+        document.addEventListener('click', e => {
+          const wrap = document.getElementById('editCitySearchWrap');
+          if (wrap && !wrap.contains(e.target)) drop.classList.remove('open');
+        }, { once: true, capture: true });
+      }, 50);
+    }
+
     window.addToStock = async function (category) {
       if (!requireManagerOrAdmin('Modifier le stock')) return;
       closeAllMenus();
@@ -1714,10 +2108,12 @@
       const mins = Math.floor(diff / 60000);
       const hours = Math.floor(diff / 3600000);
       const days = Math.floor(diff / 86400000);
-      if (mins < 5) return '<span class="activity-status online">🟢 En ligne</span>';
-      if (mins < 60) return `<span class="activity-status recent">Actif il y a ${mins} min</span>`;
-      if (hours < 24) return `<span class="activity-status hours">Actif il y a ${hours} h</span>`;
-      return `<span class="activity-status offline">Actif il y a ${days} j</span>`;
+      if (mins < 4) return '<span class="activity-status online">🟢 En ligne</span>';
+      if (mins < 10) return `<span class="activity-status recent">🟡 Actif il y a ${mins} min</span>`;
+      if (mins < 60) return `<span class="activity-status recent">⚪ Vu il y a ${mins} min</span>`;
+      if (hours < 24) return `<span class="activity-status hours">Vu il y a ${hours} h</span>`;
+      if (days < 7) return `<span class="activity-status offline">Vu il y a ${days} j</span>`;
+      return `<span class="activity-status offline">Inactif (${days} j)</span>`;
     }
 
     function renderUsersList() {
@@ -1931,6 +2327,46 @@
       showSessionStatus('✅ Filtres réinitialisés', 'success');
     };
 
+    // ── Product purchase price configuration ────────────────────────────────────
+    let _customPurchasePrices = { ...{ ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 } };
+
+    function loadProductPrices() {
+      try {
+        const saved = localStorage.getItem('productPurchasePrices');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          Object.assign(_customPurchasePrices, parsed);
+        }
+      } catch(e) { /* use defaults */ }
+    }
+
+    function getProductPurchasePrice(cat) {
+      return _customPurchasePrices[cat] || { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 }[cat] || 0;
+    }
+
+    window.openProductPricesModal = function() {
+      closeAllMenus();
+      if (!isManagerOrAdmin()) return;
+      const cats = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
+      cats.forEach(cat => {
+        const el = document.getElementById('pp' + cat);
+        if (el) el.value = _customPurchasePrices[cat] || 0;
+      });
+      openModal('productPricesModal');
+    };
+
+    window.saveProductPrices = function() {
+      const cats = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
+      cats.forEach(cat => {
+        const el = document.getElementById('pp' + cat);
+        if (el) _customPurchasePrices[cat] = Math.max(1, parseInt(el.value, 10) || 1);
+      });
+      localStorage.setItem('productPurchasePrices', JSON.stringify(_customPurchasePrices));
+      closeModal('productPricesModal');
+      renderAnalytics(_allSalesData);
+      showSessionStatus('✅ Prix produits enregistrés', 'success');
+    };
+
     // ── Analytics ───────────────────────────────────────────────────────────────
     function renderAnalytics(data) {
       const accordion = document.getElementById('analyticsAccordion');
@@ -1955,7 +2391,7 @@
         if (catSales.length === 0) return;
         const qty = catSales.reduce((s, x) => s + Number(x.quantity || 0), 0);
         const revenu = catSales.reduce((s, x) => s + Number(x.total_price || 0), 0);
-        const purchaseUnit = PURCHASE_PRICES[cat];
+        const purchaseUnit = getProductPurchasePrice(cat);
         const achat = qty * purchaseUnit;
         const marge = revenu - achat;
         const margeClass = marge >= 0 ? 'margin-positive' : 'margin-negative';
@@ -1983,7 +2419,7 @@
       const unpaidAmount = data.filter(s => !s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
 
       content.innerHTML = `
-        <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">Prix d'achat estimés. Filtres actifs.</div>
+        <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">Basé sur les prix d'achat configurés. Filtres actifs.</div>
         <table class="analytics-table">
           <thead><tr><th>Gamme</th><th>Qté</th><th>Achat</th><th>Revente</th><th>Marge</th></tr></thead>
           <tbody>${rows}</tbody>
