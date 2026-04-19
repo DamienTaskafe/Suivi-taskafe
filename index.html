@@ -1570,6 +1570,10 @@
     // Sync state: 'idle' | 'syncing' | 'error'
     let _syncState = 'idle';
     let _syncErrorCount = 0;
+    // Delay before triggering sync at boot (ms) — lets the network stabilize
+    const BOOT_SYNC_DELAY_MS = 1200;
+    // How long to hold the logout guard against spurious auth-state-change re-boots (ms)
+    const LOGOUT_GUARD_DURATION_MS = 2000;
 
     async function updateOfflineBanner() {
       const banner = document.getElementById('offlineBanner');
@@ -1643,31 +1647,34 @@
       showSessionStatus(`⏳ Synchronisation de ${ops.length} action(s)…`, 'info', 15000);
       let done = 0, failed = 0;
       const errors = [];
-      // idMapping accumulates { 'local_xxx': 'real-uuid' } as addSale/addClient ops resolve
+      // idMapping accumulates { 'local_xxx': 'real-uuid' } as addSale/addClient ops resolve.
+      // Each op is rewritten with accumulated mappings before execution; this is a no-op
+      // on the first iteration when idMapping is still empty.
       const idMapping = {};
-      for (const op of ops) {
-        // Rewrite any local IDs in this op's payload before executing
-        _applyIdRemapping(op, idMapping);
+      let salesDirty = false, clientsDirty = false;
+      for (let opIdx = 0; opIdx < ops.length; opIdx++) {
+        const op = ops[opIdx];
+        _applyIdRemapping(op, idMapping); // apply all previously gathered id remaps
         try {
           const mapping = await _executePendingOp(op);
-          // Persist remapped pending ops BEFORE removing the current one, so
-          // if the process is interrupted the queue is already consistent.
           if (mapping) {
             const { localId, realId, storeKey } = mapping;
             idMapping[localId] = realId;
-            // Update state in memory
+            // Update state in memory (deferred batch save after the loop)
             if (storeKey === 'sales') {
               const rec = state.sales.find(s => s.id === localId);
-              if (rec) { rec.id = realId; await saveRecords('sales', state.sales).catch(() => {}); }
+              if (rec) { rec.id = realId; salesDirty = true; }
             } else if (storeKey === 'clients') {
               const rec = state.clients.find(c => c.id === localId);
-              if (rec) { rec.id = realId; await saveRecords('clients', state.clients).catch(() => {}); }
+              if (rec) { rec.id = realId; clientsDirty = true; }
             }
-            // Update remaining pending ops in IndexedDB so future sync retries use real IDs
-            for (const remaining of ops) {
-              if (remaining.id === op.id) continue; // skip current (about to be removed)
-              if (_applyIdRemapping(remaining, { [localId]: realId })) {
-                await updatePendingOp(remaining).catch(() => {});
+            // Update only the *remaining* pending ops in IndexedDB so future sync
+            // retries use real IDs — persist before removing the current op so
+            // the queue stays consistent even if the process is interrupted.
+            for (let i = opIdx + 1; i < ops.length; i++) {
+              if (_applyIdRemapping(ops[i], { [localId]: realId })) {
+                await updatePendingOp(ops[i]).catch(e =>
+                  console.warn('[sync] updatePendingOp failed:', e?.message));
               }
             }
           }
@@ -1680,6 +1687,9 @@
           failed++;
         }
       }
+      // Batch-persist state changes from ID remapping (one write per store if needed)
+      if (salesDirty) await saveRecords('sales', state.sales).catch(() => {});
+      if (clientsDirty) await saveRecords('clients', state.clients).catch(() => {});
       try { await loadCloudData(); paintApp(); } catch(e) { /* ignore */ }
       if (failed === 0) {
         _syncState = 'idle';
@@ -1698,7 +1708,9 @@
     // Apply accumulated local->real id mappings to a pending op's payload in place.
     // Returns true if any replacement was made, false otherwise.
     function _applyIdRemapping(op, idMapping) {
-      if (!op || !idMapping || Object.keys(idMapping).length === 0) return false;
+      if (!op || !idMapping) return false;
+      const keys = Object.keys(idMapping);
+      if (keys.length === 0) return false;
       let changed = false;
       const payload = op.payload;
       if (!payload) return false;
@@ -2342,7 +2354,7 @@
           if (navigator.onLine) {
             const pending = await countPendingOps().catch(() => 0);
             if (pending > 0) {
-              setTimeout(() => syncPendingOps(), 1200);
+              setTimeout(() => syncPendingOps(), BOOT_SYNC_DELAY_MS);
             }
           }
         } catch (error) {
@@ -2408,8 +2420,9 @@
         document.getElementById('appShell').classList.add('hidden');
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('loginPassword').value = '';
-        // Release the flag after auth state change has had time to fire and be ignored
-        setTimeout(() => { _loggedOut = false; }, 2000);
+        // LOGOUT_GUARD_DURATION_MS covers the SIGNED_OUT auth-state-change event that
+        // fires after signOut(); the flag prevents bootFromSession from re-entering.
+        setTimeout(() => { _loggedOut = false; }, LOGOUT_GUARD_DURATION_MS);
       }
     };
 
