@@ -564,11 +564,101 @@
     .adv-stat-row:last-child { border-bottom: none; }
     .adv-stat-label { color: var(--color-text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
     .adv-stat-val { font-weight: 700; color: var(--color-text); }
+
+    /* ── Compact preview bar ── */
+    .preview-bar { display: flex; gap: 6px; margin: 10px 0; flex-wrap: nowrap; }
+    .preview-chip { flex: 1; background: rgba(255,255,255,0.82); border: 1px solid rgba(0,0,0,0.07); border-radius: 10px; padding: 6px 8px; text-align: center; min-width: 0; }
+    .preview-chip--total { background: rgba(20,20,20,0.08); border-color: rgba(0,0,0,0.12); }
+    .pchip-label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--color-text-muted); margin-bottom: 2px; }
+    .pchip-val { display: block; font-size: 13px; font-weight: 700; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── Client search filter ── */
+    .client-search-wrap { position: relative; }
+    .client-search-drop { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 500; max-height: 220px; overflow-y: auto; margin-top: 4px; }
+    .client-search-drop.open { display: block; }
+    .csearch-item { padding: 10px 14px; font-size: 14px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.04); }
+    .csearch-item:last-child { border-bottom: none; }
+    .csearch-item:hover, .csearch-item.active { background: rgba(0,0,0,0.04); }
+    .csearch-item.selected { font-weight: 700; }
+
+    /* ── Dark mode ── */
+    body.dark {
+      --color-bg: #0f0f0f;
+      --color-card: #1a1a1a;
+      --color-text: #f0ece6;
+      --color-text-muted: #9a8a80;
+      --color-border: rgba(255,255,255,0.08);
+      --color-primary: #f4efe8;
+      --color-secondary: #c8beb6;
+    }
+    body.dark .section-shell { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+    body.dark .card { background: rgba(30,26,22,0.98); border-color: rgba(255,255,255,0.07); }
+    body.dark input[type="text"], body.dark input[type="email"], body.dark input[type="password"], body.dark input[type="number"], body.dark input[type="date"], body.dark input[type="month"], body.dark input[type="datetime-local"], body.dark select, body.dark textarea { background: rgba(30,26,22,0.95); color: var(--color-text); border-color: rgba(255,255,255,0.1); }
+    body.dark .accordion { background: rgba(255,255,255,0.04); }
+    body.dark .menu, body.dark .header-menu { background: rgba(25,22,18,0.98); border-color: rgba(255,255,255,0.08); }
+    body.dark .menu button, body.dark .header-menu button { color: var(--color-text); }
+    body.dark .modal-card { background: rgba(22,19,16,0.99); color: var(--color-text); }
+    body.dark .settings-option { background: rgba(30,26,22,0.96); }
+    body.dark .user-row { background: rgba(25,22,18,0.88); }
+    body.dark .preview-chip { background: rgba(255,255,255,0.06); }
+    body.dark .mini-box { background: rgba(255,255,255,0.05); }
+    body.dark .client-search-drop { background: #1a1a1a; border-color: rgba(255,255,255,0.1); }
+    body.dark .csearch-item:hover, body.dark .csearch-item.active { background: rgba(255,255,255,0.06); }
+    body.dark .analytics-table { background: rgba(20,17,14,0.98); }
+    body.dark .analytics-table td, body.dark .analytics-table th { border-color: rgba(255,255,255,0.06); color: var(--color-text); }
+
+    /* ── User activity status ── */
+    .user-activity { margin-top: 4px; }
+    .activity-status { font-size: 11px; font-weight: 600; }
+    .activity-status.online { color: #34c759; }
+    .activity-status.recent { color: #f39a1e; }
+    .activity-status.hours { color: var(--color-text-muted); }
+    .activity-status.offline { color: var(--color-text-muted); opacity: 0.7; }
+
+    /* ── Analytics table ── */
+    .analytics-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .analytics-table th { background: rgba(0,0,0,0.85); color: white; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .analytics-table td { padding: 7px 8px; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+    .analytics-table tr:last-child td { border-bottom: none; }
+    .analytics-table tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
+    .analytics-total-row td { font-weight: 700; background: rgba(0,0,0,0.04) !important; }
+    .margin-positive { color: #148c37; font-weight: 700; }
+    .margin-negative { color: #cc2d2d; font-weight: 700; }
+
+    /* ── Pull to refresh ── */
+    #pullIndicator { position: fixed; top: 0; left: 0; right: 0; height: 0; background: rgba(0,0,0,0.85); display: flex; align-items: flex-end; justify-content: center; z-index: 2000; overflow: hidden; transition: height 0.15s ease; pointer-events: none; }
+    #pullIndicator .pull-inner { padding: 8px; color: white; font-size: 13px; font-weight: 700; opacity: 0; transition: opacity 0.2s; }
+    #pullIndicator.visible .pull-inner { opacity: 1; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .pull-spin { display: inline-block; animation: spin 0.8s linear infinite; }
+
+    /* ── Compact sale cards ── */
+    .sale-card-compact { padding: 10px 12px 10px 12px; margin-bottom: 8px; }
+    .sale-card-row1 { display: flex; align-items: center; gap: 8px; margin-right: 40px; margin-bottom: 5px; }
+    .sale-client-name { font-size: 14px; font-weight: 700; color: var(--color-text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sale-card-row2 { display: flex; gap: 10px; font-size: 12px; color: var(--color-secondary); flex-wrap: wrap; margin-bottom: 4px; }
+    .sale-card-row2 strong { color: var(--color-text); }
+    .sale-card-row3 { display: flex; align-items: center; justify-content: space-between; font-size: 11px; }
+    .sale-date { color: var(--color-text-muted); }
+
+    /* ── Price spinner & 3-col prices grid ── */
+    .prices-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }
+    .price-spinner-cell { display: flex; flex-direction: column; gap: 3px; }
+    .price-spinner { display: flex; align-items: center; gap: 0; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.9); }
+    .price-spinner input { flex: 1; border: none; text-align: center; font-size: 15px; font-weight: 700; padding: 6px 2px; background: transparent; color: var(--color-text); min-width: 0; width: 100%; margin: 0; box-shadow: none; border-radius: 0; }
+    .spin-btn { width: 32px; height: 36px; border-radius: 0; margin: 0; padding: 0; font-size: 18px; font-weight: 700; background: rgba(0,0,0,0.06); color: var(--color-text); border: none; box-shadow: none; flex-shrink: 0; min-width: 32px; display: flex; align-items: center; justify-content: center; }
+    .spin-btn:active { background: rgba(0,0,0,0.15); }
+    .price-default-hint { font-size: 10px; color: var(--color-text-muted); text-align: center; }
+    @media (max-width: 480px) { .prices-grid3 { grid-template-columns: repeat(3, 1fr); gap: 6px; } }
+
+    /* ── City search wrap ── */
+    .city-search-wrap { position: relative; }
   </style>
 </head>
 
 <body>
   <div id="sessionStatus" class="session-status"></div>
+  <div id="pullIndicator"><div class="pull-inner" id="pullInnerText">↓ Tirer pour actualiser</div></div>
 
   <div id="authScreen" class="auth-screen">
     <div class="auth-card">
@@ -609,8 +699,9 @@
           </div>
           <button onclick="openProfileModal()">👤 Mon profil</button>
           <button onclick="openSettingsHubModal()">⚙️ Paramètres</button>
+          <button id="darkModeBtn" onclick="toggleDarkMode()">🌙 Mode sombre</button>
           <button id="usersBtn" onclick="openUsersModal()" class="hidden">👥 Gérer utilisateurs</button>
-          <button onclick="confirmResetFilters()">🔄 Réinitialiser</button>
+          <button id="resetAppBtn" class="hidden" onclick="openResetModal()">🔄 Réinitialiser filtres</button>
           <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()">📋 Logs</button>
           <button onclick="logout()">🚪 Déconnexion</button>
         </div>
@@ -656,10 +747,10 @@
           <label for="paid" style="margin: 0; flex: 1;">✅ Payé</label>
         </div>
 
-        <div class="summary-grid">
-          <div class="summary-box"><div class="label">Prix unitaire</div><div class="value" id="previewUnitPrice">0 DHS</div></div>
-          <div class="summary-box"><div class="label">Total</div><div class="value" id="previewTotalPrice">0 DHS</div></div>
-          <div class="summary-box"><div class="label">Client</div><div class="value" id="previewClientName">—</div></div>
+        <div class="preview-bar">
+          <div class="preview-chip"><span class="pchip-label">Prix unit.</span><span class="pchip-val" id="previewUnitPrice">0 DHS</span></div>
+          <div class="preview-chip preview-chip--total"><span class="pchip-label">Total</span><span class="pchip-val" id="previewTotalPrice">0 DHS</span></div>
+          <div class="preview-chip"><span class="pchip-label">Client</span><span class="pchip-val" id="previewClientName">—</span></div>
         </div>
 
         <button onclick="addSale()">✅ Ajouter vente</button>
@@ -669,22 +760,28 @@
         <div class="accordion">
           <div class="accordion-header" onclick="toggleAccordion(this)"><span>🔍 Filtres</span><span class="arrow">▼</span></div>
           <div class="accordion-inner">
-            <label for="filterClient">Client</label>
-            <select id="filterClient" onchange="renderSales()"></select>
-
-            <label for="filterCategory">Catégorie</label>
-            <select id="filterCategory" onchange="renderSales()">
-              <option value="">Toutes catégories</option>
-              <option value="ORO">ORO</option>
-              <option value="RIO">RIO</option>
-              <option value="ESPRESSO">ESPRESSO</option>
-              <option value="CLASSIC">CLASSIC</option>
-              <option value="SANTOS">SANTOS</option>
-              <option value="SUCRE">SUCRE</option>
-            </select>
+            <label>Client</label>
+            <div class="client-search-wrap" id="clientSearchWrap">
+              <input id="filterClientSearch" type="text" placeholder="Rechercher un client…" autocomplete="off" oninput="onFilterClientInput()" onfocus="showClientDropdown()" />
+              <input type="hidden" id="filterClient" />
+              <div class="client-search-drop" id="clientSearchDrop"></div>
+            </div>
 
             <label for="filterDate">📅 Date</label>
             <input type="date" id="filterDate" onchange="renderSales()" />
+
+            <details style="margin-top:10px;">
+              <summary style="font-size:12px;font-weight:700;color:var(--color-text-muted);cursor:pointer;text-transform:uppercase;letter-spacing:0.3px;">▸ Filtre catégorie</summary>
+              <select id="filterCategory" onchange="renderSales()" style="margin-top:8px;">
+                <option value="">Toutes catégories</option>
+                <option value="ORO">ORO</option>
+                <option value="RIO">RIO</option>
+                <option value="ESPRESSO">ESPRESSO</option>
+                <option value="CLASSIC">CLASSIC</option>
+                <option value="SANTOS">SANTOS</option>
+                <option value="SUCRE">SUCRE</option>
+              </select>
+            </details>
           </div>
         </div>
 
@@ -692,13 +789,20 @@
         <div id="salesList"></div>
 
         <div class="accordion">
-          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📈 Résumé</span><span class="arrow">▼</span></div>
+          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📊 Résumé rapide</span><span class="arrow">▼</span></div>
           <div class="accordion-inner">
             <div class="summary-grid">
               <div class="summary-box"><div class="label">Total quantité</div><div class="value" id="totalQty">0</div></div>
               <div class="summary-box"><div class="label">Revenu total</div><div class="value" id="totalDh">0 DHS</div></div>
               <div class="summary-box"><div class="label">Non payé</div><div class="value" id="unpaidDh">0 DHS</div></div>
             </div>
+          </div>
+        </div>
+
+        <div class="accordion hidden" id="analyticsAccordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📈 Analytiques</span><span class="arrow">▼</span></div>
+          <div class="accordion-inner">
+            <div id="analyticsContent"></div>
           </div>
         </div>
       </div>
@@ -715,25 +819,29 @@
             <input id="clientName" placeholder="Nom du client" />
 
             <label>Adresse</label>
-            <div class="addr-row">
-              <select id="clientAddrType">
-                <option>Rue</option><option>Av</option><option>Chem</option><option>Res</option><option>Lot</option>
+            <div class="addr-row" style="gap:6px;margin-bottom:4px;">
+              <input id="clientAddrNum" type="text" placeholder="N°" style="flex:0 0 54px;width:54px;padding:10px 6px;" />
+              <select id="clientAddrType" style="flex:0 0 80px;width:80px;padding:10px 6px;font-size:13px;">
+                <option>Rue</option><option>Av</option><option>Bd</option><option>Imp</option><option>Chem</option><option>Res</option><option>Lot</option><option>Pass</option><option>Allée</option><option>Sq</option>
               </select>
-              <input id="clientAddrDetail" placeholder="Détail de l'adresse" />
+              <input id="clientAddrDetail" placeholder="Nom de voie" style="flex:1;min-width:0;" />
             </div>
-            <input id="clientAddrCity" placeholder="Ville" />
+            <div class="city-search-wrap" id="citySearchWrap">
+              <input id="clientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" />
+              <div class="client-search-drop" id="citySearchDrop"></div>
+            </div>
 
             <label for="clientICE">💳 ICE</label>
             <input id="clientICE" placeholder="Numéro ICE (facturation)" />
 
             <h4>💰 Prix personnalisés par gamme</h4>
-            <div class="prices-grid">
-              <div><span class="price-badge-label ORO">ORO</span><input id="priceORO" type="number" placeholder="130 DHS" /></div>
-              <div><span class="price-badge-label RIO">RIO</span><input id="priceRIO" type="number" placeholder="135 DHS" /></div>
-              <div><span class="price-badge-label ESPRESSO">ESPRESSO</span><input id="priceESPRESSO" type="number" placeholder="140 DHS" /></div>
-              <div><span class="price-badge-label CLASSIC">CLASSIC</span><input id="priceCLASSIC" type="number" placeholder="150 DHS" /></div>
-              <div><span class="price-badge-label SANTOS">SANTOS</span><input id="priceSANTOS" type="number" placeholder="180 DHS" /></div>
-              <div><span class="price-badge-label SUCRE">SUCRE</span><input id="priceSUCRE" type="number" placeholder="100 DHS" /></div>
+            <div class="prices-grid3">
+              <div class="price-spinner-cell"><span class="price-badge-label ORO">ORO</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceORO',-1)">−</button><input id="priceORO" type="number" value="130" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceORO',1)">+</button></div><span class="price-default-hint">défaut: 130</span></div>
+              <div class="price-spinner-cell"><span class="price-badge-label RIO">RIO</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceRIO',-1)">−</button><input id="priceRIO" type="number" value="135" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceRIO',1)">+</button></div><span class="price-default-hint">défaut: 135</span></div>
+              <div class="price-spinner-cell"><span class="price-badge-label ESPRESSO">ESPRESSO</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceESPRESSO',-1)">−</button><input id="priceESPRESSO" type="number" value="140" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceESPRESSO',1)">+</button></div><span class="price-default-hint">défaut: 140</span></div>
+              <div class="price-spinner-cell"><span class="price-badge-label CLASSIC">CLASSIC</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceCLASSIC',-1)">−</button><input id="priceCLASSIC" type="number" value="150" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceCLASSIC',1)">+</button></div><span class="price-default-hint">défaut: 150</span></div>
+              <div class="price-spinner-cell"><span class="price-badge-label SANTOS">SANTOS</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceSANTOS',-1)">−</button><input id="priceSANTOS" type="number" value="180" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceSANTOS',1)">+</button></div><span class="price-default-hint">défaut: 180</span></div>
+              <div class="price-spinner-cell"><span class="price-badge-label SUCRE">SUCRE</span><div class="price-spinner"><button type="button" class="spin-btn" onclick="adjustPrice('priceSUCRE',-1)">−</button><input id="priceSUCRE" type="number" value="100" min="1" step="1" /><button type="button" class="spin-btn" onclick="adjustPrice('priceSUCRE',1)">+</button></div><span class="price-default-hint">défaut: 100</span></div>
             </div>
             <div class="muted">Laisse vide pour utiliser les prix standard.</div>
             <button onclick="addClient()">✅ Créer client</button>
@@ -860,6 +968,45 @@
     </div>
   </div>
 
+  <div id="resetModal" class="modal-backdrop" onclick="backdropClose(event, 'resetModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔄 Réinitialiser</h3><button class="close-x" onclick="closeModal('resetModal')">✕</button></div>
+      <p class="muted">Action réservée à l'admin. Saisissez le code de confirmation pour réinitialiser les filtres.</p>
+      <label for="resetCode">Code de confirmation</label>
+      <input id="resetCode" type="text" placeholder="Saisir le code…" autocomplete="off" />
+      <div id="resetCodeError" style="color:var(--color-error);font-size:12px;min-height:16px;margin-top:-6px;"></div>
+      <button onclick="executeReset()">✅ Confirmer la réinitialisation</button>
+    </div>
+  </div>
+
+  <div id="editSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'editSaleModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>✏️ Modifier la vente</h3><button class="close-x" onclick="closeModal('editSaleModal')">✕</button></div>
+      <div id="editSaleCreator" class="muted" style="margin-bottom:10px;font-size:12px;"></div>
+      <label for="editSaleClient">Client</label>
+      <select id="editSaleClient"></select>
+      <label for="editSaleCategory">Catégorie</label>
+      <select id="editSaleCategory">
+        <option value="ORO">ORO</option>
+        <option value="RIO">RIO</option>
+        <option value="ESPRESSO">ESPRESSO</option>
+        <option value="CLASSIC">CLASSIC</option>
+        <option value="SANTOS">SANTOS</option>
+        <option value="SUCRE">SUCRE</option>
+      </select>
+      <label for="editSaleQty">Quantité</label>
+      <input id="editSaleQty" type="number" step="0.01" placeholder="Quantité" />
+      <label for="editSaleDate">📅 Date & Heure</label>
+      <input id="editSaleDate" type="datetime-local" />
+      <div class="checkbox-line">
+        <input type="checkbox" id="editSalePaid" />
+        <label for="editSalePaid" style="margin:0;flex:1;">✅ Payé</label>
+      </div>
+      <input type="hidden" id="editSaleId" />
+      <button onclick="saveEditSale()">💾 Enregistrer</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script type="module">
@@ -977,7 +1124,8 @@
       const value = document.getElementById(id).value;
       if (value === '') return null;
       const n = Number(value);
-      return isNaN(n) || n <= 0 ? null : n;
+      if (isNaN(n) || n <= 0) return null;
+      return n;
     }
 
     function updatePreview() {
@@ -992,20 +1140,15 @@
 
     function loadClientSelectors() {
       const salesSelect = document.getElementById('clientSelect');
-      const filterSelect = document.getElementById('filterClient');
       salesSelect.innerHTML = '';
-      filterSelect.innerHTML = "<option value=''>Tous clients</option>";
       state.clients.forEach(c => {
         const a = document.createElement('option');
         a.value = c.name;
         a.textContent = c.name;
         salesSelect.appendChild(a);
-
-        const b = document.createElement('option');
-        b.value = c.name;
-        b.textContent = c.name;
-        filterSelect.appendChild(b);
       });
+      // reset client search filter
+      document.getElementById('filterClientSearch').value = document.getElementById('filterClient').value || '';
     }
 
     function getFilteredSales() {
@@ -1090,27 +1233,30 @@
         totalDh += Number(s.total_price || 0);
         if (!s.paid) unpaidDh += Number(s.total_price || 0);
 
+        const creatorName = s.created_by ? (state.allUsers.find(u=>u.id===s.created_by)?.full_name || 'Utilisateur') : 'Inconnu';
         html += `
-          <div class="card">
+          <div class="card sale-card-compact">
             <div class="menu-wrap">
               <button class="menu-btn" onclick="toggleMenu(event, 'saleMenu${s.id}')">⋯</button>
               <div class="menu" id="saleMenu${s.id}">
+                <button onclick="openEditSale('${s.id}')">✏️ Modifier</button>
                 <button onclick="togglePaid('${s.id}', ${!s.paid})">${s.paid ? '❌ NON PAYÉ' : '✅ PAYÉ'}</button>
-                ${
-                  isManagerOrAdmin()
-                    ? `<button onclick="deleteSale('${s.id}')">🗑️ Supprimer</button>`
-                    : ''
-                }
+                ${isManagerOrAdmin() ? `<button onclick="deleteSale('${s.id}')">🗑️ Supprimer</button>` : ''}
+                <button disabled style="opacity:0.5;cursor:default;font-size:11px;">👤 ${creatorName}</button>
               </div>
             </div>
-            <span class="card-title">${s.client_name}</span>
-            <span class="badge ${s.category}">${s.category}</span>
-            <div class="line">
-              📦 ${formatStockValue(s.category, s.quantity)}<br>
-              💵 ${formatDh(s.unit_price)}/${s.category === 'SUCRE' ? 'paquet' : 'kg'}<br>
-              <strong>💰 ${formatDh(s.total_price)}</strong><br>
-              📅 ${new Date(s.created_at).toLocaleString()}<br>
-              ${s.paid ? '<span class="paid">✅ PAYÉ</span>' : '<span class="unpaid">❌ NON PAYÉ</span>'}
+            <div class="sale-card-row1">
+              <span class="sale-client-name">${s.client_name}</span>
+              <span class="badge ${s.category}" style="margin:0;padding:3px 9px;font-size:10px;">${s.category}</span>
+            </div>
+            <div class="sale-card-row2">
+              <span>📦 ${formatStockValue(s.category, s.quantity)}</span>
+              <span>💵 ${formatDh(s.unit_price)}/${s.category === 'SUCRE' ? 'pcs' : 'kg'}</span>
+              <strong>💰 ${formatDh(s.total_price)}</strong>
+            </div>
+            <div class="sale-card-row3">
+              <span class="sale-date">📅 ${new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+              ${s.paid ? '<span class="paid">✅</span>' : '<span class="unpaid">❌</span>'}
             </div>
           </div>`;
       });
@@ -1119,6 +1265,7 @@
       document.getElementById('totalQty').innerText = formatQty(totalQty);
       document.getElementById('totalDh').innerText = formatDh(totalDh);
       document.getElementById('unpaidDh').innerText = formatDh(unpaidDh);
+      renderAnalytics(data);
     }
 
     function renderStock() {
@@ -1211,6 +1358,14 @@
       if (!error) state.allUsers = data || [];
     }
 
+    async function updateLastSeen() {
+      try {
+        const userId = state.session?.user?.id;
+        if (!userId) return;
+        await supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', userId);
+      } catch(e) { /* non-blocking */ }
+    }
+
     async function loadCloudData() {
       const requests = [
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
@@ -1259,6 +1414,8 @@
 
       document.getElementById('usersBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
+      document.getElementById('resetAppBtn').classList.toggle('hidden', !isAdmin());
+      updateDarkModeBtn();
       initAccordions();
     }
 
@@ -1322,6 +1479,7 @@
         }
 
         await loadProfile(session.user.id);
+        updateLastSeen();
 
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('appShell').classList.remove('hidden');
@@ -1389,6 +1547,7 @@
 
     window.addClient = async function () {
       const name = document.getElementById('clientName').value.trim();
+      const addrNum = document.getElementById('clientAddrNum').value.trim();
       const addrType = document.getElementById('clientAddrType').value;
       const addrDetail = document.getElementById('clientAddrDetail').value.trim();
       const addrCity = document.getElementById('clientAddrCity').value.trim();
@@ -1396,10 +1555,11 @@
       if (!name) return alert('❌ Nom client obligatoire');
 
       // Build a clean formatted address string (backward-compatible plain string)
-      let address = '';
-      if (addrDetail && addrCity) address = `${addrType} ${addrDetail}, ${addrCity}`;
-      else if (addrDetail) address = `${addrType} ${addrDetail}`;
-      else if (addrCity) address = addrCity;
+      let addrParts = [];
+      if (addrNum) addrParts.push(addrNum);
+      if (addrDetail) addrParts.push(`${addrType} ${addrDetail}`);
+      if (addrCity) addrParts.push(addrCity);
+      const address = addrParts.join(', ');
 
       const payload = {
         name,
@@ -1418,7 +1578,7 @@
       const { error } = await supabase.from('clients').insert(payload);
       if (error) return alert(error.message);
 
-      ['clientName', 'clientAddrDetail', 'clientAddrCity', 'clientICE', 'priceORO', 'priceRIO', 'priceESPRESSO', 'priceCLASSIC', 'priceSANTOS', 'priceSUCRE'].forEach(id => {
+      ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE', 'priceORO', 'priceRIO', 'priceESPRESSO', 'priceCLASSIC', 'priceSANTOS', 'priceSUCRE'].forEach(id => {
         document.getElementById(id).value = '';
       });
       document.getElementById('clientAddrType').value = 'Rue';
@@ -1546,6 +1706,18 @@
       showSessionStatus('✅ Stock défini', 'success');
     };
 
+    function getActivityStatus(lastSeen) {
+      if (!lastSeen) return '<span class="activity-status offline">Jamais connecté</span>';
+      const diff = Date.now() - new Date(lastSeen).getTime();
+      const mins = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      if (mins < 5) return '<span class="activity-status online">🟢 En ligne</span>';
+      if (mins < 60) return `<span class="activity-status recent">Actif il y a ${mins} min</span>`;
+      if (hours < 24) return `<span class="activity-status hours">Actif il y a ${hours} h</span>`;
+      return `<span class="activity-status offline">Actif il y a ${days} j</span>`;
+    }
+
     function renderUsersList() {
       const list = document.getElementById('usersList');
       list.innerHTML = state.allUsers
@@ -1556,11 +1728,13 @@
               : user.role === 'manager'
                 ? '🔑 Manager'
                 : 'Employé';
+            const activityHtml = getActivityStatus(user.last_seen_at);
             return `
         <div class="user-row">
           <div class="user-info">
             <div class="user-email">${user.full_name || user.email}</div>
             <div class="user-role">👤 ${user.email} • ${roleLabel}</div>
+            <div class="user-activity">${activityHtml}</div>
           </div>
           ${
             user.id === state.session?.user?.id
@@ -1662,6 +1836,351 @@
     };
 
     window.updatePreview = updatePreview;
+
+    window.onFilterClientInput = function() {
+      const q = document.getElementById('filterClientSearch').value.trim().toLowerCase();
+      if (!q) {
+        document.getElementById('filterClient').value = '';
+        renderSales();
+      }
+      renderClientDropdown(q);
+    };
+
+    window.showClientDropdown = function() {
+      const q = document.getElementById('filterClientSearch').value.trim().toLowerCase();
+      renderClientDropdown(q);
+    };
+
+    function renderClientDropdown(q) {
+      const drop = document.getElementById('clientSearchDrop');
+      const current = document.getElementById('filterClient').value;
+      const filtered = q
+        ? state.clients.filter(c => c.name.toLowerCase().includes(q))
+        : state.clients;
+
+      let html = `<div class="csearch-item${!current ? ' selected' : ''}" onclick="selectFilterClient('')">Tous les clients</div>`;
+      filtered.forEach(c => {
+        html += `<div class="csearch-item${c.name === current ? ' selected' : ''}" onclick="selectFilterClient('${c.name.replace(/'/g,"\\'")}')">
+          ${c.name}
+        </div>`;
+      });
+      drop.innerHTML = html;
+      drop.classList.add('open');
+
+      setTimeout(() => {
+        document.addEventListener('click', closeClientDropdown, { once: true, capture: true });
+      }, 50);
+    }
+
+    window.selectFilterClient = function(name) {
+      document.getElementById('filterClient').value = name;
+      document.getElementById('filterClientSearch').value = name;
+      document.getElementById('clientSearchDrop').classList.remove('open');
+      renderSales();
+    };
+
+    function closeClientDropdown(e) {
+      const wrap = document.getElementById('clientSearchWrap');
+      if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('clientSearchDrop').classList.remove('open');
+      }
+    }
+
+    // ── Dark mode ───────────────────────────────────────────────────────────────
+    (function() {
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark');
+      }
+    })();
+
+    window.toggleDarkMode = function() {
+      closeAllMenus();
+      const isDark = document.body.classList.toggle('dark');
+      localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+      document.getElementById('darkModeBtn').textContent = isDark ? '☀️ Mode clair' : '🌙 Mode sombre';
+    };
+
+    function updateDarkModeBtn() {
+      const btn = document.getElementById('darkModeBtn');
+      if (btn) btn.textContent = document.body.classList.contains('dark') ? '☀️ Mode clair' : '🌙 Mode sombre';
+    }
+
+    // ── Secure Reset ────────────────────────────────────────────────────────────
+    const RESET_CODE = 'RESET';
+
+    window.openResetModal = function() {
+      closeAllMenus();
+      if (!isAdmin()) return;
+      document.getElementById('resetCode').value = '';
+      document.getElementById('resetCodeError').textContent = '';
+      openModal('resetModal');
+    };
+
+    window.executeReset = function() {
+      const code = document.getElementById('resetCode').value.trim().toUpperCase();
+      if (code !== RESET_CODE) {
+        document.getElementById('resetCodeError').textContent = '❌ Code incorrect. Saisissez : RESET';
+        return;
+      }
+      closeModal('resetModal');
+      document.getElementById('filterClient').value = '';
+      document.getElementById('filterClientSearch').value = '';
+      document.getElementById('filterCategory').value = '';
+      document.getElementById('filterDate').value = '';
+      renderSales();
+      showSessionStatus('✅ Filtres réinitialisés', 'success');
+    };
+
+    // ── Analytics ───────────────────────────────────────────────────────────────
+    function renderAnalytics(data) {
+      const accordion = document.getElementById('analyticsAccordion');
+      if (!accordion) return;
+
+      if (!isManagerOrAdmin()) {
+        accordion.classList.add('hidden');
+        return;
+      }
+      accordion.classList.remove('hidden');
+
+      const content = document.getElementById('analyticsContent');
+      if (!content) return;
+
+      const cats = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
+      const PURCHASE_PRICES = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
+
+      let rows = '';
+      let totQty = 0, totRevenu = 0, totAchat = 0, totMarge = 0;
+
+      cats.forEach(cat => {
+        const catSales = data.filter(s => s.category === cat);
+        if (catSales.length === 0) return;
+        const qty = catSales.reduce((s, x) => s + Number(x.quantity || 0), 0);
+        const revenu = catSales.reduce((s, x) => s + Number(x.total_price || 0), 0);
+        const purchaseUnit = PURCHASE_PRICES[cat];
+        const achat = qty * purchaseUnit;
+        const marge = revenu - achat;
+        const margeClass = marge >= 0 ? 'margin-positive' : 'margin-negative';
+        totQty += qty; totRevenu += revenu; totAchat += achat; totMarge += marge;
+
+        rows += `<tr>
+          <td><span class="badge ${cat}" style="margin:0;padding:3px 8px;font-size:10px;">${cat}</span></td>
+          <td>${formatQty(qty)}</td>
+          <td>${formatDh(achat)}</td>
+          <td>${formatDh(revenu)}</td>
+          <td class="${margeClass}">${formatDh(marge)}</td>
+        </tr>`;
+      });
+
+      const totMargeClass = totMarge >= 0 ? 'margin-positive' : 'margin-negative';
+      rows += `<tr class="analytics-total-row">
+        <td>TOTAL</td>
+        <td>${formatQty(totQty)}</td>
+        <td>${formatDh(totAchat)}</td>
+        <td>${formatDh(totRevenu)}</td>
+        <td class="${totMargeClass}">${formatDh(totMarge)}</td>
+      </tr>`;
+
+      const paidAmount = data.filter(s => s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
+      const unpaidAmount = data.filter(s => !s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
+
+      content.innerHTML = `
+        <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">Prix d'achat estimés. Filtres actifs.</div>
+        <table class="analytics-table">
+          <thead><tr><th>Gamme</th><th>Qté</th><th>Achat</th><th>Revente</th><th>Marge</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <div class="preview-chip" style="flex:1;"><span class="pchip-label">✅ Encaissé</span><span class="pchip-val" style="color:#148c37">${formatDh(paidAmount)}</span></div>
+          <div class="preview-chip" style="flex:1;"><span class="pchip-label">❌ En attente</span><span class="pchip-val" style="color:#cc2d2d">${formatDh(unpaidAmount)}</span></div>
+        </div>
+      `;
+    }
+
+    // ── Edit sale ────────────────────────────────────────────────────────────────
+    window.openEditSale = function(saleId) {
+      closeAllMenus();
+      const sale = state.sales.find(s => s.id === saleId);
+      if (!sale) return;
+
+      document.getElementById('editSaleId').value = saleId;
+
+      const clientSel = document.getElementById('editSaleClient');
+      clientSel.innerHTML = '';
+      state.clients.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        if (c.name === sale.client_name) opt.selected = true;
+        clientSel.appendChild(opt);
+      });
+
+      document.getElementById('editSaleCategory').value = sale.category;
+      document.getElementById('editSaleQty').value = sale.quantity;
+
+      const d = new Date(sale.created_at);
+      const offset = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - offset * 60000);
+      document.getElementById('editSaleDate').value = local.toISOString().slice(0, 16);
+
+      document.getElementById('editSalePaid').checked = !!sale.paid;
+
+      const creator = sale.created_by ? state.allUsers.find(u => u.id === sale.created_by) : null;
+      document.getElementById('editSaleCreator').textContent = creator
+        ? `👤 Créée par : ${creator.full_name || creator.email}`
+        : '👤 Créateur inconnu';
+
+      openModal('editSaleModal');
+    };
+
+    window.saveEditSale = async function() {
+      const saleId = document.getElementById('editSaleId').value;
+      const clientName = document.getElementById('editSaleClient').value;
+      const category = document.getElementById('editSaleCategory').value;
+      const quantity = parseFloat(document.getElementById('editSaleQty').value);
+      const rawDate = document.getElementById('editSaleDate').value;
+      const paid = document.getElementById('editSalePaid').checked;
+
+      if (!clientName) return alert('❌ Client obligatoire');
+      if (isNaN(quantity) || quantity <= 0) return alert('❌ Quantité invalide');
+
+      const sale = state.sales.find(s => s.id === saleId);
+      if (!sale) return;
+
+      const client = state.clients.find(c => c.name === clientName);
+      const unitPrice = getClientPrice(clientName, category);
+      const totalPrice = Number((quantity * unitPrice).toFixed(2));
+      const createdAt = rawDate ? new Date(rawDate).toISOString() : sale.created_at;
+
+      if (sale.category !== category || sale.quantity !== quantity) {
+        await supabase.from('stocks').upsert({
+          category: sale.category,
+          quantity: Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0)
+        });
+        const newStock = Number(state.stocks[category] || 0) - quantity;
+        if (newStock < 0) { alert('❌ Stock insuffisant pour ' + category); return; }
+        await supabase.from('stocks').upsert({ category, quantity: newStock });
+      }
+
+      const { error } = await supabase.from('sales').update({
+        client_id: client?.id || null,
+        client_name: clientName,
+        category,
+        quantity,
+        unit_price: unitPrice,
+        total_price: totalPrice,
+        paid,
+        created_at: createdAt
+      }).eq('id', saleId);
+
+      if (error) return alert('❌ ' + error.message);
+      closeModal('editSaleModal');
+      await loadCloudData();
+      paintApp();
+      showSessionStatus('✅ Vente modifiée', 'success');
+    };
+
+    // ── Price spinners ───────────────────────────────────────────────────────────
+    window.adjustPrice = function(id, delta) {
+      const input = document.getElementById(id);
+      const current = parseInt(input.value, 10) || 0;
+      input.value = Math.max(1, current + delta);
+    };
+
+    // ── Morocco cities autocomplete ──────────────────────────────────────────────
+    const MOROCCO_CITIES = [
+      'Casablanca','Rabat','Fès','Marrakech','Agadir','Tanger','Meknès','Oujda','Kénitra','Tétouan',
+      'Safi','El Jadida','Khouribga','Béni Mellal','Nador','Taza','Settat','Berrechid','Khémisset',
+      'Inezgane','Ksar El Kébir','Larache','Guelmim','Berkane','Taourirt','Tiznit','Sidi Slimane',
+      'Sidi Kacem','Al Hoceïma','Dakhla','Laâyoune','Errachidia','Ouarzazate','Taroudant','Ifrane',
+      'Azrou','Midelt','Tinghir','Zagora','Tan-Tan','Essaouira','Mohammedia','Temara','Salé',
+      'Fquih Ben Salah','Youssoufia','Demnate','Azilal','Chefchaouen','Ouazzane','Souk El Arbaa',
+      'Sidi Bennour','El Kelaa des Sraghna','Kelaat Sraghna','Bouznika','Benslimane','Aïn Harrouda'
+    ];
+
+    window.onCityInput = function() {
+      const q = document.getElementById('clientAddrCity').value.trim().toLowerCase();
+      renderCityDrop(q);
+    };
+
+    window.showCityDrop = function() {
+      const q = document.getElementById('clientAddrCity').value.trim().toLowerCase();
+      renderCityDrop(q);
+    };
+
+    function renderCityDrop(q) {
+      const drop = document.getElementById('citySearchDrop');
+      if (!drop) return;
+      const filtered = q ? MOROCCO_CITIES.filter(c => c.toLowerCase().includes(q)) : MOROCCO_CITIES.slice(0, 15);
+      if (filtered.length === 0) { drop.classList.remove('open'); return; }
+      drop.innerHTML = filtered.map(c =>
+        `<div class="csearch-item" onclick="selectCity('${c.replace(/'/g,"\\'")}')"> ${c}</div>`
+      ).join('');
+      drop.classList.add('open');
+      setTimeout(() => {
+        document.addEventListener('click', closeCityDrop, { once: true, capture: true });
+      }, 50);
+    }
+
+    window.selectCity = function(city) {
+      document.getElementById('clientAddrCity').value = city;
+      document.getElementById('citySearchDrop').classList.remove('open');
+    };
+
+    function closeCityDrop(e) {
+      const wrap = document.getElementById('citySearchWrap');
+      if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('citySearchDrop').classList.remove('open');
+      }
+    }
+
+    // ── Pull to refresh ─────────────────────────────────────────────────────────
+    (function() {
+      let startY = 0;
+      let pulling = false;
+      const THRESHOLD = 70;
+
+      document.addEventListener('touchstart', e => {
+        if (window.scrollY === 0 && document.getElementById('appShell') && !document.getElementById('appShell').classList.contains('hidden')) {
+          startY = e.touches[0].clientY;
+          pulling = true;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchmove', e => {
+        if (!pulling) return;
+        const dy = e.touches[0].clientY - startY;
+        if (dy < 0) { pulling = false; return; }
+        const ind = document.getElementById('pullIndicator');
+        const h = Math.min(dy * 0.5, 60);
+        ind.style.height = h + 'px';
+        if (h > 30) {
+          ind.classList.add('visible');
+          document.getElementById('pullInnerText').textContent = dy > THRESHOLD * 1.5 ? '↑ Relâcher pour actualiser' : '↓ Tirer pour actualiser';
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', async e => {
+        if (!pulling) return;
+        pulling = false;
+        const dy = e.changedTouches[0].clientY - startY;
+        const ind = document.getElementById('pullIndicator');
+        if (dy > THRESHOLD) {
+          ind.style.height = '48px';
+          document.getElementById('pullInnerText').innerHTML = '<span class="pull-spin">⟳</span> Actualisation…';
+          try {
+            await loadCloudData();
+            paintApp();
+            showSessionStatus('✅ Données actualisées', 'success', 2000);
+          } catch(e) { showSessionStatus('❌ Erreur actualisation', 'error'); }
+        }
+        setTimeout(() => {
+          ind.style.height = '0px';
+          ind.classList.remove('visible');
+        }, 300);
+      }, { passive: true });
+    })();
+
+    document.addEventListener('click', closeAllMenus);
 
     window.show = function(section) {
       const ids = ['sales', 'clients', 'stock', 'logs'];
@@ -2132,7 +2651,6 @@
     document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
     document.getElementById('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
 
-    document.addEventListener('click', closeAllMenus);
     window.addEventListener('resize', initAccordions);
 
     const { data: initial } = await supabase.auth.getSession();
