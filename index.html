@@ -1277,12 +1277,12 @@
       <div class="settings-option">
         <div class="title">📦 Alertes stock bas</div>
         <div class="checkbox-line" style="margin-top:8px;">
-          <input type="checkbox" id="lowStockEnabled" onchange="saveLowStockSettings()" />
+          <input type="checkbox" id="lowStockEnabled" aria-label="Activer les alertes de stock bas — affiche une pastille quand le stock est sous le seuil" onchange="saveLowStockSettings()" />
           <label for="lowStockEnabled" style="margin:0;flex:1;">Activer les alertes stock bas</label>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
           <label for="lowStockThreshold" style="margin:0;font-size:12px;text-transform:none;letter-spacing:0;flex-shrink:0;">Seuil :</label>
-          <input id="lowStockThreshold" type="number" min="0" step="0.5" value="5" style="width:80px;margin:0;" oninput="saveLowStockSettings()" />
+          <input id="lowStockThreshold" type="number" min="0" max="9999" step="0.5" value="5" style="width:80px;margin:0;" oninput="saveLowStockSettings()" />
           <span style="font-size:12px;color:var(--color-text-muted);">kg / paquet</span>
         </div>
       </div>
@@ -1467,6 +1467,9 @@
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
     const PURCHASE_PRICES = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
+    const LS_LOW_STOCK_ENABLED = 'lowStockEnabled';
+    const LS_LOW_STOCK_THRESHOLD = 'lowStockThreshold';
+    const LOW_STOCK_DEFAULT = 5;
 
     const rememberCheckbox = document.getElementById('rememberSession');
     const customStorage = {
@@ -1757,8 +1760,8 @@
 
     function renderStock() {
       const list = document.getElementById('stockList');
-      const lowEnabled = localStorage.getItem('lowStockEnabled') === 'true';
-      const lowThreshold = parseFloat(localStorage.getItem('lowStockThreshold') || '5');
+      const lowEnabled = localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true';
+      const lowThreshold = parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT);
       let anyLow = false;
       let html = '';
       Object.keys(DEFAULT_STOCKS).forEach(cat => {
@@ -2397,8 +2400,8 @@
 
     window.openSettingsHubModal = function () {
       // Restore low-stock settings in UI
-      const enabled = localStorage.getItem('lowStockEnabled') === 'true';
-      const threshold = parseFloat(localStorage.getItem('lowStockThreshold') || '5');
+      const enabled = localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true';
+      const threshold = parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT);
       const cbEl = document.getElementById('lowStockEnabled');
       const thEl = document.getElementById('lowStockThreshold');
       if (cbEl) cbEl.checked = enabled;
@@ -2409,8 +2412,8 @@
     window.saveLowStockSettings = function () {
       const cbEl = document.getElementById('lowStockEnabled');
       const thEl = document.getElementById('lowStockThreshold');
-      if (cbEl) localStorage.setItem('lowStockEnabled', cbEl.checked ? 'true' : 'false');
-      if (thEl) localStorage.setItem('lowStockThreshold', thEl.value);
+      if (cbEl) localStorage.setItem(LS_LOW_STOCK_ENABLED, cbEl.checked ? 'true' : 'false');
+      if (thEl) localStorage.setItem(LS_LOW_STOCK_THRESHOLD, thEl.value);
       renderStock();
     };
 
