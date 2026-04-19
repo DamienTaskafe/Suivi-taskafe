@@ -187,7 +187,7 @@
     hr { border: none; border-top: 1px solid var(--color-border); margin: var(--spacing-xl) 0; }
     .muted { font-size: 12px; color: var(--color-text-muted); line-height: 1.6; }
 
-    .auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: var(--spacing-2xl); }
+    .auth-screen { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: var(--spacing-2xl); padding-top: max(var(--spacing-2xl), 10vh); }
     .auth-card {
       width: 100%;
       max-width: 430px;
@@ -199,12 +199,47 @@
       box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
       color: white;
     }
+    .auth-card input[type="email"],
+    .auth-card input[type="password"] { margin: 5px 0; }
 
     .auth-brand { text-align: center; margin-bottom: var(--spacing-xl); }
-    .auth-brand img { width: 200px; height: 200px; object-fit: cover; border-radius: 50%; box-shadow: 0 10px 24px rgba(0,0,0,0.22); margin-bottom: var(--spacing-lg); }
     .auth-brand h1 { margin: 0 0 var(--spacing-sm); font-size: 32px; letter-spacing: 1px; }
     .auth-brand p { margin: 0; opacity: 0.86; font-size: 13px; }
     .auth-card label { color: rgba(255,255,255,0.9); }
+
+    /* ── Logo glow & shine effect ── */
+    .logo-wrap {
+      display: inline-block;
+      position: relative;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      margin-bottom: var(--spacing-lg);
+    }
+    .logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22), 0 0 36px 8px rgba(210,175,100,0.48), 0 0 60px 16px rgba(210,175,100,0.2);
+      display: block;
+    }
+    .logo-shine {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0) 55%);
+      pointer-events: none;
+      animation: logoShineIdle 5s ease-in-out infinite;
+      will-change: transform, opacity;
+    }
+    @keyframes logoShineIdle {
+      0%   { transform: rotate(0deg);   opacity: 0.55; }
+      25%  { transform: rotate(-12deg); opacity: 0.85; }
+      50%  { transform: rotate(8deg);   opacity: 0.55; }
+      75%  { transform: rotate(20deg);  opacity: 0.85; }
+      100% { transform: rotate(0deg);   opacity: 0.55; }
+    }
 
     .auth-error {
       display: none;
@@ -837,6 +872,58 @@
     #editClientModal .price-scroll-row .price-scroll-item {
       flex: 0 0 calc(33.333% - 6px);
     }
+
+    /* ── Ventes récentes accordion ── */
+    .vr-acc .accordion-inner { padding: 0 !important; }
+    .vr-acc.open .accordion-inner { padding: 0 !important; }
+    .vr-acc .sales-scroll-area { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+
+    /* ── Ventes récentes: client groups & sale items ── */
+    .vr-client-group {
+      padding: 8px 12px 4px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .vr-client-group:last-child { border-bottom: none; }
+    .vr-client-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--color-text-muted);
+      margin-bottom: 5px;
+      padding-bottom: 3px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .vr-sale-item {
+      padding: 7px 8px;
+      background: rgba(255,255,255,0.18);
+      border-radius: var(--radius-sm);
+      margin-bottom: 5px;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    body.dark .vr-sale-item { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.07); }
+    .vr-sale-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 3px;
+    }
+    .vr-sale-qty { font-size: 12px; }
+    .vr-sale-total { font-size: 13px; font-weight: 700; }
+    .vr-sale-total.paid { color: var(--color-success); }
+    .vr-sale-total.unpaid { color: var(--color-error); }
+    .vr-sale-meta { font-size: 11px; color: var(--color-text-muted); margin-bottom: 5px; }
+    .vr-sale-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .vr-sale-actions button {
+      flex: 1;
+      min-width: 80px;
+      padding: 6px 8px;
+      font-size: 12px;
+      margin: 0;
+      width: auto;
+    }
+    .vr-sale-actions .btn-danger { flex: 0; min-width: 0; padding: 6px 10px; background: linear-gradient(180deg,#8f1111 0%,#5e0808 100%); }
   </style>
 </head>
 
@@ -853,16 +940,17 @@
   <div id="authScreen" class="auth-screen">
     <div class="auth-card">
       <div class="auth-brand">
-        <img src="icon-512.png.PNG" alt="TASKAFÉ" />
+        <div class="logo-wrap">
+          <img src="icon-512.png.PNG" alt="TASKAFÉ" />
+          <div class="logo-shine"></div>
+        </div>
         <h1>TASKAFÉ</h1>
         <p>Gestion de ventes cloud sécurisée</p>
       </div>
 
-      <label for="loginEmail">📧 Email</label>
       <input id="loginEmail" type="email" placeholder="Email" autocomplete="username"
              autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" />
 
-      <label for="loginPassword">🔐 Mot de passe</label>
       <input id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password"
              autocapitalize="none" autocorrect="off" spellcheck="false" />
 
@@ -873,7 +961,6 @@
 
       <button id="loginBtn" type="button">Se connecter</button>
       <div id="authError" class="auth-error"></div>
-      <div class="muted">Tes données restent sécurisées sur Supabase.</div>
     </div>
   </div>
 
@@ -958,9 +1045,16 @@
 
         <hr />
 
-        <h3>📊 Ventes récentes</h3>
-        <div class="sales-scroll-area" id="salesScrollArea">
-          <div id="salesList"></div>
+        <div class="accordion vr-acc open" id="ventesRecentesAcc">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>📊 Ventes récentes</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="accordion-inner">
+            <div class="sales-scroll-area" id="salesScrollArea">
+              <div id="salesList"></div>
+            </div>
+          </div>
         </div>
         <button id="salesShowMoreBtn" class="secondary sales-show-more" onclick="showMoreSales()" style="display:none;">↕ Défiler pour voir plus</button>
 
@@ -1482,49 +1576,59 @@
     function renderSales() {
       const data = getFilteredSales().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       _allSalesData = data;
-      _salesShown = data.length; // render all, scrollable container limits visible area
+      _salesShown = data.length;
 
       const list = document.getElementById('salesList');
       let html = '';
 
+      // Group sales by client name, preserving insertion order
+      const grouped = {};
+      const clientOrder = [];
       data.forEach(s => {
-        const creatorName = s.created_by ? (state.allUsers.find(u=>u.id===s.created_by)?.full_name || 'Utilisateur') : 'Inconnu';
-        const dateStr = new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
-        html += `
-          <div class="accordion sale-acc">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-              <div class="sale-acc-head">
-                <span class="sale-acc-client">${s.client_name}</span>
-                <span class="badge ${s.category}" style="margin:0;padding:2px 7px;font-size:10px;">${s.category}</span>
-                <span class="sale-acc-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
-                <span class="sale-acc-paid">${s.paid ? '✅' : '❌'}</span>
-              </div>
-              <span class="arrow">▼</span>
-            </div>
-            <div class="accordion-inner">
-              <div class="sale-acc-body">
-                <div class="sale-acc-detail">
-                  <span>📦 ${formatStockValue(s.category, s.quantity)}</span>
-                  <span>💵 ${formatDh(s.unit_price)}/${s.category === 'SUCRE' ? 'pcs' : 'kg'}</span>
-                  <span>📅 ${dateStr}</span>
-                  <span>👤 ${creatorName}</span>
+        const key = s.client_name || 'Inconnu';
+        if (!grouped[key]) { grouped[key] = []; clientOrder.push(key); }
+        grouped[key].push(s);
+      });
+
+      if (clientOrder.length === 0) {
+        html = `<div class="empty-state">Aucune vente trouvée.</div>`;
+      } else {
+        clientOrder.forEach(clientName => {
+          const clientSales = grouped[clientName];
+          html += `<div class="vr-client-group"><div class="vr-client-title">${clientName}</div>`;
+          clientSales.forEach(s => {
+            const dateStr = new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+            const creatorName = s.created_by ? (state.allUsers.find(u=>u.id===s.created_by)?.full_name || 'Utilisateur') : 'Inconnu';
+            html += `
+              <div class="vr-sale-item">
+                <div class="vr-sale-row">
+                  <span class="badge ${s.category}" style="padding:2px 7px;font-size:10px;margin:0;">${s.category}</span>
+                  <span class="vr-sale-qty">${formatStockValue(s.category, s.quantity)}</span>
+                  <span class="vr-sale-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
+                  <span style="margin-left:auto;">${s.paid ? '✅' : '❌'}</span>
                 </div>
-                <div class="sale-acc-actions">
+                <div class="vr-sale-meta">📅 ${dateStr} · 👤 ${creatorName}</div>
+                <div class="vr-sale-actions">
                   <button class="secondary" onclick="openEditSale('${s.id}')">✏️ Modifier</button>
                   <button class="secondary" onclick="togglePaid('${s.id}', ${!s.paid})">${s.paid ? '❌ Impayé' : '✅ Payé'}</button>
                   ${isManagerOrAdmin() ? `<button class="btn-danger" onclick="deleteSale('${s.id}')">🗑️</button>` : ''}
                 </div>
-              </div>
-            </div>
-          </div>`;
-      });
-
-      list.innerHTML = html || `<div class="empty-state">Aucune vente trouvée.</div>`;
-      document.getElementById('salesShowMoreBtn').style.display = data.length > SALES_PAGE ? 'block' : 'none';
-      if (data.length > SALES_PAGE) {
-        document.getElementById('salesShowMoreBtn').textContent = `↕ ${data.length} ventes — défiler`;
+              </div>`;
+          });
+          html += `</div>`;
+        });
       }
+
+      list.innerHTML = html;
+      document.getElementById('salesShowMoreBtn').style.display = 'none';
+
+      // Re-init and reopen the ventes-récentes accordion after DOM update
       initAccordions();
+      const vrAcc = document.getElementById('ventesRecentesAcc');
+      if (vrAcc && vrAcc.classList.contains('open')) {
+        const inner = vrAcc.querySelector('.accordion-inner');
+        if (inner) inner.style.maxHeight = inner.scrollHeight + 'px';
+      }
 
       let totalQty = 0;
       let totalDh = 0;
@@ -3120,6 +3224,38 @@
     document.getElementById('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
 
     window.addEventListener('resize', initAccordions);
+
+    // ── Logo shine: device orientation effect ────────────────────────────────
+    (function initLogoShine() {
+      const shine = document.querySelector('.logo-shine');
+      if (!shine) return;
+
+      function applyOrientation(beta, gamma) {
+        const angle = 135 + (gamma || 0) * 1.8 + (beta || 0) * 0.6;
+        shine.style.animation = 'none';
+        shine.style.background = `linear-gradient(${angle}deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 55%)`;
+        shine.style.opacity = '0.9';
+      }
+
+      if (typeof DeviceOrientationEvent !== 'undefined') {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+          // iOS 13+ requires permission; request on first login button tap
+          const loginBtn = document.getElementById('loginBtn');
+          if (loginBtn) {
+            loginBtn.addEventListener('touchstart', function askPermission() {
+              DeviceOrientationEvent.requestPermission().then(permResult => {
+                if (permResult === 'granted') {
+                  window.addEventListener('deviceorientation', e => applyOrientation(e.beta, e.gamma), { passive: true });
+                }
+              }).catch(() => {});
+              loginBtn.removeEventListener('touchstart', askPermission);
+            }, { passive: true });
+          }
+        } else {
+          window.addEventListener('deviceorientation', e => applyOrientation(e.beta, e.gamma), { passive: true });
+        }
+      }
+    })();
 
     const { data: initial } = await supabase.auth.getSession();
     await bootFromSession(initial.session);
