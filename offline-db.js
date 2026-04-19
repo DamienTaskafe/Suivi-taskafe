@@ -111,6 +111,17 @@ export async function removePendingOp(id) {
   });
 }
 
+/** Update (upsert) a pending op record in-place (uses its existing id key). */
+export async function updatePendingOp(op) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('pendingOps', 'readwrite');
+    tx.objectStore('pendingOps').put(op);
+    tx.oncomplete = () => resolve();
+    tx.onerror = e => reject(e.target.error);
+  });
+}
+
 /** Count pending ops. */
 export async function countPendingOps() {
   const db = await openDB();
