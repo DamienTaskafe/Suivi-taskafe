@@ -201,7 +201,7 @@
     }
 
     .auth-brand { text-align: center; margin-bottom: var(--spacing-xl); }
-    .auth-brand img { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; box-shadow: 0 10px 24px rgba(0,0,0,0.22); margin-bottom: var(--spacing-lg); }
+    .auth-brand img { width: 200px; height: 200px; object-fit: cover; border-radius: 50%; box-shadow: 0 10px 24px rgba(0,0,0,0.22); margin-bottom: var(--spacing-lg); }
     .auth-brand h1 { margin: 0 0 var(--spacing-sm); font-size: 32px; letter-spacing: 1px; }
     .auth-brand p { margin: 0; opacity: 0.86; font-size: 13px; }
     .auth-card label { color: rgba(255,255,255,0.9); }
@@ -325,8 +325,9 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.08);
     }
 
-    .date-actions { display: grid; grid-template-columns: 3fr 1fr; gap: var(--spacing-md); align-items: stretch; }
+    .date-actions { display: grid; grid-template-columns: 3fr 1fr; gap: var(--spacing-md); align-items: center; }
     .date-actions input, #filterDate { margin: var(--spacing-md) 0; height: 44px; }
+    #sales .date-actions input { margin: var(--spacing-md) 0; }
 
     .small-btn {
       height: 44px; white-space: nowrap;
@@ -606,6 +607,7 @@
       --color-border: rgba(255,255,255,0.08);
       --color-primary: #f4efe8;
       --color-secondary: #c8beb6;
+      background-color: #0f0f0f;
     }
     body.dark .section-shell { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
     body.dark .card { background: rgba(30,26,22,0.98); border-color: rgba(255,255,255,0.07); }
@@ -821,11 +823,30 @@
       align-items: start;
     }
     .edit-addr-grid input, .edit-addr-grid select { margin: 0; }
+
+    /* ── Nouveau client: Nom field larger ── */
+    #clientName { height: 88px; min-height: 88px; }
+
+    /* ── Prix par gamme: 2-row grid layout ── */
+    #clients .price-scroll-row,
+    #editClientModal .price-scroll-row {
+      flex-wrap: wrap;
+      overflow-x: visible;
+    }
+    #clients .price-scroll-row .price-scroll-item,
+    #editClientModal .price-scroll-row .price-scroll-item {
+      flex: 0 0 calc(33.333% - 6px);
+    }
   </style>
 </head>
 
 <body>
-  <script>if(localStorage.getItem('darkMode')==='true')document.body.classList.add('dark');</script>
+  <script>
+    if(localStorage.getItem('darkMode')==='true') {
+      document.body.classList.add('dark');
+      document.body.style.backgroundColor = '#0f0f0f';
+    }
+  </script>
   <div id="sessionStatus" class="session-status"></div>
   <div id="pullIndicator"><div class="pull-inner" id="pullInnerText">↓ Tirer pour actualiser</div></div>
 
@@ -870,6 +891,8 @@
           <button onclick="openSettingsHubModal()">⚙️ Paramètres</button>
           <button id="darkModeBtn" onclick="toggleDarkMode()">🌙 Mode sombre</button>
           <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden">💲 Prix produits</button>
+          <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden">📈 Analytiques</button>
+          <button onclick="openResumeModal()">📊 Résumé rapide</button>
           <button id="usersBtn" onclick="openUsersModal()" class="hidden">👥 Gérer utilisateurs</button>
           <button id="resetAppBtn" class="hidden" onclick="openResetModal()">🔄 Réinitialiser filtres</button>
           <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()">📋 Logs</button>
@@ -940,24 +963,6 @@
           <div id="salesList"></div>
         </div>
         <button id="salesShowMoreBtn" class="secondary sales-show-more" onclick="showMoreSales()" style="display:none;">↕ Défiler pour voir plus</button>
-
-        <div class="accordion hidden" id="analyticsAccordion">
-          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📈 Analytiques</span><span class="arrow">▼</span></div>
-          <div class="accordion-inner">
-            <div id="analyticsContent"></div>
-          </div>
-        </div>
-
-        <div class="accordion">
-          <div class="accordion-header" onclick="toggleAccordion(this)"><span>📊 Résumé rapide</span><span class="arrow">▼</span></div>
-          <div class="accordion-inner">
-            <div class="summary-grid">
-              <div class="summary-box"><div class="label">Total quantité</div><div class="value" id="totalQty">0</div></div>
-              <div class="summary-box"><div class="label">Revenu total</div><div class="value" id="totalDh">0 DHS</div></div>
-              <div class="summary-box"><div class="label">Non payé</div><div class="value" id="unpaidDh">0 DHS</div></div>
-            </div>
-          </div>
-        </div>
 
         <div class="accordion">
           <div class="accordion-header" onclick="toggleAccordion(this)"><span>🔍 Filtres</span><span class="arrow">▼</span></div>
@@ -1234,6 +1239,24 @@
         <div class="price-scroll-item"><span class="price-badge-label SUCRE">SUCRE</span><div class="price-compact-ctrl"><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppSUCRE',-1)">−</button><input id="ppSUCRE" type="number" value="75" min="1" step="1" /><button type="button" class="spin-btn-sm" onclick="adjustPrice('ppSUCRE',1)">+</button></div></div>
       </div>
       <button onclick="saveProductPrices()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <div id="resumeModal" class="modal-backdrop" onclick="backdropClose(event, 'resumeModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>📊 Résumé rapide</h3><button class="close-x" onclick="closeModal('resumeModal')">✕</button></div>
+      <div class="summary-grid">
+        <div class="summary-box"><div class="label">Total quantité</div><div class="value" id="totalQty">0</div></div>
+        <div class="summary-box"><div class="label">Revenu total</div><div class="value" id="totalDh">0 DHS</div></div>
+        <div class="summary-box"><div class="label">Non payé</div><div class="value" id="unpaidDh">0 DHS</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="analyticsModal" class="modal-backdrop" onclick="backdropClose(event, 'analyticsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>📈 Analytiques</h3><button class="close-x" onclick="closeModal('analyticsModal')">✕</button></div>
+      <div id="analyticsContent"></div>
     </div>
   </div>
 
@@ -1690,6 +1713,7 @@
       document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
       document.getElementById('resetAppBtn').classList.toggle('hidden', !isAdmin());
       document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('analyticsBtn').classList.toggle('hidden', !isManagerOrAdmin());
 
       // Show header summary bar
       const hsum = document.getElementById('headerSummary');
@@ -2163,6 +2187,14 @@
 
     window.openSettingsHubModal = function () { openModal('settingsHubModal'); };
 
+    window.openResumeModal = function () { openModal('resumeModal'); };
+
+    window.openAnalyticsModal = function () {
+      if (!isManagerOrAdmin()) return;
+      renderAnalytics(_allSalesData);
+      openModal('analyticsModal');
+    };
+
     function openModal(id) { closeAllMenus(); document.getElementById(id).classList.add('show'); }
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
     window.closeModal = closeModal;
@@ -2294,6 +2326,7 @@
       const isDark = document.body.classList.toggle('dark');
       localStorage.setItem('darkMode', isDark ? 'true' : 'false');
       document.getElementById('darkModeBtn').textContent = isDark ? '☀️ Mode clair' : '🌙 Mode sombre';
+      document.body.style.backgroundColor = isDark ? '#0f0f0f' : '';
     };
 
     function updateDarkModeBtn() {
@@ -2370,17 +2403,12 @@
 
     // ── Analytics ───────────────────────────────────────────────────────────────
     function renderAnalytics(data) {
-      const accordion = document.getElementById('analyticsAccordion');
-      if (!accordion) return;
-
-      if (!isManagerOrAdmin()) {
-        accordion.classList.add('hidden');
-        return;
-      }
-      accordion.classList.remove('hidden');
+      const analyticsBtn = document.getElementById('analyticsBtn');
+      if (analyticsBtn) analyticsBtn.classList.toggle('hidden', !isManagerOrAdmin());
 
       const content = document.getElementById('analyticsContent');
       if (!content) return;
+      if (!isManagerOrAdmin()) return;
 
       const cats = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
 
