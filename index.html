@@ -291,17 +291,28 @@
     .tab-btn {
       position: relative;
       overflow: hidden;
-      padding: var(--spacing-md) var(--spacing-lg);
-      border-radius: var(--radius-md);
-      font-size: 13px;
-      font-weight: 700;
+      padding: 18px var(--spacing-lg);
+      border-radius: var(--radius-lg);
+      font-size: 15px;
+      font-weight: 800;
       background: rgba(255, 255, 255, 0.12);
       color: white;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.5px;
+      min-height: 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+      gap: 2px;
     }
-    .tab-btn.active { background: linear-gradient(180deg, #2a2a2a 0%, #101010 100%); border-color: rgba(255,255,255,0.2); }
+    .tab-btn.active {
+      background: linear-gradient(180deg, #2a2a2a 0%, #101010 100%);
+      border-color: rgba(255,255,255,0.22);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
 
     .tab-badge { position: absolute; top: 6px; right: 8px; background: var(--color-error); width: 10px; height: 10px; border-radius: 50%; display: none; }
 
@@ -504,11 +515,55 @@
     }
 
     @media (max-width: 480px) {
-      .top-actions { grid-template-columns: repeat(2, 1fr); }
+      .top-actions { grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm); }
       h3 { font-size: 18px; }
-      .tab-btn { font-size: 12px; padding: var(--spacing-sm) var(--spacing-md); }
+      .tab-btn { font-size: 12px; padding: 14px var(--spacing-sm); min-height: 56px; }
       .small-btn { width: 100%; }
     }
+
+    /* Address row layout */
+    .addr-row { display: flex; gap: var(--spacing-sm); align-items: flex-start; }
+    .addr-row select { flex: 0 0 90px; width: 90px; margin: var(--spacing-md) 0; }
+    .addr-row input { flex: 1; width: auto; min-width: 0; }
+
+    /* Colored product range badge labels in price grid */
+    .price-badge-label {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .price-badge-label.ORO { background: #f39a1e; }
+    .price-badge-label.RIO { background: #1f78ff; }
+    .price-badge-label.ESPRESSO { background: #d52a2a; }
+    .price-badge-label.CLASSIC { background: #6b4329; color: #f4d27a; }
+    .price-badge-label.SANTOS { background: #161616; color: #d4af37; }
+    .price-badge-label.SUCRE { background: #e6d3a3; color: #3a2e00; }
+
+    /* Compact price inputs in grid */
+    .prices-grid input {
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: 14px;
+      margin: 2px 0 0;
+    }
+
+    /* Client badge spacing fix – push cmd-count badge away from ⋯ button */
+    .client-cmd-badge { flex-shrink: 0; margin-right: 48px; }
+
+    /* Clients section label for "Fiches clients" */
+    .clients-list-header { margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-md); }
+    .clients-list-header h3 { margin: 0; }
+
+    /* Advanced modal muted lines */
+    .adv-stat-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid var(--color-border); }
+    .adv-stat-row:last-child { border-bottom: none; }
+    .adv-stat-label { color: var(--color-text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .adv-stat-val { font-weight: 700; color: var(--color-text); }
   </style>
 </head>
 
@@ -649,27 +704,45 @@
       </div>
 
       <div id="clients" class="section-shell hidden">
-        <h3>➕ Nouveau client</h3>
-        <label for="clientName">Nom</label>
-        <input id="clientName" placeholder="Nom du client" />
-        <label for="clientAddress">Adresse</label>
-        <input id="clientAddress" placeholder="Adresse (optionnel)" />
-        <label for="clientICE">ICE</label>
-        <input id="clientICE" placeholder="Numéro ICE (optionnel)" />
 
-        <h4>💰 Prix personnalisés</h4>
-        <div class="prices-grid">
-          <div><label for="priceORO">ORO</label><input id="priceORO" type="number" placeholder="130 DHS" /></div>
-          <div><label for="priceRIO">RIO</label><input id="priceRIO" type="number" placeholder="135 DHS" /></div>
-          <div><label for="priceESPRESSO">ESPRESSO</label><input id="priceESPRESSO" type="number" placeholder="140 DHS" /></div>
-          <div><label for="priceCLASSIC">CLASSIC</label><input id="priceCLASSIC" type="number" placeholder="150 DHS" /></div>
-          <div><label for="priceSANTOS">SANTOS</label><input id="priceSANTOS" type="number" placeholder="180 DHS" /></div>
-          <div><label for="priceSUCRE">SUCRE</label><input id="priceSUCRE" type="number" placeholder="100 DHS" /></div>
+        <div class="accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>➕ Nouveau client</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="accordion-inner">
+            <label for="clientName">Nom du client</label>
+            <input id="clientName" placeholder="Nom du client" />
+
+            <label>Adresse</label>
+            <div class="addr-row">
+              <select id="clientAddrType">
+                <option>Rue</option><option>Av</option><option>Chem</option><option>Res</option><option>Lot</option>
+              </select>
+              <input id="clientAddrDetail" placeholder="Détail de l'adresse" />
+            </div>
+            <input id="clientAddrCity" placeholder="Ville" />
+
+            <label for="clientICE">💳 ICE</label>
+            <input id="clientICE" placeholder="Numéro ICE (facturation)" />
+
+            <h4>💰 Prix personnalisés par gamme</h4>
+            <div class="prices-grid">
+              <div><span class="price-badge-label ORO">ORO</span><input id="priceORO" type="number" placeholder="130 DHS" /></div>
+              <div><span class="price-badge-label RIO">RIO</span><input id="priceRIO" type="number" placeholder="135 DHS" /></div>
+              <div><span class="price-badge-label ESPRESSO">ESPRESSO</span><input id="priceESPRESSO" type="number" placeholder="140 DHS" /></div>
+              <div><span class="price-badge-label CLASSIC">CLASSIC</span><input id="priceCLASSIC" type="number" placeholder="150 DHS" /></div>
+              <div><span class="price-badge-label SANTOS">SANTOS</span><input id="priceSANTOS" type="number" placeholder="180 DHS" /></div>
+              <div><span class="price-badge-label SUCRE">SUCRE</span><input id="priceSUCRE" type="number" placeholder="100 DHS" /></div>
+            </div>
+            <div class="muted">Laisse vide pour utiliser les prix standard.</div>
+            <button onclick="addClient()">✅ Créer client</button>
+          </div>
         </div>
-        <div class="muted">Laisse vide pour utiliser les prix standard.</div>
-        <button onclick="addClient()">✅ Créer client</button>
-        <hr />
-        <h3>👥 Fiches clients</h3>
+
+        <div class="clients-list-header">
+          <h3>👥 Fiches clients</h3>
+        </div>
         <div id="clientList"></div>
       </div>
 
@@ -746,6 +819,44 @@
       <label for="newPassword">Nouveau mot de passe</label>
       <input id="newPassword" type="password" placeholder="Min 6 caractères" />
       <button onclick="changeMyPassword()">✅ Mettre à jour</button>
+    </div>
+  </div>
+
+  <div id="clientAdvancedModal" class="modal-backdrop" onclick="backdropClose(event, 'clientAdvancedModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3>⚙️ Actions avancées</h3>
+        <button class="close-x" onclick="closeModal('clientAdvancedModal')">✕</button>
+      </div>
+
+      <div class="settings-option">
+        <div class="title" id="advancedClientName">Client</div>
+      </div>
+
+      <div class="settings-option">
+        <div class="title">📊 Compteurs</div>
+        <div style="margin-top:10px;">
+          <div class="adv-stat-row"><span class="adv-stat-label">Ce mois</span><span class="adv-stat-val" id="advancedMonthlyCmd">—</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">Cette année</span><span class="adv-stat-val" id="advancedYearlyCmd">—</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">Total global</span><span class="adv-stat-val" id="advancedTotalCmd">—</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">Compteur LG</span><span class="adv-stat-val" id="advancedLgCount">0</span></div>
+        </div>
+      </div>
+
+      <div class="settings-option">
+        <div class="title">🔄 Reset mensuel LG</div>
+        <div class="checkbox-line" style="margin-top:10px;">
+          <input type="checkbox" id="advancedAutoReset" onchange="advancedToggleAutoReset(this)" />
+          <label for="advancedAutoReset" style="margin:0;flex:1;">Reset automatique mensuel actif</label>
+        </div>
+        <button id="advancedResetBtn" class="secondary" style="margin-top:6px;" onclick="advancedManualReset(this)">🔄 Reset manuel maintenant</button>
+      </div>
+
+      <div class="settings-option">
+        <div class="title">📄 Facture mensuelle</div>
+        <div class="muted" style="margin-top:4px;">Génère le récapitulatif PDF du mois en cours pour ce client.</div>
+        <button style="margin-top:10px;" id="advancedPdfBtn" onclick="generateClientMonthlyPDF(document.getElementById('advancedResetBtn').dataset.clientId); closeModal('clientAdvancedModal');">📄 Générer facture PDF du mois</button>
+      </div>
     </div>
   </div>
 
@@ -925,11 +1036,20 @@
           .filter(s => !s.paid)
           .reduce((sum, s) => sum + Number(s.total_price || 0), 0);
 
+        const now = new Date();
+        const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        const monthlySales = sales.filter(s => {
+          const d = new Date(s.created_at);
+          return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === thisMonth;
+        });
+
         html += `
           <div class="card">
             <div class="menu-wrap">
               <button class="menu-btn" onclick="toggleMenu(event, 'clientMenu${i}')">⋯</button>
               <div class="menu" id="clientMenu${i}">
+                <button onclick="openClientAdvanced('${c.id}')">⚙️ Actions avancées</button>
+                <button onclick="generateClientMonthlyPDF('${c.id}')">📄 Facture mensuelle</button>
                 ${
                   isManagerOrAdmin()
                     ? `<button onclick="deleteClient('${c.id}')">🗑️ Supprimer</button>`
@@ -939,15 +1059,16 @@
             </div>
 
             <div class="client-head">
-              <div>
+              <div style="flex:1;min-width:0;padding-right:8px;">
                 <span class="card-title">${c.name}</span>
                 <div class="line">${c.address ? `📍 ${c.address}` : ''}${c.address ? '<br>' : ''}💳 ICE: ${c.ice || '—'}</div>
               </div>
-              <span class="badge ${sales[0]?.category || 'ORO'}">${sales.length} cmd</span>
+              <span class="badge ${sales[0]?.category || 'ORO'} client-cmd-badge">${sales.length} cmd</span>
             </div>
 
             <div class="client-stats">
               <div class="mini-box"><div class="k">Non payé</div><div class="v">${formatDh(unpaid)}</div></div>
+              <div class="mini-box"><div class="k">Ce mois</div><div class="v">${monthlySales.length} cmd</div></div>
               <div class="mini-box"><div class="k">Total</div><div class="v">${sales.length}</div></div>
             </div>
           </div>`;
@@ -1268,9 +1389,17 @@
 
     window.addClient = async function () {
       const name = document.getElementById('clientName').value.trim();
-      const address = document.getElementById('clientAddress').value.trim();
+      const addrType = document.getElementById('clientAddrType').value;
+      const addrDetail = document.getElementById('clientAddrDetail').value.trim();
+      const addrCity = document.getElementById('clientAddrCity').value.trim();
       const ice = document.getElementById('clientICE').value.trim();
       if (!name) return alert('❌ Nom client obligatoire');
+
+      // Build a clean formatted address string (backward-compatible plain string)
+      let address = '';
+      if (addrDetail && addrCity) address = `${addrType} ${addrDetail}, ${addrCity}`;
+      else if (addrDetail) address = `${addrType} ${addrDetail}`;
+      else if (addrCity) address = addrCity;
 
       const payload = {
         name,
@@ -1289,9 +1418,10 @@
       const { error } = await supabase.from('clients').insert(payload);
       if (error) return alert(error.message);
 
-      ['clientName', 'clientAddress', 'clientICE', 'priceORO', 'priceRIO', 'priceESPRESSO', 'priceCLASSIC', 'priceSANTOS', 'priceSUCRE'].forEach(id => {
+      ['clientName', 'clientAddrDetail', 'clientAddrCity', 'clientICE', 'priceORO', 'priceRIO', 'priceESPRESSO', 'priceCLASSIC', 'priceSANTOS', 'priceSUCRE'].forEach(id => {
         document.getElementById(id).value = '';
       });
+      document.getElementById('clientAddrType').value = 'Rue';
 
       await loadCloudData();
       paintApp();
@@ -1744,6 +1874,249 @@
       document.getElementById('newPassword').value = '';
       closeModal('passwordModal');
       showSessionStatus('✅ Mot de passe mis à jour', 'success');
+    };
+
+    window.openClientAdvanced = function(clientId) {
+      closeAllMenus();
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const sales = getSalesForClient(client);
+      const now = new Date();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const thisYear = String(now.getFullYear());
+
+      const monthlySales = sales.filter(s => {
+        const d = new Date(s.created_at);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === thisMonth;
+      });
+      const yearlySales = sales.filter(s => {
+        const d = new Date(s.created_at);
+        return String(d.getFullYear()) === thisYear;
+      });
+
+      const autoResetKey = `autoReset_${clientId}`;
+      const autoReset = localStorage.getItem(autoResetKey) === 'true';
+      const lgCountKey = `lgCount_${clientId}`;
+      const lgCount = parseInt(localStorage.getItem(lgCountKey) || '0', 10);
+
+      const monthTotal = monthlySales.reduce((s,x) => s + Number(x.total_price||0), 0);
+      const yearTotal = yearlySales.reduce((s,x) => s + Number(x.total_price||0), 0);
+      const grandTotal = sales.reduce((s,x) => s + Number(x.total_price||0), 0);
+
+      document.getElementById('advancedClientName').innerText = client.name;
+      document.getElementById('advancedMonthlyCmd').innerText = `${monthlySales.length} cmd — ${formatDh(monthTotal)}`;
+      document.getElementById('advancedYearlyCmd').innerText = `${yearlySales.length} cmd — ${formatDh(yearTotal)}`;
+      document.getElementById('advancedTotalCmd').innerText = `${sales.length} cmd — ${formatDh(grandTotal)}`;
+      document.getElementById('advancedLgCount').innerText = lgCount;
+      document.getElementById('advancedAutoReset').checked = autoReset;
+      document.getElementById('advancedAutoReset').dataset.clientId = clientId;
+      document.getElementById('advancedResetBtn').dataset.clientId = clientId;
+
+      openModal('clientAdvancedModal');
+    };
+
+    window.advancedToggleAutoReset = function(cb) {
+      const clientId = cb.dataset.clientId;
+      localStorage.setItem(`autoReset_${clientId}`, cb.checked ? 'true' : 'false');
+      showSessionStatus(cb.checked ? '✅ Reset auto activé' : '✅ Reset auto désactivé', 'success');
+    };
+
+    window.advancedManualReset = function(btn) {
+      const clientId = btn.dataset.clientId;
+      if (!confirm('Réinitialiser le compteur LG mensuel de ce client ?')) return;
+      localStorage.setItem(`lgCount_${clientId}`, '0');
+      document.getElementById('advancedLgCount').innerText = '0';
+      showSessionStatus('✅ Compteur LG réinitialisé', 'success');
+    };
+
+    window.generateClientMonthlyPDF = async function(clientId) {
+      closeAllMenus();
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const now = new Date();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const monthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+      const monthlySales = state.sales.filter(s => {
+        const d = new Date(s.created_at);
+        const sMonth = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        return (s.client_id === client.id || s.client_name === client.name) && sMonth === thisMonth;
+      }).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      if (monthlySales.length === 0) {
+        showSessionStatus('ℹ️ Aucune vente ce mois pour ce client', 'info', 4000);
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const margin = 15;
+      const pageW = 210;
+      const pageH = 297;
+      let y = margin;
+
+      const colBlack = [17, 17, 17];
+      const colGray = [107, 93, 85];
+      const colLight = [245, 242, 238];
+
+      // Watermark / filigrane logo centré
+      try {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        await new Promise(resolve => {
+          logoImg.onload = resolve;
+          logoImg.onerror = resolve;
+          logoImg.src = 'icon-512.png.PNG';
+        });
+        if (logoImg.complete && logoImg.naturalWidth > 0) {
+          const canvas = document.createElement('canvas');
+          canvas.width = logoImg.naturalWidth;
+          canvas.height = logoImg.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.globalAlpha = 0.07;
+          ctx.drawImage(logoImg, 0, 0);
+          const wdata = canvas.toDataURL('image/png');
+          const wSize = 110;
+          doc.addImage(wdata, 'PNG', (pageW - wSize) / 2, (pageH - wSize) / 2, wSize, wSize);
+        }
+      } catch (_) { /* skip watermark on error */ }
+
+      // ── Header block ────────────────────────────────────────────────────────
+      doc.setFillColor(...colLight);
+      doc.roundedRect(margin, y, pageW - margin * 2, 30, 4, 4, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(...colBlack);
+      doc.text('TASKAFÉ', margin + 6, y + 11);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...colGray);
+      doc.text('Distribution café — Gestion commerciale', margin + 6, y + 18);
+
+      const invoiceNum = `FC-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}-${client.name.replace(/\s+/g,'').substring(0,6).toUpperCase()}`;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...colBlack);
+      doc.text(`N° ${invoiceNum}`, pageW - margin - 5, y + 9, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...colGray);
+      doc.text(`Période : ${monthLabel}`, pageW - margin - 5, y + 15, { align: 'right' });
+      doc.text(`Émis le : ${now.toLocaleDateString('fr-FR')}`, pageW - margin - 5, y + 21, { align: 'right' });
+
+      y += 36;
+
+      // ── Client block ─────────────────────────────────────────────────────────
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(220, 215, 208);
+      doc.roundedRect(margin, y, pageW - margin * 2, 30, 3, 3, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...colGray);
+      doc.text('FACTURÉ À', margin + 5, y + 7);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(...colBlack);
+      doc.text(client.name, margin + 5, y + 15);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...colGray);
+      let infoY = y + 22;
+      if (client.address) { doc.text(`Adresse : ${client.address}`, margin + 5, infoY); infoY += 6; }
+      if (client.ice) doc.text(`ICE : ${client.ice}`, margin + 5, infoY);
+
+      y += 36;
+
+      // ── Table header ─────────────────────────────────────────────────────────
+      doc.setFillColor(...colBlack);
+      doc.rect(margin, y, pageW - margin * 2, 9, 'F');
+
+      const cDate = margin + 3;
+      const cCat  = margin + 36;
+      const cQty  = margin + 76;
+      const cUnit = margin + 110;
+      const cTot  = pageW - margin - 3;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Date', cDate, y + 6);
+      doc.text('Catégorie', cCat, y + 6);
+      doc.text('Quantité', cQty, y + 6);
+      doc.text('Prix unit.', cUnit, y + 6);
+      doc.text('Total', cTot, y + 6, { align: 'right' });
+
+      y += 9;
+
+      // ── Table rows ────────────────────────────────────────────────────────────
+      let grandTotal = 0;
+      monthlySales.forEach((s, idx) => {
+        if (y > pageH - 50) {
+          doc.addPage();
+          y = margin;
+        }
+        const rowBg = idx % 2 === 0 ? [250, 247, 244] : [255, 255, 255];
+        doc.setFillColor(...rowBg);
+        doc.rect(margin, y, pageW - margin * 2, 7.5, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...colBlack);
+
+        doc.text(new Date(s.created_at).toLocaleDateString('fr-FR'), cDate, y + 5.2);
+        doc.text(s.category, cCat, y + 5.2);
+        doc.text(`${formatQty(s.quantity)} ${s.category === 'SUCRE' ? 'pcs' : 'kg'}`, cQty, y + 5.2);
+        doc.text(formatDh(s.unit_price), cUnit, y + 5.2);
+        doc.text(formatDh(s.total_price), cTot, y + 5.2, { align: 'right' });
+
+        grandTotal += Number(s.total_price || 0);
+        y += 7.5;
+      });
+
+      // Separator
+      doc.setDrawColor(220, 215, 208);
+      doc.line(margin, y + 2, pageW - margin, y + 2);
+      y += 8;
+
+      // ── Totals block ──────────────────────────────────────────────────────────
+      const totW = 80;
+      const totX = pageW - margin - totW;
+      doc.setFillColor(...colLight);
+      doc.roundedRect(totX, y, totW, 18, 3, 3, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...colGray);
+      doc.text('TOTAL', totX + 4, y + 7);
+      doc.setFontSize(14);
+      doc.setTextColor(...colBlack);
+      doc.text(formatDh(grandTotal), pageW - margin - 4, y + 14, { align: 'right' });
+
+      y += 26;
+
+      // ── Footer ────────────────────────────────────────────────────────────────
+      doc.setDrawColor(...colLight);
+      doc.line(margin, y, pageW - margin, y);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...colGray);
+      doc.text('TASKAFÉ — Suivi des ventes café', pageW / 2, y, { align: 'center' });
+      doc.text(
+        `Document généré automatiquement le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')}`,
+        pageW / 2, y + 5, { align: 'center' }
+      );
+
+      const fileName = `taskafe-${client.name.replace(/\s+/g,'-').toLowerCase()}-${thisMonth}.pdf`;
+      doc.save(fileName);
+      showSessionStatus('✅ Facture PDF générée', 'success');
     };
 
     // iOS PWA: ensure virtual keyboard opens reliably on login fields
