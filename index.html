@@ -722,6 +722,19 @@
     #pullIndicator.ptr-refreshing .ptr-svg { animation: ptr-spin 0.75s linear infinite; transform-origin: 50% 50%; }
     #pullIndicator.ptr-refreshing .ptr-arc { stroke-dasharray: 62 38; }
 
+    /* ── Offline banner ── */
+    .offline-banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #e65100; color: #fff;
+      text-align: center; font-size: 13px; font-weight: 600;
+      padding: 7px 12px; z-index: 1999;
+      transition: transform 0.25s ease;
+    }
+    body.dark .offline-banner { background: #b74200; }
+
+    /* ── User-row overflow menu (reuses .menu-wrap pattern) ── */
+    .user-row .menu-wrap { position: relative; flex-shrink: 0; }
+
     /* ── Compact sale cards ── */
     .sale-card-compact { padding: 10px 12px 10px 12px; margin-bottom: 8px; }
     .sale-card-row1 { display: flex; align-items: center; gap: 8px; margin-right: 40px; margin-bottom: 5px; }
@@ -1050,6 +1063,9 @@
       }
     })();
   </script>
+  <div id="offlineBanner" class="offline-banner" style="display:none;">
+    📶 Hors ligne&ensp;<span id="offlinePendingCount"></span>
+  </div>
   <div id="sessionStatus" class="session-status"></div>
   <div id="pullIndicator">
     <svg class="ptr-svg" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
@@ -1484,6 +1500,7 @@
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/+esm';
+    import { initOfflineDB, saveRecords, loadRecords, putRecord, deleteRecord, addPendingOp, getPendingOps, removePendingOp, countPendingOps } from './offline-db.js';
 
     // ── Splash screen countdown (starts as early as possible) ─────────────────
     // CSS: logo stays large for 2.4s (halo rotation visible), shrinks over 0.9s → done at ~3.3s
@@ -1549,6 +1566,124 @@
       el.textContent = message;
       el.className = `session-status show ${type}`;
       _statusTimer = setTimeout(() => { el.classList.remove('show'); _statusTimer = null; }, duration);
+    }
+
+    // ── Offline helpers ────────────────────────────────────────────────────────
+    function genLocalId() {
+      return 'local_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    async function updateOfflineBanner() {
+      const banner = document.getElementById('offlineBanner');
+      const countEl = document.getElementById('offlinePendingCount');
+      if (!banner) return;
+      if (!navigator.onLine) {
+        const n = await countPendingOps().catch(() => 0);
+        banner.style.display = 'block';
+        countEl.textContent = n > 0 ? `· ${n} action(s) en attente` : '';
+      } else {
+        const n = await countPendingOps().catch(() => 0);
+        if (n > 0) {
+          banner.style.display = 'block';
+          banner.style.background = '#1565c0';
+          countEl.textContent = `· ${n} action(s) à synchroniser`;
+        } else {
+          banner.style.display = 'none';
+          banner.style.background = '';
+        }
+      }
+    }
+
+    async function syncPendingOps() {
+      const ops = await getPendingOps();
+      if (ops.length === 0) { updateOfflineBanner(); return; }
+      showSessionStatus(`⏳ Synchronisation de ${ops.length} action(s)…`, 'info', 15000);
+      let done = 0, failed = 0;
+      for (const op of ops) {
+        try {
+          await _executePendingOp(op);
+          await removePendingOp(op.id);
+          done++;
+        } catch (err) {
+          console.error('[sync] op failed:', op.type, op.id, err?.message);
+          failed++;
+        }
+      }
+      try { await loadCloudData(); paintApp(); } catch(e) { /* ignore */ }
+      if (failed === 0) {
+        showSessionStatus(`✅ ${done} action(s) synchronisée(s)`, 'success');
+      } else {
+        showSessionStatus(`⚠️ ${done} synchro, ${failed} en échec`, 'error');
+      }
+      updateOfflineBanner();
+    }
+
+    async function _executePendingOp(op) {
+      switch (op.type) {
+        case 'addClient': {
+          const { id: _id, created_at: _ca, ...payload } = op.payload;
+          const { error } = await supabase.from('clients').insert(payload);
+          if (error) throw error;
+          break;
+        }
+        case 'deleteClient': {
+          if (String(op.payload.clientId).startsWith('local_')) break; // was never on server
+          const { error } = await supabase.from('clients').delete().eq('id', op.payload.clientId);
+          if (error) throw error;
+          break;
+        }
+        case 'updateClient': {
+          const { clientId, ...payload } = op.payload;
+          if (String(clientId).startsWith('local_')) break;
+          const { error } = await supabase.from('clients').update(payload).eq('id', clientId);
+          if (error) throw error;
+          break;
+        }
+        case 'addSale': {
+          const { id: _id, created_at: _ca, client_id: rawClientId, ...salePayload } = op.payload;
+          // If client was created offline (temp ID), use null for client_id; client_name still links correctly
+          const client_id = rawClientId && String(rawClientId).startsWith('local_') ? null : (rawClientId || null);
+          const { error: saleErr } = await supabase.from('sales').insert({ ...salePayload, client_id });
+          if (saleErr) throw saleErr;
+          if (op.stockPayload) {
+            await supabase.from('stocks').upsert(op.stockPayload);
+          }
+          break;
+        }
+        case 'deleteSale': {
+          const { saleId } = op.payload;
+          if (!String(saleId).startsWith('local_')) {
+            const { error } = await supabase.from('sales').delete().eq('id', saleId);
+            if (error) throw error;
+          }
+          if (op.stockPayload) {
+            await supabase.from('stocks').upsert(op.stockPayload);
+          }
+          break;
+        }
+        case 'updateSale': {
+          const { saleId, stockOldPayload, stockNewPayload, ...salePayload } = op.payload;
+          if (String(saleId).startsWith('local_')) break;
+          if (stockOldPayload) await supabase.from('stocks').upsert(stockOldPayload);
+          if (stockNewPayload) await supabase.from('stocks').upsert(stockNewPayload);
+          const { error } = await supabase.from('sales').update(salePayload).eq('id', saleId);
+          if (error) throw error;
+          break;
+        }
+        case 'togglePaid': {
+          if (String(op.payload.saleId).startsWith('local_')) break;
+          const { error } = await supabase.from('sales').update({ paid: op.payload.paid }).eq('id', op.payload.saleId);
+          if (error) throw error;
+          break;
+        }
+        case 'stockUpdate': {
+          const { error } = await supabase.from('stocks').upsert(op.payload);
+          if (error) throw error;
+          break;
+        }
+        default:
+          console.warn('[sync] unknown op type:', op.type);
+      }
     }
 
     function formatDh(value) {
@@ -1922,6 +2057,25 @@
     }
 
     async function loadCloudData() {
+      if (!navigator.onLine) {
+        // Load from local cache when offline
+        try {
+          const [clients, sales, stockRows] = await Promise.all([
+            loadRecords('clients'),
+            loadRecords('sales'),
+            loadRecords('stocks')
+          ]);
+          state.clients = clients.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          state.sales = sales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          state.stocks = { ...DEFAULT_STOCKS };
+          stockRows.forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+        } catch (e) {
+          console.warn('[loadCloudData] cache read error:', e?.message);
+        }
+        updateOfflineBanner();
+        return;
+      }
+
       const requests = [
         supabase.from('clients').select('*').order('created_at', { ascending: false }),
         supabase.from('sales').select('*').order('created_at', { ascending: false }),
@@ -1946,6 +2100,19 @@
       state.logs = logsRes?.data || [];
 
       await loadAllUsers();
+
+      // Persist to local cache for offline use
+      try {
+        const stockArr = Object.entries(state.stocks).map(([category, quantity]) => ({ category, quantity }));
+        await Promise.all([
+          saveRecords('clients', state.clients),
+          saveRecords('sales', state.sales),
+          saveRecords('stocks', stockArr)
+        ]);
+      } catch (e) {
+        console.warn('[loadCloudData] cache write error:', e?.message);
+      }
+      updateOfflineBanner();
     }
 
     function paintApp() {
@@ -2048,6 +2215,9 @@
         try {
           await loadCloudData();
           paintApp();
+          if (!navigator.onLine) {
+            showSessionStatus('📶 Hors ligne — données locales chargées', 'info', 4000);
+          }
         } catch (error) {
           console.error('Boot error:', error);
           showSessionStatus('❌ Erreur de chargement', 'error', 5000);
@@ -2139,16 +2309,26 @@
         }
       };
 
-      const { error } = await supabase.from('clients').insert(payload);
-      if (error) return alert(error.message);
-
       ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE'].forEach(id => {
         document.getElementById(id).value = '';
       });
       document.getElementById('clientAddrType').value = 'Rue';
-      // Reset prices to defaults
       const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 150, priceSANTOS: 180, priceSUCRE: 100 };
       Object.entries(defaults).forEach(([id, val]) => { document.getElementById(id).value = val; });
+
+      if (!navigator.onLine) {
+        const localClient = { ...payload, id: genLocalId(), created_at: new Date().toISOString() };
+        state.clients.unshift(localClient);
+        await saveRecords('clients', state.clients).catch(() => {});
+        await addPendingOp({ type: 'addClient', payload: localClient }).catch(() => {});
+        paintApp();
+        showSessionStatus('📶 Client enregistré localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      const { error } = await supabase.from('clients').insert(payload);
+      if (error) return alert(error.message);
 
       await loadCloudData();
       paintApp();
@@ -2171,6 +2351,41 @@
       const unitPrice = getClientPrice(clientName, category);
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
 
+      document.getElementById('quantityInput').value = '';
+      document.getElementById('datetime').value = '';
+      document.getElementById('paid').checked = false;
+
+      const newStockQty = Number(state.stocks[category] || 0) - quantity;
+
+      if (!navigator.onLine) {
+        const localSale = {
+          id: genLocalId(),
+          client_id: client?.id || null,
+          client_name: clientName,
+          category,
+          quantity,
+          unit_price: unitPrice,
+          total_price: totalPrice,
+          paid,
+          created_by: state.session?.user?.id || null,
+          created_at: createdAt
+        };
+        state.sales.unshift(localSale);
+        state.stocks[category] = newStockQty;
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('sales', state.sales).catch(() => {});
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({
+          type: 'addSale',
+          payload: localSale,
+          stockPayload: { category, quantity: newStockQty }
+        }).catch(() => {});
+        paintApp();
+        showSessionStatus('📶 Vente enregistrée localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
       const { error: saleError } = await supabase.from('sales').insert({
         client_id: client?.id || null,
         client_name: clientName,
@@ -2184,15 +2399,8 @@
       });
       if (saleError) return alert(saleError.message);
 
-      const { error: stockError } = await supabase.from('stocks').upsert({
-        category,
-        quantity: Number(state.stocks[category] || 0) - quantity
-      });
+      const { error: stockError } = await supabase.from('stocks').upsert({ category, quantity: newStockQty });
       if (stockError) return alert(stockError.message);
-
-      document.getElementById('quantityInput').value = '';
-      document.getElementById('datetime').value = '';
-      document.getElementById('paid').checked = false;
 
       await loadCloudData();
       paintApp();
@@ -2200,6 +2408,18 @@
     };
 
     window.togglePaid = async function (saleId, paid) {
+      if (!navigator.onLine) {
+        const sale = state.sales.find(s => s.id === saleId);
+        if (sale) {
+          sale.paid = paid;
+          await saveRecords('sales', state.sales).catch(() => {});
+          await addPendingOp({ type: 'togglePaid', payload: { saleId, paid } }).catch(() => {});
+        }
+        paintApp();
+        showSessionStatus(paid ? '📶 Marqué payé (local)' : '📶 Marqué non payé (local)', 'info');
+        updateOfflineBanner();
+        return;
+      }
       const { error } = await supabase.from('sales').update({ paid }).eq('id', saleId);
       if (error) return alert(error.message);
       await loadCloudData();
@@ -2214,12 +2434,31 @@
       const sale = state.sales.find(s => s.id === saleId);
       if (!sale) return;
 
+      const restoredQty = Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0);
+
+      if (!navigator.onLine) {
+        state.sales = state.sales.filter(s => s.id !== saleId);
+        state.stocks[sale.category] = restoredQty;
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('sales', state.sales).catch(() => {});
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({
+          type: 'deleteSale',
+          payload: { saleId },
+          stockPayload: { category: sale.category, quantity: restoredQty }
+        }).catch(() => {});
+        paintApp();
+        showSessionStatus('📶 Vente supprimée localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
       const { error } = await supabase.from('sales').delete().eq('id', saleId);
       if (error) return alert(error.message);
 
       const { error: stockError } = await supabase.from('stocks').upsert({
         category: sale.category,
-        quantity: Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0)
+        quantity: restoredQty
       });
       if (stockError) return alert(stockError.message);
 
@@ -2231,6 +2470,15 @@
     window.deleteClient = async function (clientId) {
       if (!requireManagerOrAdmin('Supprimer un client')) return;
       if (!confirm('Voulez-vous vraiment supprimer ce client ?')) return;
+      if (!navigator.onLine) {
+        state.clients = state.clients.filter(c => c.id !== clientId);
+        await saveRecords('clients', state.clients).catch(() => {});
+        await addPendingOp({ type: 'deleteClient', payload: { clientId } }).catch(() => {});
+        paintApp();
+        showSessionStatus('📶 Client supprimé localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
       const { error } = await supabase.from('clients').delete().eq('id', clientId);
       if (error) return alert(error.message);
       await loadCloudData();
@@ -2301,6 +2549,17 @@
         prices[cat] = (v > 0) ? v : null;
       });
 
+      if (!navigator.onLine) {
+        const idx = state.clients.findIndex(c => c.id === clientId);
+        if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices });
+        await saveRecords('clients', state.clients).catch(() => {});
+        await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices } }).catch(() => {});
+        closeModal('editClientModal');
+        paintApp();
+        showSessionStatus('📶 Client modifié localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
       const { error } = await supabase.from('clients').update({ name, address, ice, prices }).eq('id', clientId);
       if (error) return alert('❌ ' + error.message);
       closeModal('editClientModal');
@@ -2350,10 +2609,19 @@
       const amount = Number(value);
       if (isNaN(amount) || amount <= 0) return alert('❌ Quantité invalide');
 
-      const { error } = await supabase.from('stocks').upsert({
-        category,
-        quantity: Number(state.stocks[category] || 0) + amount
-      });
+      const newQty = Number(state.stocks[category] || 0) + amount;
+      if (!navigator.onLine) {
+        state.stocks[category] = newQty;
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({ type: 'stockUpdate', payload: { category, quantity: newQty } }).catch(() => {});
+        paintApp();
+        showSessionStatus('📶 Stock mis à jour localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      const { error } = await supabase.from('stocks').upsert({ category, quantity: newQty });
       if (error) return alert(error.message);
 
       await loadCloudData();
@@ -2368,6 +2636,17 @@
       if (value === null) return;
       const quantity = Number(value);
       if (isNaN(quantity) || quantity < 0) return alert('❌ Quantité invalide');
+
+      if (!navigator.onLine) {
+        state.stocks[category] = quantity;
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({ type: 'stockUpdate', payload: { category, quantity } }).catch(() => {});
+        paintApp();
+        showSessionStatus('📶 Stock défini localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
 
       const { error } = await supabase.from('stocks').upsert({ category, quantity });
       if (error) return alert(error.message);
@@ -2413,7 +2692,12 @@
             user.id === state.session?.user?.id
               ? '<span style="font-size:11px;">TOI</span>'
               : isAdmin()
-                ? `<button class="danger" style="width: 80px" onclick="deleteUser('${user.id}', this)">🗑️</button>`
+                ? `<div class="menu-wrap">
+                    <button class="menu-btn" onclick="toggleMenu(event,'userActMenu_${user.id}')">⋯</button>
+                    <div class="menu" id="userActMenu_${user.id}">
+                      <button class="danger" onclick="deleteUser('${user.id}',this)">🗑️ Supprimer</button>
+                    </div>
+                  </div>`
                 : ''
           }
         </div>
@@ -2783,17 +3067,17 @@
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
       const createdAt = rawDate ? new Date(rawDate).toISOString() : sale.created_at;
 
-      if (sale.category !== category || sale.quantity !== quantity) {
-        await supabase.from('stocks').upsert({
-          category: sale.category,
-          quantity: Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0)
-        });
+      const stockChanged = sale.category !== category || sale.quantity !== quantity;
+      let stockOldPayload = null, stockNewPayload = null;
+      if (stockChanged) {
+        const restoredOld = Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0);
         const newStock = Number(state.stocks[category] || 0) - quantity;
         if (newStock < 0) { alert('❌ Stock insuffisant pour ' + category); return; }
-        await supabase.from('stocks').upsert({ category, quantity: newStock });
+        stockOldPayload = { category: sale.category, quantity: restoredOld };
+        stockNewPayload = { category, quantity: newStock };
       }
 
-      const { error } = await supabase.from('sales').update({
+      const updatedSaleData = {
         client_id: client?.id || null,
         client_name: clientName,
         category,
@@ -2802,7 +3086,37 @@
         total_price: totalPrice,
         paid,
         created_at: createdAt
-      }).eq('id', saleId);
+      };
+
+      if (!navigator.onLine) {
+        Object.assign(sale, updatedSaleData);
+        if (stockChanged && stockOldPayload && stockNewPayload) {
+          // Use payload categories (not sale.category which was just mutated by Object.assign)
+          state.stocks[stockOldPayload.category] = stockOldPayload.quantity;
+          state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
+        }
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('sales', state.sales).catch(() => {});
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({
+          type: 'updateSale',
+          payload: { saleId, ...updatedSaleData, stockOldPayload, stockNewPayload }
+        }).catch(() => {});
+        closeModal('editSaleModal');
+        paintApp();
+        showSessionStatus('📶 Vente modifiée localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      if (stockChanged) {
+        const { error: stockErr1 } = await supabase.from('stocks').upsert(stockOldPayload);
+        if (stockErr1) return alert('❌ ' + stockErr1.message);
+        const { error: stockErr2 } = await supabase.from('stocks').upsert(stockNewPayload);
+        if (stockErr2) return alert('❌ ' + stockErr2.message);
+      }
+
+      const { error } = await supabase.from('sales').update(updatedSaleData).eq('id', saleId);
 
       if (error) return alert('❌ ' + error.message);
       closeModal('editSaleModal');
@@ -2872,20 +3186,44 @@
     // ── Pull to refresh (Chrome-style) ─────────────────────────────────────────
     (function() {
       let startY = 0, startX = 0;
-      let pulling = false;
+      let isAtTop = false;   // touch started while page was truly at the top
+      let isPulling = false; // downward drag currently in progress
+      let isArmed = false;   // drag reached the release threshold
+      let hasVibrated = false; // vibration sent for this gesture
+      let isRefreshing = false; // async refresh in progress — gate against re-entry
+
       const THRESHOLD = 80;               // px drag needed to trigger refresh
       const MAX_OFFSET = 68;              // max translateY when dragging
       const CIRC = 100.5;                 // 2π×16 (SVG arc circumference)
-      const RUBBER_BAND_COEFF = 5.2;      // sqrt multiplier — gives Chrome-like diminishing resistance
+      const RUBBER_BAND_COEFF = 5.2;      // sqrt multiplier — Chrome-like diminishing resistance
       const FADE_IN_DISTANCE = 18;        // px of offset at which indicator is fully opaque
-      const ARC_MAX_RATIO = 0.82;         // max visible arc fraction (avoids full-circle on drag)
-      const HORIZONTAL_SWIPE_THRESHOLD = 0.9; // dx/dy ratio above which gesture is treated as horizontal
+      const ARC_MAX_RATIO = 0.82;         // max visible arc fraction
+      const HORIZONTAL_SWIPE_THRESHOLD = 0.9; // dx/dy ratio above which gesture is horizontal
 
       const ind = document.getElementById('pullIndicator');
       const arc = document.getElementById('pullArc');
 
+      function resetGesture() {
+        isAtTop = false;
+        isPulling = false;
+        isArmed = false;
+        hasVibrated = false;
+      }
+
+      function hideIndicator(animated) {
+        if (!ind) return;
+        if (animated) {
+          ind.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease';
+        }
+        ind.style.transform = 'translateX(-50%) translateY(-68px)';
+        ind.style.opacity = '0';
+        setTimeout(() => {
+          if (arc) { arc.style.strokeDasharray = `0 ${CIRC}`; arc.setAttribute('transform', 'rotate(-90 22 22)'); }
+          if (ind) ind.classList.remove('ptr-refreshing');
+        }, animated ? 300 : 0);
+      }
+
       // Check if any ancestor of el is a scrollable container with content.
-      // A 1-pixel tolerance prevents false-negatives caused by sub-pixel rounding.
       const SCROLL_TOLERANCE = 1;
       function isInsideScrollable(el) {
         let node = el.parentElement;
@@ -2901,29 +3239,41 @@
       }
 
       document.addEventListener('touchstart', e => {
+        resetGesture();
+        if (isRefreshing) return;
         const appShell = document.getElementById('appShell');
         if (!appShell || appShell.classList.contains('hidden')) return;
         if (window.scrollY > 2) return;
         if (isInsideScrollable(e.target)) return;
         startY = e.touches[0].clientY;
         startX = e.touches[0].clientX;
-        pulling = false;
+        isAtTop = true; // arm only when scroll is truly at the top at touchstart
       }, { passive: true });
 
       document.addEventListener('touchmove', e => {
-        if (window.scrollY > 2) { pulling = false; return; }
+        if (!isAtTop || isRefreshing) return;
+        // Abort if page scrolled during the gesture (e.g. inertia carried user to top)
+        if (window.scrollY > 2) { resetGesture(); return; }
+
         const dy = e.touches[0].clientY - startY;
         const dx = e.touches[0].clientX - startX;
-        if (!pulling) {
+
+        if (!isPulling) {
           if (dy < 8) return;
-          if (Math.abs(dx) > dy * HORIZONTAL_SWIPE_THRESHOLD) return; // horizontal swipe — ignore
-          pulling = true;
+          if (Math.abs(dx) > dy * HORIZONTAL_SWIPE_THRESHOLD) return;
+          isPulling = true;
         }
-        if (dy <= 0) { pulling = false; return; }
+        if (dy <= 0) { resetGesture(); return; }
+
+        // Single vibration when drag crosses the release threshold
+        if (dy >= THRESHOLD && !hasVibrated) {
+          isArmed = true;
+          hasVibrated = true;
+          if (navigator.vibrate) navigator.vibrate(30);
+        }
 
         // Rubber-band resistance: sqrt gives diminishing returns like Chrome
         const offset = Math.min(Math.sqrt(dy) * RUBBER_BAND_COEFF, MAX_OFFSET);
-
         if (ind) {
           ind.style.transition = 'none';
           ind.style.transform = `translateX(-50%) translateY(${offset - 52}px)`;
@@ -2938,12 +3288,13 @@
       }, { passive: true });
 
       document.addEventListener('touchend', async e => {
-        if (!pulling) return;
-        pulling = false;
+        if (!isPulling) { resetGesture(); return; }
         const dy = e.changedTouches[0].clientY - startY;
+        const wasArmed = isArmed;
+        resetGesture();
 
-        if (dy > THRESHOLD) {
-          // Snap to refreshing position
+        if (wasArmed && dy >= THRESHOLD) {
+          isRefreshing = true;
           if (ind) {
             ind.style.transition = 'transform 0.22s cubic-bezier(0.4,0,0.2,1)';
             ind.style.transform = 'translateX(-50%) translateY(14px)';
@@ -2958,7 +3309,6 @@
           } catch(err) {
             showSessionStatus('❌ Erreur actualisation', 'error');
           }
-          // Hide after refresh
           if (ind) {
             ind.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
             ind.style.transform = 'translateX(-50%) translateY(-68px)';
@@ -2967,18 +3317,16 @@
           setTimeout(() => {
             if (ind) ind.classList.remove('ptr-refreshing');
             if (arc) { arc.style.strokeDasharray = `0 ${CIRC}`; arc.setAttribute('transform', 'rotate(-90 22 22)'); }
+            isRefreshing = false;
           }, 320);
         } else {
-          // Cancel — slide back up
-          if (ind) {
-            ind.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease';
-            ind.style.transform = 'translateX(-50%) translateY(-68px)';
-            ind.style.opacity = '0';
-          }
-          setTimeout(() => {
-            if (arc) { arc.style.strokeDasharray = `0 ${CIRC}`; arc.setAttribute('transform', 'rotate(-90 22 22)'); }
-          }, 280);
+          hideIndicator(true);
         }
+      }, { passive: true });
+
+      document.addEventListener('touchcancel', () => {
+        if (isPulling) hideIndicator(true);
+        resetGesture();
       }, { passive: true });
     })();
 
@@ -3454,6 +3802,19 @@
     document.getElementById('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
 
     window.addEventListener('resize', initAccordions);
+
+    // ── Offline / online lifecycle ──────────────────────────────────────────────
+    await initOfflineDB().catch(e => console.warn('[offline-db] init failed:', e?.message));
+
+    window.addEventListener('offline', () => {
+      updateOfflineBanner();
+      showSessionStatus('📶 Hors ligne — les modifications sont enregistrées localement', 'info', 5000);
+    });
+
+    window.addEventListener('online', async () => {
+      showSessionStatus('✅ Connexion rétablie — synchronisation…', 'success', 4000);
+      await syncPendingOps();
+    });
 
     const { data: initial } = await supabase.auth.getSession();
     await bootFromSession(initial.session);
