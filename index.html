@@ -1893,14 +1893,6 @@
       document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('analyticsBtn').classList.toggle('hidden', !isManagerOrAdmin());
 
-      // Show header summary bar
-      const hsum = document.getElementById('headerSummary');
-      if (hsum) hsum.style.display = 'flex';
-
-      // Update header summary client count
-      const hSumClients = document.getElementById('hSumClients');
-      if (hSumClients) hSumClients.textContent = state.clients.length;
-
       updateDarkModeBtn();
       initAccordions();
       loadProductPrices();
