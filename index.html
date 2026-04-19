@@ -657,6 +657,7 @@
 </head>
 
 <body>
+  <script>if(localStorage.getItem('darkMode')==='true')document.body.classList.add('dark');</script>
   <div id="sessionStatus" class="session-status"></div>
   <div id="pullIndicator"><div class="pull-inner" id="pullInnerText">↓ Tirer pour actualiser</div></div>
 
@@ -1017,6 +1018,7 @@
 
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
+    const PURCHASE_PRICES = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
 
     const rememberCheckbox = document.getElementById('rememberSession');
     const customStorage = {
@@ -1858,14 +1860,16 @@
         ? state.clients.filter(c => c.name.toLowerCase().includes(q))
         : state.clients;
 
-      let html = `<div class="csearch-item${!current ? ' selected' : ''}" onclick="selectFilterClient('')">Tous les clients</div>`;
+      let html = `<div class="csearch-item${!current ? ' selected' : ''}" data-client="">Tous les clients</div>`;
       filtered.forEach(c => {
-        html += `<div class="csearch-item${c.name === current ? ' selected' : ''}" onclick="selectFilterClient('${c.name.replace(/'/g,"\\'")}')">
-          ${c.name}
-        </div>`;
+        const escaped = c.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        html += `<div class="csearch-item${c.name === current ? ' selected' : ''}" data-client="${escaped}">${escaped}</div>`;
       });
       drop.innerHTML = html;
       drop.classList.add('open');
+      drop.querySelectorAll('.csearch-item').forEach(item => {
+        item.addEventListener('click', () => window.selectFilterClient(item.dataset.client));
+      });
 
       setTimeout(() => {
         document.addEventListener('click', closeClientDropdown, { once: true, capture: true });
@@ -1887,11 +1891,7 @@
     }
 
     // ── Dark mode ───────────────────────────────────────────────────────────────
-    (function() {
-      if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark');
-      }
-    })();
+    // (Initial dark class applied by inline script in <body> for FOUC prevention)
 
     window.toggleDarkMode = function() {
       closeAllMenus();
@@ -1946,7 +1946,6 @@
       if (!content) return;
 
       const cats = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
-      const PURCHASE_PRICES = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
 
       let rows = '';
       let totQty = 0, totRevenu = 0, totAchat = 0, totMarge = 0;
@@ -2112,9 +2111,13 @@
       if (!drop) return;
       const filtered = q ? MOROCCO_CITIES.filter(c => c.toLowerCase().includes(q)) : MOROCCO_CITIES.slice(0, 15);
       if (filtered.length === 0) { drop.classList.remove('open'); return; }
-      drop.innerHTML = filtered.map(c =>
-        `<div class="csearch-item" onclick="selectCity('${c.replace(/'/g,"\\'")}')"> ${c}</div>`
-      ).join('');
+      drop.innerHTML = filtered.map(c => {
+        const escaped = c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        return `<div class="csearch-item" data-city="${escaped}">${escaped}</div>`;
+      }).join('');
+      drop.querySelectorAll('.csearch-item').forEach(item => {
+        item.addEventListener('click', () => window.selectCity(item.dataset.city));
+      });
       drop.classList.add('open');
       setTimeout(() => {
         document.addEventListener('click', closeCityDrop, { once: true, capture: true });
