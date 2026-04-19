@@ -1518,7 +1518,7 @@
       renderAnalytics(data);
     }
 
-    function renderSalesPage() {}  // kept for compatibility
+    function renderSalesPage() { /* no-op: sales are fully rendered by renderSales() */ }
 
     window.showMoreSales = function() {
       // scroll to end of sales area
@@ -2328,7 +2328,8 @@
     };
 
     // ── Product purchase price configuration ────────────────────────────────────
-    let _customPurchasePrices = { ...{ ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 } };
+    const DEFAULT_PURCHASE_PRICES = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
+    let _customPurchasePrices = { ...DEFAULT_PURCHASE_PRICES };
 
     function loadProductPrices() {
       try {
@@ -2341,7 +2342,7 @@
     }
 
     function getProductPurchasePrice(cat) {
-      return _customPurchasePrices[cat] || { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 }[cat] || 0;
+      return _customPurchasePrices[cat] || DEFAULT_PURCHASE_PRICES[cat] || 0;
     }
 
     window.openProductPricesModal = function() {
