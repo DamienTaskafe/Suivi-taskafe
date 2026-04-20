@@ -1844,7 +1844,13 @@
     }
 
     function closeAllMenus() {
-      document.querySelectorAll('.menu').forEach(m => m.style.display = 'none');
+      document.querySelectorAll('.menu').forEach(m => {
+        m.style.display = 'none';
+        m.style.position = '';
+        m.style.top = '';
+        m.style.right = '';
+        m.style.left = '';
+      });
       document.querySelectorAll('.header-menu').forEach(m => m.classList.remove('show'));
     }
 
@@ -2945,17 +2951,52 @@
       const el = document.getElementById(id);
       const open = el.style.display === 'block';
       closeAllMenus();
-      if (!open) el.style.display = 'block';
+      if (!open) {
+        el.style.display = 'block';
+        // Use fixed positioning for menus inside .vr-sale-item so they escape
+        // overflow:auto/.accordion-inner overflow:hidden containers.
+        const saleItem = el.closest && el.closest('.vr-sale-item');
+        if (saleItem) {
+          const btn = el.parentElement.querySelector('.menu-btn');
+          if (btn) {
+            const rect = btn.getBoundingClientRect();
+            el.style.position = 'fixed';
+            el.style.left   = 'auto';
+            el.style.right  = (window.innerWidth - rect.right) + 'px';
+            // show below button; flip above when there's no room
+            const menuH = el.offsetHeight;
+            const vpH   = window.innerHeight;
+            el.style.top = (rect.bottom + menuH < vpH - 10)
+              ? (rect.bottom + 4) + 'px'
+              : Math.max(0, rect.top - menuH - 4) + 'px';
+          }
+        }
+      }
     };
 
     window.toggleAccordion = function (el) {
       const acc = el.parentElement;
       const inner = acc.querySelector('.accordion-inner');
-      const willOpen = !acc.classList.contains('open');
-      acc.classList.toggle('open');
+      // Consider the accordion "effectively open" only when the open class is present
+      // AND content is actually visible (maxHeight > 0).  This prevents the desync
+      // where the class says "open" but maxHeight is still 0 from the CSS default.
+      const effectivelyOpen = acc.classList.contains('open') &&
+                              parseInt(inner.style.maxHeight || '0') > 0;
+      const willOpen = !effectivelyOpen;
       if (willOpen) {
+        acc.classList.add('open');
+        inner.style.overflow = 'hidden';
         inner.style.maxHeight = inner.scrollHeight + 'px';
+        // After the max-height transition ends, lift overflow so absolute/fixed
+        // dropdown menus can extend beyond the accordion boundary.
+        inner.addEventListener('transitionend', function onEnd(e) {
+          if (e.propertyName !== 'max-height') return;
+          inner.removeEventListener('transitionend', onEnd);
+          if (acc.classList.contains('open')) inner.style.overflow = 'visible';
+        });
       } else {
+        acc.classList.remove('open');
+        inner.style.overflow = 'hidden';
         inner.style.maxHeight = inner.scrollHeight + 'px';
         requestAnimationFrame(() => (inner.style.maxHeight = '0px'));
       }
@@ -2964,7 +3005,13 @@
     function initAccordions() {
       document.querySelectorAll('.accordion').forEach(acc => {
         const inner = acc.querySelector('.accordion-inner');
-        inner.style.maxHeight = acc.classList.contains('open') ? inner.scrollHeight + 'px' : '0px';
+        if (acc.classList.contains('open')) {
+          inner.style.maxHeight = inner.scrollHeight + 'px';
+          inner.style.overflow  = 'visible';
+        } else {
+          inner.style.maxHeight = '0px';
+          inner.style.overflow  = 'hidden';
+        }
       });
     }
 
@@ -3368,7 +3415,7 @@
       let hasVibrated = false; // vibration sent for this gesture
       let isRefreshing = false; // async refresh in progress — gate against re-entry
 
-      const THRESHOLD = 80;               // px drag needed to trigger refresh
+      const THRESHOLD = Math.round(window.innerHeight * 0.45); // ~45 % of screen height — requires a long deliberate pull
       const MAX_OFFSET = 68;              // max translateY when dragging
       const CIRC = 100.5;                 // 2π×16 (SVG arc circumference)
       const RUBBER_BAND_COEFF = 5.2;      // sqrt multiplier — Chrome-like diminishing resistance
