@@ -515,6 +515,26 @@
     /* Compact stock range badges */
     #stock .badge { padding: 2px 6px; font-size: 9px; margin-bottom: 2px; letter-spacing: 0.1px; border-radius: 7px; }
 
+    /* ── Compact stock grid ── */
+    .stock-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm); }
+    @media (max-width: 480px) { .stock-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stock-compact-card {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: var(--radius-md);
+      padding: 8px 10px 8px 10px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .stock-compact-card .menu-wrap { position: absolute; top: 5px; right: 5px; }
+    .stock-compact-card .menu-btn { font-size: 16px; padding: 2px 7px; }
+    .stock-compact-card .badge { font-size: 8px; padding: 2px 5px; border-radius: 6px; margin: 0; align-self: flex-start; max-width: calc(100% - 28px); }
+    .stock-compact-qty { font-size: 11px; color: var(--color-secondary); line-height: 1.4; }
+    .stock-compact-card .stock-low-badge { font-size: 8px; padding: 1px 5px; margin-left: 0; align-self: flex-start; }
+
     #category.ORO { background-color: #f39a1e; color: white; }
     #category.RIO { background-color: #1f78ff; color: white; }
     #category.ESPRESSO { background-color: #d52a2a; color: white; }
@@ -1329,15 +1349,7 @@
       </div>
 
       <div id="stock" class="section-shell hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-lg);">
-          <h3 style="margin:0;">📦 Gestion du stock</h3>
-          <div class="menu-wrap" style="position:relative;">
-            <button class="menu-btn" onclick="toggleMenu(event,'stockGlobalMenu')">⋯</button>
-            <div class="menu" id="stockGlobalMenu">
-              <button onclick="openStockAlertModal()">⚠️ Alertes stock bas</button>
-            </div>
-          </div>
-        </div>
+        <h3 style="margin-bottom:var(--spacing-lg);">📦 Gestion du stock</h3>
         <div id="stockList"></div>
       </div>
 
@@ -1582,24 +1594,6 @@
     </div>
   </div>
 
-  <div id="stockAlertModal" class="modal-backdrop" onclick="backdropClose(event, 'stockAlertModal')">
-    <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>⚠️ Alertes stock bas</h3><button class="close-x" onclick="closeModal('stockAlertModal')">✕</button></div>
-      <div class="settings-option">
-        <div class="title">Seuil global par défaut</div>
-        <div class="checkbox-line" style="margin-top:8px;">
-          <input type="checkbox" id="lowStockEnabled" aria-label="Activer les alertes de stock bas — affiche une pastille quand le stock est sous le seuil" onchange="saveLowStockSettings()" />
-          <label for="lowStockEnabled" style="margin:0;flex:1;">Activer les alertes stock bas</label>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-          <label for="lowStockThreshold" style="margin:0;font-size:12px;text-transform:none;letter-spacing:0;flex-shrink:0;">Seuil :</label>
-          <input id="lowStockThreshold" type="number" min="0" max="9999" step="0.5" value="5" style="width:80px;margin:0;" oninput="saveLowStockSettings()" />
-          <span style="font-size:12px;color:var(--color-text-muted);">kg / paquet</span>
-        </div>
-        <div class="muted" style="margin-top:8px;font-size:11px;">Les seuils individuels par article s'ajustent via le menu ⋯ de chaque produit.</div>
-      </div>
-    </div>
-  </div>
 
   <div id="itemAlertModal" class="modal-backdrop" onclick="backdropClose(event, 'itemAlertModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
@@ -2344,7 +2338,7 @@
         const isLow = alertSettings.enabled && qty <= alertSettings.threshold;
         if (isLow) anyLow = true;
         html += `
-          <div class="card">
+          <div class="stock-compact-card">
             <div class="menu-wrap">
               <button class="menu-btn" onclick="toggleMenu(event, 'stockMenu${cat}')">⋯</button>
               <div class="menu" id="stockMenu${cat}">
@@ -2359,12 +2353,12 @@
                 <button onclick="openItemAlertModal('${cat}')">⚙️ Seuil alerte</button>
               </div>
             </div>
-            <span class="card-title">${cat}${isLow ? '<span class="stock-low-badge">⚠️ Bas</span>' : ''}</span>
             <span class="badge ${cat}">${cat}</span>
-            <div class="line">📦 ${formatStockValue(cat, qty)} restant</div>
+            <div class="stock-compact-qty">📦 ${formatStockValue(cat, qty)}</div>
+            ${isLow ? '<span class="stock-low-badge">⚠️ Bas</span>' : ''}
           </div>`;
       });
-      list.innerHTML = html;
+      list.innerHTML = `<div class="stock-grid">${html}</div>`;
 
       // Update Stock tab badge
       const tabBadge = document.getElementById('stockAlert');
@@ -3273,14 +3267,6 @@
       openModal('settingsHubModal');
     };
 
-    window.saveLowStockSettings = function () {
-      const cbEl = document.getElementById('lowStockEnabled');
-      const thEl = document.getElementById('lowStockThreshold');
-      if (cbEl) localStorage.setItem(LS_LOW_STOCK_ENABLED, cbEl.checked ? 'true' : 'false');
-      if (thEl) localStorage.setItem(LS_LOW_STOCK_THRESHOLD, thEl.value);
-      renderStock();
-    };
-
     // ── Per-item alert helpers ─────────────────────────────────────────────────
     function getItemAlertSettings(cat) {
       try {
@@ -3289,10 +3275,10 @@
       } catch(e) {
         console.warn('[getItemAlertSettings] localStorage parse error:', e?.message);
       }
-      // Fall back to global settings
+      // Default: alerts disabled until individually configured
       return {
-        enabled: localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true',
-        threshold: parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT)
+        enabled: false,
+        threshold: LOW_STOCK_DEFAULT
       };
     }
 
@@ -3305,17 +3291,6 @@
         console.warn('[setItemAlertSettings] localStorage write error:', e?.message);
       }
     }
-
-    window.openStockAlertModal = function () {
-      closeAllMenus();
-      const enabled = localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true';
-      const threshold = parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT);
-      const cbEl = document.getElementById('lowStockEnabled');
-      const thEl = document.getElementById('lowStockThreshold');
-      if (cbEl) cbEl.checked = enabled;
-      if (thEl) thEl.value = threshold;
-      openModal('stockAlertModal');
-    };
 
     window.openItemAlertModal = function (cat) {
       closeAllMenus();
