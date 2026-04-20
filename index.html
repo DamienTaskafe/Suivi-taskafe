@@ -1761,7 +1761,7 @@
             .from('sales').insert({ ...salePayload, client_id }).select('id').single();
           if (saleErr) throw saleErr;
           if (op.stockPayload) {
-            const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload);
+            const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload, { onConflict: 'category' });
             if (stockErr) console.warn('[sync] stock upsert warning (addSale):', stockErr.message);
           }
           const realId = saleData?.id;
@@ -1776,7 +1776,7 @@
             if (error) throw error;
           }
           if (op.stockPayload) {
-            const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload);
+            const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload, { onConflict: 'category' });
             if (stockErr) console.warn('[sync] stock upsert warning (deleteSale):', stockErr.message);
           }
           break;
@@ -1785,11 +1785,11 @@
           const { saleId, stockOldPayload, stockNewPayload, ...salePayload } = op.payload;
           if (String(saleId).startsWith('local_')) break;
           if (stockOldPayload) {
-            const { error: e1 } = await supabase.from('stocks').upsert(stockOldPayload);
+            const { error: e1 } = await supabase.from('stocks').upsert(stockOldPayload, { onConflict: 'category' });
             if (e1) console.warn('[sync] stock upsert warning (updateSale old):', e1.message);
           }
           if (stockNewPayload) {
-            const { error: e2 } = await supabase.from('stocks').upsert(stockNewPayload);
+            const { error: e2 } = await supabase.from('stocks').upsert(stockNewPayload, { onConflict: 'category' });
             if (e2) console.warn('[sync] stock upsert warning (updateSale new):', e2.message);
           }
           const { error } = await supabase.from('sales').update(salePayload).eq('id', saleId);
@@ -1803,7 +1803,7 @@
           break;
         }
         case 'stockUpdate': {
-          const { error } = await supabase.from('stocks').upsert(op.payload);
+          const { error } = await supabase.from('stocks').upsert(op.payload, { onConflict: 'category' });
           if (error) throw error;
           break;
         }
@@ -2477,9 +2477,8 @@
       const { error } = await supabase.from('clients').insert(payload);
       if (error) return alert(error.message);
 
-      await loadCloudData();
-      paintApp();
       showSessionStatus('✅ Client créé', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] addClient:', e?.message));
     };
 
     window.addSale = async function () {
@@ -2546,12 +2545,13 @@
       });
       if (saleError) return alert(saleError.message);
 
-      const { error: stockError } = await supabase.from('stocks').upsert({ category, quantity: newStockQty });
-      if (stockError) return alert(stockError.message);
+      state.stocks[category] = newStockQty;
+      const { error: stockError } = await supabase.from('stocks').upsert({ category, quantity: newStockQty }, { onConflict: 'category' });
+      if (stockError) console.warn('[addSale] stock upsert:', stockError.message);
 
-      await loadCloudData();
       paintApp();
       showSessionStatus('✅ Vente ajoutée', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] addSale:', e?.message));
     };
 
     window.togglePaid = async function (saleId, paid) {
@@ -2567,11 +2567,19 @@
         updateOfflineBanner();
         return;
       }
-      const { error } = await supabase.from('sales').update({ paid }).eq('id', saleId);
-      if (error) return alert(error.message);
-      await loadCloudData();
+      const sale = state.sales.find(s => s.id === saleId);
+      if (!sale) return;
+      const prevPaid = sale.paid;
+      sale.paid = paid;
       paintApp();
+      const { error } = await supabase.from('sales').update({ paid }).eq('id', saleId);
+      if (error) {
+        sale.paid = prevPaid;
+        paintApp();
+        return alert(error.message);
+      }
       showSessionStatus(paid ? '✅ Marqué payé' : '❌ Marqué non payé', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] togglePaid:', e?.message));
     };
 
     window.deleteSale = async function (saleId) {
@@ -2600,18 +2608,28 @@
         return;
       }
 
-      const { error } = await supabase.from('sales').delete().eq('id', saleId);
-      if (error) return alert(error.message);
-
-      const { error: stockError } = await supabase.from('stocks').upsert({
-        category: sale.category,
-        quantity: restoredQty
-      });
-      if (stockError) return alert(stockError.message);
-
-      await loadCloudData();
+      const salesSnapshot = state.sales.slice();
+      const stockSnapshot = Number(state.stocks[sale.category] || 0);
+      state.sales = state.sales.filter(s => s.id !== saleId);
+      state.stocks[sale.category] = restoredQty;
       paintApp();
+
+      const { error } = await supabase.from('sales').delete().eq('id', saleId);
+      if (error) {
+        state.sales = salesSnapshot;
+        state.stocks[sale.category] = stockSnapshot;
+        paintApp();
+        return alert(error.message);
+      }
+
+      const { error: stockError } = await supabase.from('stocks').upsert(
+        { category: sale.category, quantity: restoredQty },
+        { onConflict: 'category' }
+      );
+      if (stockError) console.warn('[deleteSale] stock upsert:', stockError.message);
+
       showSessionStatus('✅ Vente supprimée', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] deleteSale:', e?.message));
     };
 
     window.deleteClient = async function (clientId) {
@@ -2626,11 +2644,18 @@
         updateOfflineBanner();
         return;
       }
-      const { error } = await supabase.from('clients').delete().eq('id', clientId);
-      if (error) return alert(error.message);
-      await loadCloudData();
+      const clientsSnapshot = state.clients.slice();
+      state.clients = state.clients.filter(c => c.id !== clientId);
       paintApp();
+
+      const { error } = await supabase.from('clients').delete().eq('id', clientId);
+      if (error) {
+        state.clients = clientsSnapshot;
+        paintApp();
+        return alert(error.message);
+      }
       showSessionStatus('✅ Client supprimé', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] deleteClient:', e?.message));
     };
 
     window.openEditClient = function(clientId) {
@@ -2710,9 +2735,8 @@
       const { error } = await supabase.from('clients').update({ name, address, ice, prices }).eq('id', clientId);
       if (error) return alert('❌ ' + error.message);
       closeModal('editClientModal');
-      await loadCloudData();
-      paintApp();
       showSessionStatus('✅ Client modifié', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] editClient:', e?.message));
     };
 
     // City autocomplete for edit modal
@@ -2768,12 +2792,12 @@
         return;
       }
 
-      const { error } = await supabase.from('stocks').upsert({ category, quantity: newQty });
+      state.stocks[category] = newQty;
+      const { error } = await supabase.from('stocks').upsert({ category, quantity: newQty }, { onConflict: 'category' });
       if (error) return alert(error.message);
 
-      await loadCloudData();
-      paintApp();
       showSessionStatus('✅ Stock mis à jour', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] addToStock:', e?.message));
     };
 
     window.setStock = async function (category) {
@@ -2795,12 +2819,12 @@
         return;
       }
 
-      const { error } = await supabase.from('stocks').upsert({ category, quantity });
+      state.stocks[category] = quantity;
+      const { error } = await supabase.from('stocks').upsert({ category, quantity }, { onConflict: 'category' });
       if (error) return alert(error.message);
 
-      await loadCloudData();
-      paintApp();
       showSessionStatus('✅ Stock défini', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] setStock:', e?.message));
     };
 
     function getActivityStatus(lastSeen) {
@@ -3257,19 +3281,24 @@
       }
 
       if (stockChanged) {
-        const { error: stockErr1 } = await supabase.from('stocks').upsert(stockOldPayload);
+        const { error: stockErr1 } = await supabase.from('stocks').upsert(stockOldPayload, { onConflict: 'category' });
         if (stockErr1) return alert('❌ ' + stockErr1.message);
-        const { error: stockErr2 } = await supabase.from('stocks').upsert(stockNewPayload);
+        const { error: stockErr2 } = await supabase.from('stocks').upsert(stockNewPayload, { onConflict: 'category' });
         if (stockErr2) return alert('❌ ' + stockErr2.message);
       }
 
       const { error } = await supabase.from('sales').update(updatedSaleData).eq('id', saleId);
 
       if (error) return alert('❌ ' + error.message);
+      Object.assign(sale, updatedSaleData);
+      if (stockChanged && stockOldPayload && stockNewPayload) {
+        state.stocks[stockOldPayload.category] = stockOldPayload.quantity;
+        state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
+      }
       closeModal('editSaleModal');
-      await loadCloudData();
       paintApp();
       showSessionStatus('✅ Vente modifiée', 'success');
+      loadCloudData().then(() => paintApp()).catch(e => console.warn('[refresh] editSale:', e?.message));
     };
 
     // ── Price spinners ───────────────────────────────────────────────────────────
