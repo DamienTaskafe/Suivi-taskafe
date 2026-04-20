@@ -2217,12 +2217,19 @@
 
     async function loadAllUsers() {
       if (!isManagerOrAdmin()) return;
-      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      if (error) {
-        console.error('[loadAllUsers] Erreur chargement utilisateurs :', error?.message || error);
+      try {
+        const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        if (error) {
+          console.error('[loadAllUsers] Erreur chargement utilisateurs :', error?.message || error);
+          showSessionStatus('⚠️ La liste des utilisateurs n\'a pas pu être rafraîchie', 'error', 5000);
+        } else {
+          state.allUsers = data || [];
+        }
+      } catch (e) {
+        // Guard against unexpected throws from the Supabase SDK (e.g. HTML error page
+        // parsed as JSON during a Supabase outage or project-pause).
+        console.error('[loadAllUsers] Exception inattendue :', e?.message || e);
         showSessionStatus('⚠️ La liste des utilisateurs n\'a pas pu être rafraîchie', 'error', 5000);
-      } else {
-        state.allUsers = data || [];
       }
     }
 
@@ -3014,8 +3021,13 @@
       openModal('usersModal');
       const list = document.getElementById('usersList');
       if (list) list.innerHTML = '<div class="muted" style="padding:12px">⏳ Chargement…</div>';
-      await loadAllUsers();
-      renderUsersList();
+      try {
+        await loadAllUsers();
+        renderUsersList();
+      } catch (e) {
+        console.warn('[openUsersModal] Chargement liste utilisateurs échoué :', e?.message);
+        if (list) list.innerHTML = '<div class="muted" style="padding:12px">⚠️ Impossible de charger la liste.</div>';
+      }
     };
 
     window.openProfileModal = function () {
@@ -3850,8 +3862,13 @@
 
         logAction('create_user', { email, role, targetUserId: result.userId });
 
-        await loadAllUsers();
-        renderUsersList();
+        // Refresh user list — errors here must not block or mask the success path.
+        try {
+          await loadAllUsers();
+          renderUsersList();
+        } catch (e) {
+          console.warn('[createNewUser] Rechargement liste utilisateurs échoué :', e?.message);
+        }
       } catch (err) {
         // Catch any unexpected exception (network failure, abort, etc.)
         // so the user always gets a clear message instead of a silent failure.
