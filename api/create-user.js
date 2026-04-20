@@ -223,25 +223,60 @@ module.exports = async (req, res) => {
               'Accept': 'application/json'
             }
           });
+          const profileRespContentType = profileResp.headers.get('content-type') || '';
+          // Always read body as text first so we can log it safely regardless of format.
+          // This avoids calling .json() on an HTML response (which would throw
+          // "Unexpected token '<'" and could propagate to the frontend).
+          let profileRespText = '';
+          try { profileRespText = await profileResp.text(); } catch (readEx) {
+            console.warn('[create-user] REST profiles: impossible de lire le corps de la réponse :', readEx?.message);
+          }
           if (profileResp.ok) {
-            const restRows = await profileResp.json();
-            if (Array.isArray(restRows) && restRows.length > 0) {
-              callerRole = String(restRows[0].role || '').toLowerCase();
-              profileLookupStatus = 'found_via_rest';
-              console.log('[create-user] Rôle obtenu via REST (fallback sdk_error) :', callerRole);
+            if (!profileRespContentType.includes('application/json')) {
+              // OK status but non-JSON body — likely an HTML error page from a proxy/CDN.
+              // Log full context to identify the root cause; do not attempt JSON.parse.
+              console.error('[create-user] REST profiles: réponse OK mais non-JSON (HTML probable)', {
+                url: profileUrl,
+                status: profileResp.status,
+                contentType: profileRespContentType,
+                bodyStart: profileRespText.substring(0, 300)
+              });
             } else {
-              console.warn('[create-user] REST profiles: aucun profil trouvé pour callerId =', caller.id);
+              let restRows = null;
+              try {
+                restRows = JSON.parse(profileRespText);
+              } catch (jsonErr) {
+                console.error('[create-user] REST profiles: échec JSON.parse malgré content-type JSON', {
+                  url: profileUrl,
+                  status: profileResp.status,
+                  contentType: profileRespContentType,
+                  parseError: jsonErr?.message,
+                  bodyStart: profileRespText.substring(0, 300)
+                });
+              }
+              if (Array.isArray(restRows) && restRows.length > 0) {
+                callerRole = String(restRows[0].role || '').toLowerCase();
+                profileLookupStatus = 'found_via_rest';
+                console.log('[create-user] Rôle obtenu via REST (fallback sdk_error) :', callerRole);
+              } else if (restRows !== null) {
+                // JSON parsed successfully but returned an empty array or unexpected type — no profile found
+                console.warn('[create-user] REST profiles: aucun profil trouvé pour callerId =', caller.id);
+              }
             }
           } else {
-            let errBody = '';
-            try { errBody = await profileResp.text(); } catch (parseEx) {
-              console.warn('[create-user] REST profiles: impossible de lire le corps de la réponse :', parseEx?.message);
-            }
-            console.warn('[create-user] REST profiles: réponse non-OK, status =', profileResp.status, '| body =', errBody.substring(0, 200));
+            console.warn('[create-user] REST profiles: réponse non-OK', {
+              url: profileUrl,
+              status: profileResp.status,
+              contentType: profileRespContentType,
+              bodyStart: profileRespText.substring(0, 300)
+            });
           }
         }
       } catch (restEx) {
-        console.warn('[create-user] REST profiles fallback exception :', restEx?.message);
+        console.error('[create-user] REST profiles fallback exception :', {
+          message: restEx?.message,
+          stack: restEx?.stack?.split('\n').slice(0, 5).join(' | ')
+        });
       }
 
       // Diagnostic (sdk_error path): also attempt email-based lookup to detect UUID mismatches
