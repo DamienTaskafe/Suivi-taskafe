@@ -7,7 +7,7 @@
 -- the caller's admin role because the profile row simply does not exist.
 --
 -- Fix:
---   1. A BEFORE/AFTER INSERT trigger on auth.users automatically creates a
+--   1. An AFTER INSERT trigger on auth.users automatically creates a
 --      corresponding profiles row with the role stored in raw_app_meta_data
 --      (falls back to 'employee' when the field is absent).
 --   2. A one-time backfill inserts profiles rows for any existing auth.users

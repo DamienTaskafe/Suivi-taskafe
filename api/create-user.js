@@ -341,9 +341,10 @@ module.exports = async (req, res) => {
 
     // Opportunistic sync: if the role was resolved via profiles but app_metadata lacks it,
     // set it now so subsequent calls can short-circuit the profile lookup entirely.
+    // Merge with existing app_metadata so other fields (e.g. provider data) are preserved.
     if (callerRole && !caller.app_metadata?.role) {
       supabaseAdmin.auth.admin.updateUserById(caller.id, {
-        app_metadata: { role: callerRole }
+        app_metadata: { ...caller.app_metadata, role: callerRole }
       }).catch(e => console.warn('[create-user] Sync app_metadata (non-bloquant) :', e?.message));
     }
   } catch (e) {

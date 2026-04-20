@@ -2371,7 +2371,7 @@
         if (!refreshError && refreshData?.session?.access_token) {
           state.session = refreshData.session;
           const u = refreshData.session.user;
-          console.log('[getFreshToken] Token rafraîchi pour :', u?.id?.substring(0, 8), '…', u?.email);
+          console.log('[getFreshToken] Token rafraîchi pour utilisateur :', u?.id?.substring(0, 8), '…');
           return refreshData.session.access_token;
         }
         if (refreshError) {
@@ -2389,7 +2389,7 @@
         if (sessionData?.session?.access_token) {
           state.session = sessionData.session;
           const u = sessionData.session.user;
-          console.log('[getFreshToken] Token depuis getSession pour :', u?.id?.substring(0, 8), '…', u?.email);
+          console.log('[getFreshToken] Token depuis getSession pour utilisateur :', u?.id?.substring(0, 8), '…');
           return sessionData.session.access_token;
         }
       } catch (e) {
@@ -2403,7 +2403,7 @@
       const stateToken = state.session?.access_token;
       if (stateToken) {
         const u = state.session?.user;
-        console.warn('[getFreshToken] Utilisation du token en mémoire (state.session) pour :', u?.id?.substring(0, 8), '…', u?.email, '— peut être expiré, le serveur validera');
+        console.warn('[getFreshToken] Utilisation du token en mémoire (state.session) pour utilisateur :', u?.id?.substring(0, 8), '… — peut être expiré, le serveur validera');
         return stateToken;
       }
 
@@ -3771,7 +3771,7 @@
         const jwtPayload = decodeJwtPayload(accessToken);
         if (jwtPayload) {
           const nowSec = Math.floor(Date.now() / 1000);
-          console.log('[createNewUser] Token JWT : sub =', jwtPayload.sub?.substring(0, 8), '…', '| email =', jwtPayload.email, '| exp =', jwtPayload.exp, '| expiré =', jwtPayload.exp < nowSec);
+          console.log('[createNewUser] Token JWT : sub =', jwtPayload.sub?.substring(0, 8), '… | exp =', jwtPayload.exp, '| expiré =', jwtPayload.exp < nowSec);
           if (jwtPayload.exp && jwtPayload.exp < nowSec) {
             statusEl.textContent = '❌ Token expiré localement. Déconnectez-vous puis reconnectez-vous.';
             statusEl.style.color = '#e53935';
