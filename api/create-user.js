@@ -163,6 +163,43 @@ module.exports = async (req, res) => {
         details: profileQueryError.details,
         hint: profileQueryError.hint
       });
+
+      // Fallback: query profiles via REST API directly (bypasses SDK, uses service-role key)
+      try {
+        // Validate that caller.id is a UUID before interpolating into the REST URL.
+        // Matches UUID v1–v5 (all variants); UUIDs from Supabase auth are always v4.
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(caller.id)) {
+          console.warn('[create-user] REST profiles fallback ignoré: callerId non-UUID =', typeof caller.id);
+        } else {
+          const profileUrl = `${supabaseUrl}/rest/v1/profiles?select=role&id=eq.${encodeURIComponent(caller.id)}&limit=1`;
+          const profileResp = await fetch(profileUrl, {
+            headers: {
+              'apikey': serviceRoleKey,
+              'Authorization': `Bearer ${serviceRoleKey}`,
+              'Accept': 'application/json'
+            }
+          });
+          if (profileResp.ok) {
+            const restRows = await profileResp.json();
+            if (Array.isArray(restRows) && restRows.length > 0) {
+              callerRole = String(restRows[0].role || '').toLowerCase();
+              profileLookupStatus = 'found_via_rest';
+              console.log('[create-user] Rôle obtenu via REST (fallback sdk_error) :', callerRole);
+            } else {
+              console.warn('[create-user] REST profiles: aucun profil trouvé pour callerId =', caller.id);
+            }
+          } else {
+            let errBody = '';
+            try { errBody = await profileResp.text(); } catch (parseEx) {
+              console.warn('[create-user] REST profiles: impossible de lire le corps de la réponse :', parseEx?.message);
+            }
+            console.warn('[create-user] REST profiles: réponse non-OK, status =', profileResp.status, '| body =', errBody.substring(0, 200));
+          }
+        }
+      } catch (restEx) {
+        console.warn('[create-user] REST profiles fallback exception :', restEx?.message);
+      }
     } else if (Array.isArray(profileRows) && profileRows.length > 0) {
       callerRole = String(profileRows[0].role || '').toLowerCase();
       profileLookupStatus = 'found';
