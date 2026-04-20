@@ -553,12 +553,12 @@
     .prices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); }
     .prices-grid > div label { margin: 0 0 var(--spacing-sm); }
 
-    .client-head { display: flex; justify-content: space-between; gap: var(--spacing-lg); align-items: flex-start; flex-wrap: wrap; margin-bottom: var(--spacing-md); }
-    .client-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); margin: var(--spacing-lg) 0; }
+    .client-head { display: flex; justify-content: space-between; gap: var(--spacing-md); align-items: flex-start; flex-wrap: wrap; margin-bottom: var(--spacing-sm); }
+    .client-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-sm); margin: var(--spacing-sm) 0 0; }
 
-    .mini-box { background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.05); border-radius: var(--radius-md); padding: var(--spacing-md); text-align: center; }
-    .mini-box .k { font-size: 10px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: var(--spacing-xs); letter-spacing: 0.3px; }
-    .mini-box .v { font-size: 15px; font-weight: 700; color: var(--color-text); }
+    .mini-box { background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.05); border-radius: var(--radius-md); padding: var(--spacing-xs) var(--spacing-sm); text-align: center; }
+    .mini-box .k { font-size: 9px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: var(--spacing-xs); letter-spacing: 0.3px; }
+    .mini-box .v { font-size: 13px; font-weight: 700; color: var(--color-text); }
 
     .logs-list { display: grid; gap: var(--spacing-md); }
     .log-item { background: rgba(255,255,255,0.9); border-radius: var(--radius-md); border: 1px solid rgba(0,0,0,0.03); padding: var(--spacing-lg); }
@@ -602,7 +602,7 @@
     .user-role { font-size: 11px; color: var(--color-text-muted); margin-top: var(--spacing-xs); text-transform: uppercase; letter-spacing: 0.2px; }
 
     @media (max-width: 760px) {
-      .top-actions, .summary-grid, .prices-grid, .client-stats { grid-template-columns: 1fr; }
+      .top-actions, .summary-grid, .prices-grid { grid-template-columns: 1fr; }
       .container { padding: var(--spacing-lg); padding-top: calc(116px + var(--spacing-sm)); }
       .auth-card { padding: var(--spacing-xl); }
       .modal-card { padding: var(--spacing-lg); }
@@ -649,6 +649,10 @@
 
     /* Client badge spacing fix – push cmd-count badge away from ⋯ button */
     .client-cmd-badge { flex-shrink: 0; margin-right: 48px; }
+
+    /* Client cards: tighter padding for a more compact appearance */
+    #clientList .card { padding: var(--spacing-md); margin-bottom: var(--spacing-sm); }
+    #clientList .card-title { font-size: 15px; margin-bottom: var(--spacing-xs); }
 
     /* Clients section label for "Fiches clients" */
     .clients-list-header { margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-md); }
@@ -2189,16 +2193,15 @@
 
       state.clients.forEach((c, i) => {
         const sales = getSalesForClient(c);
-        const unpaid = sales
-          .filter(s => !s.paid)
-          .reduce((sum, s) => sum + Number(s.total_price || 0), 0);
-
         const now = new Date();
         const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
         const monthlySales = sales.filter(s => {
           const d = new Date(s.created_at);
           return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === thisMonth;
         });
+        const monthlyUnpaid = monthlySales
+          .filter(s => !s.paid)
+          .reduce((sum, s) => sum + Number(s.total_price || 0), 0);
 
         html += `
           <div class="card">
@@ -2225,9 +2228,8 @@
             </div>
 
             <div class="client-stats">
-              <div class="mini-box"><div class="k">Non payé</div><div class="v">${formatDh(unpaid)}</div></div>
-              <div class="mini-box"><div class="k">Ce mois</div><div class="v">${monthlySales.length} cmd</div></div>
-              <div class="mini-box"><div class="k">Total</div><div class="v">${sales.length}</div></div>
+              <div class="mini-box"><div class="k">Non payé ce mois</div><div class="v">${formatDh(monthlyUnpaid)}</div></div>
+              <div class="mini-box"><div class="k">Total</div><div class="v">${sales.length} cmd</div></div>
             </div>
           </div>`;
       });
