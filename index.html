@@ -3787,7 +3787,9 @@
         }
 
         // Call the secure backend API — the service role key never leaves the server
-        const resp = await fetch('/api/create-user', {
+        const apiUrl = '/api/create-user';
+        console.log('[createNewUser] → appel', apiUrl, '| method: POST');
+        const resp = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -3845,6 +3847,21 @@
 
         await loadAllUsers();
         renderUsersList();
+      } catch (err) {
+        // Catch any unexpected exception (network failure, abort, etc.)
+        // so the user always gets a clear message instead of a silent failure.
+        let msg;
+        if (err?.name === 'AbortError') {
+          msg = 'Délai dépassé — réessayez dans quelques instants';
+        } else if (err instanceof TypeError) {
+          msg = 'Impossible de contacter le serveur — vérifiez votre connexion';
+        } else {
+          msg = err?.message || 'Erreur inattendue';
+        }
+        console.error('[createNewUser] Exception non gérée :', err);
+        statusEl.textContent = '❌ ' + msg;
+        statusEl.style.color = '#e53935';
+        showSessionStatus('❌ Erreur lors de la création utilisateur', 'error', 6000);
       } finally {
         btn.disabled = false;
         btn.textContent = '✅ Créer';
