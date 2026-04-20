@@ -2370,6 +2370,8 @@
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         if (!refreshError && refreshData?.session?.access_token) {
           state.session = refreshData.session;
+          const u = refreshData.session.user;
+          console.log('[getFreshToken] Token rafraîchi pour utilisateur :', u?.id?.substring(0, 8), '…');
           return refreshData.session.access_token;
         }
         if (refreshError) {
@@ -2386,6 +2388,8 @@
         }
         if (sessionData?.session?.access_token) {
           state.session = sessionData.session;
+          const u = sessionData.session.user;
+          console.log('[getFreshToken] Token depuis getSession pour utilisateur :', u?.id?.substring(0, 8), '…');
           return sessionData.session.access_token;
         }
       } catch (e) {
@@ -2398,11 +2402,24 @@
       // The API will return 401 if this token is expired; callers must handle that.
       const stateToken = state.session?.access_token;
       if (stateToken) {
-        console.warn('[getFreshToken] Utilisation du token en mémoire (state.session) — peut être expiré, le serveur validera');
+        const u = state.session?.user;
+        console.warn('[getFreshToken] Utilisation du token en mémoire (state.session) pour utilisateur :', u?.id?.substring(0, 8), '… — peut être expiré, le serveur validera');
         return stateToken;
       }
 
       return null;
+    }
+
+    // Decode the payload of a JWT without verifying its signature.
+    // Used only for local expiry checks before sending to the backend.
+    function decodeJwtPayload(token) {
+      try {
+        const parts = (token || '').split('.');
+        if (parts.length !== 3) return null;
+        return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      } catch (_) {
+        return null;
+      }
     }
 
     // Shows the login screen and hides the app shell — used as a last-resort
@@ -3747,6 +3764,26 @@
           statusEl.style.color = '#e53935';
           showSessionStatus('❌ Session expirée — reconnexion requise', 'error', 6000);
           return;
+        }
+
+        // Local sanity check: decode the JWT and verify it hasn't expired before sending.
+        // This catches the rare case where getFreshToken() returned a stale fallback token.
+        const jwtPayload = decodeJwtPayload(accessToken);
+        if (jwtPayload) {
+          const nowSec = Math.floor(Date.now() / 1000);
+          console.log('[createNewUser] Token JWT : sub =', jwtPayload.sub?.substring(0, 8), '… | exp =', jwtPayload.exp, '| expiré =', jwtPayload.exp < nowSec);
+          if (jwtPayload.exp && jwtPayload.exp < nowSec) {
+            statusEl.textContent = '❌ Token expiré localement. Déconnectez-vous puis reconnectez-vous.';
+            statusEl.style.color = '#e53935';
+            showSessionStatus('❌ Session expirée — reconnexion requise', 'error', 6000);
+            return;
+          }
+          // Cross-check: warn if the token user doesn't match the in-memory profile.
+          // This would indicate session confusion (two accounts in storage).
+          const profileId = state.profile?.id;
+          if (profileId && jwtPayload.sub && profileId !== jwtPayload.sub) {
+            console.warn('[createNewUser] ⚠️ Divergence identité : profile.id =', profileId, '≠ token.sub =', jwtPayload.sub);
+          }
         }
 
         // Call the secure backend API — the service role key never leaves the server
