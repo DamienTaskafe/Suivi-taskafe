@@ -3,7 +3,7 @@
 // - assets (js/css/img/font): stale-while-revalidate
 // - ne cache jamais les requêtes Supabase
 
-const CACHE_NAME = "taskafe-static-v2";
+const CACHE_NAME = "taskafe-static-v3";
 
 self.addEventListener("install", () => self.skipWaiting());
 
