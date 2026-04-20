@@ -1868,6 +1868,9 @@
       });
       document.querySelectorAll('.header-menu').forEach(m => m.classList.remove('show'));
     }
+    // Expose to global scope so inline onclick handlers (in dynamically generated HTML)
+    // can call it — the script is a module, so function declarations are not on window.
+    window.closeAllMenus = closeAllMenus;
 
     function requireAdmin(label) {
       if (!isAdmin()) {
@@ -2367,6 +2370,10 @@
         try {
           await loadCloudData();
           paintApp();
+          // Ensure the page is scrolled to the very top so the pull-to-refresh
+          // touchstart guard (window.scrollY > 2) passes on the first attempt.
+          // Without this, browser scroll-restoration can leave scrollY > 0.
+          window.scrollTo(0, 0);
           if (!navigator.onLine) {
             showSessionStatus('📶 Hors ligne — données locales chargées', 'info', 4000);
           }
