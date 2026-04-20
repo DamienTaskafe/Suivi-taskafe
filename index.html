@@ -957,6 +957,8 @@
       margin-bottom: 8px;
       border: 1px solid rgba(255,255,255,0.14);
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
     body.dark .vr-sale-item { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.07); }
     .vr-sale-row {
@@ -971,6 +973,7 @@
     .vr-sale-total.paid { color: var(--color-success); }
     .vr-sale-total.unpaid { color: var(--color-error); }
     .vr-sale-meta { font-size: 12px; color: var(--color-text-muted); margin-bottom: 4px; }
+    .vr-sale-footer { margin-top: auto; padding-top: 6px; }
     /* overflow menu positioned at top-right of each sale card */
     .vr-sale-item .menu-wrap { position: absolute; top: 8px; right: 8px; }
     .vr-sale-item .menu-wrap .menu-btn { background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.09); padding: 3px 9px; font-size: 18px; }
@@ -2287,8 +2290,10 @@
                     <span>${s.paid ? '✅' : '❌'}</span>
                   </span>
                 </div>
-                <div class="vr-sale-meta">📅 ${dateStr}</div>
-                <div class="vr-sale-meta">Créée par : ${escHtml(creatorName)}</div>
+                <div class="vr-sale-footer">
+                  <div class="vr-sale-meta">📅 ${dateStr}</div>
+                  <div class="vr-sale-meta">Créée par : ${escHtml(creatorName)}</div>
+                </div>
               </div>`;
           });
           html += `</div>`;
