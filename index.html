@@ -512,6 +512,9 @@
     .badge.SANTOS { background-color: #161616; color: #d4af37; }
     .badge.SUCRE { background-color: #e6d3a3; color: black; }
 
+    /* Compact stock range badges */
+    #stock .badge { padding: 2px 6px; font-size: 9px; margin-bottom: 2px; letter-spacing: 0.1px; border-radius: 7px; }
+
     #category.ORO { background-color: #f39a1e; color: white; }
     #category.RIO { background-color: #1f78ff; color: white; }
     #category.ESPRESSO { background-color: #d52a2a; color: white; }
@@ -573,8 +576,8 @@
     .empty-state { text-align: center; padding: var(--spacing-xl); border-radius: var(--radius-lg); background: rgba(255,255,255,0.72); color: var(--color-text-muted); border: 1px dashed var(--color-border); font-size: 13px; }
 
     .users-grid { display: grid; grid-template-columns: 1fr; gap: var(--spacing-md); margin: var(--spacing-lg) 0; }
-    .user-row { background: rgba(255,255,255,0.88); border-radius: var(--radius-md); padding: var(--spacing-md) var(--spacing-lg); border: 1px solid rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; gap: var(--spacing-lg); }
-    .user-info { flex: 1; }
+    .user-row { position: relative; background: rgba(255,255,255,0.88); border-radius: var(--radius-md); padding: var(--spacing-md) var(--spacing-lg); padding-right: 52px; border: 1px solid rgba(0,0,0,0.04); display: flex; align-items: center; gap: var(--spacing-lg); }
+    .user-info { flex: 1; min-width: 0; }
     .user-email { font-weight: 700; font-size: 13px; color: var(--color-text); }
     .user-role { font-size: 11px; color: var(--color-text-muted); margin-top: var(--spacing-xs); text-transform: uppercase; letter-spacing: 0.2px; }
 
@@ -583,7 +586,7 @@
       .container { padding: var(--spacing-lg); padding-top: calc(116px + var(--spacing-sm)); }
       .auth-card { padding: var(--spacing-xl); }
       .modal-card { padding: var(--spacing-lg); }
-      .user-row { flex-direction: column; align-items: flex-start; }
+      .user-row { flex-direction: row; align-items: center; }
       .user-row button { width: 100%; }
     }
 
@@ -733,7 +736,8 @@
     body.dark .offline-banner { background: #b74200; }
 
     /* ── User-row overflow menu (reuses .menu-wrap pattern) ── */
-    .user-row .menu-wrap { position: relative; flex-shrink: 0; }
+    .user-row .menu-wrap { position: absolute; top: var(--spacing-md); right: var(--spacing-md); flex-shrink: 0; }
+    .user-row .menu-btn { width: auto !important; }
 
     /* ── Compact sale cards ── */
     .sale-card-compact { padding: 10px 12px 10px 12px; margin-bottom: 8px; }
@@ -892,27 +896,27 @@
     /* ── Address fields clean layout ── */
     .addr-grid {
       display: grid;
-      grid-template-columns: 52px 1fr;
+      grid-template-columns: 52px min-content 1fr;
       gap: 6px;
       margin-bottom: var(--spacing-sm);
       align-items: start;
     }
     .addr-grid input, .addr-grid select { margin: 0; }
-    .addr-grid > *:nth-child(3) { grid-column: 1 / -1; }
+    .addr-grid select { font-size: 13px; padding: 8px 6px; }
 
     /* ── Client edit modal: address grid ── */
     .edit-addr-grid {
       display: grid;
-      grid-template-columns: 52px 1fr;
+      grid-template-columns: 52px min-content 1fr;
       gap: 6px;
       margin-bottom: var(--spacing-sm);
       align-items: start;
     }
     .edit-addr-grid input, .edit-addr-grid select { margin: 0; }
-    .edit-addr-grid > *:nth-child(3) { grid-column: 1 / -1; }
+    .edit-addr-grid select { font-size: 13px; padding: 8px 6px; }
 
-    /* ── Nouveau client: Nom field larger ── */
-    #clientName { height: 88px; min-height: 88px; }
+    /* ── Nouveau client: Nom field ── */
+    /* #clientName height removed – use standard input height */
 
     /* ── Prix par gamme: 2-row grid layout ── */
     #clients .price-scroll-row,
@@ -1289,7 +1293,7 @@
             <div class="addr-grid">
               <input id="clientAddrNum" type="text" placeholder="N°" />
               <select id="clientAddrType">
-                <option>Rue</option><option>Av</option><option>Bd</option><option>Imp</option><option>Chem</option><option>Res</option><option>Lot</option><option>Pass</option><option>Allée</option><option>Sq</option>
+                <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
               </select>
               <input id="clientAddrDetail" placeholder="Nom de voie" />
             </div>
@@ -1322,7 +1326,15 @@
       </div>
 
       <div id="stock" class="section-shell hidden">
-        <h3>📦 Gestion du stock</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-lg);">
+          <h3 style="margin:0;">📦 Gestion du stock</h3>
+          <div class="menu-wrap" style="position:relative;">
+            <button class="menu-btn" onclick="toggleMenu(event,'stockGlobalMenu')">⋯</button>
+            <div class="menu" id="stockGlobalMenu">
+              <button onclick="openStockAlertModal()">⚠️ Alertes stock bas</button>
+            </div>
+          </div>
+        </div>
         <div id="stockList"></div>
       </div>
 
@@ -1400,18 +1412,6 @@
         <div class="title">☁️ Export cloud</div>
         <div class="muted">Télécharger une sauvegarde JSON complète.</div>
         <button onclick="exportData()">📥 Exporter données</button>
-      </div>
-      <div class="settings-option">
-        <div class="title">📦 Alertes stock bas</div>
-        <div class="checkbox-line" style="margin-top:8px;">
-          <input type="checkbox" id="lowStockEnabled" aria-label="Activer les alertes de stock bas — affiche une pastille quand le stock est sous le seuil" onchange="saveLowStockSettings()" />
-          <label for="lowStockEnabled" style="margin:0;flex:1;">Activer les alertes stock bas</label>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-          <label for="lowStockThreshold" style="margin:0;font-size:12px;text-transform:none;letter-spacing:0;flex-shrink:0;">Seuil :</label>
-          <input id="lowStockThreshold" type="number" min="0" max="9999" step="0.5" value="5" style="width:80px;margin:0;" oninput="saveLowStockSettings()" />
-          <span style="font-size:12px;color:var(--color-text-muted);">kg / paquet</span>
-        </div>
       </div>
     </div>
   </div>
@@ -1512,7 +1512,7 @@
       <div class="edit-addr-grid">
         <input id="editClientAddrNum" type="text" placeholder="N°" />
         <select id="editClientAddrType">
-          <option>Rue</option><option>Av</option><option>Bd</option><option>Imp</option><option>Chem</option><option>Res</option><option>Lot</option><option>Pass</option><option>Allée</option><option>Sq</option>
+          <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
         </select>
         <input id="editClientAddrDetail" placeholder="Nom de voie" />
       </div>
@@ -1579,6 +1579,43 @@
     </div>
   </div>
 
+  <div id="stockAlertModal" class="modal-backdrop" onclick="backdropClose(event, 'stockAlertModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>⚠️ Alertes stock bas</h3><button class="close-x" onclick="closeModal('stockAlertModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title">Seuil global par défaut</div>
+        <div class="checkbox-line" style="margin-top:8px;">
+          <input type="checkbox" id="lowStockEnabled" aria-label="Activer les alertes de stock bas — affiche une pastille quand le stock est sous le seuil" onchange="saveLowStockSettings()" />
+          <label for="lowStockEnabled" style="margin:0;flex:1;">Activer les alertes stock bas</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label for="lowStockThreshold" style="margin:0;font-size:12px;text-transform:none;letter-spacing:0;flex-shrink:0;">Seuil :</label>
+          <input id="lowStockThreshold" type="number" min="0" max="9999" step="0.5" value="5" style="width:80px;margin:0;" oninput="saveLowStockSettings()" />
+          <span style="font-size:12px;color:var(--color-text-muted);">kg / paquet</span>
+        </div>
+        <div class="muted" style="margin-top:8px;font-size:11px;">Les seuils individuels par article s'ajustent via le menu ⋯ de chaque produit.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="itemAlertModal" class="modal-backdrop" onclick="backdropClose(event, 'itemAlertModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3 id="itemAlertModalTitle">⚙️ Alerte stock</h3><button class="close-x" onclick="closeModal('itemAlertModal')">✕</button></div>
+      <input type="hidden" id="itemAlertCat" />
+      <div class="settings-option">
+        <div class="checkbox-line" style="margin-top:4px;">
+          <input type="checkbox" id="itemAlertEnabled" onchange="saveItemAlertSettings()" />
+          <label for="itemAlertEnabled" style="margin:0;flex:1;">Activer l'alerte pour cet article</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label for="itemAlertThreshold" style="margin:0;font-size:12px;text-transform:none;letter-spacing:0;flex-shrink:0;">Seuil :</label>
+          <input id="itemAlertThreshold" type="number" min="0" max="9999" step="0.5" value="5" style="width:80px;margin:0;" oninput="saveItemAlertSettings()" />
+          <span id="itemAlertUnit" style="font-size:12px;color:var(--color-text-muted);">kg</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script type="module">
@@ -1607,6 +1644,7 @@
     const PURCHASE_PRICES = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
     const LS_LOW_STOCK_ENABLED = 'lowStockEnabled';
     const LS_LOW_STOCK_THRESHOLD = 'lowStockThreshold';
+    const LS_ITEM_ALERTS = 'stockAlertPerItem';
     const LOW_STOCK_DEFAULT = 5;
 
     const rememberCheckbox = document.getElementById('rememberSession');
@@ -2056,6 +2094,7 @@
         m.style.right = '';
         m.style.left = '';
         m.style.visibility = '';
+        m.style.zIndex = '';
         // Restore portaled menus to their original DOM position.
         const origParent = portaledMenus.get(m);
         if (origParent) {
@@ -2228,7 +2267,9 @@
           html += `<div class="vr-client-group"><div class="vr-client-title">${clientName}</div>`;
           clientSales.forEach(s => {
             const dateStr = new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
-            const creatorName = s.created_by ? (state.allUsers.find(u=>u.id===s.created_by)?.full_name || 'Utilisateur') : 'Inconnu';
+            const creatorUser = s.created_by ? state.allUsers.find(u => u.id === s.created_by) : null;
+            const creatorName = creatorUser?.full_name || (s.created_by ? 'Utilisateur' : 'Inconnu');
+            const roleIcon = getRoleIcon(creatorUser?.role);
             html += `
               <div class="vr-sale-item">
                 <div class="menu-wrap">
@@ -2245,7 +2286,7 @@
                   <span class="vr-sale-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
                   <span style="margin-left:auto;">${s.paid ? '✅' : '❌'}</span>
                 </div>
-                <div class="vr-sale-meta">📅 ${dateStr} · 👤 ${creatorName}</div>
+                <div class="vr-sale-meta">📅 ${dateStr} · ${roleIcon} ${escHtml(creatorName)}</div>
               </div>`;
           });
           html += `</div>`;
@@ -2288,13 +2329,12 @@
 
     function renderStock() {
       const list = document.getElementById('stockList');
-      const lowEnabled = localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true';
-      const lowThreshold = parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT);
       let anyLow = false;
       let html = '';
       Object.keys(DEFAULT_STOCKS).forEach(cat => {
+        const alertSettings = getItemAlertSettings(cat);
         const qty = Number(state.stocks[cat] || 0);
-        const isLow = lowEnabled && qty <= lowThreshold;
+        const isLow = alertSettings.enabled && qty <= alertSettings.threshold;
         if (isLow) anyLow = true;
         html += `
           <div class="card">
@@ -2309,6 +2349,7 @@
                 `
                     : ''
                 }
+                <button onclick="openItemAlertModal('${cat}')">⚙️ Seuil alerte</button>
               </div>
             </div>
             <span class="card-title">${cat}${isLow ? '<span class="stock-low-badge">⚠️ Bas</span>' : ''}</span>
@@ -2849,6 +2890,19 @@
       });
       if (saleError) return alert(saleError.message);
 
+      // Optimistically add the new sale to state so client badge updates immediately
+      state.sales.unshift({
+        id: 'pending_' + Date.now(),
+        client_id: client?.id || null,
+        client_name: clientName,
+        category,
+        quantity,
+        unit_price: unitPrice,
+        total_price: totalPrice,
+        paid,
+        created_by: state.session.user.id,
+        created_at: createdAt
+      });
       state.stocks[category] = newStockQty;
       const { error: stockError } = await supabase.from('stocks').upsert({ category, quantity: newStockQty }, { onConflict: 'category' });
       if (stockError) console.warn('[addSale] stock upsert:', stockError.message);
@@ -2976,18 +3030,20 @@
       let addrNum = '', addrType = 'Rue', addrDetail = '', addrCity = '';
       if (addrParts.length >= 3) {
         addrNum = addrParts[0];
-        const typeMatch = addrParts[1]?.match(/^(Rue|Av|Bd|Imp|Chem|Res|Lot|Pass|Allée|Sq)\s+(.*)$/i);
+        const typeMatch = addrParts[1]?.match(/^(Rue|Avenue|Boulevard|Impasse|Chemin|Résidence|Lotissement|Passage|Allée|Square|Av|Bd|Imp|Chem|Res|Lot|Pass|Sq)\s+(.*)$/i);
         if (typeMatch) { addrType = typeMatch[1]; addrDetail = typeMatch[2]; } else { addrDetail = addrParts[1]; }
         addrCity = addrParts.slice(2).join(', ');
       } else if (addrParts.length === 2) {
-        const typeMatch = addrParts[0]?.match(/^(Rue|Av|Bd|Imp|Chem|Res|Lot|Pass|Allée|Sq)\s+(.*)$/i);
+        const typeMatch = addrParts[0]?.match(/^(Rue|Avenue|Boulevard|Impasse|Chemin|Résidence|Lotissement|Passage|Allée|Square|Av|Bd|Imp|Chem|Res|Lot|Pass|Sq)\s+(.*)$/i);
         if (typeMatch) { addrType = typeMatch[1]; addrDetail = typeMatch[2]; } else { addrDetail = addrParts[0]; }
         addrCity = addrParts[1];
       } else if (addrParts.length === 1) {
         addrDetail = addrParts[0];
       }
       document.getElementById('editClientAddrNum').value = addrNum;
-      document.getElementById('editClientAddrType').value = addrType;
+      // Map legacy abbreviations to full names for the select
+      const addrTypeMap = { Av:'Avenue', Bd:'Boulevard', Imp:'Impasse', Chem:'Chemin', Res:'Résidence', Lot:'Lotissement', Pass:'Passage', Sq:'Square' };
+      document.getElementById('editClientAddrType').value = addrTypeMap[addrType] || addrType;
       document.getElementById('editClientAddrDetail').value = addrDetail;
       document.getElementById('editClientAddrCity').value = addrCity;
 
@@ -3207,13 +3263,6 @@
     };
 
     window.openSettingsHubModal = function () {
-      // Restore low-stock settings in UI
-      const enabled = localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true';
-      const threshold = parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT);
-      const cbEl = document.getElementById('lowStockEnabled');
-      const thEl = document.getElementById('lowStockThreshold');
-      if (cbEl) cbEl.checked = enabled;
-      if (thEl) thEl.value = threshold;
       openModal('settingsHubModal');
     };
 
@@ -3224,6 +3273,66 @@
       if (thEl) localStorage.setItem(LS_LOW_STOCK_THRESHOLD, thEl.value);
       renderStock();
     };
+
+    // ── Per-item alert helpers ─────────────────────────────────────────────────
+    function getItemAlertSettings(cat) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(LS_ITEM_ALERTS) || '{}');
+        if (stored[cat] !== undefined) return stored[cat];
+      } catch(e) {}
+      // Fall back to global settings
+      return {
+        enabled: localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true',
+        threshold: parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT)
+      };
+    }
+
+    function setItemAlertSettings(cat, settings) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(LS_ITEM_ALERTS) || '{}');
+        stored[cat] = settings;
+        localStorage.setItem(LS_ITEM_ALERTS, JSON.stringify(stored));
+      } catch(e) {}
+    }
+
+    window.openStockAlertModal = function () {
+      closeAllMenus();
+      const enabled = localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true';
+      const threshold = parseFloat(localStorage.getItem(LS_LOW_STOCK_THRESHOLD) || LOW_STOCK_DEFAULT);
+      const cbEl = document.getElementById('lowStockEnabled');
+      const thEl = document.getElementById('lowStockThreshold');
+      if (cbEl) cbEl.checked = enabled;
+      if (thEl) thEl.value = threshold;
+      openModal('stockAlertModal');
+    };
+
+    window.openItemAlertModal = function (cat) {
+      closeAllMenus();
+      const settings = getItemAlertSettings(cat);
+      document.getElementById('itemAlertCat').value = cat;
+      document.getElementById('itemAlertModalTitle').textContent = `⚙️ Alerte — ${cat}`;
+      document.getElementById('itemAlertEnabled').checked = settings.enabled;
+      document.getElementById('itemAlertThreshold').value = settings.threshold;
+      document.getElementById('itemAlertUnit').textContent = cat === 'SUCRE' ? 'paquets' : 'kg';
+      openModal('itemAlertModal');
+    };
+
+    window.saveItemAlertSettings = function () {
+      const cat = document.getElementById('itemAlertCat').value;
+      if (!cat) return;
+      const enabled = document.getElementById('itemAlertEnabled').checked;
+      const threshold = parseFloat(document.getElementById('itemAlertThreshold').value) || 0;
+      setItemAlertSettings(cat, { enabled, threshold });
+      renderStock();
+    };
+
+    // ── Role icon helper ───────────────────────────────────────────────────────
+    function getRoleIcon(role) {
+      if (role === 'admin') return '👑';
+      if (role === 'manager') return '🔑';
+      // Employee: classic blue head SVG
+      return '<svg style="display:inline-block;vertical-align:middle;width:13px;height:13px;margin-right:1px" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="7" r="4" fill="#1f78ff"/><path d="M2 18c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#1f78ff" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+    }
 
     window.openResumeModal = function () { openModal('resumeModal'); };
 
@@ -3278,6 +3387,7 @@
             // Now position:fixed is truly viewport-relative (body has no transforms).
             el.style.position = 'fixed';
             el.style.left = 'auto';
+            el.style.zIndex = '5000'; // above modal-backdrop (z-index: 4000)
             // Measure height while invisible to avoid any flash at the wrong position
             el.style.visibility = 'hidden';
             el.style.display = 'block';
@@ -4026,6 +4136,9 @@
 
         statusEl.textContent = `✅ Utilisateur créé : ${email}`;
         statusEl.style.color = '#2e7d32';
+        // Auto-dismiss the success indicator after 4 seconds
+        clearTimeout(statusEl._dismissTimer);
+        statusEl._dismissTimer = setTimeout(() => { statusEl.textContent = ''; statusEl.style.color = ''; }, 4000);
         showSessionStatus('✅ Utilisateur créé', 'success');
 
         logAction('create_user', { email, role, targetUserId: result.userId });
