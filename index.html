@@ -587,7 +587,7 @@
       .auth-card { padding: var(--spacing-xl); }
       .modal-card { padding: var(--spacing-lg); }
       .user-row { flex-direction: row; align-items: center; }
-      .user-row button { width: 100%; }
+      .user-row > button:not(.menu-btn) { width: 100%; }
     }
 
     @media (max-width: 480px) {
@@ -3279,7 +3279,9 @@
       try {
         const stored = JSON.parse(localStorage.getItem(LS_ITEM_ALERTS) || '{}');
         if (stored[cat] !== undefined) return stored[cat];
-      } catch(e) {}
+      } catch(e) {
+        console.warn('[getItemAlertSettings] localStorage parse error:', e?.message);
+      }
       // Fall back to global settings
       return {
         enabled: localStorage.getItem(LS_LOW_STOCK_ENABLED) === 'true',
@@ -3292,7 +3294,9 @@
         const stored = JSON.parse(localStorage.getItem(LS_ITEM_ALERTS) || '{}');
         stored[cat] = settings;
         localStorage.setItem(LS_ITEM_ALERTS, JSON.stringify(stored));
-      } catch(e) {}
+      } catch(e) {
+        console.warn('[setItemAlertSettings] localStorage write error:', e?.message);
+      }
     }
 
     window.openStockAlertModal = function () {
