@@ -3060,15 +3060,15 @@
       closeAllMenus();
       if (!open) {
         const saleItem = el.closest && el.closest('.vr-sale-item');
-        if (saleItem) {
+        const userRow  = el.closest && el.closest('.user-row');
+        if (saleItem || userRow) {
           const btn = el.parentElement.querySelector('.menu-btn');
           if (btn) {
             const rect = btn.getBoundingClientRect();
 
-            // Portal the menu to <body> so it escapes all overflow:hidden ancestors
-            // (the backdrop-filter on .section-shell makes position:fixed relative to
-            // the shell, not the viewport, which causes overflow:hidden clipping of
-            // pointer events on .accordion and .accordion-inner).
+            // Portal the menu to <body> so it escapes all overflow:hidden / overflow:auto
+            // ancestors AND the backdrop-filter stacking context on .modal-backdrop
+            // (backdrop-filter makes position:fixed relative to the element, not the viewport).
             const origParent = el.parentElement;
             document.body.appendChild(el);
             portaledMenus.set(el, origParent);
@@ -3076,13 +3076,19 @@
             // Now position:fixed is truly viewport-relative (body has no transforms).
             el.style.position = 'fixed';
             el.style.left = 'auto';
-            el.style.right = Math.max(0, window.innerWidth - rect.right) + 'px';
             // Measure height while invisible to avoid any flash at the wrong position
             el.style.visibility = 'hidden';
             el.style.display = 'block';
 
+            const menuW = el.offsetWidth;
             const menuH = el.offsetHeight;
+            const vpW   = window.innerWidth;
             const vpH   = window.innerHeight;
+
+            // Align right edge of menu with right edge of button.
+            // Clamp so the menu never overflows the left or right viewport edge.
+            const rightFromEdge = vpW - rect.right;
+            el.style.right = Math.max(8, Math.min(rightFromEdge, vpW - menuW - 8)) + 'px';
 
             el.style.top = (rect.bottom + menuH + 4 < vpH - 10)
               ? (rect.bottom + 4) + 'px'

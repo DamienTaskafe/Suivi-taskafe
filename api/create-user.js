@@ -6,9 +6,6 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-// Timeout (ms) for the admin-role REST fetch to avoid silent hangs on slow networks
-const ROLE_VERIFICATION_TIMEOUT_MS = 8000;
-
 // Supabase project URL — same value already hardcoded in index.html (not a secret)
 const SUPABASE_URL_FALLBACK = 'https://ogjljdjphawcminawtlv.supabase.co';
 
@@ -139,39 +136,26 @@ module.exports = async (req, res) => {
   console.log('[create-user] Token validé, appelant =', caller.id, '| email =', caller.email);
 
   // ── Step 3 : Verify caller has admin role ────────────────────────────────
-  // 1. REST fetch profiles by caller.id (service-role key → bypasses RLS)
+  // 1. supabaseAdmin SDK query on profiles (service-role key → bypasses RLS)
   // 2. Fallback to app_metadata.role (server-controlled, set by create-user)
   let callerRole = null;
   try {
-    const profileUrl = `${supabaseUrl}/rest/v1/profiles?select=role&id=eq.${encodeURIComponent(caller.id)}&limit=1`;
-    console.log('[create-user] Vérification du rôle admin via profiles REST...');
-    const roleAbort = new AbortController();
-    const roleTimeout = setTimeout(() => roleAbort.abort(), ROLE_VERIFICATION_TIMEOUT_MS);
-    let profileResp;
-    try {
-      profileResp = await fetch(profileUrl, {
-        signal: roleAbort.signal,
-        headers: {
-          'apikey': serviceRoleKey,
-          'Authorization': `Bearer ${serviceRoleKey}`,
-          'Accept': 'application/json'
-        }
-      });
-    } finally {
-      clearTimeout(roleTimeout);
-    }
-    if (profileResp.ok) {
-      const rows = await profileResp.json();
-      if (Array.isArray(rows) && rows.length > 0) {
-        callerRole = String(rows[0].role || '').toLowerCase();
-        console.log('[create-user] Rôle obtenu via profiles :', callerRole, '| callerId =', caller.id);
-      } else {
-        console.warn('[create-user] Profil introuvable en table profiles pour id =', caller.id);
-      }
+    console.log('[create-user] Vérification du rôle admin via supabaseAdmin.from(profiles)...');
+    const { data: profileRows, error: profileQueryError } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', caller.id)
+      .limit(1);
+
+    if (profileQueryError) {
+      console.error('[create-user] Erreur SDK profiles :', profileQueryError.message, '| code :', profileQueryError.code);
+    } else if (Array.isArray(profileRows) && profileRows.length > 0) {
+      callerRole = String(profileRows[0].role || '').toLowerCase();
+      console.log('[create-user] Rôle obtenu via profiles :', callerRole, '| callerId =', caller.id);
     } else {
-      const errText = await profileResp.text().catch(() => '');
-      console.error('[create-user] REST profiles échoué :', profileResp.status, errText);
+      console.warn('[create-user] Profil introuvable en table profiles pour id =', caller.id);
     }
+
     // Fallback to app_metadata if profiles table query failed or returned no role
     if (!callerRole) {
       callerRole = String(caller.app_metadata?.role || '').toLowerCase();
@@ -181,12 +165,7 @@ module.exports = async (req, res) => {
     }
   } catch (e) {
     console.error('[create-user] Erreur vérification rôle appelant :', e.message);
-    const isTimeout = e.name === 'AbortError';
-    return res.status(503).json({
-      error: isTimeout
-        ? 'Délai dépassé lors de la vérification du rôle, réessayez'
-        : 'Service d\'authentification inaccessible, réessayez'
-    });
+    return res.status(503).json({ error: 'Service d\'authentification inaccessible, réessayez' });
   }
 
   if (callerRole !== 'admin') {
