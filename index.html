@@ -1035,6 +1035,52 @@
     @keyframes splashLogoShrink {
       to { transform: scale(1.0); }
     }
+
+    /* ── Permissions toggle switch (iOS-style) ──────────────────────────────── */
+    .perm-toggle {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .perm-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .perm-toggle .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: rgba(0,0,0,0.15);
+      border-radius: 13px;
+      transition: background 0.2s;
+    }
+    .perm-toggle .slider::before {
+      content: "";
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+    .perm-toggle input:checked + .slider { background: var(--color-success); }
+    .perm-toggle input:checked + .slider::before { transform: translateX(18px); }
+
+    /* ── Permissions table ──────────────────────────────────────────────────── */
+    .perm-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    .perm-table th {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+      color: var(--color-text-muted); padding: 8px 4px; text-align: center;
+    }
+    .perm-table th:first-child { text-align: left; }
+    .perm-table td {
+      padding: 10px 4px; border-bottom: 1px solid var(--color-border);
+      text-align: center; vertical-align: middle;
+    }
+    .perm-table td:first-child { text-align: left; font-size: 13px; font-weight: 600; padding-right: 8px; }
+    .perm-table tr:last-child td { border-bottom: none; }
   </style>
 </head>
 
@@ -1129,6 +1175,7 @@
           <button id="usersBtn" onclick="openUsersModal()" class="hidden">👥 Gérer utilisateurs</button>
           <button id="resetAppBtn" class="hidden" onclick="openResetModal()">🔄 Réinitialiser filtres</button>
           <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()">📋 Logs</button>
+          <button id="permissionsBtn" class="hidden" onclick="openPermissionsModal()">🔐 Droits d'accès</button>
           <button onclick="logout()">🚪 Déconnexion</button>
         </div>
       </div>
@@ -1522,6 +1569,16 @@
     </div>
   </div>
 
+  <div id="permissionsModal" class="modal-backdrop" onclick="backdropClose(event, 'permissionsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔐 Droits d'accès</h3><button class="close-x" onclick="closeModal('permissionsModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;">Configurez les permissions par rôle. L'admin dispose de tous les droits.</div>
+      <div id="permissionsContent">
+        <div class="muted">Chargement…</div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script type="module">
@@ -1582,7 +1639,8 @@
       logs: [],
       profile: null,
       session: null,
-      allUsers: []
+      allUsers: [],
+      rolePermissions: { employee: {}, manager: {} }
     };
 
     let _statusTimer = null;
@@ -1879,7 +1937,115 @@
       return r === 'admin' || r === 'manager';
     }
 
-    // Track menus that have been moved to <body> to escape overflow:hidden ancestors.
+    // ── Role-based permissions ────────────────────────────────────────────────
+    const ROLE_PERMISSIONS_DEF = [
+      { key: 'tasks.create',      label: 'Créer une vente' },
+      { key: 'tasks.edit',        label: 'Modifier une vente' },
+      { key: 'tasks.delete',      label: 'Supprimer une vente' },
+      { key: 'tasks.toggle_paid', label: 'Marquer payé / impayé' },
+      { key: 'clients.create',    label: 'Ajouter un client' },
+      { key: 'clients.edit',      label: 'Modifier un client' },
+      { key: 'clients.delete',    label: 'Supprimer un client' },
+      { key: 'reports.view',      label: 'Voir les analytiques' },
+      { key: 'stock.edit',        label: 'Modifier le stock' },
+      { key: 'users.view',        label: 'Voir les utilisateurs' },
+    ];
+
+    const DEFAULT_ROLE_PERMISSIONS = {
+      employee: {
+        'tasks.create': true,  'tasks.edit': true,   'tasks.delete': false,
+        'tasks.toggle_paid': false, 'clients.create': false, 'clients.edit': false,
+        'clients.delete': false, 'reports.view': false, 'stock.edit': false, 'users.view': false
+      },
+      manager: {
+        'tasks.create': true,  'tasks.edit': true,   'tasks.delete': true,
+        'tasks.toggle_paid': true, 'clients.create': true,  'clients.edit': true,
+        'clients.delete': true, 'reports.view': true, 'stock.edit': true, 'users.view': true
+      }
+    };
+
+    function hasPermission(key) {
+      if (isAdmin()) return true;
+      const role = String(state.profile?.role || '').toLowerCase();
+      const rolePerms = state.rolePermissions[role];
+      if (!rolePerms) return false;
+      return rolePerms[key] === true;
+    }
+
+    async function loadRolePermissions() {
+      try {
+        const { data, error } = await supabase.from('role_permissions').select('*');
+        if (error) {
+          console.warn('[loadRolePermissions] error:', error.message);
+          state.rolePermissions = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+          return;
+        }
+        const perms = {
+          employee: { ...DEFAULT_ROLE_PERMISSIONS.employee },
+          manager:  { ...DEFAULT_ROLE_PERMISSIONS.manager }
+        };
+        (data || []).forEach(row => {
+          if (perms[row.role] !== undefined) {
+            perms[row.role][row.permission_key] = row.allowed;
+          }
+        });
+        state.rolePermissions = perms;
+      } catch (e) {
+        console.warn('[loadRolePermissions] exception:', e?.message);
+        state.rolePermissions = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+      }
+    }
+
+    window.openPermissionsModal = function() {
+      closeAllMenus();
+      if (!isAdmin()) return;
+      renderPermissionsModal();
+      openModal('permissionsModal');
+    };
+
+    function renderPermissionsModal() {
+      const content = document.getElementById('permissionsContent');
+      if (!content) return;
+      const perms = state.rolePermissions;
+      let rows = '';
+      ROLE_PERMISSIONS_DEF.forEach(def => {
+        const empChecked = perms.employee[def.key] === true ? 'checked' : '';
+        const mgrChecked = perms.manager[def.key] === true ? 'checked' : '';
+        const k = escHtml(def.key);
+        rows += `<tr>
+          <td>${escHtml(def.label)}</td>
+          <td><label class="perm-toggle"><input type="checkbox" ${empChecked} onchange="toggleRolePermission('employee','${k}',this.checked)" /><span class="slider"></span></label></td>
+          <td><label class="perm-toggle"><input type="checkbox" ${mgrChecked} onchange="toggleRolePermission('manager','${k}',this.checked)" /><span class="slider"></span></label></td>
+        </tr>`;
+      });
+      content.innerHTML = `<table class="perm-table">
+        <thead><tr><th>Permission</th><th>👤 Employé</th><th>🔑 Manager</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    window.toggleRolePermission = async function(role, key, allowed) {
+      if (!isAdmin()) return;
+      if (!state.rolePermissions[role]) state.rolePermissions[role] = {};
+      state.rolePermissions[role][key] = allowed;
+      try {
+        const { error } = await supabase
+          .from('role_permissions')
+          .upsert({ role, permission_key: key, allowed, updated_at: new Date().toISOString() },
+                   { onConflict: 'role,permission_key' });
+        if (error) {
+          console.error('[toggleRolePermission] error:', error.message);
+          showSessionStatus('⚠️ Erreur lors de la sauvegarde', 'error');
+          state.rolePermissions[role][key] = !allowed;
+          renderPermissionsModal();
+        }
+      } catch (e) {
+        console.error('[toggleRolePermission] exception:', e?.message);
+        showSessionStatus('⚠️ Erreur lors de la sauvegarde', 'error');
+        state.rolePermissions[role][key] = !allowed;
+        renderPermissionsModal();
+      }
+    };
     const portaledMenus = new Map(); // menu el → original parent el
 
     function closeAllMenus() {
@@ -2326,6 +2492,7 @@
       state.logs = logsRes?.data || [];
 
       await loadAllUsers();
+      await loadRolePermissions();
 
       // Persist to local cache for offline use
       try {
@@ -2363,6 +2530,7 @@
       document.getElementById('usersBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
       document.getElementById('resetAppBtn').classList.toggle('hidden', !isAdmin());
+      document.getElementById('permissionsBtn').classList.toggle('hidden', !isAdmin());
       document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('analyticsBtn').classList.toggle('hidden', !isManagerOrAdmin());
 
