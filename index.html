@@ -3910,6 +3910,13 @@
         });
 
         let result;
+        const deleteContentType = res.headers.get('content-type') || '';
+        if (!deleteContentType.includes('application/json')) {
+          const rawText = await res.text().catch(() => '');
+          console.error('[deleteUser] Réponse non-JSON (statut', res.status, ') :', rawText.substring(0, 300));
+          showSessionStatus(`❌ L'API n'a pas répondu en JSON (statut ${res.status}). Vérifiez le déploiement Vercel.`, 'error', 8000);
+          return;
+        }
         try {
           result = await res.json();
         } catch (_parseErr) {
@@ -3987,6 +3994,16 @@
           },
           body: JSON.stringify({ userId, role: newRole })
         });
+
+        const roleContentType = resp.headers.get('content-type') || '';
+        if (!roleContentType.includes('application/json')) {
+          const rawText = await resp.text().catch(() => '');
+          console.error('[updateRole] Réponse non-JSON (statut', resp.status, ') :', rawText.substring(0, 300));
+          statusEl.textContent = `❌ L'API n'a pas répondu en JSON (statut ${resp.status}). Vérifiez le déploiement Vercel.`;
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Erreur serveur : réponse non-JSON', 'error', 8000);
+          return;
+        }
 
         const result = await resp.json();
 

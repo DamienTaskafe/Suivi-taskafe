@@ -16,6 +16,11 @@ const SUPABASE_ANON_KEY =
   'WVgrgx8Q1c9j_1UyNX7e2ilvttMBSHY2vnrBw_Ga05A';
 
 module.exports = async (req, res) => {
+  // Always set JSON content-type header up front so that even unhandled errors
+  // return JSON instead of Vercel's default HTML error page.
+  res.setHeader('Content-Type', 'application/json');
+
+  try {
   // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' });
@@ -175,4 +180,10 @@ module.exports = async (req, res) => {
 
   console.log('[update-role] Rôle mis à jour avec succès pour userId =', userId, '| nouveau rôle =', role);
   return res.status(200).json({ success: true, userId, role });
+  } catch (unexpectedErr) {
+    // Safety net: catch any unhandled exception and return JSON so the frontend
+    // never receives an HTML error page that would trigger "Unexpected token '<'".
+    console.error('[update-role] Erreur inattendue non gérée :', unexpectedErr);
+    return res.status(500).json({ error: 'Erreur serveur interne. Veuillez réessayer.' });
+  }
 };
