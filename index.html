@@ -1847,6 +1847,10 @@
       return `${formatQty(n)} ${unitLabel(category, n > 1)}`;
     }
 
+    function escHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
     function isAdmin() {
       return String(state.profile?.role || '').toLowerCase() === 'admin';
     }
@@ -2171,7 +2175,7 @@
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id,email,full_name,role')
+          .select('id,email,full_name,role,last_seen_at')
           .eq('id', userId)
           .single();
 
@@ -2206,7 +2210,12 @@
       try {
         const userId = state.session?.user?.id;
         if (!userId) return;
-        await supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', userId);
+        const now = new Date().toISOString();
+        await supabase.from('profiles').update({ last_seen_at: now }).eq('id', userId);
+        // Keep local state fresh so the current user's own presence indicator is accurate
+        if (state.profile) state.profile.last_seen_at = now;
+        const myIdx = state.allUsers.findIndex(u => u.id === userId);
+        if (myIdx !== -1) state.allUsers[myIdx].last_seen_at = now;
       } catch(e) { /* non-blocking */ }
     }
 
@@ -2462,10 +2471,10 @@
 
         await bootFromSession(data.session);
         logAction('login', { email: data.session?.user?.email });
-
+      } catch (e) {
         loginBtn.disabled = false;
         loginBtn.innerText = originalText;
-        errorBox.innerText = 'Erreur de connexion.';
+        errorBox.innerText = 'Erreur de connexion : ' + (e?.message || 'erreur inconnue');
         errorBox.style.display = 'block';
       }
     };
@@ -2918,11 +2927,13 @@
                 ? '🔑 Manager'
                 : 'Employé';
             const activityHtml = getActivityStatus(user.last_seen_at);
+            const displayName = escHtml(user.full_name || user.email);
+            const displayEmail = escHtml(user.email);
             return `
         <div class="user-row">
           <div class="user-info">
-            <div class="user-email">${user.full_name || user.email}</div>
-            <div class="user-role">👤 ${user.email} • ${roleLabel}</div>
+            <div class="user-email">${displayName}</div>
+            <div class="user-role">👤 ${displayEmail} • ${roleLabel}</div>
             <div class="user-activity">${activityHtml}</div>
           </div>
           ${
