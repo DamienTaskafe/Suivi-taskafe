@@ -136,11 +136,19 @@ module.exports = async (req, res) => {
   console.log('[create-user] Token validé, appelant =', caller.id, '| email =', caller.email);
 
   // ── Step 3 : Verify caller has admin role ────────────────────────────────
-  // 1. supabaseAdmin SDK query on profiles (service-role key → bypasses RLS)
-  // 2. Fallback to app_metadata.role (server-controlled, set by create-user)
+  // Strategy (in order):
+  //   1. supabaseAdmin SDK query on profiles (service-role key → bypasses RLS)
+  //   2. Fallback to app_metadata.role carried in the JWT (set by create-user on new accounts)
+  //   3. Fresh admin.getUserById() to get latest app_metadata directly from Supabase
   let callerRole = null;
+  let profileLookupStatus = 'pending';
   try {
-    console.log('[create-user] Vérification du rôle admin via supabaseAdmin.from(profiles)...');
+    console.log('[create-user] Début vérification rôle admin :', {
+      callerId: caller.id,
+      callerEmail: caller.email,
+      appMetadataHasRole: !!(caller.app_metadata?.role)
+    });
+
     const { data: profileRows, error: profileQueryError } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -148,33 +156,112 @@ module.exports = async (req, res) => {
       .limit(1);
 
     if (profileQueryError) {
-      console.error('[create-user] Erreur SDK profiles :', profileQueryError.message, '| code :', profileQueryError.code);
+      profileLookupStatus = 'sdk_error';
+      console.error('[create-user] Erreur SDK profiles :', {
+        message: profileQueryError.message,
+        code: profileQueryError.code,
+        details: profileQueryError.details,
+        hint: profileQueryError.hint
+      });
     } else if (Array.isArray(profileRows) && profileRows.length > 0) {
       callerRole = String(profileRows[0].role || '').toLowerCase();
+      profileLookupStatus = 'found';
       console.log('[create-user] Rôle obtenu via profiles :', callerRole, '| callerId =', caller.id);
     } else {
-      console.warn('[create-user] Profil introuvable en table profiles pour id =', caller.id);
+      profileLookupStatus = 'not_found';
+      console.warn('[create-user] Profil introuvable (par id) pour callerId =', caller.id);
+
+      // Diagnostic: verify table access by checking total row count
+      try {
+        const { count: totalCount, error: countErr } = await supabaseAdmin
+          .from('profiles')
+          .select('id', { count: 'exact', head: true });
+        console.warn('[create-user] Diagnostic table profiles — nb total lignes :', totalCount, '| erreur :', countErr?.message);
+      } catch (countEx) {
+        console.warn('[create-user] Diagnostic count profiles exception :', countEx?.message);
+      }
+
+      // Diagnostic: try lookup by email to detect a UUID mismatch
+      if (caller.email) {
+        try {
+          const { data: emailRows } = await supabaseAdmin
+            .from('profiles')
+            .select('id,role')
+            .eq('email', caller.email)
+            .limit(1);
+          if (Array.isArray(emailRows) && emailRows.length > 0) {
+            console.warn('[create-user] Diagnostic: profil trouvé par email mais pas par id.', {
+              profileIdByEmail: emailRows[0].id,
+              callerId: caller.id,
+              idsDiffer: emailRows[0].id !== caller.id,
+              roleByEmail: emailRows[0].role
+            });
+          } else {
+            console.warn('[create-user] Diagnostic: aucun profil par email non plus :', caller.email);
+          }
+        } catch (emailLookupEx) {
+          console.warn('[create-user] Diagnostic email lookup exception :', emailLookupEx?.message);
+        }
+      }
     }
 
-    // Fallback to app_metadata if profiles table query failed or returned no role
+    // Fallback 1: app_metadata.role carried inside the JWT
     if (!callerRole) {
-      callerRole = String(caller.app_metadata?.role || '').toLowerCase();
-      if (callerRole) {
-        console.log('[create-user] Rôle obtenu depuis app_metadata (fallback) :', callerRole);
+      const appRole = String(caller.app_metadata?.role || '').toLowerCase();
+      if (appRole) {
+        callerRole = appRole;
+        console.log('[create-user] Rôle depuis app_metadata JWT (fallback 1) :', callerRole);
+      }
+    }
+
+    // Fallback 2: fresh admin API call to get the latest app_metadata
+    // Needed when the admin account was created manually (no app_metadata set at creation)
+    // and the profiles query returned empty (e.g., service_role key issue or UUID mismatch).
+    if (!callerRole) {
+      try {
+        const { data: freshUserData, error: adminGetErr } = await supabaseAdmin.auth.admin.getUserById(caller.id);
+        if (adminGetErr) {
+          console.warn('[create-user] admin.getUserById erreur :', adminGetErr.message);
+        } else {
+          const freshAppRole = String(
+            freshUserData?.user?.app_metadata?.role || ''
+          ).toLowerCase();
+          if (freshAppRole) {
+            callerRole = freshAppRole;
+            console.log('[create-user] Rôle depuis admin.getUserById (fallback 2) :', callerRole);
+          } else {
+            console.warn('[create-user] admin.getUserById : aucun rôle dans app_metadata');
+          }
+        }
+      } catch (adminGetEx) {
+        console.warn('[create-user] admin.getUserById exception :', adminGetEx?.message);
       }
     }
   } catch (e) {
-    console.error('[create-user] Erreur vérification rôle appelant :', e.message);
+    console.error('[create-user] Exception vérification rôle appelant :', e.message);
     return res.status(503).json({ error: 'Service d\'authentification inaccessible, réessayez' });
   }
 
   if (callerRole !== 'admin') {
-    console.error('[create-user] Accès refusé :', { callerId: caller.id, callerEmail: caller.email, callerRole });
-    return res.status(403).json({
-      error: callerRole
-        ? `Accès refusé : rôle admin requis (rôle actuel : ${callerRole})`
-        : 'Accès refusé : rôle admin non défini ou introuvable'
+    console.error('[create-user] Accès refusé :', {
+      callerId: caller.id,
+      callerEmail: caller.email,
+      callerRole: callerRole || '(vide)',
+      profileLookupStatus
     });
+
+    let errorMsg;
+    if (!callerRole && profileLookupStatus === 'not_found') {
+      errorMsg = 'Accès refusé : profil introuvable pour cet identifiant utilisateur';
+    } else if (!callerRole && profileLookupStatus === 'sdk_error') {
+      errorMsg = 'Accès refusé : erreur lors de la vérification du profil';
+    } else if (!callerRole) {
+      errorMsg = 'Accès refusé : rôle admin non défini ou introuvable';
+    } else {
+      errorMsg = `Accès refusé : rôle admin requis (rôle actuel : ${callerRole})`;
+    }
+
+    return res.status(403).json({ error: errorMsg });
   }
 
   let authData;
