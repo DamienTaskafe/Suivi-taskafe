@@ -2269,7 +2269,6 @@
             const dateStr = new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
             const creatorUser = s.created_by ? state.allUsers.find(u => u.id === s.created_by) : null;
             const creatorName = creatorUser?.full_name || (s.created_by ? 'Utilisateur' : 'Inconnu');
-            const roleIcon = getRoleIcon(creatorUser?.role);
             html += `
               <div class="vr-sale-item">
                 <div class="menu-wrap">
@@ -2283,10 +2282,13 @@
                 <div class="vr-sale-row">
                   <span class="badge ${s.category}" style="padding:2px 7px;font-size:10px;margin:0;">${s.category}</span>
                   <span class="vr-sale-qty">${formatStockValue(s.category, s.quantity)}</span>
-                  <span class="vr-sale-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
-                  <span style="margin-left:auto;">${s.paid ? '✅' : '❌'}</span>
+                  <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+                    <span class="vr-sale-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
+                    <span>${s.paid ? '✅' : '❌'}</span>
+                  </span>
                 </div>
-                <div class="vr-sale-meta">📅 ${dateStr} · ${roleIcon} ${escHtml(creatorName)}</div>
+                <div class="vr-sale-meta">📅 ${dateStr}</div>
+                <div class="vr-sale-meta">Créée par : ${escHtml(creatorName)}</div>
               </div>`;
           });
           html += `</div>`;
