@@ -1309,6 +1309,23 @@
     </div>
   </div>
 
+  <div id="roleModal" class="modal-backdrop" onclick="backdropClose(event, 'roleModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>✏️ Modifier le rôle</h3><button class="close-x" onclick="closeModal('roleModal')">✕</button></div>
+      <div class="settings-option">
+        <div id="roleModalUserLabel" class="title">—</div>
+        <label for="roleModalSelect">🎖️ Nouveau rôle</label>
+        <select id="roleModalSelect">
+          <option value="employee">Employé</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button id="roleModalSaveBtn" onclick="confirmRoleChange()">✅ Enregistrer</button>
+        <div id="roleModalStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="settingsHubModal" class="modal-backdrop" onclick="backdropClose(event, 'settingsHubModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>⚙️ Paramètres</h3><button class="close-x" onclick="closeModal('settingsHubModal')">✕</button></div>
@@ -2197,8 +2214,28 @@
     let _lastSeenInterval = null;
     function startLastSeenHeartbeat() {
       if (_lastSeenInterval) clearInterval(_lastSeenInterval);
-      _lastSeenInterval = setInterval(() => { if (state.session?.user?.id) updateLastSeen(); }, 3 * 60 * 1000);
+      _lastSeenInterval = setInterval(() => { if (state.session?.user?.id) updateLastSeen(); }, 2 * 60 * 1000);
     }
+
+    // ── Action logs helper ─────────────────────────────────────────────────────
+    // Non-blocking: errors are silently swallowed so log failures never block the
+    // main user flow. The action_logs table is optional — if it does not exist yet
+    // (e.g. migration not yet applied) the insert simply fails quietly.
+    async function logAction(actionType, details = {}) {
+      try {
+        if (!state.session?.user) return;
+        await supabase.from('action_logs').insert({
+          action_type: actionType,
+          user_id: state.session.user.id,
+          user_email: state.session.user.email || state.profile?.email || '',
+          details,
+          created_at: new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn('[logAction] non-blocking error:', e?.message);
+      }
+    }
+
 
     function updateHeaderSummary(totalQty, totalDh, unpaidDh) {
       const qtyEl = document.getElementById('hSumQty');
@@ -2424,7 +2461,8 @@
         }
 
         await bootFromSession(data.session);
-      } catch (err) {
+        logAction('login', { email: data.session?.user?.email });
+
         loginBtn.disabled = false;
         loginBtn.innerText = originalText;
         errorBox.innerText = 'Erreur de connexion.';
@@ -2894,6 +2932,7 @@
                 ? `<div class="menu-wrap">
                     <button class="menu-btn" onclick="toggleMenu(event,'userActMenu_${user.id}')">⋯</button>
                     <div class="menu" id="userActMenu_${user.id}">
+                      <button onclick="openRoleModal('${user.id}','${user.role || 'employee'}')">✏️ Rôle</button>
                       <button class="danger" onclick="deleteUser('${user.id}',this)">🗑️ Supprimer</button>
                     </div>
                   </div>`
@@ -2906,9 +2945,12 @@
         .join('');
     }
 
-    window.openUsersModal = function () {
-      renderUsersList();
+    window.openUsersModal = async function () {
       openModal('usersModal');
+      const list = document.getElementById('usersList');
+      if (list) list.innerHTML = '<div class="muted" style="padding:12px">⏳ Chargement…</div>';
+      await loadAllUsers();
+      renderUsersList();
     };
 
     window.openProfileModal = function () {
@@ -3606,9 +3648,24 @@
       if (btnCurrent) btnCurrent.classList.add('active');
     };
 
-    window.showLogsSection = function() {
+    window.showLogsSection = async function() {
       closeAllMenus();
       show('logs');
+      if (isAdmin()) {
+        try {
+          const { data, error } = await supabase
+            .from('action_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(200);
+          if (!error) {
+            state.logs = data || [];
+            renderLogs();
+          }
+        } catch (e) {
+          console.warn('[showLogsSection] Rechargement logs échoué :', e?.message);
+        }
+      }
     };
 
     window.createNewUser = async function () {
@@ -3674,6 +3731,8 @@
         statusEl.textContent = `✅ Utilisateur créé : ${email}`;
         statusEl.style.color = '#2e7d32';
         showSessionStatus('✅ Utilisateur créé', 'success');
+
+        logAction('create_user', { email, role, targetUserId: result.userId });
 
         await loadAllUsers();
         renderUsersList();
@@ -3760,6 +3819,7 @@
           renderUsersList();
         } catch (e) { console.warn('[deleteUser] Rechargement liste utilisateurs échoué :', e?.message); /* list will be refreshed at next load */ }
 
+        logAction('delete_user', { targetUserId: userId, targetLabel: label });
         showSessionStatus(`✅ Compte de "${label}" supprimé`, 'success');
       } catch (err) {
         const msg = err?.name === 'AbortError'
@@ -3769,6 +3829,87 @@
       } finally {
         clearTimeout(fetchTimeout);
         if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+      }
+    };
+
+    // ── Role change ──────────────────────────────────────────────────────────
+    let _pendingRoleChangeUserId = null;
+
+    window.openRoleModal = function (userId, currentRole) {
+      closeAllMenus();
+      if (!requireAdmin('Modifier le rôle')) return;
+      const user = state.allUsers.find(u => u.id === userId);
+      const label = user?.full_name || user?.email || userId;
+      document.getElementById('roleModalUserLabel').textContent = `👤 ${label}`;
+      document.getElementById('roleModalSelect').value = currentRole || 'employee';
+      document.getElementById('roleModalStatus').textContent = '';
+      document.getElementById('roleModalStatus').style.color = '';
+      const saveBtn = document.getElementById('roleModalSaveBtn');
+      saveBtn.disabled = false;
+      saveBtn.textContent = '✅ Enregistrer';
+      _pendingRoleChangeUserId = userId;
+      openModal('roleModal');
+    };
+
+    window.confirmRoleChange = async function () {
+      const userId = _pendingRoleChangeUserId;
+      if (!userId) return;
+      const newRole = document.getElementById('roleModalSelect').value;
+      const btn = document.getElementById('roleModalSaveBtn');
+      const statusEl = document.getElementById('roleModalStatus');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Enregistrement…';
+      statusEl.textContent = '';
+
+      try {
+        const accessToken = await getFreshToken();
+        if (!accessToken) {
+          statusEl.textContent = '❌ Session expirée. Déconnectez-vous puis reconnectez-vous.';
+          statusEl.style.color = '#e53935';
+          return;
+        }
+
+        const resp = await fetch('/api/update-role', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ userId, role: newRole })
+        });
+
+        const result = await resp.json();
+
+        if (!resp.ok) {
+          statusEl.textContent = '❌ ' + (result?.error || 'Erreur inconnue');
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Échec mise à jour du rôle', 'error', 5000);
+          return;
+        }
+
+        // Update local state so the list reflects the change immediately
+        const userIdx = state.allUsers.findIndex(u => u.id === userId);
+        if (userIdx !== -1) state.allUsers[userIdx].role = newRole;
+
+        logAction('role_change', { targetUserId: userId, newRole });
+
+        statusEl.textContent = '✅ Rôle mis à jour';
+        statusEl.style.color = '#2e7d32';
+        showSessionStatus('✅ Rôle mis à jour', 'success');
+
+        setTimeout(() => {
+          closeModal('roleModal');
+          renderUsersList();
+        }, 900);
+
+      } catch (err) {
+        statusEl.textContent = '❌ ' + (err?.message || 'Erreur réseau');
+        statusEl.style.color = '#e53935';
+        showSessionStatus('❌ Erreur réseau lors de la mise à jour du rôle', 'error', 5000);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Enregistrer';
       }
     };
 
