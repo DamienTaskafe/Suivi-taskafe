@@ -1843,6 +1843,9 @@
       return r === 'admin' || r === 'manager';
     }
 
+    // Track menus that have been moved to <body> to escape overflow:hidden ancestors.
+    const portaledMenus = new Map(); // menu el → original parent el
+
     function closeAllMenus() {
       document.querySelectorAll('.menu').forEach(m => {
         m.style.display = 'none';
@@ -1851,6 +1854,17 @@
         m.style.right = '';
         m.style.left = '';
         m.style.visibility = '';
+        // Restore portaled menus to their original DOM position.
+        const origParent = portaledMenus.get(m);
+        if (origParent) {
+          if (origParent.isConnected) {
+            origParent.appendChild(m);
+          } else {
+            // Original parent was removed (DOM rebuild), clean up from body.
+            m.remove();
+          }
+          portaledMenus.delete(m);
+        }
       });
       document.querySelectorAll('.header-menu').forEach(m => m.classList.remove('show'));
     }
@@ -2958,20 +2972,19 @@
           const btn = el.parentElement.querySelector('.menu-btn');
           if (btn) {
             const rect = btn.getBoundingClientRect();
-            // .section-shell has backdrop-filter which creates a new containing block
-            // for position:fixed children, so coordinates must be expressed relative
-            // to that element, not the viewport.
-            // Fallback uses viewport edges (top:0, right:window.innerWidth) so the
-            // calculation degenerates to standard viewport-relative fixed positioning.
-            const shell = el.closest('.section-shell');
-            const shellRect = shell
-              ? shell.getBoundingClientRect()
-              : { top: 0, right: window.innerWidth };
 
+            // Portal the menu to <body> so it escapes all overflow:hidden ancestors
+            // (the backdrop-filter on .section-shell makes position:fixed relative to
+            // the shell, not the viewport, which causes overflow:hidden clipping of
+            // pointer events on .accordion and .accordion-inner).
+            const origParent = el.parentElement;
+            document.body.appendChild(el);
+            portaledMenus.set(el, origParent);
+
+            // Now position:fixed is truly viewport-relative (body has no transforms).
             el.style.position = 'fixed';
             el.style.left = 'auto';
-            // Guard against rounding / sub-pixel edge cases where rect.right > shellRect.right
-            el.style.right = Math.max(0, shellRect.right - rect.right) + 'px';
+            el.style.right = Math.max(0, window.innerWidth - rect.right) + 'px';
             // Measure height while invisible to avoid any flash at the wrong position
             el.style.visibility = 'hidden';
             el.style.display = 'block';
@@ -2979,13 +2992,9 @@
             const menuH = el.offsetHeight;
             const vpH   = window.innerHeight;
 
-            // Convert viewport bottom/top of button into shell-relative coordinates
-            const topBelowBtn = rect.bottom - shellRect.top + 4;
-            const topAboveBtn = rect.top   - shellRect.top - menuH - 4;
-
             el.style.top = (rect.bottom + menuH + 4 < vpH - 10)
-              ? topBelowBtn + 'px'
-              : Math.max(0, topAboveBtn) + 'px';
+              ? (rect.bottom + 4) + 'px'
+              : Math.max(0, rect.top - menuH - 4) + 'px';
 
             el.style.visibility = '';
             return;
