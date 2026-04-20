@@ -1850,6 +1850,7 @@
         m.style.top = '';
         m.style.right = '';
         m.style.left = '';
+        m.style.visibility = '';
       });
       document.querySelectorAll('.header-menu').forEach(m => m.classList.remove('show'));
     }
@@ -2952,25 +2953,45 @@
       const open = el.style.display === 'block';
       closeAllMenus();
       if (!open) {
-        el.style.display = 'block';
-        // Use fixed positioning for menus inside .vr-sale-item so they escape
-        // overflow:auto/.accordion-inner overflow:hidden containers.
         const saleItem = el.closest && el.closest('.vr-sale-item');
         if (saleItem) {
           const btn = el.parentElement.querySelector('.menu-btn');
           if (btn) {
             const rect = btn.getBoundingClientRect();
+            // .section-shell has backdrop-filter which creates a new containing block
+            // for position:fixed children, so coordinates must be expressed relative
+            // to that element, not the viewport.
+            // Fallback uses viewport edges (top:0, right:window.innerWidth) so the
+            // calculation degenerates to standard viewport-relative fixed positioning.
+            const shell = el.closest('.section-shell');
+            const shellRect = shell
+              ? shell.getBoundingClientRect()
+              : { top: 0, right: window.innerWidth };
+
             el.style.position = 'fixed';
-            el.style.left   = 'auto';
-            el.style.right  = (window.innerWidth - rect.right) + 'px';
-            // show below button; flip above when there's no room
+            el.style.left = 'auto';
+            // Guard against rounding / sub-pixel edge cases where rect.right > shellRect.right
+            el.style.right = Math.max(0, shellRect.right - rect.right) + 'px';
+            // Measure height while invisible to avoid any flash at the wrong position
+            el.style.visibility = 'hidden';
+            el.style.display = 'block';
+
             const menuH = el.offsetHeight;
             const vpH   = window.innerHeight;
-            el.style.top = (rect.bottom + menuH < vpH - 10)
-              ? (rect.bottom + 4) + 'px'
-              : Math.max(0, rect.top - menuH - 4) + 'px';
+
+            // Convert viewport bottom/top of button into shell-relative coordinates
+            const topBelowBtn = rect.bottom - shellRect.top + 4;
+            const topAboveBtn = rect.top   - shellRect.top - menuH - 4;
+
+            el.style.top = (rect.bottom + menuH + 4 < vpH - 10)
+              ? topBelowBtn + 'px'
+              : Math.max(0, topAboveBtn) + 'px';
+
+            el.style.visibility = '';
+            return;
           }
         }
+        el.style.display = 'block';
       }
     };
 
@@ -3415,7 +3436,7 @@
       let hasVibrated = false; // vibration sent for this gesture
       let isRefreshing = false; // async refresh in progress — gate against re-entry
 
-      const THRESHOLD = Math.round(window.innerHeight * 0.45); // ~45 % of screen height — requires a long deliberate pull
+      const THRESHOLD = Math.round(window.innerHeight * 0.5); // 50% of screen height — requires a deliberate half-screen pull
       const MAX_OFFSET = 68;              // max translateY when dragging
       const CIRC = 100.5;                 // 2π×16 (SVG arc circumference)
       const RUBBER_BAND_COEFF = 5.2;      // sqrt multiplier — Chrome-like diminishing resistance
