@@ -2218,7 +2218,12 @@
     async function loadAllUsers() {
       if (!isManagerOrAdmin()) return;
       const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      if (!error) state.allUsers = data || [];
+      if (error) {
+        console.error('[loadAllUsers] Erreur chargement utilisateurs :', error?.message || error);
+        showSessionStatus('⚠️ La liste des utilisateurs n\'a pas pu être rafraîchie', 'error', 5000);
+      } else {
+        state.allUsers = data || [];
+      }
     }
 
     async function updateLastSeen() {
@@ -4022,7 +4027,16 @@
           return;
         }
 
-        const result = await resp.json();
+        let result;
+        try {
+          result = await resp.json();
+        } catch (_parseErr) {
+          console.error('[updateRole] Échec du parsing JSON :', _parseErr?.message);
+          statusEl.textContent = '❌ Réponse inattendue du serveur — réessayez';
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Réponse inattendue du serveur', 'error', 6000);
+          return;
+        }
 
         if (!resp.ok) {
           statusEl.textContent = '❌ ' + (result?.error || 'Erreur inconnue');
@@ -4031,15 +4045,22 @@
           return;
         }
 
-        // Update local state so the list reflects the change immediately
-        const userIdx = state.allUsers.findIndex(u => u.id === userId);
-        if (userIdx !== -1) state.allUsers[userIdx].role = newRole;
-
         logAction('role_change', { targetUserId: userId, newRole });
 
         statusEl.textContent = '✅ Rôle mis à jour';
         statusEl.style.color = '#2e7d32';
         showSessionStatus('✅ Rôle mis à jour', 'success');
+
+        // Refresh list from server so the change is always reflected correctly,
+        // then close the modal. Errors here must not block the success path.
+        try {
+          await loadAllUsers();
+        } catch (e) {
+          console.warn('[confirmRoleChange] Rechargement liste utilisateurs a échoué :', e?.message);
+          // Fall back to local update so the UI is not left stale
+          const userIdx = state.allUsers.findIndex(u => u.id === userId);
+          if (userIdx !== -1) state.allUsers[userIdx].role = newRole;
+        }
 
         setTimeout(() => {
           closeModal('roleModal');
@@ -4047,7 +4068,16 @@
         }, 900);
 
       } catch (err) {
-        statusEl.textContent = '❌ ' + (err?.message || 'Erreur réseau');
+        let errMsg;
+        if (err?.name === 'AbortError') {
+          errMsg = 'Délai dépassé — réessayez dans quelques instants';
+        } else if (err instanceof TypeError) {
+          errMsg = 'Impossible de contacter le serveur — vérifiez votre connexion';
+        } else {
+          errMsg = 'Erreur réseau inattendue';
+        }
+        console.error('[confirmRoleChange] Exception non gérée :', err);
+        statusEl.textContent = '❌ ' + errMsg;
         statusEl.style.color = '#e53935';
         showSessionStatus('❌ Erreur réseau lors de la mise à jour du rôle', 'error', 5000);
       } finally {
