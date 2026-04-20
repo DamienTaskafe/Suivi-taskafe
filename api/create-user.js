@@ -138,8 +138,12 @@ module.exports = async (req, res) => {
   // ── Step 3 : Verify caller has admin role ────────────────────────────────
   // Strategy (in order):
   //   1. supabaseAdmin SDK query on profiles (service-role key → bypasses RLS)
-  //   2. Fallback to app_metadata.role carried in the JWT (set by create-user on new accounts)
-  //   3. Fresh admin.getUserById() to get latest app_metadata directly from Supabase
+  //      → sdk_error path: REST fallback + email-based lookup
+  //   2. Fallback to app_metadata.role carried in the JWT
+  //   3. Fallback: query profiles using the caller's own JWT (anon key + caller token)
+  //      — works even when SUPABASE_SERVICE_ROLE_KEY is misconfigured on the host
+  //   4. Fresh admin.getUserById() to get the latest app_metadata
+  // After any successful lookup: opportunistically sync role to app_metadata.
   let callerRole = null;
   let profileLookupStatus = 'pending';
   try {
@@ -200,6 +204,36 @@ module.exports = async (req, res) => {
       } catch (restEx) {
         console.warn('[create-user] REST profiles fallback exception :', restEx?.message);
       }
+
+      // Diagnostic (sdk_error path): also attempt email-based lookup to detect UUID mismatches
+      if (!callerRole && caller.email) {
+        try {
+          const { data: emailRowsSdkErr } = await supabaseAdmin
+            .from('profiles')
+            .select('id,role')
+            .eq('email', caller.email)
+            .limit(1);
+          if (Array.isArray(emailRowsSdkErr) && emailRowsSdkErr.length > 0) {
+            console.warn('[create-user] sdk_error path: profil trouvé par email.', {
+              profileIdByEmail: emailRowsSdkErr[0].id,
+              callerId: caller.id,
+              idsDiffer: emailRowsSdkErr[0].id !== caller.id,
+              roleByEmail: emailRowsSdkErr[0].role
+            });
+            // Use the role even if IDs differ — the JWT identity was already validated in Step 2.
+            // A mismatch here likely means the profile was migrated with a different UUID.
+            if (!callerRole && emailRowsSdkErr[0].role) {
+              callerRole = String(emailRowsSdkErr[0].role).toLowerCase();
+              profileLookupStatus = 'found_via_email';
+              console.log('[create-user] Rôle obtenu via email (sdk_error path) :', callerRole);
+            }
+          } else {
+            console.warn('[create-user] sdk_error path: aucun profil par email non plus :', caller.email);
+          }
+        } catch (emailErrSdk) {
+          console.warn('[create-user] sdk_error path: email lookup exception :', emailErrSdk?.message);
+        }
+      }
     } else if (Array.isArray(profileRows) && profileRows.length > 0) {
       callerRole = String(profileRows[0].role || '').toLowerCase();
       profileLookupStatus = 'found';
@@ -251,7 +285,37 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Fallback 2: fresh admin API call to get the latest app_metadata
+    // Fallback 2: query profiles using the caller's own JWT (anon key + caller's Authorization).
+    // This works regardless of whether the service_role key is correctly configured on the host,
+    // because any authenticated Supabase user can read all profiles (RLS: profiles_select_auth).
+    // It covers the common case where SUPABASE_SERVICE_ROLE_KEY is missing/wrong on Vercel
+    // but the user's session token is perfectly valid.
+    if (!callerRole) {
+      try {
+        const supabaseAsUser = createClient(supabaseUrl, SUPABASE_ANON_KEY, {
+          auth: { autoRefreshToken: false, persistSession: false },
+          global: { headers: { Authorization: `Bearer ${callerToken}` } }
+        });
+        const { data: callerProfileRows, error: callerProfileErr } = await supabaseAsUser
+          .from('profiles')
+          .select('role')
+          .eq('id', caller.id)
+          .limit(1);
+        if (callerProfileErr) {
+          console.warn('[create-user] Profiles (caller token) erreur :', callerProfileErr.message);
+        } else if (Array.isArray(callerProfileRows) && callerProfileRows.length > 0) {
+          callerRole = String(callerProfileRows[0].role || '').toLowerCase();
+          profileLookupStatus = 'found_via_caller_token';
+          console.log('[create-user] Rôle depuis profiles (caller token, fallback 2) :', callerRole);
+        } else {
+          console.warn('[create-user] Profiles (caller token): aucun profil pour callerId =', caller.id);
+        }
+      } catch (callerTokenEx) {
+        console.warn('[create-user] Profiles (caller token) exception :', callerTokenEx?.message);
+      }
+    }
+
+    // Fallback 3: fresh admin API call to get the latest app_metadata
     // Needed when the admin account was created manually (no app_metadata set at creation)
     // and the profiles query returned empty (e.g., service_role key issue or UUID mismatch).
     if (!callerRole) {
@@ -265,7 +329,7 @@ module.exports = async (req, res) => {
           ).toLowerCase();
           if (freshAppRole) {
             callerRole = freshAppRole;
-            console.log('[create-user] Rôle depuis admin.getUserById (fallback 2) :', callerRole);
+            console.log('[create-user] Rôle depuis admin.getUserById (fallback 3) :', callerRole);
           } else {
             console.warn('[create-user] admin.getUserById : aucun rôle dans app_metadata');
           }
@@ -273,6 +337,14 @@ module.exports = async (req, res) => {
       } catch (adminGetEx) {
         console.warn('[create-user] admin.getUserById exception :', adminGetEx?.message);
       }
+    }
+
+    // Opportunistic sync: if the role was resolved via profiles but app_metadata lacks it,
+    // set it now so subsequent calls can short-circuit the profile lookup entirely.
+    if (callerRole && !caller.app_metadata?.role) {
+      supabaseAdmin.auth.admin.updateUserById(caller.id, {
+        app_metadata: { role: callerRole }
+      }).catch(e => console.warn('[create-user] Sync app_metadata (non-bloquant) :', e?.message));
     }
   } catch (e) {
     console.error('[create-user] Exception vérification rôle appelant :', e.message);
@@ -288,10 +360,8 @@ module.exports = async (req, res) => {
     });
 
     let errorMsg;
-    if (!callerRole && profileLookupStatus === 'not_found') {
-      errorMsg = 'Accès refusé : profil introuvable pour cet identifiant utilisateur';
-    } else if (!callerRole && profileLookupStatus === 'sdk_error') {
-      errorMsg = 'Accès refusé : erreur lors de la vérification du profil';
+    if (!callerRole && (profileLookupStatus === 'not_found' || profileLookupStatus === 'sdk_error')) {
+      errorMsg = 'Accès refusé : votre compte n\'a pas de rôle admin configuré. Vérifiez que votre profil existe dans la table profiles avec role=admin, ou contactez un administrateur système.';
     } else if (!callerRole) {
       errorMsg = 'Accès refusé : rôle admin non défini ou introuvable';
     } else {
