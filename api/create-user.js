@@ -73,8 +73,7 @@ module.exports = async (req, res) => {
       (err && err.name === 'SyntaxError' && msg.toLowerCase().includes('json'));
     if (isHTMLParseError) {
       console.error(`[create-user] Réponse non-JSON (HTML probable) à l'étape "${step}" :`, {
-        originalError: msg.substring(0, 300),
-        step
+        originalError: msg.substring(0, 300)
       });
       return `Réponse inattendue du service d'authentification lors de l'étape "${step}". Vérifiez la configuration Supabase.`;
     }
@@ -494,7 +493,7 @@ module.exports = async (req, res) => {
         authError.status === 422;
       return res
         .status(alreadyExists ? 409 : 400)
-        .json({ error: alreadyExists ? (authError.message || 'Cet email est déjà utilisé') : normalizedMsg });
+        .json({ error: alreadyExists ? (normalizedMsg || 'Cet email est déjà utilisé') : normalizedMsg });
     }
 
     authData = data;
@@ -505,7 +504,7 @@ module.exports = async (req, res) => {
       message: networkError?.message,
       normalizedMsg
     });
-    return res.status(502).json({ error: `Échec création Auth user : ${normalizedMsg}` });
+    return res.status(502).json({ error: `Échec création utilisateur : ${normalizedMsg}` });
   }
 
   const newUserId = authData?.user?.id;
