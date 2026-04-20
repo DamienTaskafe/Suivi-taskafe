@@ -26,20 +26,40 @@ DROP POLICY IF EXISTS "role_permissions_insert_auth" ON public.role_permissions;
 CREATE POLICY "role_permissions_insert_auth"
   ON public.role_permissions FOR INSERT
   TO authenticated
-  WITH CHECK (true);
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
 
 DROP POLICY IF EXISTS "role_permissions_update_auth" ON public.role_permissions;
 CREATE POLICY "role_permissions_update_auth"
   ON public.role_permissions FOR UPDATE
   TO authenticated
-  USING (true)
-  WITH CHECK (true);
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
 
 DROP POLICY IF EXISTS "role_permissions_delete_auth" ON public.role_permissions;
 CREATE POLICY "role_permissions_delete_auth"
   ON public.role_permissions FOR DELETE
   TO authenticated
-  USING (true);
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
 
 -- ── Default permission values ─────────────────────────────────────────────────
 INSERT INTO public.role_permissions (role, permission_key, allowed) VALUES
