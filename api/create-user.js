@@ -516,19 +516,22 @@ module.exports = async (req, res) => {
       app_metadata: { role: safeRole }
     }).catch((e) => console.warn('[create-user] app_metadata update failed:', e?.message));
 
-    console.log('[create-user] Étape insert profile — lancement pour newUserId =', newUserId);
+    console.log('[create-user] Étape upsert profile — lancement pour newUserId =', newUserId);
     let profileError;
     try {
-      const { error: insertErr } = await supabaseAdmin.from('profiles').insert({
-        id: newUserId,
-        email,
-        full_name: full_name || '',
-        role: safeRole
-      });
+      const { error: insertErr } = await supabaseAdmin.from('profiles').upsert(
+        {
+          id: newUserId,
+          email,
+          full_name: full_name || '',
+          role: safeRole
+        },
+        { onConflict: 'id' }
+      );
       profileError = insertErr;
     } catch (insertException) {
-      const normalizedMsg = normalizeSDKError(insertException, 'insert profile');
-      console.error('[create-user] Étape insert profile — exception :', {
+      const normalizedMsg = normalizeSDKError(insertException, 'upsert profile');
+      console.error('[create-user] Étape upsert profile — exception :', {
         message: insertException?.message,
         normalizedMsg,
         newUserId
@@ -542,8 +545,8 @@ module.exports = async (req, res) => {
 
     if (profileError) {
       // Profile creation failed — roll back the Auth user to avoid an orphaned account
-      const normalizedMsg = normalizeSDKError(profileError, 'insert profile');
-      console.error('[create-user] Étape insert profile — erreur SDK :', {
+      const normalizedMsg = normalizeSDKError(profileError, 'upsert profile');
+      console.error('[create-user] Étape upsert profile — erreur SDK :', {
         originalMessage: profileError.message,
         code: profileError.code,
         details: profileError.details,
@@ -555,7 +558,7 @@ module.exports = async (req, res) => {
       );
       return res.status(500).json({ error: `Échec insertion profile : ${normalizedMsg}` });
     }
-    console.log('[create-user] Étape insert profile — succès pour', newUserId);
+    console.log('[create-user] Étape upsert profile — succès pour', newUserId);
   }
 
   return res.status(201).json({
