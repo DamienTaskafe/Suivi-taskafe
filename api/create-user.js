@@ -60,6 +60,27 @@ module.exports = async (req, res) => {
     return JSON.parse(text); // throws on invalid JSON — caught by the caller
   };
 
+  // Helper: detect when a Supabase SDK error is actually an HTML-response parse failure
+  // (e.g. Supabase or a proxy returned an HTML page instead of JSON).
+  // Returns a human-readable, contextualised message instead of the raw JS SyntaxError.
+  const normalizeSDKError = (err, step) => {
+    const msg = (err && (err.message || err.msg || String(err))) || '';
+    const isHTMLParseError =
+      msg.includes('Unexpected token') ||
+      msg.includes('<!DOCTYPE') ||
+      msg.includes('is not valid JSON') ||
+      msg.includes('JSON.parse') ||
+      (err && err.name === 'SyntaxError' && msg.toLowerCase().includes('json'));
+    if (isHTMLParseError) {
+      console.error(`[create-user] Réponse non-JSON (HTML probable) à l'étape "${step}" :`, {
+        originalError: msg.substring(0, 300),
+        step
+      });
+      return `Réponse inattendue du service d'authentification lors de l'étape "${step}". Vérifiez la configuration Supabase.`;
+    }
+    return msg || `Erreur inconnue à l'étape "${step}"`;
+  };
+
   let parsedBody = req.body;
   if (typeof parsedBody === 'string' || Buffer.isBuffer(parsedBody)) {
     try {
@@ -449,7 +470,7 @@ module.exports = async (req, res) => {
   let authData;
   try {
     // Create Auth user with admin API — bypasses email rate-limits and confirmation emails
-    console.log('[create-user] Lancement de supabaseAdmin.auth.admin.createUser pour :', email);
+    console.log('[create-user] Étape createUser — lancement pour :', email);
     const { data, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -457,23 +478,34 @@ module.exports = async (req, res) => {
     });
 
     if (authError) {
-      const msg = (authError.message || '').toLowerCase();
+      const normalizedMsg = normalizeSDKError(authError, 'createUser');
+      const rawMsg = (authError.message || '').toLowerCase();
+      console.error('[create-user] Étape createUser — erreur SDK :', {
+        originalMessage: authError.message,
+        code: authError.code,
+        status: authError.status,
+        normalizedMsg
+      });
       const alreadyExists =
-        msg.includes('already') ||
-        msg.includes('already registered') ||
-        msg.includes('duplicate') ||
+        rawMsg.includes('already') ||
+        rawMsg.includes('already registered') ||
+        rawMsg.includes('duplicate') ||
         authError.code === 'email_exists' ||
         authError.status === 422;
       return res
         .status(alreadyExists ? 409 : 400)
-        .json({ error: authError.message || 'Erreur lors de la création du compte' });
+        .json({ error: alreadyExists ? (authError.message || 'Cet email est déjà utilisé') : normalizedMsg });
     }
 
     authData = data;
-    console.log('[create-user] createUser réussi, newUserId =', authData?.user?.id);
+    console.log('[create-user] Étape createUser — réussi, newUserId =', authData?.user?.id);
   } catch (networkError) {
-    console.error('[create-user] Supabase admin API unreachable:', networkError);
-    return res.status(502).json({ error: 'Service d\'authentification inaccessible, réessayez dans quelques instants' });
+    const normalizedMsg = normalizeSDKError(networkError, 'createUser');
+    console.error('[create-user] Étape createUser — exception :', {
+      message: networkError?.message,
+      normalizedMsg
+    });
+    return res.status(502).json({ error: `Échec création Auth user : ${normalizedMsg}` });
   }
 
   const newUserId = authData?.user?.id;
@@ -485,23 +517,46 @@ module.exports = async (req, res) => {
       app_metadata: { role: safeRole }
     }).catch((e) => console.warn('[create-user] app_metadata update failed:', e?.message));
 
-    console.log('[create-user] Insertion du profil en table profiles...');
-    const { error: profileError } = await supabaseAdmin.from('profiles').insert({
-      id: newUserId,
-      email,
-      full_name: full_name || '',
-      role: safeRole
-    });
+    console.log('[create-user] Étape insert profile — lancement pour newUserId =', newUserId);
+    let profileError;
+    try {
+      const { error: insertErr } = await supabaseAdmin.from('profiles').insert({
+        id: newUserId,
+        email,
+        full_name: full_name || '',
+        role: safeRole
+      });
+      profileError = insertErr;
+    } catch (insertException) {
+      const normalizedMsg = normalizeSDKError(insertException, 'insert profile');
+      console.error('[create-user] Étape insert profile — exception :', {
+        message: insertException?.message,
+        normalizedMsg,
+        newUserId
+      });
+      // Roll back the Auth user to avoid an orphaned account
+      await supabaseAdmin.auth.admin.deleteUser(newUserId).catch((e) =>
+        console.error('[create-user] Rollback deleteUser failed (insert exception):', e?.message)
+      );
+      return res.status(500).json({ error: `Échec insertion profile : ${normalizedMsg}` });
+    }
 
     if (profileError) {
       // Profile creation failed — roll back the Auth user to avoid an orphaned account
-      console.error('[create-user] Profile insert failed, rolling back auth user:', profileError.message);
+      const normalizedMsg = normalizeSDKError(profileError, 'insert profile');
+      console.error('[create-user] Étape insert profile — erreur SDK :', {
+        originalMessage: profileError.message,
+        code: profileError.code,
+        details: profileError.details,
+        normalizedMsg,
+        newUserId
+      });
       await supabaseAdmin.auth.admin.deleteUser(newUserId).catch((e) =>
-        console.error('[create-user] Rollback deleteUser failed:', e)
+        console.error('[create-user] Rollback deleteUser failed:', e?.message)
       );
-      return res.status(500).json({ error: 'Échec de la création du profil : ' + profileError.message });
+      return res.status(500).json({ error: `Échec insertion profile : ${normalizedMsg}` });
     }
-    console.log('[create-user] Profil inséré avec succès pour', newUserId);
+    console.log('[create-user] Étape insert profile — succès pour', newUserId);
   }
 
   return res.status(201).json({
