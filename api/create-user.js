@@ -29,7 +29,13 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Méthode non autorisée' });
   }
 
-  console.log('[create-user] → Entrée dans la fonction', { method: req.method, ts: new Date().toISOString() });
+  console.log('[create-user] → Entrée dans la fonction', {
+    method: req.method,
+    ts: new Date().toISOString(),
+    contentType: req.headers['content-type'] || '(absent)',
+    bodyType: typeof req.body,
+    hasBody: req.body !== undefined && req.body !== null
+  });
 
   // ── Step 1 : Require admin Authorization header ───────────────────────────
   const authHeader = (req.headers['authorization'] || '').trim();
@@ -45,7 +51,33 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: 'Token JWT malformé' });
   }
 
-  const { email, password, full_name, role } = req.body || {};
+  // Vercel normally auto-parses JSON bodies, but in some edge cases (missing or
+  // mismatched Content-Type, certain runtime versions) it delivers the body as a
+  // raw string or Buffer.  Parse explicitly so we always work with a plain object.
+  const parseRawBody = (raw) => {
+    // raw is guaranteed to be a string or Buffer at call-site
+    const text = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw;
+    return JSON.parse(text); // throws on invalid JSON — caught by the caller
+  };
+
+  let parsedBody = req.body;
+  if (typeof parsedBody === 'string' || Buffer.isBuffer(parsedBody)) {
+    try {
+      parsedBody = parseRawBody(parsedBody);
+    } catch (bodyParseErr) {
+      console.error('[create-user] Impossible de parser le body :', bodyParseErr.message);
+      return res.status(400).json({ error: `Corps de la requête JSON invalide : ${bodyParseErr.message}` });
+    }
+  }
+
+  if (parsedBody === null || parsedBody === undefined) {
+    return res.status(400).json({ error: 'Corps de la requête absent' });
+  }
+  if (typeof parsedBody !== 'object' || Array.isArray(parsedBody)) {
+    return res.status(400).json({ error: 'Corps de la requête invalide (objet JSON attendu)' });
+  }
+
+  const { email, password, full_name, role } = parsedBody;
 
   // Basic validation
   if (!email || !password) {
