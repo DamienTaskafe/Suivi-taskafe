@@ -1055,6 +1055,21 @@
         var s = document.getElementById('splashScreen');
         if (s) s.classList.add('splash-light');
       }
+      // Safety fallback: if the module script fails to run (e.g. a SyntaxError
+      // or a failed ESM import), the splash timer inside the module never fires
+      // and the user is stuck on the splash indefinitely.  This plain-script
+      // guard forces the splash off after SPLASH_SAFETY_MS so the login screen
+      // is always reachable even when the module cannot start normally.
+      var SPLASH_SAFETY_MS = 8000;
+      setTimeout(function() {
+        var splash = document.getElementById('splashScreen');
+        if (splash) {
+          splash.classList.add('splash-done');
+          setTimeout(function() {
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+          }, 750);
+        }
+      }, SPLASH_SAFETY_MS);
     })();
   </script>
   <div id="offlineBanner" class="offline-banner" style="display:none;">
@@ -2390,6 +2405,18 @@
       return null;
     }
 
+    // Shows the login screen and hides the app shell — used as a last-resort
+    // fallback whenever a critical boot error would otherwise leave the user
+    // on a blank page or stuck on the splash screen.
+    function showLoginFallback() {
+      try {
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('appShell').classList.add('hidden');
+      } catch (domErr) {
+        console.warn('[showLoginFallback] DOM error:', domErr);
+      }
+    }
+
     let _bootInProgress = false;
     let _loggedOut = false;
     async function bootFromSession(session) {
@@ -2435,6 +2462,11 @@
           console.error('Boot error:', error);
           showSessionStatus('❌ Erreur de chargement', 'error', 5000);
         }
+      } catch (fatalErr) {
+        // Unexpected error before the app shell was shown — fall back to the
+        // login screen so the user is never left on a blank / splash state.
+        console.error('[bootFromSession] Erreur critique, retour login:', fatalErr);
+        showLoginFallback();
       } finally {
         _bootInProgress = false;
       }
@@ -4231,9 +4263,18 @@
       setTimeout(() => syncPendingOps(), 800);
     });
 
-    const { data: initial } = await supabase.auth.getSession();
-    const _initialUserId = initial?.session?.user?.id || null;
-    await bootFromSession(initial.session);
+    // Run the initial boot; if getSession() or bootFromSession() throws
+    // unexpectedly we still register onAuthStateChange below so the user
+    // can log in manually, and we show the login screen as a final fallback.
+    let _initialUserId = null;
+    try {
+      const { data: initial } = await supabase.auth.getSession();
+      _initialUserId = initial?.session?.user?.id || null;
+      await bootFromSession(initial.session);
+    } catch (bootErr) {
+      console.error('[boot] Erreur critique au démarrage, affichage login:', bootErr);
+      showLoginFallback();
+    }
     supabase.auth.onAuthStateChange(async (event, session) => {
       // TOKEN_REFRESHED is fired by refreshSession() inside deleteUser —
       // the Supabase client already updated its internal token; no need
