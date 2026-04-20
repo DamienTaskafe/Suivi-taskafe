@@ -3796,7 +3796,30 @@
           body: JSON.stringify({ email, password, full_name: fullName, role })
         });
 
-        const result = await resp.json();
+        // Safely parse response — guard against HTML error pages from Vercel
+        // (e.g. 404 when the serverless function is unreachable, deployment errors, etc.)
+        let result;
+        const contentType = resp.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          try {
+            result = await resp.json();
+          } catch (parseErr) {
+            console.error('[createNewUser] Échec du parsing JSON :', parseErr);
+            statusEl.textContent = `❌ Réponse serveur invalide (statut ${resp.status}). Réessayez ou vérifiez le déploiement.`;
+            statusEl.style.color = '#e53935';
+            showSessionStatus('❌ Erreur serveur inattendue', 'error', 6000);
+            return;
+          }
+        } else {
+          // The server returned HTML or another non-JSON format — likely a Vercel routing
+          // issue or an unhandled server error; show a clear diagnostic instead of crashing.
+          const rawText = await resp.text().catch(() => '');
+          console.error('[createNewUser] Réponse non-JSON (statut', resp.status, ') :', rawText.substring(0, 300));
+          statusEl.textContent = `❌ L'API n'a pas répondu en JSON (statut ${resp.status}). Vérifiez le déploiement Vercel ou contactez l'administrateur.`;
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Erreur serveur : réponse non-JSON', 'error', 8000);
+          return;
+        }
 
         if (!resp.ok) {
           const msg = result?.error || 'Erreur inconnue';
