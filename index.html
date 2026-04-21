@@ -1579,7 +1579,7 @@
       <div id="sales" class="section-shell">
         <h3>💵 Nouvelle vente</h3>
 
-        <label for="clientSelectSearch">Sélectionner un client</label>
+        <label>Sélectionner un client</label>
         <div class="client-search-wrap" id="clientSelectWrap">
           <input id="clientSelectSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onClientSelectInput()" onfocus="showClientSelectDrop()" />
           <input type="hidden" id="clientSelect" />
@@ -1884,7 +1884,7 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>✏️ Modifier la vente</h3><button class="close-x" onclick="closeModal('editSaleModal')">✕</button></div>
       <div id="editSaleCreator" class="muted" style="margin-bottom:10px;font-size:12px;"></div>
-      <label for="editSaleClientSearch">Client</label>
+      <label>Client</label>
       <div class="client-search-wrap" id="editSaleClientWrap">
         <input id="editSaleClientSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onEditSaleClientInput()" onfocus="showEditSaleClientDrop()" />
         <input type="hidden" id="editSaleClient" />
@@ -2553,13 +2553,12 @@
 
     function loadClientSelectors() {
       const sorted = sortClientsAZ(state.clients);
-      // Preserve current selection in the new sale client picker
+      // Pre-fill the new sale client picker with the first alphabetical client if none is selected.
+      // The dropdown renders on demand from state.clients (always sorted) when the user interacts.
       const currentVal = document.getElementById('clientSelect').value;
-      if (!currentVal) {
-        if (sorted.length > 0) {
-          document.getElementById('clientSelect').value = sorted[0].name;
-          document.getElementById('clientSelectSearch').value = sorted[0].name;
-        }
+      if (!currentVal && sorted.length > 0) {
+        document.getElementById('clientSelect').value = sorted[0].name;
+        document.getElementById('clientSelectSearch').value = sorted[0].name;
       }
       // reset client search filter
       document.getElementById('filterClientSearch').value = document.getElementById('filterClient').value || '';
@@ -4022,6 +4021,8 @@
         item.addEventListener('click', () => selectClientForSale(item.dataset.client));
       });
 
+      // Delay registering the outside-click handler so the current click event
+      // (the one that opened the dropdown) doesn't immediately close it.
       setTimeout(() => {
         document.addEventListener('click', closeClientSelectDrop, { once: true, capture: true });
       }, 50);
@@ -4075,6 +4076,8 @@
         item.addEventListener('click', () => selectClientForEditSale(item.dataset.client));
       });
 
+      // Delay registering the outside-click handler so the current click event
+      // (the one that opened the dropdown) doesn't immediately close it.
       setTimeout(() => {
         document.addEventListener('click', closeEditSaleClientDrop, { once: true, capture: true });
       }, 50);
