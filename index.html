@@ -1166,6 +1166,7 @@
       gap: 10px;
       padding: 11px 14px 10px;
       border-bottom: 1px solid var(--color-border);
+      position: relative;
     }
     .vr-back-btn {
       background: none;
@@ -1185,7 +1186,13 @@
       font-size: 15px;
       font-weight: 600;
       color: var(--color-text);
-      flex: 1;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: calc(100% - 80px);
     }
     body.dark .vr-back-btn { color: #c19950; }
     body.dark .vr-detail-header { border-bottom-color: rgba(255,255,255,0.07); }
@@ -4302,6 +4309,10 @@
     document.addEventListener('click', closeAllMenus);
 
     window.show = function(section) {
+      // Reset the Ventes récentes client detail when leaving the sales tab
+      if (section !== 'sales' && typeof closeClientSales === 'function') {
+        closeClientSales();
+      }
       const ids = ['sales', 'clients', 'stock', 'logs'];
       ids.forEach(id => {
         const sectionEl = document.getElementById(id);
