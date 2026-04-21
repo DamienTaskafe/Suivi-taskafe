@@ -762,36 +762,43 @@
       font-size: 15px;
     }
     .ncp-body { padding: var(--spacing-lg); }
-    /* 2-col row for Nom + ICE */
-    .ncp-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0; }
-    .ncp-row2 > div > label { margin-top: 0; }
-    @media (max-width: 480px) { .ncp-row2 { grid-template-columns: 1fr; } }
-    /* Darker, less-white inputs inside nouveau client panel */
+    /* Single-field rows */
+    .ncp-field { margin-bottom: var(--spacing-sm); }
+    .ncp-field label { display: block; font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .ncp-field input,
+    .ncp-field select { width: 100%; box-sizing: border-box; margin: 0; }
+    /* Numéro + Type de voie on same row */
+    .ncp-num-type-row { display: grid; grid-template-columns: 90px 1fr; gap: 8px; margin-bottom: var(--spacing-sm); }
+    .ncp-num-type-row .ncp-field { margin-bottom: 0; }
+    /* Darker, cleaner inputs inside nouveau client panel */
     .nouveau-client-panel input[type="text"],
     .nouveau-client-panel input[type="number"],
     .nouveau-client-panel select {
-      background: rgba(0,0,0,0.055);
-      border-color: rgba(0,0,0,0.13);
-      box-shadow: none;
+      background: rgba(0,0,0,0.08);
+      border-color: rgba(0,0,0,0.18);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
     }
     .nouveau-client-panel input[type="text"]:focus,
     .nouveau-client-panel input[type="number"]:focus,
     .nouveau-client-panel select:focus {
       background: rgba(255,255,255,0.88);
-      border-color: rgba(0,0,0,0.22);
-      box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+      border-color: rgba(0,0,0,0.28);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
     }
     body.dark .nouveau-client-panel input[type="text"],
     body.dark .nouveau-client-panel input[type="number"],
     body.dark .nouveau-client-panel select {
-      background: rgba(255,255,255,0.07);
-      border-color: rgba(255,255,255,0.13);
+      background: rgba(20,16,12,0.82);
+      border-color: rgba(255,255,255,0.12);
+      color: var(--color-text);
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.4);
     }
     body.dark .nouveau-client-panel input[type="text"]:focus,
     body.dark .nouveau-client-panel input[type="number"]:focus,
     body.dark .nouveau-client-panel select:focus {
-      background: rgba(255,255,255,0.12);
-      border-color: rgba(255,255,255,0.28);
+      background: rgba(40,34,26,0.98);
+      border-color: rgba(255,255,255,0.3);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
     }
     /* Price spinners inside nouveau client panel keep transparent background */
     .nouveau-client-panel .price-compact-ctrl input[type="number"],
@@ -1076,37 +1083,6 @@
     .addr-grid input, .addr-grid select { margin: 0; }
     .addr-grid select { font-size: 13px; padding: 8px 8px; min-width: 120px; }
 
-    /* ── Adresse block: dark-integrated styling (mirrors Nouvelle vente) ── */
-    .nouveau-client-panel .addr-grid input,
-    .nouveau-client-panel .addr-grid select,
-    .nouveau-client-panel .city-search-wrap input {
-      background: rgba(0,0,0,0.09);
-      border-color: rgba(0,0,0,0.2);
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.07);
-    }
-    .nouveau-client-panel .addr-grid input:focus,
-    .nouveau-client-panel .addr-grid select:focus,
-    .nouveau-client-panel .city-search-wrap input:focus {
-      background: rgba(255,255,255,0.82);
-      border-color: rgba(0,0,0,0.26);
-      box-shadow: 0 0 0 3px rgba(0,0,0,0.07);
-    }
-    body.dark .nouveau-client-panel .addr-grid input,
-    body.dark .nouveau-client-panel .addr-grid select,
-    body.dark .nouveau-client-panel .city-search-wrap input {
-      background: rgba(30,26,22,0.95);
-      border-color: rgba(255,255,255,0.12);
-      color: var(--color-text);
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.35);
-    }
-    body.dark .nouveau-client-panel .addr-grid input:focus,
-    body.dark .nouveau-client-panel .addr-grid select:focus,
-    body.dark .nouveau-client-panel .city-search-wrap input:focus {
-      background: rgba(42,36,28,0.98);
-      border-color: rgba(255,255,255,0.3);
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
-    }
-
     /* ── Client edit modal: address grid ── */
     .edit-addr-grid {
       display: grid;
@@ -1117,9 +1093,6 @@
     }
     .edit-addr-grid input, .edit-addr-grid select { margin: 0; }
     .edit-addr-grid select { font-size: 13px; padding: 8px 6px; }
-
-    /* ── Nouveau client: Nom field ── */
-    /* #clientName height removed – use standard input height */
 
     /* ── Prix par gamme: 2-row grid layout ── */
     #clients .price-scroll-row,
@@ -1489,30 +1462,40 @@
         <div class="nouveau-client-panel">
           <div class="ncp-header">➕ Nouveau client</div>
           <div class="ncp-body">
-            <div class="ncp-row2">
-              <div>
-                <label for="clientName">Nom du client</label>
-                <input id="clientName" placeholder="Nom du client" />
-              </div>
-              <div>
-                <label for="clientICE">💳 ICE</label>
-                <input id="clientICE" placeholder="Numéro ICE (facturation)" />
-              </div>
+            <div class="ncp-field">
+              <label for="clientName">Nom du client</label>
+              <input id="clientName" placeholder="Nom du client" />
             </div>
 
-            <label>Adresse</label>
-            <div class="addr-block">
-              <div class="addr-grid">
+            <div class="ncp-num-type-row">
+              <div class="ncp-field">
+                <label for="clientAddrNum">Numéro</label>
                 <input id="clientAddrNum" type="text" placeholder="N°" />
+              </div>
+              <div class="ncp-field">
+                <label for="clientAddrType">Type de voie</label>
                 <select id="clientAddrType">
                   <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
                 </select>
-                <input id="clientAddrDetail" placeholder="Nom de voie" />
               </div>
+            </div>
+
+            <div class="ncp-field">
+              <label for="clientAddrDetail">Adresse</label>
+              <input id="clientAddrDetail" placeholder="Nom de voie" />
+            </div>
+
+            <div class="ncp-field">
+              <label for="clientAddrCity">Ville</label>
               <div class="city-search-wrap" id="citySearchWrap">
                 <input id="clientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" />
                 <div class="client-search-drop" id="citySearchDrop"></div>
               </div>
+            </div>
+
+            <div class="ncp-field">
+              <label for="clientICE">💳 ICE</label>
+              <input id="clientICE" placeholder="Numéro ICE (facturation)" />
             </div>
 
             <h4>💰 Prix personnalisés par gamme</h4>
