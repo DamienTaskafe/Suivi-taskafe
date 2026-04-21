@@ -1163,7 +1163,7 @@
     .vr-detail-header {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
       padding: 11px 14px 10px;
       border-bottom: 1px solid var(--color-border);
       position: relative;
@@ -1177,7 +1177,10 @@
       font-size: 20px;
       color: #c19950;
       line-height: 1;
-      flex-shrink: 0;
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
       transition: background 0.15s;
     }
     .vr-back-btn:active { background: rgba(193,153,80,0.15); }
@@ -1186,9 +1189,6 @@
       font-size: 15px;
       font-weight: 600;
       color: var(--color-text);
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
