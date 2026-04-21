@@ -840,6 +840,12 @@
     .clients-list-header { margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-md); }
     .clients-list-header h3 { margin: 0; }
 
+    /* ── Fiches clients search bar ── */
+    .clients-search-bar { margin-bottom: var(--spacing-md); }
+    .clients-search-bar input { width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.8); font-size: 14px; outline: none; transition: border-color 0.15s; }
+    .clients-search-bar input:focus { border-color: var(--color-primary); }
+    body.dark .clients-search-bar input { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: var(--color-text); }
+
     /* ── Scrollable client list ── */
     .client-list-scroll { max-height: 520px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 2px; }
 
@@ -1573,8 +1579,12 @@
       <div id="sales" class="section-shell">
         <h3>💵 Nouvelle vente</h3>
 
-        <label for="clientSelect">Sélectionner un client</label>
-        <select id="clientSelect" onchange="updatePreview()"></select>
+        <label for="clientSelectSearch">Sélectionner un client</label>
+        <div class="client-search-wrap" id="clientSelectWrap">
+          <input id="clientSelectSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onClientSelectInput()" onfocus="showClientSelectDrop()" />
+          <input type="hidden" id="clientSelect" />
+          <div class="client-search-drop" id="clientSelectDrop"></div>
+        </div>
 
         <label for="quantityInput">Quantité</label>
         <input id="quantityInput" type="number" step="0.01" placeholder="Quantité" oninput="updatePreview()" />
@@ -1720,6 +1730,9 @@
 
         <div class="clients-list-header">
           <h3>👥 Fiches clients</h3>
+        </div>
+        <div class="clients-search-bar">
+          <input id="clientSearchInput" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="filterClients()" />
         </div>
         <div class="client-list-scroll">
           <div id="clientList"></div>
@@ -1871,8 +1884,12 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>✏️ Modifier la vente</h3><button class="close-x" onclick="closeModal('editSaleModal')">✕</button></div>
       <div id="editSaleCreator" class="muted" style="margin-bottom:10px;font-size:12px;"></div>
-      <label for="editSaleClient">Client</label>
-      <select id="editSaleClient"></select>
+      <label for="editSaleClientSearch">Client</label>
+      <div class="client-search-wrap" id="editSaleClientWrap">
+        <input id="editSaleClientSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onEditSaleClientInput()" onfocus="showEditSaleClientDrop()" />
+        <input type="hidden" id="editSaleClient" />
+        <div class="client-search-drop" id="editSaleClientDrop"></div>
+      </div>
       <label for="editSaleCategory">Catégorie</label>
       <select id="editSaleCategory">
         <option value="ORO">ORO</option>
@@ -2520,6 +2537,10 @@
       return n;
     }
 
+    function sortClientsAZ(clients) {
+      return [...clients].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    }
+
     function updatePreview() {
       const client = document.getElementById('clientSelect').value;
       const category = document.getElementById('category').value;
@@ -2531,14 +2552,15 @@
     }
 
     function loadClientSelectors() {
-      const salesSelect = document.getElementById('clientSelect');
-      salesSelect.innerHTML = '';
-      state.clients.forEach(c => {
-        const a = document.createElement('option');
-        a.value = c.name;
-        a.textContent = c.name;
-        salesSelect.appendChild(a);
-      });
+      const sorted = sortClientsAZ(state.clients);
+      // Preserve current selection in the new sale client picker
+      const currentVal = document.getElementById('clientSelect').value;
+      if (!currentVal) {
+        if (sorted.length > 0) {
+          document.getElementById('clientSelect').value = sorted[0].name;
+          document.getElementById('clientSelectSearch').value = sorted[0].name;
+        }
+      }
       // reset client search filter
       document.getElementById('filterClientSearch').value = document.getElementById('filterClient').value || '';
     }
@@ -2563,9 +2585,14 @@
 
     function renderClients() {
       const list = document.getElementById('clientList');
+      const q = (document.getElementById('clientSearchInput')?.value || '').trim().toLowerCase();
+      let clients = sortClientsAZ(state.clients);
+      if (q) {
+        clients = clients.filter(c => c.name.toLowerCase().includes(q));
+      }
       let html = '';
 
-      state.clients.forEach((c, i) => {
+      clients.forEach((c, i) => {
         const sales = getSalesForClient(c);
         const totalUnpaid = sales
           .filter(s => !s.paid)
@@ -2610,7 +2637,7 @@
           </div>`;
       });
 
-      list.innerHTML = html || `<div class="empty-state">Aucun client enregistré.</div>`;
+      list.innerHTML = html || `<div class="empty-state">${q ? 'Aucun client trouvé.' : 'Aucun client enregistré.'}</div>`;
     }
 
     let _allSalesData = [];
@@ -2626,7 +2653,7 @@
     }
 
     function renderSalesClientCards(data) {
-      // Group sales by client name, preserving insertion order
+      // Group sales by client name and sort A→Z
       const grouped = {};
       const clientOrder = [];
       data.forEach(s => {
@@ -2634,6 +2661,7 @@
         if (!grouped[key]) { grouped[key] = []; clientOrder.push(key); }
         grouped[key].push(s);
       });
+      clientOrder.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
       const cards = document.getElementById('vrClientCards');
       const detail = document.getElementById('vrClientDetail');
@@ -2937,7 +2965,7 @@
             loadRecords('sales'),
             loadRecords('stocks')
           ]);
-          state.clients = clients.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          state.clients = sortClientsAZ(clients);
           state.sales = sales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           state.stocks = { ...DEFAULT_STOCKS };
           stockRows.forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
@@ -2965,7 +2993,7 @@
       if (salesRes.error) throw salesRes.error;
       if (stocksRes.error) throw stocksRes.error;
 
-      state.clients = clientsRes.data || [];
+      state.clients = sortClientsAZ(clientsRes.data || []);
       state.sales = salesRes.data || [];
       state.stocks = { ...DEFAULT_STOCKS };
       (stocksRes.data || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
@@ -3918,9 +3946,9 @@
     function renderClientDropdown(q) {
       const drop = document.getElementById('clientSearchDrop');
       const current = document.getElementById('filterClient').value;
-      const filtered = q
-        ? state.clients.filter(c => c.name.toLowerCase().includes(q))
-        : state.clients;
+      const filtered = sortClientsAZ(
+        q ? state.clients.filter(c => c.name.toLowerCase().includes(q)) : state.clients
+      );
 
       let html = `<div class="csearch-item${!current ? ' selected' : ''}" data-client="">Tous les clients</div>`;
       filtered.forEach(c => {
@@ -3949,6 +3977,119 @@
       const wrap = document.getElementById('clientSearchWrap');
       if (wrap && !wrap.contains(e.target)) {
         document.getElementById('clientSearchDrop').classList.remove('open');
+      }
+    }
+
+    // ── Fiches clients search ────────────────────────────────────────────────────
+    window.filterClients = function() {
+      renderClients();
+    };
+
+    // ── New sale client picker ───────────────────────────────────────────────────
+    window.onClientSelectInput = function() {
+      const q = document.getElementById('clientSelectSearch').value.trim().toLowerCase();
+      if (!q) {
+        document.getElementById('clientSelect').value = '';
+        updatePreview();
+      }
+      renderClientSelectDrop(q);
+    };
+
+    window.showClientSelectDrop = function() {
+      const q = document.getElementById('clientSelectSearch').value.trim().toLowerCase();
+      renderClientSelectDrop(q);
+    };
+
+    function renderClientSelectDrop(q) {
+      const drop = document.getElementById('clientSelectDrop');
+      const current = document.getElementById('clientSelect').value;
+      const filtered = sortClientsAZ(
+        q ? state.clients.filter(c => c.name.toLowerCase().includes(q)) : state.clients
+      );
+
+      let html = '';
+      if (filtered.length === 0) {
+        html = `<div class="csearch-item" style="color:var(--color-text-muted);">Aucun client trouvé</div>`;
+      } else {
+        filtered.forEach(c => {
+          const escaped = escHtml(c.name);
+          html += `<div class="csearch-item${c.name === current ? ' selected' : ''}" data-client="${escaped}">${escaped}</div>`;
+        });
+      }
+      drop.innerHTML = html;
+      drop.classList.add('open');
+      drop.querySelectorAll('.csearch-item[data-client]').forEach(item => {
+        item.addEventListener('click', () => selectClientForSale(item.dataset.client));
+      });
+
+      setTimeout(() => {
+        document.addEventListener('click', closeClientSelectDrop, { once: true, capture: true });
+      }, 50);
+    }
+
+    function selectClientForSale(name) {
+      document.getElementById('clientSelect').value = name;
+      document.getElementById('clientSelectSearch').value = name;
+      document.getElementById('clientSelectDrop').classList.remove('open');
+      updatePreview();
+    }
+
+    function closeClientSelectDrop(e) {
+      const wrap = document.getElementById('clientSelectWrap');
+      if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('clientSelectDrop').classList.remove('open');
+      }
+    }
+
+    // ── Edit sale client picker ──────────────────────────────────────────────────
+    window.onEditSaleClientInput = function() {
+      const q = document.getElementById('editSaleClientSearch').value.trim().toLowerCase();
+      if (!q) document.getElementById('editSaleClient').value = '';
+      renderEditSaleClientDrop(q);
+    };
+
+    window.showEditSaleClientDrop = function() {
+      const q = document.getElementById('editSaleClientSearch').value.trim().toLowerCase();
+      renderEditSaleClientDrop(q);
+    };
+
+    function renderEditSaleClientDrop(q) {
+      const drop = document.getElementById('editSaleClientDrop');
+      const current = document.getElementById('editSaleClient').value;
+      const filtered = sortClientsAZ(
+        q ? state.clients.filter(c => c.name.toLowerCase().includes(q)) : state.clients
+      );
+
+      let html = '';
+      if (filtered.length === 0) {
+        html = `<div class="csearch-item" style="color:var(--color-text-muted);">Aucun client trouvé</div>`;
+      } else {
+        filtered.forEach(c => {
+          const escaped = escHtml(c.name);
+          html += `<div class="csearch-item${c.name === current ? ' selected' : ''}" data-client="${escaped}">${escaped}</div>`;
+        });
+      }
+      drop.innerHTML = html;
+      drop.classList.add('open');
+      drop.querySelectorAll('.csearch-item[data-client]').forEach(item => {
+        item.addEventListener('click', () => selectClientForEditSale(item.dataset.client));
+      });
+
+      setTimeout(() => {
+        document.addEventListener('click', closeEditSaleClientDrop, { once: true, capture: true });
+      }, 50);
+    }
+
+    function selectClientForEditSale(name) {
+      document.getElementById('editSaleClient').value = name;
+      document.getElementById('editSaleClientSearch').value = name;
+      document.getElementById('editSaleClientDrop').classList.remove('open');
+    }
+
+    function closeEditSaleClientDrop(e) {
+      const wrap = document.getElementById('editSaleClientWrap');
+      if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('editSaleClientDrop').classList.remove('open');
       }
     }
 
@@ -4102,15 +4243,9 @@
 
       document.getElementById('editSaleId').value = saleId;
 
-      const clientSel = document.getElementById('editSaleClient');
-      clientSel.innerHTML = '';
-      state.clients.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.name;
-        opt.textContent = c.name;
-        if (c.name === sale.client_name) opt.selected = true;
-        clientSel.appendChild(opt);
-      });
+      // Populate edit sale client picker
+      document.getElementById('editSaleClient').value = sale.client_name || '';
+      document.getElementById('editSaleClientSearch').value = sale.client_name || '';
 
       document.getElementById('editSaleCategory').value = sale.category;
       document.getElementById('editSaleQty').value = sale.quantity;
