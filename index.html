@@ -575,7 +575,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 12px 50px 11px 14px;
+      padding: 10px 12px 10px 14px;
       background: rgba(0,0,0,0.03);
       border-bottom: 1px solid rgba(0,0,0,0.06);
     }
@@ -583,6 +583,8 @@
       background: rgba(255,255,255,0.04);
       border-bottom-color: rgba(255,255,255,0.07);
     }
+    /* Menu-wrap inside client-card-header uses flex alignment, not absolute */
+    .client-card-header .menu-wrap { position: static; flex-shrink: 0; }
     .client-card-name {
       font-size: 15px;
       font-weight: 700;
@@ -737,6 +739,67 @@
     /* Clients section label for "Fiches clients" */
     .clients-list-header { margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-md); }
     .clients-list-header h3 { margin: 0; }
+
+    /* ── Scrollable client list ── */
+    .client-list-scroll { max-height: 520px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 2px; }
+
+    /* ── Nouveau client panel (replaces accordion) ── */
+    .nouveau-client-panel {
+      margin-bottom: var(--spacing-md);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: rgba(255,255,255,0.25);
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    body.dark .nouveau-client-panel { background: rgba(255,255,255,0.04); }
+    .ncp-header {
+      padding: var(--spacing-lg);
+      font-weight: 700;
+      background: rgba(20,20,20,0.92);
+      color: white;
+      font-family: "Playfair Display", serif;
+      font-size: 15px;
+    }
+    .ncp-body { padding: var(--spacing-lg); }
+    /* 2-col row for Nom + ICE */
+    .ncp-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0; }
+    .ncp-row2 > div > label { margin-top: 0; }
+    @media (max-width: 480px) { .ncp-row2 { grid-template-columns: 1fr; } }
+    /* Darker, less-white inputs inside nouveau client panel */
+    .nouveau-client-panel input[type="text"],
+    .nouveau-client-panel input[type="number"],
+    .nouveau-client-panel select {
+      background: rgba(0,0,0,0.055);
+      border-color: rgba(0,0,0,0.13);
+      box-shadow: none;
+    }
+    .nouveau-client-panel input[type="text"]:focus,
+    .nouveau-client-panel input[type="number"]:focus,
+    .nouveau-client-panel select:focus {
+      background: rgba(255,255,255,0.88);
+      border-color: rgba(0,0,0,0.22);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    }
+    body.dark .nouveau-client-panel input[type="text"],
+    body.dark .nouveau-client-panel input[type="number"],
+    body.dark .nouveau-client-panel select {
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(255,255,255,0.13);
+    }
+    body.dark .nouveau-client-panel input[type="text"]:focus,
+    body.dark .nouveau-client-panel input[type="number"]:focus,
+    body.dark .nouveau-client-panel select:focus {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.28);
+    }
+    /* Price spinners inside nouveau client panel keep transparent background */
+    .nouveau-client-panel .price-compact-ctrl input[type="number"],
+    .nouveau-client-panel .price-compact-ctrl input[type="number"]:focus {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
 
     /* Advanced modal muted lines */
     .adv-stat-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid var(--color-border); }
@@ -1386,14 +1449,19 @@
 
       <div id="clients" class="section-shell hidden">
 
-        <div class="accordion">
-          <div class="accordion-header" onclick="toggleAccordion(this)">
-            <span>➕ Nouveau client</span>
-            <span class="arrow">▼</span>
-          </div>
-          <div class="accordion-inner">
-            <label for="clientName">Nom du client</label>
-            <input id="clientName" placeholder="Nom du client" />
+        <div class="nouveau-client-panel">
+          <div class="ncp-header">➕ Nouveau client</div>
+          <div class="ncp-body">
+            <div class="ncp-row2">
+              <div>
+                <label for="clientName">Nom du client</label>
+                <input id="clientName" placeholder="Nom du client" />
+              </div>
+              <div>
+                <label for="clientICE">💳 ICE</label>
+                <input id="clientICE" placeholder="Numéro ICE (facturation)" />
+              </div>
+            </div>
 
             <label>Adresse</label>
             <div class="addr-grid">
@@ -1407,9 +1475,6 @@
               <input id="clientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" />
               <div class="client-search-drop" id="citySearchDrop"></div>
             </div>
-
-            <label for="clientICE">💳 ICE</label>
-            <input id="clientICE" placeholder="Numéro ICE (facturation)" />
 
             <h4>💰 Prix personnalisés par gamme</h4>
             <div class="price-scroll-row">
@@ -1428,7 +1493,9 @@
         <div class="clients-list-header">
           <h3>👥 Fiches clients</h3>
         </div>
-        <div id="clientList"></div>
+        <div class="client-list-scroll">
+          <div id="clientList"></div>
+        </div>
       </div>
 
       <div id="stock" class="section-shell hidden">
@@ -2272,35 +2339,27 @@
 
       state.clients.forEach((c, i) => {
         const sales = getSalesForClient(c);
-        const now = new Date();
-        const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-        const monthlySales = sales.filter(s => {
-          const d = new Date(s.created_at);
-          return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === thisMonth;
-        });
-        const monthlyUnpaid = monthlySales
+        const totalUnpaid = sales
           .filter(s => !s.paid)
           .reduce((sum, s) => sum + Number(s.total_price || 0), 0);
 
         html += `
           <div class="client-card">
-            <div class="menu-wrap">
-              <button class="menu-btn" onclick="toggleMenu(event, 'clientMenu${i}')">⋯</button>
-              <div class="menu" id="clientMenu${i}">
-                <button onclick="openClientAdvanced('${c.id}')">⚙️ Actions avancées</button>
-                <button onclick="generateClientMonthlyPDF('${c.id}')">📄 Facture mensuelle</button>
-                ${
-                  isManagerOrAdmin()
-                    ? `<button onclick="openEditClient('${c.id}')">✏️ Modifier</button>
-                       <button onclick="deleteClient('${c.id}')">🗑️ Supprimer</button>`
-                    : ''
-                }
-              </div>
-            </div>
-
             <div class="client-card-header">
               <span class="client-card-name">${c.name}</span>
-              <span class="badge ${sales[0]?.category || 'ORO'} client-cmd-badge" style="font-size:10px;padding:2px 7px;margin:0;">${sales.length} cmd</span>
+              <div class="menu-wrap">
+                <button class="menu-btn" onclick="toggleMenu(event, 'clientMenu${i}')">⋯</button>
+                <div class="menu" id="clientMenu${i}">
+                  <button onclick="openClientAdvanced('${c.id}')">⚙️ Actions avancées</button>
+                  <button onclick="generateClientMonthlyPDF('${c.id}')">📄 Facture mensuelle</button>
+                  ${
+                    isManagerOrAdmin()
+                      ? `<button onclick="openEditClient('${c.id}')">✏️ Modifier</button>
+                         <button onclick="deleteClient('${c.id}')">🗑️ Supprimer</button>`
+                      : ''
+                  }
+                </div>
+              </div>
             </div>
 
             <div class="client-card-info">
@@ -2311,8 +2370,8 @@
 
             <div class="client-stat-row">
               <div class="client-stat">
-                <div class="client-stat-label">Non payé ce mois</div>
-                <div class="client-stat-value${monthlyUnpaid > 0 ? ' unpaid' : ''}">${formatDh(monthlyUnpaid)}</div>
+                <div class="client-stat-label">Total non payé</div>
+                <div class="client-stat-value${totalUnpaid > 0 ? ' unpaid' : ''}">${formatDh(totalUnpaid)}</div>
               </div>
               <div class="client-stat-sep"></div>
               <div class="client-stat">
