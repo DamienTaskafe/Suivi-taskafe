@@ -555,23 +555,33 @@
 
     /* ── Client cards (fiches clients) redesign ── */
     .client-card {
-      background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(252,246,239,0.90);
+      border: 1px solid rgba(180,150,120,0.22);
       border-radius: var(--radius-lg);
-      padding: 12px 14px;
+      padding: 0;
       margin-bottom: 10px;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      box-shadow: 0 3px 16px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.04);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
-    body.dark .client-card { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.10); }
+    body.dark .client-card {
+      background: rgba(36,28,22,0.88);
+      border-color: rgba(255,255,255,0.09);
+    }
 
     .client-card-header {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 9px;
-      margin-right: 42px;
+      padding: 12px 50px 11px 14px;
+      background: rgba(0,0,0,0.03);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    body.dark .client-card-header {
+      background: rgba(255,255,255,0.04);
+      border-bottom-color: rgba(255,255,255,0.07);
     }
     .client-card-name {
       font-size: 15px;
@@ -587,35 +597,40 @@
     .client-card-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid rgba(0,0,0,0.07);
+      gap: 5px;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
     }
-    body.dark .client-card-info { border-bottom-color: rgba(255,255,255,0.08); }
+    body.dark .client-card-info { border-bottom-color: rgba(255,255,255,0.07); }
 
     .client-info-row {
       display: flex;
-      align-items: flex-start;
-      gap: 6px;
+      align-items: center;
+      gap: 7px;
       font-size: 12px;
       color: var(--color-text-muted);
-      line-height: 1.5;
+      background: rgba(0,0,0,0.04);
+      border-radius: 8px;
+      padding: 5px 9px;
+      line-height: 1.4;
     }
-    .client-info-icon { flex-shrink: 0; }
-    .client-info-empty { opacity: 0.55; font-style: italic; }
+    body.dark .client-info-row { background: rgba(255,255,255,0.06); }
+    .client-info-icon { flex-shrink: 0; font-size: 13px; }
+    .client-info-empty { opacity: 0.55; font-style: italic; background: transparent; padding: 4px 2px; }
+    body.dark .client-info-empty { background: transparent; }
 
     .client-stat-row {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      align-items: stretch;
+      gap: 0;
+      padding: 10px 14px;
     }
-    .client-stat { flex: 1; text-align: center; }
+    .client-stat { flex: 1; text-align: center; padding: 4px 0; }
     .client-stat-sep {
       width: 1px;
-      height: 28px;
       background: rgba(0,0,0,0.08);
       flex-shrink: 0;
+      margin: 4px 0;
     }
     body.dark .client-stat-sep { background: rgba(255,255,255,0.10); }
     .client-stat-label {
@@ -624,7 +639,7 @@
       font-weight: 700;
       color: var(--color-text-muted);
       letter-spacing: 0.3px;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
     }
     .client-stat-value { font-size: 13px; font-weight: 700; color: var(--color-text); }
     .client-stat-value.unpaid { color: var(--color-error); }
