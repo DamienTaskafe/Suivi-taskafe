@@ -1060,15 +1060,52 @@
     .sales-show-more { margin: 6px 0; font-size: 12px; }
 
     /* ── Address fields clean layout ── */
+    .addr-block {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: var(--spacing-sm);
+    }
+    .addr-block .city-search-wrap input { margin-bottom: 0; }
     .addr-grid {
       display: grid;
-      grid-template-columns: 52px min-content 1fr;
+      grid-template-columns: 72px minmax(120px, auto) 1fr;
       gap: 6px;
-      margin-bottom: var(--spacing-sm);
+      margin-bottom: 6px;
       align-items: start;
     }
     .addr-grid input, .addr-grid select { margin: 0; }
-    .addr-grid select { font-size: 13px; padding: 8px 6px; }
+    .addr-grid select { font-size: 13px; padding: 8px 8px; min-width: 120px; }
+
+    /* ── Adresse block: dark-integrated styling (mirrors Nouvelle vente) ── */
+    .nouveau-client-panel .addr-grid input,
+    .nouveau-client-panel .addr-grid select,
+    .nouveau-client-panel .city-search-wrap input {
+      background: rgba(0,0,0,0.09);
+      border-color: rgba(0,0,0,0.2);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .nouveau-client-panel .addr-grid input:focus,
+    .nouveau-client-panel .addr-grid select:focus,
+    .nouveau-client-panel .city-search-wrap input:focus {
+      background: rgba(255,255,255,0.82);
+      border-color: rgba(0,0,0,0.26);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.07);
+    }
+    body.dark .nouveau-client-panel .addr-grid input,
+    body.dark .nouveau-client-panel .addr-grid select,
+    body.dark .nouveau-client-panel .city-search-wrap input {
+      background: rgba(30,26,22,0.95);
+      border-color: rgba(255,255,255,0.12);
+      color: var(--color-text);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.35);
+    }
+    body.dark .nouveau-client-panel .addr-grid input:focus,
+    body.dark .nouveau-client-panel .addr-grid select:focus,
+    body.dark .nouveau-client-panel .city-search-wrap input:focus {
+      background: rgba(42,36,28,0.98);
+      border-color: rgba(255,255,255,0.3);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+    }
 
     /* ── Client edit modal: address grid ── */
     .edit-addr-grid {
@@ -1464,16 +1501,18 @@
             </div>
 
             <label>Adresse</label>
-            <div class="addr-grid">
-              <input id="clientAddrNum" type="text" placeholder="N°" />
-              <select id="clientAddrType">
-                <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
-              </select>
-              <input id="clientAddrDetail" placeholder="Nom de voie" />
-            </div>
-            <div class="city-search-wrap" id="citySearchWrap">
-              <input id="clientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" />
-              <div class="client-search-drop" id="citySearchDrop"></div>
+            <div class="addr-block">
+              <div class="addr-grid">
+                <input id="clientAddrNum" type="text" placeholder="N°" />
+                <select id="clientAddrType">
+                  <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
+                </select>
+                <input id="clientAddrDetail" placeholder="Nom de voie" />
+              </div>
+              <div class="city-search-wrap" id="citySearchWrap">
+                <input id="clientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" />
+                <div class="client-search-drop" id="citySearchDrop"></div>
+              </div>
             </div>
 
             <h4>💰 Prix personnalisés par gamme</h4>
