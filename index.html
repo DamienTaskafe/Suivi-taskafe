@@ -263,13 +263,113 @@
       left: 0;
       right: 0;
       z-index: 1000;
-      background: rgba(0, 0, 0, 0.92);
+      background: transparent;
       overflow: visible;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      backdrop-filter: blur(8px);
+      box-shadow: none;
     }
 
-    .header-banner { display: block; width: 100%; height: auto; max-height: 116px; object-fit: cover; }
+    /* ── Animated horizontal banner ── */
+    .banner-visual {
+      position: relative;
+      width: 100%;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      padding: 0 64px 0 16px;
+      background: linear-gradient(135deg, #0d0b07 0%, #1c1508 45%, #0d0b07 100%);
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+    }
+    .banner-visual::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 55% 90% at 18% 50%, rgba(210,175,100,0.13) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .banner-visual::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(210,175,100,0.45) 25%, rgba(210,175,100,0.75) 50%, rgba(210,175,100,0.45) 75%, transparent 100%);
+    }
+    .banner-logo-wrap {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #000;
+      box-shadow: 0 0 10px 2px rgba(210,175,100,0.4), 0 0 22px 6px rgba(210,175,100,0.15);
+    }
+    .banner-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      transform: scale(1.15);
+      display: block;
+    }
+    .banner-logo-shine {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 55%);
+      pointer-events: none;
+    }
+    .banner-text {
+      margin-left: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .banner-title {
+      font-size: 21px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 2.5px;
+      line-height: 1;
+      text-shadow: 0 0 18px rgba(210,175,100,0.45);
+      white-space: nowrap;
+    }
+    .banner-sub {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: rgba(210,175,100,0.72);
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    /* Shimmer sweep element */
+    .banner-shimmer {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 38%;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,255,255,0.055) 40%,
+        rgba(255,255,255,0.09) 50%,
+        rgba(255,255,255,0.055) 60%,
+        transparent 100%
+      );
+      animation: bannerShimmer 5.5s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes bannerShimmer {
+      0%   { transform: translateX(-200%); opacity: 0; }
+      8%   { opacity: 1; }
+      55%  { opacity: 1; }
+      65%  { transform: translateX(370%); opacity: 0; }
+      100% { transform: translateX(370%); opacity: 0; }
+    }
+
     .header-menu-wrap { position: absolute; right: var(--spacing-lg); top: var(--spacing-lg); z-index: 1200; }
 
     .header-menu-btn {
@@ -324,7 +424,7 @@
     .user-chip strong { display: block; color: var(--color-text); margin-bottom: var(--spacing-xs); font-size: 15px; }
     .user-chip span { font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.3px; }
 
-    .container { width: 100%; max-width: 920px; margin: 0 auto; padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-2xl); padding-top: calc(116px + var(--spacing-lg)); }
+    .container { width: 100%; max-width: 920px; margin: 0 auto; padding: var(--spacing-xl) var(--spacing-lg) var(--spacing-2xl); padding-top: calc(72px + var(--spacing-lg)); }
 
     .top-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); margin-bottom: var(--spacing-xl); }
 
@@ -689,7 +789,7 @@
 
     @media (max-width: 760px) {
       .top-actions, .summary-grid, .prices-grid { grid-template-columns: 1fr; }
-      .container { padding: var(--spacing-lg); padding-top: calc(116px + var(--spacing-sm)); }
+      .container { padding: var(--spacing-lg); padding-top: calc(72px + var(--spacing-sm)); }
       .auth-card { padding: var(--spacing-xl); }
       .modal-card { padding: var(--spacing-lg); }
       .user-row { flex-direction: row; align-items: center; }
@@ -1430,7 +1530,17 @@
 
   <div id="appShell" class="hidden">
     <header class="banner-header">
-      <img src="IMG_5089.jpeg" alt="TASKAFÉ" class="header-banner" />
+      <div class="banner-visual" role="banner" aria-label="TASKAFÉ">
+        <div class="banner-logo-wrap">
+          <img src="icon-512.png.PNG" alt="" class="banner-logo-img" aria-hidden="true" />
+          <div class="banner-logo-shine"></div>
+        </div>
+        <div class="banner-text">
+          <span class="banner-title">TASKAFÉ</span>
+          <span class="banner-sub">Gestion · Suivi · Stock</span>
+        </div>
+        <div class="banner-shimmer" aria-hidden="true"></div>
+      </div>
       <div class="header-menu-wrap">
         <button class="header-menu-btn" onclick="toggleHeaderMenu(event)">⋯</button>
         <div class="header-menu" id="headerMenu">
