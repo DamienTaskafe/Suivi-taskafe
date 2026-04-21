@@ -1110,6 +1110,86 @@
     .vr-acc.open .accordion-inner { padding: 0; }
     .vr-acc .sales-scroll-area { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
 
+    /* ── Ventes récentes: step-1 client cards ── */
+    .vr-cards-list {
+      padding: 12px 12px 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .vr-client-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, #fdf6e3 0%, #f5e6c0 55%, #e8d5a3 100%);
+      border: 1px solid rgba(193,153,80,0.35);
+      box-shadow: 0 2px 10px rgba(120,80,20,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .vr-client-card:active,
+    .vr-client-card:focus-visible { transform: scale(0.97); outline: 2px solid #c19950; outline-offset: 2px; }
+    .vr-client-card-icon {
+      font-size: 26px;
+      line-height: 1;
+      flex-shrink: 0;
+      filter: drop-shadow(0 1px 2px rgba(100,60,10,0.18));
+    }
+    .vr-client-card-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #3b2507;
+      letter-spacing: 0.2px;
+      flex: 1;
+    }
+    .vr-client-card-arrow {
+      font-size: 14px;
+      color: #c19950;
+      flex-shrink: 0;
+    }
+    body.dark .vr-client-card {
+      background: linear-gradient(135deg, #2a1f0e 0%, #1e1508 55%, #150f05 100%);
+      border-color: rgba(193,153,80,0.25);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    body.dark .vr-client-card-name { color: #f0d898; }
+    body.dark .vr-client-card-arrow { color: #c19950; }
+
+    /* ── Ventes récentes: step-2 back header ── */
+    .vr-detail-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px 10px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .vr-back-btn {
+      background: none;
+      border: none;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 20px;
+      color: #c19950;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .vr-back-btn:active { background: rgba(193,153,80,0.15); }
+    .vr-detail-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text);
+      flex: 1;
+    }
+    body.dark .vr-back-btn { color: #c19950; }
+    body.dark .vr-detail-header { border-bottom-color: rgba(255,255,255,0.07); }
+
     /* ── Ventes récentes: client groups & sale items ── */
     .vr-client-group {
       padding: 12px 14px 8px;
@@ -1422,7 +1502,14 @@
           </div>
           <div class="accordion-inner">
             <div class="sales-scroll-area" id="salesScrollArea">
-              <div id="salesList"></div>
+              <div class="vr-cards-list" id="vrClientCards"></div>
+              <div id="vrClientDetail" style="display:none;">
+                <div class="vr-detail-header">
+                  <button class="vr-back-btn" onclick="closeClientSales()" aria-label="Retour à la liste des clients">‹</button>
+                  <span class="vr-detail-title" id="vrDetailTitle"></span>
+                </div>
+                <div id="salesList"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -2411,14 +2498,15 @@
     const SALES_PAGE = 6;
     let _salesShown = SALES_PAGE;
 
-    function renderSales() {
-      const data = getFilteredSales().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      _allSalesData = data;
-      _salesShown = data.length;
+    // Coffee-themed icon pool – picks a consistent icon per client name
+    const VR_ICONS = ['☕', '🫘', '🍵', '🫗', '🏺'];
+    function vrIconForClient(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+      return VR_ICONS[Math.abs(h) % VR_ICONS.length];
+    }
 
-      const list = document.getElementById('salesList');
-      let html = '';
-
+    function renderSalesClientCards(data) {
       // Group sales by client name, preserving insertion order
       const grouped = {};
       const clientOrder = [];
@@ -2428,54 +2516,113 @@
         grouped[key].push(s);
       });
 
+      const cards = document.getElementById('vrClientCards');
+      const detail = document.getElementById('vrClientDetail');
+      detail.style.display = 'none';
+      document.getElementById('salesList').innerHTML = '';
+
       if (clientOrder.length === 0) {
-        html = `<div class="empty-state">Aucune vente trouvée.</div>`;
+        cards.innerHTML = `<div class="empty-state">Aucune vente trouvée.</div>`;
       } else {
+        let html = '';
         clientOrder.forEach(clientName => {
-          const clientSales = grouped[clientName];
-          html += `<div class="vr-client-group"><div class="vr-client-title">${clientName}</div>`;
-          clientSales.forEach(s => {
-            const dateStr = new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
-            const creatorUser = s.created_by ? state.allUsers.find(u => u.id === s.created_by) : null;
-            const creatorName = creatorUser?.full_name || (s.created_by ? 'Utilisateur' : 'Inconnu');
-            html += `
-              <div class="vr-sale-item">
-                <div class="menu-wrap">
-                  <button class="menu-btn" onclick="toggleMenu(event,'saleMenu${s.id}')">⋯</button>
-                  <div class="menu" id="saleMenu${s.id}">
-                    <button onclick="closeAllMenus();openEditSale('${s.id}')">✏️ Modifier</button>
-                    <button onclick="closeAllMenus();togglePaid('${s.id}',${!s.paid})">${s.paid ? '❌ Marquer impayé' : '✅ Marquer payé'}</button>
-                    ${isManagerOrAdmin() ? `<button class="danger" onclick="closeAllMenus();deleteSale('${s.id}')">🗑️ Supprimer</button>` : ''}
-                  </div>
-                </div>
-                <div class="vr-sale-row">
-                  <span class="badge ${s.category}" style="padding:2px 7px;font-size:10px;margin:0;">${s.category}</span>
-                  <span class="vr-sale-qty">${formatStockValue(s.category, s.quantity)}</span>
-                  <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-                    <span class="vr-sale-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
-                    <span>${s.paid ? '✅' : '❌'}</span>
-                  </span>
-                </div>
-                <div class="vr-sale-footer">
-                  <div class="vr-sale-meta">📅 ${dateStr}</div>
-                  <div class="vr-sale-meta">Créée par : ${escHtml(creatorName)}</div>
-                </div>
-              </div>`;
-          });
-          html += `</div>`;
+          const icon = vrIconForClient(clientName);
+          html += `
+            <div class="vr-client-card" role="button" tabindex="0" data-client="${escHtml(clientName)}" onclick="openClientSales(this.dataset.client)" onkeydown="if(event.key==='Enter'||event.key===' ')openClientSales(this.dataset.client)">
+              <span class="vr-client-card-icon" aria-hidden="true">${icon}</span>
+              <span class="vr-client-card-name">${escHtml(clientName)}</span>
+              <span class="vr-client-card-arrow" aria-hidden="true">›</span>
+            </div>`;
         });
+        cards.innerHTML = html;
       }
+    }
 
+    function renderSalesForClient(clientName, data) {
+      const clientSales = data.filter(s => (s.client_name || 'Inconnu') === clientName);
+      const list = document.getElementById('salesList');
+      let html = '';
+      if (clientSales.length === 0) {
+        html = `<div class="empty-state">Aucune vente pour ce client.</div>`;
+      } else {
+        html += `<div class="vr-client-group">`;
+        clientSales.forEach(s => {
+          const dateStr = new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+          const creatorUser = s.created_by ? state.allUsers.find(u => u.id === s.created_by) : null;
+          const creatorName = creatorUser?.full_name || (s.created_by ? 'Utilisateur' : 'Inconnu');
+          html += `
+            <div class="vr-sale-item">
+              <div class="menu-wrap">
+                <button class="menu-btn" onclick="toggleMenu(event,'saleMenu${s.id}')">⋯</button>
+                <div class="menu" id="saleMenu${s.id}">
+                  <button onclick="closeAllMenus();openEditSale('${s.id}')">✏️ Modifier</button>
+                  <button onclick="closeAllMenus();togglePaid('${s.id}',${!s.paid})">${s.paid ? '❌ Marquer impayé' : '✅ Marquer payé'}</button>
+                  ${isManagerOrAdmin() ? `<button class="danger" onclick="closeAllMenus();deleteSale('${s.id}')">🗑️ Supprimer</button>` : ''}
+                </div>
+              </div>
+              <div class="vr-sale-row">
+                <span class="badge ${s.category}" style="padding:2px 7px;font-size:10px;margin:0;">${s.category}</span>
+                <span class="vr-sale-qty">${formatStockValue(s.category, s.quantity)}</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+                  <span class="vr-sale-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
+                  <span>${s.paid ? '✅' : '❌'}</span>
+                </span>
+              </div>
+              <div class="vr-sale-footer">
+                <div class="vr-sale-meta">📅 ${dateStr}</div>
+                <div class="vr-sale-meta">Créée par : ${escHtml(creatorName)}</div>
+              </div>
+            </div>`;
+        });
+        html += `</div>`;
+      }
       list.innerHTML = html;
-      document.getElementById('salesShowMoreBtn').style.display = 'none';
+    }
 
-      // Re-init and reopen the ventes-récentes accordion after DOM update
+    function vrRefreshAccordion() {
       initAccordions();
       const vrAcc = document.getElementById('ventesRecentesAcc');
       if (vrAcc && vrAcc.classList.contains('open')) {
         const inner = vrAcc.querySelector('.accordion-inner');
         if (inner) inner.style.maxHeight = inner.scrollHeight + 'px';
       }
+    }
+
+    window.openClientSales = function(clientName) {
+      const detail = document.getElementById('vrClientDetail');
+      const cards = document.getElementById('vrClientCards');
+      document.getElementById('vrDetailTitle').textContent = clientName;
+      cards.style.display = 'none';
+      detail.style.display = 'block';
+      renderSalesForClient(clientName, _allSalesData);
+      vrRefreshAccordion();
+      const area = document.getElementById('salesScrollArea');
+      if (area) area.scrollTop = 0;
+    };
+
+    window.closeClientSales = function() {
+      const detail = document.getElementById('vrClientDetail');
+      const cards = document.getElementById('vrClientCards');
+      detail.style.display = 'none';
+      cards.style.display = '';
+      vrRefreshAccordion();
+      const area = document.getElementById('salesScrollArea');
+      if (area) area.scrollTop = 0;
+    };
+
+    function renderSales() {
+      const data = getFilteredSales().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      _allSalesData = data;
+      _salesShown = data.length;
+
+      // Always go back to step 1 (client cards) when re-rendering
+      document.getElementById('vrClientCards').style.display = '';
+      renderSalesClientCards(data);
+
+      document.getElementById('salesShowMoreBtn').style.display = 'none';
+
+      // Re-init and reopen the ventes-récentes accordion after DOM update
+      vrRefreshAccordion();
 
       let totalQty = 0;
       let totalDh = 0;
