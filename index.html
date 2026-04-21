@@ -553,12 +553,81 @@
     .prices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); }
     .prices-grid > div label { margin: 0 0 var(--spacing-sm); }
 
-    .client-head { display: flex; justify-content: space-between; gap: var(--spacing-md); align-items: flex-start; flex-wrap: wrap; margin-bottom: var(--spacing-sm); }
-    .client-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-sm); margin: var(--spacing-sm) 0 0; }
+    /* ── Client cards (fiches clients) redesign ── */
+    .client-card {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    }
+    body.dark .client-card { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.10); }
 
-    .mini-box { background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.05); border-radius: var(--radius-md); padding: var(--spacing-xs) var(--spacing-sm); text-align: center; }
-    .mini-box .k { font-size: 9px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: var(--spacing-xs); letter-spacing: 0.3px; }
-    .mini-box .v { font-size: 13px; font-weight: 700; color: var(--color-text); }
+    .client-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+      margin-right: 42px;
+    }
+    .client-card-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text);
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .client-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+    body.dark .client-card-info { border-bottom-color: rgba(255,255,255,0.08); }
+
+    .client-info-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--color-text-muted);
+      line-height: 1.5;
+    }
+    .client-info-icon { flex-shrink: 0; }
+    .client-info-empty { opacity: 0.55; font-style: italic; }
+
+    .client-stat-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .client-stat { flex: 1; text-align: center; }
+    .client-stat-sep {
+      width: 1px;
+      height: 28px;
+      background: rgba(0,0,0,0.08);
+      flex-shrink: 0;
+    }
+    body.dark .client-stat-sep { background: rgba(255,255,255,0.10); }
+    .client-stat-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      letter-spacing: 0.3px;
+      margin-bottom: 2px;
+    }
+    .client-stat-value { font-size: 13px; font-weight: 700; color: var(--color-text); }
+    .client-stat-value.unpaid { color: var(--color-error); }
 
     .logs-list { display: grid; gap: var(--spacing-md); }
     .log-item { background: rgba(255,255,255,0.9); border-radius: var(--radius-md); border: 1px solid rgba(0,0,0,0.03); padding: var(--spacing-lg); }
@@ -647,12 +716,8 @@
       margin: 2px 0 0;
     }
 
-    /* Client badge spacing fix – push cmd-count badge away from ⋯ button */
-    .client-cmd-badge { flex-shrink: 0; margin-right: 48px; }
-
-    /* Client cards: tighter padding for a more compact appearance */
-    #clientList .card { padding: var(--spacing-md); margin-bottom: var(--spacing-sm); }
-    #clientList .card-title { font-size: 15px; margin-bottom: var(--spacing-xs); }
+    /* Client badge: keep category badge compact in client card header */
+    .client-cmd-badge { flex-shrink: 0; }
 
     /* Clients section label for "Fiches clients" */
     .clients-list-header { margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-md); }
@@ -703,7 +768,6 @@
     body.dark .settings-option { background: rgba(30,26,22,0.96); }
     body.dark .user-row { background: rgba(25,22,18,0.88); }
     body.dark .preview-chip { background: rgba(255,255,255,0.06); }
-    body.dark .mini-box { background: rgba(255,255,255,0.05); }
     body.dark .client-search-drop { background: #1a1a1a; border-color: rgba(255,255,255,0.1); }
     body.dark .csearch-item:hover, body.dark .csearch-item.active { background: rgba(255,255,255,0.06); }
     body.dark .analytics-table { background: rgba(20,17,14,0.98); }
@@ -2204,7 +2268,7 @@
           .reduce((sum, s) => sum + Number(s.total_price || 0), 0);
 
         html += `
-          <div class="card">
+          <div class="client-card">
             <div class="menu-wrap">
               <button class="menu-btn" onclick="toggleMenu(event, 'clientMenu${i}')">⋯</button>
               <div class="menu" id="clientMenu${i}">
@@ -2219,17 +2283,27 @@
               </div>
             </div>
 
-            <div class="client-head">
-              <div style="flex:1;min-width:0;padding-right:8px;">
-                <span class="card-title">${c.name}</span>
-                <div class="line">${c.address ? `📍 ${c.address}` : ''}${c.address ? '<br>' : ''}💳 ICE: ${c.ice || '—'}</div>
-              </div>
-              <span class="badge ${sales[0]?.category || 'ORO'} client-cmd-badge">${sales.length} cmd</span>
+            <div class="client-card-header">
+              <span class="client-card-name">${c.name}</span>
+              <span class="badge ${sales[0]?.category || 'ORO'} client-cmd-badge" style="font-size:10px;padding:2px 7px;margin:0;">${sales.length} cmd</span>
             </div>
 
-            <div class="client-stats">
-              <div class="mini-box"><div class="k">Non payé ce mois</div><div class="v">${formatDh(monthlyUnpaid)}</div></div>
-              <div class="mini-box"><div class="k">Total</div><div class="v">${sales.length} cmd</div></div>
+            <div class="client-card-info">
+              ${c.address ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${c.address}</span></div>` : ''}
+              ${c.ice ? `<div class="client-info-row"><span class="client-info-icon">💳</span><span>ICE : ${c.ice}</span></div>` : ''}
+              ${!c.address && !c.ice ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
+            </div>
+
+            <div class="client-stat-row">
+              <div class="client-stat">
+                <div class="client-stat-label">Non payé ce mois</div>
+                <div class="client-stat-value${monthlyUnpaid > 0 ? ' unpaid' : ''}">${formatDh(monthlyUnpaid)}</div>
+              </div>
+              <div class="client-stat-sep"></div>
+              <div class="client-stat">
+                <div class="client-stat-label">Commandes</div>
+                <div class="client-stat-value">${sales.length}</div>
+              </div>
             </div>
           </div>`;
       });
