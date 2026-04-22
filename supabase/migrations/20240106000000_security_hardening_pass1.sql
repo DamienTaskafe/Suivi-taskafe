@@ -49,6 +49,12 @@ DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 -- while still allowing updates to every other profile column (full_name, etc.).
 -- The service_role key used by api/update-role.js bypasses RLS completely, so
 -- admin-initiated role changes continue to work without modification.
+--
+-- Note: PostgreSQL RLS WITH CHECK expressions have no access to OLD row values
+-- (OLD is only available inside triggers).  The subquery reads the current role
+-- before the update is committed and is the standard pattern for this guard.
+-- profiles_select_auth uses USING (true) so the subquery never hits an RLS
+-- recursion problem.
 CREATE POLICY "profiles_update_own"
   ON public.profiles FOR UPDATE
   TO authenticated
