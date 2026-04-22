@@ -1128,11 +1128,8 @@
                 <div class="menu" id="clientMenu${i}">
                   <button data-action="client-advanced" data-id="${c.id}">⚙️ Actions avancées</button>
                   <button data-action="client-pdf" data-id="${c.id}">📄 Facture mensuelle</button>
-                  ${
-                    hasPermission('clients.edit')
-                      ? `<button data-action="client-edit" data-id="${c.id}">✏️ Modifier</button>
-                    hasPermission('clients.delete') ? `<button data-action="client-delete" data-id="${c.id}">🗑️ Supprimer</button>` : ''
-                  }
+                  ${hasPermission('clients.edit') ? `<button data-action="client-edit" data-id="${c.id}">✏️ Modifier</button>` : ''}
+                  ${hasPermission('clients.delete') ? `<button data-action="client-delete" data-id="${c.id}">🗑️ Supprimer</button>` : ''}
                 </div>
               </div>
             </div>
@@ -1195,7 +1192,7 @@
         clientOrder.forEach(clientName => {
           const icon = vrIconForClient(clientName);
           html += `
-            <div class="vr-client-card" role="button" tabindex="0" data-client="${escHtml(clientName)}" onclick="openClientSales(this.dataset.client)" onkeydown="if(event.key==='Enter'||event.key===' ')openClientSales(this.dataset.client)">
+            <div class="vr-client-card" role="button" tabindex="0" data-action="open-client-sales" data-client="${escHtml(clientName)}">
               <span class="vr-client-card-icon" aria-hidden="true">${icon}</span>
               <span class="vr-client-card-name">${escHtml(clientName)}</span>
               <span class="vr-client-card-arrow" aria-hidden="true">›</span>
@@ -1222,8 +1219,8 @@
               <div class="menu-wrap">
                 <button class="menu-btn" data-action="toggle-menu" data-menu-id="saleMenu${s.id}">⋯</button>
                 <div class="menu" id="saleMenu${s.id}">
-                  <button data-action="sale-edit" data-id="${s.id}">✏️ Modifier</button>
-                  <button data-action="sale-toggle-paid" data-id="${s.id}" data-paid="${!s.paid}">${s.paid ? '❌ Marquer impayé' : '✅ Marquer payé'}</button>
+                  ${hasPermission('tasks.edit') ? `<button data-action="sale-edit" data-id="${s.id}">✏️ Modifier</button>` : ''}
+                  ${hasPermission('tasks.toggle_paid') ? `<button data-action="sale-toggle-paid" data-id="${s.id}" data-paid="${!s.paid}">${s.paid ? '❌ Marquer impayé' : '✅ Marquer payé'}</button>` : ''}
                   ${hasPermission('tasks.delete') ? `<button class="danger" data-action="sale-delete" data-id="${s.id}">🗑️ Supprimer</button>` : ''}
                 </div>
               </div>
@@ -2051,6 +2048,7 @@
     };
 
     window.saveEditClient = async function() {
+      if (!hasPermission('clients.edit')) return showSessionStatus('❌ Permission refusée : modifier un client', 'error');
       const clientId = document.getElementById('editClientId').value;
       const name = document.getElementById('editClientName').value.trim();
       const ice = document.getElementById('editClientICE').value.trim();
@@ -2925,7 +2923,17 @@
         case 'stock-alert':   openItemAlertModal(cat); break;
         case 'user-role':     openRoleModal(id, el.dataset.role); break;
         case 'user-delete':   deleteUser(id, el); break;
+        case 'open-client-sales': openClientSales(el.dataset.client); break;
       }
+    });
+
+    // Keyboard delegation for role="button" elements using data-action
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const el = e.target.closest('[data-action="open-client-sales"]');
+      if (!el) return;
+      e.preventDefault();
+      openClientSales(el.dataset.client);
     });
 
     document.addEventListener('click', closeAllMenus);
