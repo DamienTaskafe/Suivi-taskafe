@@ -1052,9 +1052,6 @@
     .hsum-label { font-size: 9px; color: rgba(255,255,255,0.56); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; }
     .hsum-val { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; }
 
-    /* ── Product prices btn in header menu ── */
-    #productPricesBtn { display: none; }
-
     /* ── Compact price scroll row ── */
     .price-scroll-row {
       display: flex;
