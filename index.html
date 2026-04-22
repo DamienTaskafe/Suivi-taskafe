@@ -2478,8 +2478,9 @@
 
       return {
         show() {
-          const q = (document.getElementById(inputId)?.value || '').trim().toLowerCase();
-          render(q);
+          // Always show the full client list on focus so the user sees all options.
+          // The selected item is highlighted via the hidden-input value (not by filtering).
+          render('');
         },
         onInput() {
           const q = (document.getElementById(inputId)?.value || '').trim().toLowerCase();
