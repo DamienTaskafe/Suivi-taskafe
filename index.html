@@ -1224,7 +1224,7 @@
                 <div class="menu" id="saleMenu${s.id}">
                   <button data-action="sale-edit" data-id="${s.id}">✏️ Modifier</button>
                   <button data-action="sale-toggle-paid" data-id="${s.id}" data-paid="${!s.paid}">${s.paid ? '❌ Marquer impayé' : '✅ Marquer payé'}</button>
-                  ${hasPermission('tasks.delete') ? `<button class="danger" data-action="sale-delete" data-id="${s.id}">��️ Supprimer</button>` : ''}
+                  ${hasPermission('tasks.delete') ? `<button class="danger" data-action="sale-delete" data-id="${s.id}">🗑️ Supprimer</button>` : ''}
                 </div>
               </div>
               <div class="vr-sale-row">
@@ -1305,6 +1305,9 @@
       updateHeaderSummary(totalQty, totalDh, unpaidDh);
       renderAnalytics(data);
     }
+
+    // Expose renderSales so static HTML onchange handlers can call it directly.
+    window.renderSales = renderSales;
 
     function renderSalesPage() { /* no-op: sales are fully rendered by renderSales() */ }
 
