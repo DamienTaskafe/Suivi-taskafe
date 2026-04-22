@@ -118,11 +118,6 @@
           <button onclick="logout()">🚪 Déconnexion</button>
         </div>
       </div>
-      <div id="headerSummary" class="header-summary">
-        <div class="hsum-chip"><span class="hsum-label">Qté</span><span class="hsum-val" id="hSumQty">—</span></div>
-        <div class="hsum-chip"><span class="hsum-label">Total</span><span class="hsum-val" id="hSumDh">—</span></div>
-        <div class="hsum-chip"><span class="hsum-label">Impayé</span><span class="hsum-val" id="hSumUnpaid">—</span></div>
-      </div>
     </header>
 
     <div class="container">
@@ -1294,7 +1289,6 @@
       document.getElementById('totalQty').innerText = formatQty(totalQty);
       document.getElementById('totalDh').innerText = formatDh(totalDh);
       document.getElementById('unpaidDh').innerText = formatDh(unpaidDh);
-      updateHeaderSummary(totalQty, totalDh, unpaidDh);
       renderAnalytics(data);
     }
 
@@ -1461,15 +1455,6 @@
       }
     }
 
-
-    function updateHeaderSummary(totalQty, totalDh, unpaidDh) {
-      const qtyEl = document.getElementById('hSumQty');
-      const dhEl = document.getElementById('hSumDh');
-      const unpaidEl = document.getElementById('hSumUnpaid');
-      if (qtyEl) qtyEl.textContent = formatQty(totalQty);
-      if (dhEl) dhEl.textContent = formatDh(totalDh);
-      if (unpaidEl) unpaidEl.textContent = formatDh(unpaidDh);
-    }
 
     async function loadCloudData() {
       if (!navigator.onLine) {
@@ -2898,7 +2883,7 @@
     document.addEventListener('click', function handleDelegatedClick(e) {
       const el = e.target.closest('[data-action]');
       if (!el) return;
-      e.stopPropagation();
+      e.stopImmediatePropagation();
       const action = el.dataset.action;
       const id     = el.dataset.id;
       const cat    = el.dataset.cat;

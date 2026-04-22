@@ -1027,31 +1027,6 @@
     /* ── City search wrap ── */
     .city-search-wrap { position: relative; }
 
-    /* ── Header summary bar ── */
-    .header-summary {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px var(--spacing-lg) 6px;
-      background: rgba(0,0,0,0.72);
-      border-top: 1px solid rgba(255,255,255,0.08);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    .hsum-chip {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 4px 10px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.09);
-      border: 1px solid rgba(255,255,255,0.12);
-      min-width: 60px;
-    }
-    .hsum-label { font-size: 9px; color: rgba(255,255,255,0.56); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; }
-    .hsum-val { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; }
-
     /* ── Compact price scroll row ── */
     .price-scroll-row {
       display: flex;
