@@ -118,6 +118,11 @@
           <button onclick="logout()">🚪 Déconnexion</button>
         </div>
       </div>
+      <div id="headerSummary" class="header-summary">
+        <div class="hsum-chip"><span class="hsum-label">Qté</span><span class="hsum-val" id="hSumQty">—</span></div>
+        <div class="hsum-chip"><span class="hsum-label">Total</span><span class="hsum-val" id="hSumDh">—</span></div>
+        <div class="hsum-chip"><span class="hsum-label">Impayé</span><span class="hsum-val" id="hSumUnpaid">—</span></div>
+      </div>
     </header>
 
     <div class="container">
@@ -377,23 +382,13 @@
           <div class="adv-stat-row"><span class="adv-stat-label">Ce mois</span><span class="adv-stat-val" id="advancedMonthlyCmd">—</span></div>
           <div class="adv-stat-row"><span class="adv-stat-label">Cette année</span><span class="adv-stat-val" id="advancedYearlyCmd">—</span></div>
           <div class="adv-stat-row"><span class="adv-stat-label">Total global</span><span class="adv-stat-val" id="advancedTotalCmd">—</span></div>
-          <div class="adv-stat-row"><span class="adv-stat-label">Compteur LG</span><span class="adv-stat-val" id="advancedLgCount">0</span></div>
         </div>
-      </div>
-
-      <div class="settings-option">
-        <div class="title">🔄 Reset mensuel LG</div>
-        <div class="checkbox-line" style="margin-top:10px;">
-          <input type="checkbox" id="advancedAutoReset" onchange="advancedToggleAutoReset(this)" />
-          <label for="advancedAutoReset" style="margin:0;flex:1;">Reset automatique mensuel actif</label>
-        </div>
-        <button id="advancedResetBtn" class="secondary" style="margin-top:6px;" onclick="advancedManualReset(this)">🔄 Reset manuel maintenant</button>
       </div>
 
       <div class="settings-option">
         <div class="title">📄 Facture mensuelle</div>
         <div class="muted" style="margin-top:4px;">Génère le récapitulatif PDF du mois en cours pour ce client.</div>
-        <button style="margin-top:10px;" id="advancedPdfBtn" onclick="generateClientMonthlyPDF(document.getElementById('advancedResetBtn').dataset.clientId); closeModal('clientAdvancedModal');">📄 Générer facture PDF du mois</button>
+        <button style="margin-top:10px;" id="advancedPdfBtn" onclick="generateClientMonthlyPDF(this.dataset.clientId); closeModal('clientAdvancedModal');">📄 Générer facture PDF du mois</button>
       </div>
     </div>
   </div>
@@ -1747,8 +1742,6 @@
       } finally {
         state.session = null;
         state.profile = null;
-        const hsum = document.getElementById('headerSummary');
-        if (hsum) hsum.style.display = 'none';
         document.getElementById('appShell').classList.add('hidden');
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('loginPassword').value = '';
@@ -3383,11 +3376,6 @@
         return String(d.getFullYear()) === thisYear;
       });
 
-      const autoResetKey = `autoReset_${clientId}`;
-      const autoReset = localStorage.getItem(autoResetKey) === 'true';
-      const lgCountKey = `lgCount_${clientId}`;
-      const lgCount = parseInt(localStorage.getItem(lgCountKey) || '0', 10);
-
       const monthTotal = monthlySales.reduce((s,x) => s + Number(x.total_price||0), 0);
       const yearTotal = yearlySales.reduce((s,x) => s + Number(x.total_price||0), 0);
       const grandTotal = sales.reduce((s,x) => s + Number(x.total_price||0), 0);
@@ -3396,26 +3384,9 @@
       document.getElementById('advancedMonthlyCmd').innerText = `${monthlySales.length} cmd — ${formatDh(monthTotal)}`;
       document.getElementById('advancedYearlyCmd').innerText = `${yearlySales.length} cmd — ${formatDh(yearTotal)}`;
       document.getElementById('advancedTotalCmd').innerText = `${sales.length} cmd — ${formatDh(grandTotal)}`;
-      document.getElementById('advancedLgCount').innerText = lgCount;
-      document.getElementById('advancedAutoReset').checked = autoReset;
-      document.getElementById('advancedAutoReset').dataset.clientId = clientId;
-      document.getElementById('advancedResetBtn').dataset.clientId = clientId;
+      document.getElementById('advancedPdfBtn').dataset.clientId = clientId;
 
       openModal('clientAdvancedModal');
-    };
-
-    window.advancedToggleAutoReset = function(cb) {
-      const clientId = cb.dataset.clientId;
-      localStorage.setItem(`autoReset_${clientId}`, cb.checked ? 'true' : 'false');
-      showSessionStatus(cb.checked ? '✅ Reset auto activé' : '✅ Reset auto désactivé', 'success');
-    };
-
-    window.advancedManualReset = function(btn) {
-      const clientId = btn.dataset.clientId;
-      if (!confirm('Réinitialiser le compteur LG mensuel de ce client ?')) return;
-      localStorage.setItem(`lgCount_${clientId}`, '0');
-      document.getElementById('advancedLgCount').innerText = '0';
-      showSessionStatus('✅ Compteur LG réinitialisé', 'success');
     };
 
     window.generateClientMonthlyPDF = async function(clientId) {
