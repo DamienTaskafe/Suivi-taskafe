@@ -1129,7 +1129,6 @@
     }
     .sale-acc-actions .btn-danger { background: linear-gradient(180deg, #8f1111 0%, #5e0808 100%); }
     .sales-scroll-area { max-height: 420px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-    .sales-show-more { margin: 6px 0; font-size: 12px; }
 
     /* ── Address fields clean layout ── */
     .addr-block {
