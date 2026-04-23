@@ -2001,23 +2001,23 @@
         state.clients = state.clients.filter(c => c.id !== clientId);
         await saveRecords('clients', state.clients).catch(() => {});
         await addPendingOp({ type: 'deleteClient', payload: { clientId } }).catch(() => {});
-        renderClients(); loadClientSelectors();
+        renderClients(); loadClientSelectors(); renderSales();
         showSessionStatus('📶 Client supprimé localement', 'info');
         updateOfflineBanner();
         return;
       }
       const clientsSnapshot = state.clients.slice();
       state.clients = state.clients.filter(c => c.id !== clientId);
-      renderClients(); loadClientSelectors();
+      renderClients(); loadClientSelectors(); renderSales();
 
       const { error } = await supabase.from('clients').delete().eq('id', clientId);
       if (error) {
         state.clients = clientsSnapshot;
-        renderClients(); loadClientSelectors();
+        renderClients(); loadClientSelectors(); renderSales();
         return showSessionStatus('❌ ' + error.message, 'error');
       }
       showSessionStatus('✅ Client supprimé', 'success');
-      loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] deleteClient:', e?.message));
+      loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] deleteClient:', e?.message));
     };
 
     function openEditClient(clientId) {
