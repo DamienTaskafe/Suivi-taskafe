@@ -1727,9 +1727,15 @@
 
       const [clientsRes, salesRes, stocksRes, logsRes] = await Promise.all(requests);
 
-      if (clientsRes.error) throw clientsRes.error;
-      if (salesRes.error) throw salesRes.error;
-      if (stocksRes.error) throw stocksRes.error;
+      // Attach the HTTP response status to each error object before throwing so
+      // that classifyCloudError() can read err.status accurately.  PostgREST
+      // query errors carry the HTTP status on the *response* (res.status), not
+      // on the error object itself (err.status is undefined), which previously
+      // caused every 403 / 404 to fall through to the DATA_QUERY bucket even
+      // when the real cause was an auth failure (401) or missing relation (404).
+      if (clientsRes.error) { clientsRes.error.status = clientsRes.error.status ?? clientsRes.status; throw clientsRes.error; }
+      if (salesRes.error)   { salesRes.error.status   = salesRes.error.status   ?? salesRes.status;   throw salesRes.error;   }
+      if (stocksRes.error)  { stocksRes.error.status  = stocksRes.error.status  ?? stocksRes.status;  throw stocksRes.error;  }
 
       state.clients = sortClientsAZ(clientsRes.data || []);
       state.sales = salesRes.data || [];
@@ -1881,6 +1887,7 @@
       if (
         status === 401 ||
         code   === 'pgrst301' ||       // PostgREST: JWT claim validation failed (expired / invalid)
+        code   === 'pgrst302' ||       // PostgREST: JWT signature mismatch (e.g. secret rotation)
         msg.includes('jwt') ||
         msg.includes('invalid_token') ||
         msg.includes('not authenticated') ||
