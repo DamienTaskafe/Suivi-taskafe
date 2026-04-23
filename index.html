@@ -1875,8 +1875,7 @@
       _dupCtx = { ..._dupCtx, existingClient, newName, newAddress };
       document.getElementById('dupMsg').textContent =
         'Une fiche client existe déjà avec le nom « ' + existingClient.name + ' ».';
-      const info = [existingClient.name, existingClient.address].filter(Boolean).join('
-📍 ');
+      const info = [existingClient.name, existingClient.address].filter(Boolean).join('\n📍 ');
       document.getElementById('dupExistingInfo').textContent = info;
       document.getElementById('dupStep1').style.display = '';
       document.getElementById('dupStep2Merge').style.display = 'none';
