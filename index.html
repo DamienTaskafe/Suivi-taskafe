@@ -125,6 +125,7 @@
         <button id="btnSales" class="tab-btn active" onclick="show('sales')">💰 Ventes</button>
         <button id="btnClients" class="tab-btn" onclick="show('clients')">👥 Clients</button>
         <button id="btnStock" class="tab-btn" onclick="show('stock')">📦 Stock <span id="stockAlert" class="tab-badge"></span></button>
+        <button id="btnBalance" class="tab-btn" onclick="show('balance')">⚖️ Balance</button>
       </div>
 
       <div id="sales" class="section-shell">
@@ -269,6 +270,11 @@
       <div id="stock" class="section-shell hidden">
         <h3 style="margin-bottom:var(--spacing-lg);">📦 Gestion du stock</h3>
         <div id="stockList"></div>
+      </div>
+
+      <div id="balance" class="section-shell hidden">
+        <h3 style="margin-bottom:var(--spacing-lg);">⚖️ Balance clients</h3>
+        <div id="balanceContent"></div>
       </div>
 
       <div id="logs" class="section-shell hidden">
@@ -1283,6 +1289,7 @@
       document.getElementById('totalDh').innerText = formatDh(totalDh);
       document.getElementById('unpaidDh').innerText = formatDh(unpaidDh);
       renderAnalytics(data);
+      renderBalance();
     }
 
     // Expose renderSales so static HTML onchange handlers can call it directly.
@@ -1509,6 +1516,7 @@
       renderClients();
       renderSales();
       renderStock();
+      renderBalance();
       renderLogs();
 
       document.getElementById('menuUserName').innerText =
@@ -2627,6 +2635,57 @@
       `;
     }
 
+    // ── Balance ──────────────────────────────────────────────────────────────────
+    function renderBalance() {
+      const content = document.getElementById('balanceContent');
+      if (!content) return;
+
+      const clientMap = {};
+      state.sales.forEach(s => {
+        const name = s.client_name || 'Inconnu';
+        if (!clientMap[name]) clientMap[name] = { totalSold: 0, paid: 0, unpaid: 0 };
+        const amount = Number(s.total_price || 0);
+        clientMap[name].totalSold += amount;
+        if (s.paid) clientMap[name].paid += amount;
+        else clientMap[name].unpaid += amount;
+      });
+
+      const entries = Object.entries(clientMap)
+        .map(([name, stats]) => ({ name, ...stats }))
+        .sort((a, b) => b.unpaid - a.unpaid);
+
+      if (entries.length === 0) {
+        content.innerHTML = `<div class="empty-state">Aucune vente enregistrée.</div>`;
+        return;
+      }
+
+      let totalSold = 0, totalPaid = 0, totalUnpaid = 0;
+      let rows = '';
+      entries.forEach(e => {
+        totalSold  += e.totalSold;
+        totalPaid  += e.paid;
+        totalUnpaid += e.unpaid;
+        rows += `<tr>
+          <td>${escHtml(e.name)}</td>
+          <td>${formatDh(e.totalSold)}</td>
+          <td style="color:#148c37">${formatDh(e.paid)}</td>
+          <td style="${e.unpaid > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(e.unpaid)}</td>
+        </tr>`;
+      });
+      rows += `<tr class="analytics-total-row">
+        <td>TOTAL</td>
+        <td>${formatDh(totalSold)}</td>
+        <td style="color:#148c37">${formatDh(totalPaid)}</td>
+        <td style="color:var(--color-error);font-weight:700;">${formatDh(totalUnpaid)}</td>
+      </tr>`;
+
+      content.innerHTML = `
+        <table class="analytics-table">
+          <thead><tr><th>Client</th><th>CA Total</th><th>Encaissé</th><th>Solde</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
     // ── Edit sale ────────────────────────────────────────────────────────────────
     function openEditSale(saleId) {
       if (!hasPermission('tasks.edit')) return showSessionStatus('❌ Permission refusée : modifier une vente', 'error');
@@ -2898,7 +2957,7 @@
       if (section !== 'sales' && typeof closeClientSales === 'function') {
         closeClientSales();
       }
-      const ids = ['sales', 'clients', 'stock', 'logs'];
+      const ids = ['sales', 'clients', 'stock', 'balance', 'logs'];
       ids.forEach(id => {
         const sectionEl = document.getElementById(id);
         const btnEl = document.getElementById('btn' + id.charAt(0).toUpperCase() + id.slice(1));
