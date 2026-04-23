@@ -974,6 +974,8 @@
           showSessionStatus('⚠️ Erreur lors de la sauvegarde', 'error');
           state.rolePermissions[role][key] = !allowed;
           renderPermissionsModal();
+        } else {
+          showSessionStatus('✅ Permission mise à jour', 'success');
         }
       } catch (e) {
         console.error('[toggleRolePermission] exception:', e?.message);
@@ -1418,6 +1420,37 @@
       _lastSeenInterval = setInterval(() => { if (state.session?.user?.id) updateLastSeen(); }, 2 * 60 * 1000);
     }
 
+    // ── Silent background permission refresh (non-admin sessions) ────────────
+    // Polls role_permissions every 30 s; when a change is detected for the
+    // current user's role, silently re-applies the UI without any notification.
+    let _permRefreshInterval = null;
+    function startPermRefresh() {
+      if (_permRefreshInterval) clearInterval(_permRefreshInterval);
+      // Admin always has all permissions — no need to poll for changes.
+      if (isAdmin()) return;
+      _permRefreshInterval = setInterval(async () => {
+        if (!state.session?.user || !navigator.onLine) return;
+        try {
+          const { data, error } = await supabase.from('role_permissions').select('*');
+          if (error || !data) return;
+          const role = String(state.profile?.role || '').toLowerCase();
+          const current = state.rolePermissions[role] || {};
+          // Build the updated permissions for current role from fresh DB data
+          const updated = { ...DEFAULT_ROLE_PERMISSIONS[role] };
+          data.forEach(row => { if (row.role === role) updated[row.permission_key] = row.allowed; });
+          // Detect any change relevant to this user's role
+          const changed = ROLE_PERMISSIONS_DEF.some(def => current[def.key] !== updated[def.key]);
+          if (!changed) return;
+          // Update only the current role's permissions and re-apply UI silently
+          state.rolePermissions = { ...state.rolePermissions, [role]: updated };
+          paintApp(); // silent UI re-render — no toast for employee/manager
+        } catch (e) { /* non-blocking: polling errors are silently ignored */ }
+      }, 30 * 1000);
+    }
+    function stopPermRefresh() {
+      if (_permRefreshInterval) { clearInterval(_permRefreshInterval); _permRefreshInterval = null; }
+    }
+
     // ── Action logs helper ─────────────────────────────────────────────────────
     // Non-blocking: errors are silently swallowed so log failures never block the
     // main user flow. The action_logs table is optional — if it does not exist yet
@@ -1618,12 +1651,14 @@
           document.getElementById('authScreen').classList.remove('hidden');
           document.getElementById('appShell').classList.add('hidden');
           if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
+          stopPermRefresh();
           return;
         }
 
         await loadProfile(session.user.id);
         updateLastSeen();
         startLastSeenHeartbeat();
+        startPermRefresh();
 
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('appShell').classList.remove('hidden');
@@ -1703,6 +1738,7 @@
       _loggedOut = true; // block any boot re-entry triggered by auth state change
       closeAllMenus();
       if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
+      stopPermRefresh();
       try {
         await supabase.auth.signOut();
       } catch (e) {
