@@ -1582,6 +1582,9 @@
     let _realtimeChannel = null;
     let _realtimeDebounceTimer = null;
     const REALTIME_DEBOUNCE_MS = 600; // coalesce rapid bursts into one refresh
+    // Delay before re-subscribing after coming back online — must be longer than
+    // the syncPendingOps() delay (800 ms) so the pending-ops flush completes first.
+    const REALTIME_RECONNECT_DELAY_MS = 1200;
 
     function _scheduleRealtimeRefresh(source) {
       if (!navigator.onLine || !state.session?.user) return;
@@ -1612,13 +1615,21 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'action_logs' },
           () => _scheduleRealtimeRefresh('action_logs'))
         // ── User / role management ───────────────────────────────────────────
-        // Filter out heartbeat-only last_seen_at updates to avoid noisy reloads.
+        // For UPDATE events on profiles, suppress heartbeat-only last_seen_at
+        // changes to avoid triggering a full reload every 2 minutes per active user.
+        // INSERT/DELETE always trigger a refresh so new/removed users propagate
+        // immediately. Note: key-diff filtering only detects true no-ops when
+        // Postgres REPLICA IDENTITY FULL is set; with the default identity only
+        // the primary key is included in payload.old, so any non-last_seen_at
+        // UPDATE will still produce a non-empty changedKeys list and refresh.
         .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' },
           (payload) => {
-            const oldRow = payload.old || {};
-            const newRow = payload.new || {};
-            const changedKeys = Object.keys(newRow).filter(k => newRow[k] !== oldRow[k]);
-            if (changedKeys.length === 1 && changedKeys[0] === 'last_seen_at') return;
+            if (payload.eventType === 'UPDATE') {
+              const oldRow = payload.old || {};
+              const newRow = payload.new || {};
+              const changedKeys = Object.keys(newRow).filter(k => newRow[k] !== oldRow[k]);
+              if (changedKeys.length > 0 && changedKeys.every(k => k === 'last_seen_at')) return;
+            }
             _scheduleRealtimeRefresh('profiles');
           })
         // ── Permission configuration ─────────────────────────────────────────
@@ -1636,7 +1647,9 @@
     function stopRealtimeSync() {
       if (_realtimeDebounceTimer) { clearTimeout(_realtimeDebounceTimer); _realtimeDebounceTimer = null; }
       if (_realtimeChannel) {
-        supabase.removeChannel(_realtimeChannel).catch(e => console.warn('[realtime] removeChannel error:', e?.message));
+        // Non-critical cleanup: channel removal errors can be safely ignored;
+        // the channel will be garbage-collected with the WebSocket connection.
+        supabase.removeChannel(_realtimeChannel).catch(e => console.warn('[realtime] removeChannel error (non-critical):', e?.message));
         _realtimeChannel = null;
       }
     }
@@ -3990,7 +4003,7 @@
       // Small delay: let navigator.onLine stabilize and let network actually become usable
       setTimeout(() => syncPendingOps(), 800);
       // Re-establish the Realtime channel which was dropped while offline
-      setTimeout(() => { if (state.session?.user) { stopRealtimeSync(); startRealtimeSync(); } }, 1200);
+      setTimeout(() => { if (state.session?.user) { stopRealtimeSync(); startRealtimeSync(); } }, REALTIME_RECONNECT_DELAY_MS);
     });
 
     // Silently refresh data when the user switches back to this tab so that
