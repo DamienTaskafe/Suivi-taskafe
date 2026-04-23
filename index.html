@@ -470,6 +470,42 @@
     </div>
   </div>
 
+  <!-- ── Duplicate client detection modal ───────────────────────────────────── -->
+  <div id="duplicateClientModal" class="modal-backdrop">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>⚠️ Fiche client existante</h3><button class="close-x" onclick="_handleDupCancel()">✕</button></div>
+
+      <div id="dupStep1">
+        <p id="dupMsg" style="margin-bottom:12px;font-size:14px;"></p>
+        <div class="settings-option" style="margin-bottom:12px;">
+          <div class="title" style="font-size:13px;">📋 Fiche existante</div>
+          <div id="dupExistingInfo" class="muted" style="margin-top:4px;white-space:pre-line;"></div>
+        </div>
+        <button onclick="_handleDupChoice('merge')" style="width:100%;margin-bottom:8px;">🔀 Fusionner avec la fiche existante</button>
+        <button onclick="_handleDupChoice('new-pos')" style="width:100%;margin-bottom:8px;">🏪 Créer un autre point de vente</button>
+        <button onclick="_handleDupCancel()" style="width:100%;background:rgba(0,0,0,0.06);color:var(--color-text);">✕ Annuler</button>
+      </div>
+
+      <div id="dupStep2Merge" style="display:none;">
+        <p style="margin-bottom:12px;font-size:14px;">Les deux fiches ont des adresses différentes. Laquelle souhaitez-vous conserver ?</p>
+        <button onclick="_handleDupAddrChoice('existing')" style="width:100%;margin-bottom:8px;text-align:left;">📍 Garder : <span id="dupAddrExistingLabel" style="font-weight:600;"></span></button>
+        <button onclick="_handleDupAddrChoice('new')" style="width:100%;margin-bottom:8px;text-align:left;">📍 Utiliser : <span id="dupAddrNewLabel" style="font-weight:600;"></span></button>
+        <button onclick="_handleDupCancel()" style="width:100%;background:rgba(0,0,0,0.06);color:var(--color-text);">✕ Annuler</button>
+      </div>
+
+      <div id="dupStep2NewPos" style="display:none;">
+        <p style="margin-bottom:8px;font-size:14px;">Ajoutez un libellé pour différencier ce point de vente.</p>
+        <div class="ncp-field">
+          <label for="dupPosLabel">Libellé (ex : Hay Riad, Centre, Succursale 2…)</label>
+          <input id="dupPosLabel" type="text" placeholder="Ex : Hay Riad, Centre…" oninput="_updateDupPosFinalName()" />
+        </div>
+        <p class="muted" style="margin-bottom:10px;">Nom final : <strong id="dupPosFinalName"></strong></p>
+        <button onclick="_handleDupNewPos()" style="width:100%;margin-bottom:8px;">✅ Créer le point de vente</button>
+        <button onclick="_handleDupCancel()" style="width:100%;background:rgba(0,0,0,0.06);color:var(--color-text);">✕ Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <div id="productPricesModal" class="modal-backdrop" onclick="backdropClose(event, 'productPricesModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>💲 Prix d'achat produits</h3><button class="close-x" onclick="closeModal('productPricesModal')">✕</button></div>
@@ -1821,6 +1857,166 @@
       }
     };
 
+    // ── Duplicate client detection helpers ─────────────────────────────────
+    function _normalizeName(n) { return (n || '').trim().toLowerCase(); }
+
+    function _findDuplicateClient(name, excludeId) {
+      const norm = _normalizeName(name);
+      if (!norm) return null;
+      return state.clients.find(c =>
+        (excludeId === null || String(c.id) !== String(excludeId)) &&
+        _normalizeName(c.name) === norm
+      ) || null;
+    }
+
+    let _dupCtx = null;
+
+    function _openDuplicateModal(existingClient, newName, newAddress) {
+      _dupCtx = { ..._dupCtx, existingClient, newName, newAddress };
+      document.getElementById('dupMsg').textContent =
+        'Une fiche client existe déjà avec le nom « ' + existingClient.name + ' ».';
+      const info = [existingClient.name, existingClient.address].filter(Boolean).join('
+📍 ');
+      document.getElementById('dupExistingInfo').textContent = info;
+      document.getElementById('dupStep1').style.display = '';
+      document.getElementById('dupStep2Merge').style.display = 'none';
+      document.getElementById('dupStep2NewPos').style.display = 'none';
+      openModal('duplicateClientModal');
+    }
+
+    window._handleDupCancel = function() {
+      _dupCtx = null;
+      closeModal('duplicateClientModal');
+    };
+
+    window._handleDupChoice = function(choice) {
+      if (!_dupCtx) return;
+      if (choice === 'merge') {
+        const existAddr = (_dupCtx.existingClient.address || '').trim();
+        const newAddr = (_dupCtx.newAddress || '').trim();
+        if (existAddr && newAddr && existAddr !== newAddr) {
+          document.getElementById('dupAddrExistingLabel').textContent = existAddr;
+          document.getElementById('dupAddrNewLabel').textContent = newAddr;
+          document.getElementById('dupStep1').style.display = 'none';
+          document.getElementById('dupStep2Merge').style.display = '';
+        } else {
+          _performMerge(existAddr || newAddr);
+        }
+      } else if (choice === 'new-pos') {
+        // Pre-fill with city (last comma-separated part), or leave blank for user to fill
+        const parts = (_dupCtx.newAddress || '').split(',');
+        const city = parts.length > 1 ? parts[parts.length - 1].trim() : '';
+        document.getElementById('dupPosLabel').value = city;
+        window._updateDupPosFinalName();
+        document.getElementById('dupStep1').style.display = 'none';
+        document.getElementById('dupStep2NewPos').style.display = '';
+      }
+    };
+
+    window._updateDupPosFinalName = function() {
+      if (!_dupCtx) return;
+      const label = (document.getElementById('dupPosLabel').value || '').trim();
+      document.getElementById('dupPosFinalName').textContent =
+        label ? (_dupCtx.newName + ' — ' + label) : _dupCtx.newName;
+    };
+
+    window._handleDupAddrChoice = function(keepWhich) {
+      if (!_dupCtx) return;
+      const addr = keepWhich === 'existing'
+        ? (_dupCtx.existingClient.address || '').trim()
+        : (_dupCtx.newAddress || '').trim();
+      _performMerge(addr);
+    };
+
+    async function _performMerge(addressToUse) {
+      if (!_dupCtx) return;
+      const ctx = _dupCtx;
+      _dupCtx = null;
+      closeModal('duplicateClientModal');
+      const { existingClient, mode } = ctx;
+      const targetId = existingClient.id;
+
+      if (mode === 'create') {
+        // No new client to create — optionally update address/ICE on the existing client
+        const existAddr = (existingClient.address || '').trim();
+        const existIce = (existingClient.ice || '').trim();
+        const useAddr = (addressToUse || '').trim();
+        const useIce = ((ctx.payload && ctx.payload.ice) || '').trim() || existIce;
+        const updates = {};
+        if (useAddr && useAddr !== existAddr) updates.address = useAddr;
+        if (useIce && useIce !== existIce) updates.ice = useIce;
+        if (Object.keys(updates).length > 0) {
+          if (!navigator.onLine) {
+            const idx = state.clients.findIndex(c => c.id === targetId);
+            if (idx >= 0) Object.assign(state.clients[idx], updates);
+            await saveRecords('clients', state.clients).catch(() => {});
+          } else {
+            await supabase.from('clients').update(updates).eq('id', targetId);
+            const idx = state.clients.findIndex(c => c.id === targetId);
+            if (idx >= 0) Object.assign(state.clients[idx], updates);
+          }
+        }
+        ['clientName','clientAddrNum','clientAddrDetail','clientAddrCity','clientICE'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('clientAddrType').value = 'Rue';
+        renderClients(); loadClientSelectors();
+        showSessionStatus('✅ Fusionné avec la fiche existante', 'success');
+
+      } else if (mode === 'edit') {
+        const { clientId } = ctx;
+        const existAddr = (existingClient.address || '').trim();
+        const useAddr = (addressToUse || '').trim();
+        if (!navigator.onLine) {
+          state.sales.forEach(s => {
+            if (String(s.client_id) === String(clientId)) {
+              s.client_id = targetId;
+              s.client_name = existingClient.name;
+            }
+          });
+          await saveRecords('sales', state.sales).catch(() => {});
+          if (useAddr && useAddr !== existAddr) {
+            const idx = state.clients.findIndex(c => c.id === targetId);
+            if (idx >= 0) state.clients[idx].address = useAddr;
+          }
+          state.clients = state.clients.filter(c => String(c.id) !== String(clientId));
+          await saveRecords('clients', state.clients).catch(() => {});
+          closeModal('editClientModal');
+          renderClients(); loadClientSelectors(); renderSales();
+          showSessionStatus('📶 Fusion effectuée localement', 'info');
+          updateOfflineBanner();
+        } else {
+          await supabase.from('sales')
+            .update({ client_id: targetId, client_name: existingClient.name })
+            .eq('client_id', clientId);
+          if (useAddr && useAddr !== existAddr) {
+            await supabase.from('clients').update({ address: useAddr }).eq('id', targetId);
+          }
+          await supabase.from('clients').delete().eq('id', clientId);
+          closeModal('editClientModal');
+          showSessionStatus('✅ Fusion effectuée', 'success');
+          loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); })
+            .catch(e => console.warn('[refresh] merge:', e?.message));
+        }
+      }
+    }
+
+    window._handleDupNewPos = async function() {
+      if (!_dupCtx) return;
+      const ctx = _dupCtx;
+      _dupCtx = null;
+      closeModal('duplicateClientModal');
+      const label = (document.getElementById('dupPosLabel').value || '').trim();
+      const finalName = label ? (ctx.newName + ' — ' + label) : ctx.newName;
+      if (ctx.mode === 'create') {
+        document.getElementById('clientName').value = finalName;
+        await window.addClient();
+      } else if (ctx.mode === 'edit') {
+        document.getElementById('editClientName').value = finalName;
+        await window.saveEditClient();
+      }
+    };
+
     window.addClient = async function () {
       if (!hasPermission('clients.create')) return showSessionStatus('❌ Permission refusée : ajouter un client', 'error');
       const name = document.getElementById('clientName').value.trim();
@@ -1851,6 +2047,15 @@
           SUCRE: readCustomPrice('priceSUCRE')
         }
       };
+
+      // ── Duplicate detection (case-insensitive) ────────────────────────────
+      const _dupFound = _findDuplicateClient(name, null);
+      if (_dupFound) {
+        _dupCtx = { mode: 'create', payload };
+        _openDuplicateModal(_dupFound, name, address);
+        return;
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE'].forEach(id => {
         document.getElementById(id).value = '';
@@ -2124,6 +2329,17 @@
       if (addrDetail) addrParts.push(`${addrType} ${addrDetail}`);
       if (addrCity) addrParts.push(addrCity);
       const address = addrParts.join(', ');
+
+      // ── Duplicate detection on rename (case-insensitive) ─────────────────
+      if (nameChanged) {
+        const _dupFound = _findDuplicateClient(name, clientId);
+        if (_dupFound) {
+          _dupCtx = { mode: 'edit', clientId };
+          _openDuplicateModal(_dupFound, name, address);
+          return;
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       const prices = {};
       CATEGORIES.forEach(cat => {
