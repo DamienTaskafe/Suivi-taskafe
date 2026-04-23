@@ -1170,6 +1170,15 @@
     }
 
     function renderSalesClientCards(data) {
+      // Exclude sales whose client record has been deleted
+      const activeClientIds  = new Set(state.clients.map(c => c.id));
+      const activeClientNames = new Set(state.clients.map(c => c.name));
+      data = data.filter(s =>
+        s.client_id
+          ? activeClientIds.has(s.client_id)
+          : activeClientNames.has(s.client_name)
+      );
+
       // Group sales by client name and sort A→Z
       const grouped = {};
       const clientOrder = [];
