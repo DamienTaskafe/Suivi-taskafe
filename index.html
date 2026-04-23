@@ -2262,7 +2262,7 @@
 
       renderSales(); renderStock();
       showSessionStatus('✅ Vente ajoutée', 'success');
-      loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
+      loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
     };
 
     async function togglePaid(saleId, paid) {
@@ -3412,6 +3412,9 @@
       if (document.getElementById(section)) document.getElementById(section).classList.remove('hidden');
       const btnCurrent = document.getElementById('btn' + section.charAt(0).toUpperCase() + section.slice(1));
       if (btnCurrent) btnCurrent.classList.add('active');
+      // Re-render the clients list whenever the user navigates to the Clients tab so
+      // that order counts reflect any sales that were added since the last render.
+      if (section === 'clients') renderClients();
     };
 
     window.showLogsSection = async function() {
