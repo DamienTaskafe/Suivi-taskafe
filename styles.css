@@ -924,6 +924,10 @@
     .csearch-item.selected { font-weight: 700; }
 
     /* ── Dark mode ── */
+    html { background-color: #f4efe8; }
+    html.dark {
+      background-color: #0f0f0f;
+    }
     body.dark {
       --color-bg: #0f0f0f;
       --color-card: #1a1a1a;
