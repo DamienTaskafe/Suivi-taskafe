@@ -2288,55 +2288,81 @@
       loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] addClient:', e?.message));
     };
 
-    window.addSale = async function () {
-      if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+    // ── Read & validate the new-sale form; returns null + shows error on failure ─
+    function readSaleForm() {
       const clientName = document.getElementById('clientSelect').value;
       const quantity = parseFloat(document.getElementById('quantityInput').value);
       const category = document.getElementById('category').value;
       const rawDate = document.getElementById('datetime').value;
       const paidRadio = document.querySelector('input[name="paymentStatus"]:checked');
 
-      // ── All-fields-required validation ──────────────────────────────────────
-      if (!clientName) return showSessionStatus('❌ Choisir un client', 'error');
-      if (!category) return showSessionStatus('❌ Choisir une gamme', 'error');
-      if (isNaN(quantity) || quantity <= 0) return showSessionStatus(`❌ ${category === 'SUCRE' ? 'Nombre de paquets' : 'Kilos'} invalide`, 'error');
-      if (!rawDate) return showSessionStatus('❌ Date & heure obligatoires', 'error');
-      if (!paidRadio) return showSessionStatus('❌ Choisir le statut de paiement (Payé / Non payé)', 'error');
-      if (Number(state.stocks[category] || 0) < quantity) return showSessionStatus(`❌ Stock insuffisant pour ${category}`, 'error');
+      if (!clientName) { showSessionStatus('❌ Choisir un client', 'error'); return null; }
+      if (!category) { showSessionStatus('❌ Choisir une gamme', 'error'); return null; }
+      if (isNaN(quantity) || quantity <= 0) { showSessionStatus(`❌ ${category === 'SUCRE' ? 'Nombre de paquets' : 'Kilos'} invalide`, 'error'); return null; }
+      if (!rawDate) { showSessionStatus('❌ Date & heure obligatoires', 'error'); return null; }
+      if (!paidRadio) { showSessionStatus('❌ Choisir le statut de paiement (Payé / Non payé)', 'error'); return null; }
+      if (Number(state.stocks[category] || 0) < quantity) { showSessionStatus(`❌ Stock insuffisant pour ${category}`, 'error'); return null; }
 
-      const paid = paidRadio.value === 'paid';
+      return { clientName, quantity, category, rawDate, paid: paidRadio.value === 'paid' };
+    }
+
+    window.addSale = async function () {
+      if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+      const form = readSaleForm();
+      if (!form) return;
+
+      const { clientName, quantity, category, rawDate, paid } = form;
       const unitPrice = getClientPrice(clientName, category);
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
+      // datetime-local format is YYYY-MM-DDTHH:MM – replace the sole 'T' separator
       const formattedDate = rawDate.replace('T', ' ');
       const qtyLabel = category === 'SUCRE' ? 'paquets' : 'kg';
 
-      // ── Show confirmation modal with recap ───────────────────────────────────
-      document.getElementById('confirmSaleRecap').innerHTML = `
-        <div class="recap-row"><span>Client</span><strong>${clientName}</strong></div>
-        <div class="recap-row"><span>Gamme</span><strong>${category}</strong></div>
-        <div class="recap-row"><span>Quantité</span><strong>${quantity} ${qtyLabel}</strong></div>
-        <div class="recap-row"><span>Date &amp; Heure</span><strong>${formattedDate}</strong></div>
-        <div class="recap-row"><span>Statut</span><strong>${paid ? '✅ Payé' : '❌ Non payé'}</strong></div>
-        <div class="recap-row"><span>Prix unitaire</span><strong>${formatDh(unitPrice)}</strong></div>
-        <div class="recap-row recap-row--total"><span>Total</span><strong>${formatDh(totalPrice)}</strong></div>
-      `;
+      // ── Build recap using safe DOM API to prevent XSS ───────────────────────
+      const rows = [
+        ['Client', clientName],
+        ['Gamme', category],
+        ['Quantité', `${quantity} ${qtyLabel}`],
+        ['Date & Heure', formattedDate],
+        ['Statut', paid ? '✅ Payé' : '❌ Non payé'],
+        ['Prix unitaire', formatDh(unitPrice)],
+      ];
+      const recap = document.getElementById('confirmSaleRecap');
+      recap.innerHTML = '';
+      rows.forEach(([label, value]) => {
+        const row = document.createElement('div');
+        row.className = 'recap-row';
+        const span = document.createElement('span');
+        span.textContent = label;
+        const strong = document.createElement('strong');
+        strong.textContent = value;
+        row.appendChild(span);
+        row.appendChild(strong);
+        recap.appendChild(row);
+      });
+      // Total row with special styling
+      const totalRow = document.createElement('div');
+      totalRow.className = 'recap-row recap-row--total';
+      const totalLabel = document.createElement('span');
+      totalLabel.textContent = 'Total';
+      const totalVal = document.createElement('strong');
+      totalVal.textContent = formatDh(totalPrice);
+      totalRow.appendChild(totalLabel);
+      totalRow.appendChild(totalVal);
+      recap.appendChild(totalRow);
+
       openModal('confirmSaleModal');
     };
 
     window.confirmAndSave = async function() {
       if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+
+      const form = readSaleForm();
+      if (!form) { closeModal('confirmSaleModal'); return; }
+
       closeModal('confirmSaleModal');
 
-      const clientName = document.getElementById('clientSelect').value;
-      const quantity = parseFloat(document.getElementById('quantityInput').value);
-      const category = document.getElementById('category').value;
-      const rawDate = document.getElementById('datetime').value;
-      const paidRadio = document.querySelector('input[name="paymentStatus"]:checked');
-      if (!clientName || !category || isNaN(quantity) || quantity <= 0 || !rawDate || !paidRadio) {
-        return showSessionStatus('❌ Formulaire incomplet', 'error');
-      }
-
-      const paid = paidRadio.value === 'paid';
+      const { clientName, quantity, category, rawDate, paid } = form;
       const client = state.clients.find(c => c.name === clientName);
       const createdAt = new Date(rawDate).toISOString();
       const unitPrice = getClientPrice(clientName, category);
