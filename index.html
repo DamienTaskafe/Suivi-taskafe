@@ -2306,16 +2306,21 @@
       return { clientName, quantity, category, rawDate, paid: paidRadio.value === 'paid' };
     }
 
+    // Holds the validated sale data between addSale() and confirmAndSave()
+    let _pendingSale = null;
+
     window.addSale = async function () {
       if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
       const form = readSaleForm();
       if (!form) return;
 
+      _pendingSale = form;
+
       const { clientName, quantity, category, rawDate, paid } = form;
       const unitPrice = getClientPrice(clientName, category);
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
-      // datetime-local format is YYYY-MM-DDTHH:MM – replace the sole 'T' separator
-      const formattedDate = rawDate.replace('T', ' ');
+      // datetime-local format is YYYY-MM-DDTHH:MM – replace the 'T' separator
+      const formattedDate = rawDate.replace(/T/, ' ');
       const qtyLabel = category === 'SUCRE' ? 'paquets' : 'kg';
 
       // ── Build recap using safe DOM API to prevent XSS ───────────────────────
@@ -2357,7 +2362,8 @@
     window.confirmAndSave = async function() {
       if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
 
-      const form = readSaleForm();
+      const form = _pendingSale;
+      _pendingSale = null;
       if (!form) { closeModal('confirmSaleModal'); return; }
 
       closeModal('confirmSaleModal');
@@ -2368,9 +2374,6 @@
       const unitPrice = getClientPrice(clientName, category);
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
       const newStockQty = Number(state.stocks[category] || 0) - quantity;
-
-      // Reset form immediately so the user can start a new entry
-      resetSaleForm();
 
       if (!navigator.onLine) {
         const localSale = {
@@ -2396,6 +2399,7 @@
           type: 'addSale',
           payload: localSale
         }).catch(() => {});
+        resetSaleForm();
         renderSales(); renderStock();
         showSessionStatus('📶 Vente enregistrée localement', 'info');
         updateOfflineBanner();
@@ -2430,6 +2434,8 @@
       });
       state.stocks[category] = newStockQty;
 
+      // Reset form only after successful save
+      resetSaleForm();
       renderSales(); renderStock();
       showSessionStatus('✅ Vente ajoutée', 'success');
       loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
