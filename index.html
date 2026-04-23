@@ -1742,6 +1742,9 @@
       state.stocks = { ...DEFAULT_STOCKS };
       (stocksRes.data || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
       state.logs = logsRes?.data || [];
+      if (logsRes?.error) {
+        console.warn('[loadCloudData] action_logs query failed (non-blocking):', logsRes.error.message);
+      }
 
       await loadAllUsers();
       await loadRolePermissions();
@@ -2008,9 +2011,10 @@
               ? '☁️ Serveur indisponible — données locales utilisées'
               : '☁️ Serveur indisponible — aucune donnée locale disponible';
           } else { // DATA_QUERY
+            const errDetail = error?.message ? ` (${error.message})` : '';
             statusMsg = hadLocalData
-              ? '⚠️ Erreur de chargement des données — données locales utilisées'
-              : '❌ Chargement échoué — aucune donnée locale disponible';
+              ? `⚠️ Erreur de chargement des données${errDetail} — données locales utilisées`
+              : `❌ Chargement échoué${errDetail} — aucune donnée locale disponible`;
           }
           showSessionStatus(statusMsg, 'error', 5000);
           // Profile was already loaded above; render the app with whatever state is
@@ -3747,9 +3751,25 @@
           if (!error) {
             state.logs = data || [];
             renderLogs();
+          } else {
+            console.warn('[showLogsSection] Rechargement logs échoué :', error?.message);
+            const list = document.getElementById('logsList');
+            if (list) {
+              const div = document.createElement('div');
+              div.className = 'empty-state';
+              div.textContent = `⚠️ Impossible de charger les logs : ${error.message || 'erreur inconnue'}`;
+              list.replaceChildren(div);
+            }
           }
         } catch (e) {
           console.warn('[showLogsSection] Rechargement logs échoué :', e?.message);
+          const list = document.getElementById('logsList');
+          if (list) {
+            const div = document.createElement('div');
+            div.className = 'empty-state';
+            div.textContent = '⚠️ Erreur lors du chargement des logs.';
+            list.replaceChildren(div);
+          }
         }
       }
     };
