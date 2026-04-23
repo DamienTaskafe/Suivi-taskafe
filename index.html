@@ -3109,9 +3109,12 @@
 
     function updateCategoryStyle() {
       const select = document.getElementById('category');
-      const value = select.value;
+      if (!select) return;
+      const value = (select.value || '').trim();
       select.classList.remove('ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE');
-      select.classList.add(value);
+      if (value && CATEGORIES.includes(value)) {
+        select.classList.add(value);
+      }
     }
     window.updateCategoryStyle = updateCategoryStyle;
 
