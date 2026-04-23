@@ -236,4 +236,4042 @@
               <div class="ncp-field">
                 <label for="clientAddrType">Type de voie</label>
                 <select id="clientAddrType">
-                  <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">[...]
+                  <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="ncp-field">
+              <label for="clientAddrDetail">Adresse</label>
+              <input id="clientAddrDetail" type="text" placeholder="Nom de voie" />
+            </div>
+
+            <div class="ncp-field">
+              <label for="clientAddrCity">Ville</label>
+              <div class="city-search-wrap" id="citySearchWrap">
+                <input id="clientAddrCity" type="text" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" />
+                <div class="client-search-drop" id="citySearchDrop"></div>
+              </div>
+            </div>
+
+            <div class="ncp-field">
+              <label for="clientICE">💳 ICE</label>
+              <input id="clientICE" type="text" placeholder="Numéro ICE (facturation)" />
+            </div>
+
+            <h4>💰 Prix personnalisés par gamme</h4>
+            <div class="price-scroll-row"></div>
+            <div class="muted">Laisse vide pour utiliser les prix standard.</div>
+            <button onclick="addClient()">✅ Créer client</button>
+          </div>
+        </div>
+
+        <div class="clients-list-header">
+          <h3>👥 Fiches clients</h3>
+        </div>
+        <div class="clients-search-bar">
+          <input id="clientSearchInput" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="filterClients()" />
+        </div>
+        <div class="client-list-scroll">
+          <div id="clientList"></div>
+        </div>
+      </div>
+
+      <div id="stock" class="section-shell hidden">
+        <h3 style="margin-bottom:var(--spacing-lg);">📦 Gestion du stock</h3>
+        <div id="stockList"></div>
+      </div>
+
+      <div id="balance" class="section-shell hidden">
+        <h3 style="margin-bottom:var(--spacing-lg);">⚖️ Balance clients</h3>
+        <div id="balanceContent"></div>
+      </div>
+
+      <div id="logs" class="section-shell hidden">
+        <h3>📋 Historique des actions</h3>
+        <div class="muted">Visible admin uniquement. Dernières 200 actions.</div>
+        <div id="logsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileModal" class="modal-backdrop" onclick="backdropClose(event, 'profileModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>👤 Mon profil</h3><button class="close-x" onclick="closeModal('profileModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title" id="profileName">—</div>
+        <div id="profileUsername" class="muted">—</div>
+        <div id="profileRole" class="muted">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="usersModal" class="modal-backdrop" onclick="backdropClose(event, 'usersModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>👥 Gérer utilisateurs</h3><button class="close-x" onclick="closeModal('usersModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title">Créer nouvel utilisateur</div>
+        <label for="newUserEmail">📧 Email</label>
+        <input id="newUserEmail" type="email" placeholder="Email" />
+        <label for="newUserPassword">🔐 Mot de passe</label>
+        <input id="newUserPassword" type="password" placeholder="Min 6 caractères" />
+        <label for="newUserName">👤 Nom complet</label>
+        <input id="newUserName" type="text" placeholder="Nom complet" />
+        <label for="newUserRole">🎖️ Rôle</label>
+        <select id="newUserRole">
+          <option value="employee">Employé</option>
+          <option value="manager">Manager (sous-admin)</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button id="createUserBtn" onclick="createNewUser()">✅ Créer</button>
+        <div id="createUserStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+      <hr />
+      <h4>Utilisateurs actuels</h4>
+      <div id="usersList" class="users-grid"></div>
+    </div>
+  </div>
+
+  <div id="roleModal" class="modal-backdrop" onclick="backdropClose(event, 'roleModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>✏️ Modifier le rôle</h3><button class="close-x" onclick="closeModal('roleModal')">✕</button></div>
+      <div class="settings-option">
+        <div id="roleModalUserLabel" class="title">—</div>
+        <label for="roleModalSelect">🎖️ Nouveau rôle</label>
+        <select id="roleModalSelect">
+          <option value="employee">Employé</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button id="roleModalSaveBtn" onclick="confirmRoleChange()">✅ Enregistrer</button>
+        <div id="roleModalStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsHubModal" class="modal-backdrop" onclick="backdropClose(event, 'settingsHubModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>⚙️ Paramètres</h3><button class="close-x" onclick="closeModal('settingsHubModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title">🔒 Sécurité</div>
+        <div class="muted">Modifier ton mot de passe.</div>
+        <button onclick="closeModal('settingsHubModal'); openPasswordModal();">Changer mot de passe</button>
+      </div>
+      <div class="settings-option">
+        <div class="title">☁️ Export cloud</div>
+        <div class="muted">Télécharger une sauvegarde JSON complète.</div>
+        <button onclick="exportData()">📥 Exporter données</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="passwordModal" class="modal-backdrop" onclick="backdropClose(event, 'passwordModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔐 Changer mot de passe</h3><button class="close-x" onclick="closeModal('passwordModal')">✕</button></div>
+      <label for="newPassword">Nouveau mot de passe</label>
+      <input id="newPassword" type="password" placeholder="Min 6 caractères" />
+      <button onclick="changeMyPassword()">✅ Mettre à jour</button>
+    </div>
+  </div>
+
+  <div id="clientAdvancedModal" class="modal-backdrop" onclick="backdropClose(event, 'clientAdvancedModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3>⚙️ Actions avancées</h3>
+        <button class="close-x" onclick="closeModal('clientAdvancedModal')">✕</button>
+      </div>
+
+      <div class="settings-option">
+        <div class="title" id="advancedClientName">Client</div>
+      </div>
+
+      <div class="settings-option">
+        <div class="title">📊 Compteurs</div>
+        <div style="margin-top:10px;">
+          <div class="adv-stat-row"><span class="adv-stat-label">Ce mois</span><span class="adv-stat-val" id="advancedMonthlyCmd">—</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">Cette année</span><span class="adv-stat-val" id="advancedYearlyCmd">—</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">Total global</span><span class="adv-stat-val" id="advancedTotalCmd">—</span></div>
+        </div>
+      </div>
+
+      <div class="settings-option">
+        <div class="title">📄 Facture mensuelle</div>
+        <div class="muted" style="margin-top:4px;">Génère le récapitulatif PDF du mois en cours pour ce client.</div>
+        <button style="margin-top:10px;" id="advancedPdfBtn" onclick="generateClientMonthlyPDF(this.dataset.clientId); closeModal('clientAdvancedModal');">📄 Générer facture PDF du mois</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resetModal" class="modal-backdrop" onclick="backdropClose(event, 'resetModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔄 Réinitialiser</h3><button class="close-x" onclick="closeModal('resetModal')">✕</button></div>
+      <p class="muted">Action réservée à l'admin. Saisissez le code de confirmation pour réinitialiser les filtres.</p>
+      <label for="resetCode">Code de confirmation</label>
+      <input id="resetCode" type="text" placeholder="Saisir le code…" autocomplete="off" />
+      <div id="resetCodeError" style="color:var(--color-error);font-size:12px;min-height:16px;margin-top:-6px;"></div>
+      <button onclick="executeReset()">✅ Confirmer la réinitialisation</button>
+    </div>
+  </div>
+
+  <div id="editSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'editSaleModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>✏️ Modifier la vente</h3><button class="close-x" onclick="closeModal('editSaleModal')">✕</button></div>
+      <div id="editSaleCreator" class="muted" style="margin-bottom:10px;font-size:12px;"></div>
+      <label>Client</label>
+      <div class="client-search-wrap" id="editSaleClientWrap">
+        <input id="editSaleClientSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onEditSaleClientInput()" onfocus="showEditSaleClientDrop()" />
+        <input type="hidden" id="editSaleClient" />
+        <div class="client-search-drop" id="editSaleClientDrop"></div>
+      </div>
+      <label for="editSaleCategory">Catégorie</label>
+      <select id="editSaleCategory"></select>
+      <label for="editSaleQty">Quantité</label>
+      <input id="editSaleQty" type="number" step="0.01" placeholder="Quantité" />
+      <label for="editSaleDate">📅 Date & Heure</label>
+      <input id="editSaleDate" type="datetime-local" />
+      <div class="checkbox-line">
+        <input type="checkbox" id="editSalePaid" />
+        <label for="editSalePaid" style="margin:0;flex:1;">✅ Payé</label>
+      </div>
+      <input type="hidden" id="editSaleId" />
+      <button onclick="saveEditSale()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <div id="confirmSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'confirmSaleModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="closeModal('confirmSaleModal')">✕</button></div>
+      <p style="text-align:center;font-weight:600;margin-bottom:12px;color:var(--color-text);">Voulez-vous valider cette commande ?</p>
+      <div id="confirmSaleRecap" class="confirm-recap"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button onclick="closeModal('confirmSaleModal')" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
+        <button id="confirmSaleBtn" onclick="confirmAndSave()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;">✅ Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editClientModal" class="modal-backdrop" onclick="backdropClose(event, 'editClientModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
+      <input type="hidden" id="editClientId" />
+      <div class="ncp-field">
+        <label for="editClientName">Nom du client</label>
+        <input id="editClientName" placeholder="Nom du client" />
+      </div>
+      <div class="ncp-num-type-row">
+        <div class="ncp-field">
+          <label for="editClientAddrNum">Numéro</label>
+          <input id="editClientAddrNum" type="text" placeholder="N°" />
+        </div>
+        <div class="ncp-field">
+          <label for="editClientAddrType">Type de voie</label>
+          <select id="editClientAddrType">
+            <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
+          </select>
+        </div>
+      </div>
+      <div class="ncp-field">
+        <label for="editClientAddrDetail">Adresse</label>
+        <input id="editClientAddrDetail" placeholder="Nom de voie" />
+      </div>
+      <div class="ncp-field">
+        <label for="editClientAddrCity">Ville</label>
+        <div class="city-search-wrap" id="editCitySearchWrap">
+          <input id="editClientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onEditCityInput()" onfocus="showEditCityDrop()" />
+          <div class="client-search-drop" id="editCitySearchDrop"></div>
+        </div>
+      </div>
+      <div class="ncp-field">
+        <label for="editClientICE">💳 ICE</label>
+        <input id="editClientICE" placeholder="Numéro ICE (facturation)" />
+      </div>
+      <h4>💰 Prix personnalisés par gamme</h4>
+      <div class="price-scroll-row"></div>
+      <div class="muted">Laisse vide pour utiliser les prix standard.</div>
+      <button onclick="saveEditClient()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- ── Duplicate client detection modal ───────────────────────────────────── -->
+  <div id="duplicateClientModal" class="modal-backdrop">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>⚠️ Fiche client existante</h3><button class="close-x" onclick="_handleDupCancel()">✕</button></div>
+
+      <div id="dupStep1">
+        <p id="dupMsg" style="margin-bottom:12px;font-size:14px;"></p>
+        <div class="settings-option" style="margin-bottom:12px;">
+          <div class="title" style="font-size:13px;">📋 Fiche existante</div>
+          <div id="dupExistingInfo" class="muted" style="margin-top:4px;white-space:pre-line;"></div>
+        </div>
+        <button onclick="_handleDupChoice('merge')" style="width:100%;margin-bottom:8px;">🔀 Fusionner avec la fiche existante</button>
+        <button onclick="_handleDupChoice('new-pos')" style="width:100%;margin-bottom:8px;">🏪 Créer un autre point de vente</button>
+        <button onclick="_handleDupCancel()" style="width:100%;background:rgba(0,0,0,0.06);color:var(--color-text);">✕ Annuler</button>
+      </div>
+
+      <div id="dupStep2Merge" style="display:none;">
+        <p style="margin-bottom:12px;font-size:14px;">Les deux fiches ont des adresses différentes. Laquelle souhaitez-vous conserver ?</p>
+        <button onclick="_handleDupAddrChoice('existing')" style="width:100%;margin-bottom:8px;text-align:left;">📍 Garder : <span id="dupAddrExistingLabel" style="font-weight:600;"></span></button>
+        <button onclick="_handleDupAddrChoice('new')" style="width:100%;margin-bottom:8px;text-align:left;">📍 Utiliser : <span id="dupAddrNewLabel" style="font-weight:600;"></span></button>
+        <button onclick="_handleDupCancel()" style="width:100%;background:rgba(0,0,0,0.06);color:var(--color-text);">✕ Annuler</button>
+      </div>
+
+      <div id="dupStep2NewPos" style="display:none;">
+        <p style="margin-bottom:8px;font-size:14px;">Ajoutez un libellé pour différencier les points de vente.</p>
+        <div id="dupExistPosSection" style="display:none;border:1px solid rgba(0,0,0,0.12);border-radius:8px;padding:10px;margin-bottom:12px;background:rgba(0,0,0,0.03);">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;">📋 Fiche existante — ajoutez aussi un repère</p>
+          <div class="ncp-field">
+            <label for="dupExistPosLabel">Libellé de la fiche existante (ex : Siège, Maarif…)</label>
+            <input id="dupExistPosLabel" type="text" placeholder="Ex : Siège, Maarif…" oninput="_updateDupPosFinalName()" />
+          </div>
+          <p class="muted" style="margin-bottom:0;">Nom final : <strong id="dupExistPosFinalName"></strong></p>
+        </div>
+        <div class="ncp-field">
+          <label for="dupPosLabel">Libellé du nouveau point de vente (ex : Hay Riad, Centre…)</label>
+          <input id="dupPosLabel" type="text" placeholder="Ex : Hay Riad, Centre…" oninput="_updateDupPosFinalName()" />
+        </div>
+        <p class="muted" style="margin-bottom:10px;">Nom final : <strong id="dupPosFinalName"></strong></p>
+        <button onclick="_handleDupNewPos()" style="width:100%;margin-bottom:8px;">✅ Créer le point de vente</button>
+        <button onclick="_handleDupCancel()" style="width:100%;background:rgba(0,0,0,0.06);color:var(--color-text);">✕ Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="productPricesModal" class="modal-backdrop" onclick="backdropClose(event, 'productPricesModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>💲 Prix d'achat produits</h3><button class="close-x" onclick="closeModal('productPricesModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;">Ces prix servent de base aux calculs de marge dans les analytiques.</div>
+      <div class="price-scroll-row" style="flex-wrap:wrap;gap:10px;"></div>
+      <button onclick="saveProductPrices()">💾 Enregistrer</button>
+    </div>
+  </div>
+
+  <div id="resumeModal" class="modal-backdrop" onclick="backdropClose(event, 'resumeModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>📊 Résumé rapide</h3><button class="close-x" onclick="closeModal('resumeModal')">✕</button></div>
+      <div class="summary-grid">
+        <div class="summary-box"><div class="label">Total quantité</div><div class="value" id="totalQty">0</div></div>
+        <div class="summary-box"><div class="label">Revenu total</div><div class="value" id="totalDh">0 DHS</div></div>
+        <div class="summary-box"><div class="label">Non payé</div><div class="value" id="unpaidDh">0 DHS</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="analyticsModal" class="modal-backdrop" onclick="backdropClose(event, 'analyticsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>📈 Analytiques</h3><button class="close-x" onclick="closeModal('analyticsModal')">✕</button></div>
+      <div id="analyticsContent"></div>
+    </div>
+  </div>
+
+  <div id="permissionsModal" class="modal-backdrop" onclick="backdropClose(event, 'permissionsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔐 Droits d'accès</h3><button class="close-x" onclick="closeModal('permissionsModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;">Configurez les permissions par rôle. L'admin dispose de tous les droits.</div>
+      <div id="permissionsContent">
+        <div class="muted">Chargement…</div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="itemAlertModal" class="modal-backdrop" onclick="backdropClose(event, 'itemAlertModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3 id="itemAlertModalTitle">⚙️ Alerte stock</h3><button class="close-x" onclick="closeModal('itemAlertModal')">✕</button></div>
+      <input type="hidden" id="itemAlertCat" />
+      <div class="settings-option">
+        <div class="checkbox-line" style="margin-top:4px;">
+          <input type="checkbox" id="itemAlertEnabled" onchange="saveItemAlertSettings()" />
+          <label for="itemAlertEnabled" style="margin:0;flex:1;">Activer l'alerte pour cet article</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <label for="itemAlertThreshold" style="margin:0;font-size:12px;text-transform:none;letter-spacing:0;flex-shrink:0;">Seuil :</label>
+          <input id="itemAlertThreshold" type="number" min="0" max="9999" step="0.5" value="5" style="width:80px;margin:0;" oninput="saveItemAlertSettings()" />
+          <span id="itemAlertUnit" style="font-size:12px;color:var(--color-text-muted);">kg</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/+esm';
+    import { initPullToRefresh } from './pull-to-refresh.js';
+    import { generateMonthlyPDF } from './pdf-generator.js';
+    import { initOfflineDB, saveRecords, loadRecords, putRecord, deleteRecord, addPendingOp, getPendingOps, removePendingOp, updatePendingOp, countPendingOps } from './offline-db.js';
+
+    // ── Splash screen countdown (starts as early as possible) ─────────────────
+    // CSS: logo stays large for 2.4s (halo rotation visible), shrinks over 0.9s → done at ~3.3s
+    // JS: fade starts at 3.5s (slight pause after shrink), removed 0.75s later
+    (function() {
+      const splash = document.getElementById('splashScreen');
+      if (!splash) return;
+      setTimeout(function() {
+        splash.classList.add('splash-done');
+        setTimeout(function() {
+          if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 720); // matches transition: opacity 0.7s ease
+      }, 3500); // start fade after shrink animation completes (~3.3s)
+    })();
+
+    const SUPABASE_URL = 'https://ogjljdjphawcminawtlv.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9namxqZGpwaGF3Y21pbmF3dGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzQ5MjUsImV4cCI6MjA5MTk1MDkyNX0.WVgrgx8Q1c9j_1UyNX7e2ilvttMBSHY2vnrBw_Ga05A';
+
+    const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
+    const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
+    const CATEGORIES = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
+    function initCategorySelects() {
+      const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+      const filterOpts = `<option value="">Toutes catégories</option>` + opts;
+      const mainOpts = `<option value="">Sélectionner une gamme</option>` + opts;
+      const mainCat = document.getElementById('category');
+      if (mainCat) mainCat.innerHTML = mainOpts;
+      const editCat = document.getElementById('editSaleCategory');
+      if (editCat) editCat.innerHTML = opts;
+      const fc = document.getElementById('filterCategory');
+      if (fc) fc.innerHTML = filterOpts;
+    }
+    const LS_LOW_STOCK_ENABLED = 'lowStockEnabled';
+    const LS_LOW_STOCK_THRESHOLD = 'lowStockThreshold';
+    const LS_ITEM_ALERTS = 'stockAlertPerItem';
+    const LOW_STOCK_DEFAULT = 5;
+
+    const rememberCheckbox = document.getElementById('rememberSession');
+    const customStorage = {
+      getItem(key) { return localStorage.getItem(key) ?? sessionStorage.getItem(key); },
+      setItem(key, value) {
+        const remember = rememberCheckbox?.checked ?? true;
+        if (remember) {
+          localStorage.setItem(key, value);
+          sessionStorage.removeItem(key);
+        } else {
+          sessionStorage.setItem(key, value);
+          localStorage.removeItem(key);
+        }
+      },
+      removeItem(key) {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      }
+    };
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { autoRefreshToken: true, persistSession: true, storage: customStorage }
+    });
+    initCategorySelects();
+    initPriceSpinners();
+
+    const state = {
+      clients: [],
+      sales: [],
+      stocks: { ...DEFAULT_STOCKS },
+      logs: [],
+      profile: null,
+      session: null,
+      allUsers: [],
+      rolePermissions: { employee: {}, manager: {} }
+    };
+
+    let _statusTimer = null;
+    function showSessionStatus(message, type = 'success', duration = 3500) {
+      const el = document.getElementById('sessionStatus');
+      if (_statusTimer) { clearTimeout(_statusTimer); _statusTimer = null; }
+      el.textContent = message;
+      el.className = `session-status show ${type}`;
+      _statusTimer = setTimeout(() => { el.classList.remove('show'); _statusTimer = null; }, duration);
+    }
+
+    // ── Offline helpers ────────────────────────────────────────────────────────
+    function genLocalId() {
+      return 'local_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    // Sync state: 'idle' | 'syncing' | 'error'
+    let _syncState = 'idle';
+    let _syncErrorCount = 0;
+    // Delay before triggering sync at boot (ms) — lets the network stabilize
+    const BOOT_SYNC_DELAY_MS = 1200;
+    // How long to hold the logout guard against spurious auth-state-change re-boots (ms)
+    const LOGOUT_GUARD_DURATION_MS = 2000;
+
+    async function updateOfflineBanner() {
+      const banner = document.getElementById('offlineBanner');
+      const textEl = document.getElementById('offlineBannerText');
+      const countEl = document.getElementById('offlinePendingCount');
+      if (!banner) return;
+      const n = await countPendingOps().catch(() => 0);
+      if (!navigator.onLine) {
+        banner.style.display = 'block';
+        banner.style.background = '#e65100';
+        if (textEl) textEl.textContent = '📶 Hors ligne\u2002';
+        countEl.textContent = n > 0 ? `· ${n} action(s) en attente` : '';
+      } else if (_syncState === 'syncing') {
+        banner.style.display = 'block';
+        banner.style.background = '#1565c0';
+        if (textEl) textEl.textContent = '🔄 Synchronisation…\u2002';
+        countEl.textContent = n > 0 ? `· ${n} restante(s)` : '';
+      } else if (_syncState === 'error' && _syncErrorCount > 0) {
+        banner.style.display = 'block';
+        banner.style.background = '#b71c1c';
+        if (textEl) textEl.textContent = '⚠️ Synchro échouée\u2002';
+        countEl.textContent = `· ${_syncErrorCount} erreur(s) — vérifiez la connexion`;
+      } else if (n > 0) {
+        banner.style.display = 'block';
+        banner.style.background = '#1565c0';
+        if (textEl) textEl.textContent = '🔄 En attente de synchro\u2002';
+        countEl.textContent = `· ${n} action(s)`;
+      } else {
+        banner.style.display = 'none';
+        banner.style.background = '';
+        _syncState = 'idle';
+        _syncErrorCount = 0;
+      }
+    }
+
+    let _isSyncing = false;
+    async function syncPendingOps() {
+      if (_isSyncing) return;
+      _isSyncing = true;
+      _syncState = 'syncing';
+      _syncErrorCount = 0;
+      await updateOfflineBanner();
+
+      // Ensure Supabase session is still valid before attempting sync
+      try {
+        const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+        if (sessionErr || !sessionData?.session) {
+          // Try to refresh
+          const { error: refreshErr } = await supabase.auth.refreshSession();
+          if (refreshErr) {
+            console.warn('[sync] session refresh failed:', refreshErr.message);
+            _syncState = 'error';
+            _syncErrorCount = -1; // session error flag
+            _isSyncing = false;
+            showSessionStatus('⚠️ Session expirée — reconnectez-vous pour synchroniser', 'error', 8000);
+            await updateOfflineBanner();
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[sync] session check failed:', e?.message);
+      }
+
+      const ops = await getPendingOps();
+      if (ops.length === 0) {
+        _syncState = 'idle';
+        _isSyncing = false;
+        await updateOfflineBanner();
+        return;
+      }
+      showSessionStatus(`⏳ Synchronisation de ${ops.length} action(s)…`, 'info', 15000);
+      let done = 0, failed = 0;
+      const errors = [];
+      // idMapping accumulates { 'local_xxx': 'real-uuid' } as addSale/addClient ops resolve.
+      // Each op is rewritten with accumulated mappings before execution; this is a no-op
+      // on the first iteration when idMapping is still empty.
+      const idMapping = {};
+      let salesDirty = false, clientsDirty = false;
+      for (let opIdx = 0; opIdx < ops.length; opIdx++) {
+        const op = ops[opIdx];
+        _applyIdRemapping(op, idMapping); // apply all previously gathered id remaps
+        try {
+          const mapping = await _executePendingOp(op);
+          if (mapping) {
+            const { localId, realId, storeKey } = mapping;
+            idMapping[localId] = realId;
+            // Update state in memory (deferred batch save after the loop)
+            if (storeKey === 'sales') {
+              const rec = state.sales.find(s => s.id === localId);
+              if (rec) { rec.id = realId; salesDirty = true; }
+            } else if (storeKey === 'clients') {
+              const rec = state.clients.find(c => c.id === localId);
+              if (rec) { rec.id = realId; clientsDirty = true; }
+            }
+            // Update only the *remaining* pending ops in IndexedDB so future sync
+            // retries use real IDs — persist before removing the current op so
+            // the queue stays consistent even if the process is interrupted.
+            for (let i = opIdx + 1; i < ops.length; i++) {
+              if (_applyIdRemapping(ops[i], { [localId]: realId })) {
+                await updatePendingOp(ops[i]).catch(e =>
+                  console.warn('[sync] updatePendingOp failed:', e?.message));
+              }
+            }
+          }
+          await removePendingOp(op.id);
+          done++;
+        } catch (err) {
+          const msg = err?.message || err?.details || String(err);
+          console.error('[sync] op failed:', op.type, op.id, msg);
+          errors.push(`${op.type}: ${msg}`);
+          failed++;
+        }
+      }
+      // Batch-persist state changes from ID remapping (one write per store if needed)
+      if (salesDirty) await saveRecords('sales', state.sales).catch(() => {});
+      if (clientsDirty) await saveRecords('clients', state.clients).catch(() => {});
+      try { await loadCloudData(); paintApp(); } catch(e) { /* ignore */ }
+      if (failed === 0) {
+        _syncState = 'idle';
+        _syncErrorCount = 0;
+        showSessionStatus(`✅ ${done} action(s) synchronisée(s)`, 'success');
+      } else {
+        _syncState = 'error';
+        _syncErrorCount = failed;
+        const detail = errors.slice(0, 2).join(' | ');
+        showSessionStatus(`⚠️ ${done} synchro, ${failed} en échec — ${detail}`, 'error', 10000);
+      }
+      _isSyncing = false;
+      await updateOfflineBanner();
+    }
+
+    // Apply accumulated local->real id mappings to a pending op's payload in place.
+    // Returns true if any replacement was made, false otherwise.
+    function _applyIdRemapping(op, idMapping) {
+      if (!op || !idMapping) return false;
+      const keys = Object.keys(idMapping);
+      if (keys.length === 0) return false;
+      let changed = false;
+      const payload = op.payload;
+      if (!payload) return false;
+      if (payload.saleId && idMapping[payload.saleId]) {
+        payload.saleId = idMapping[payload.saleId]; changed = true;
+      }
+      if (payload.clientId && idMapping[payload.clientId]) {
+        payload.clientId = idMapping[payload.clientId]; changed = true;
+      }
+      if (payload.client_id && idMapping[payload.client_id]) {
+        payload.client_id = idMapping[payload.client_id]; changed = true;
+      }
+      if (payload.id && idMapping[payload.id]) {
+        payload.id = idMapping[payload.id]; changed = true;
+      }
+      return changed;
+    }
+
+    async function _executePendingOp(op) {
+      switch (op.type) {
+        case 'addClient': {
+          const { id: localId, created_at: _ca, ...payload } = op.payload;
+          const { data, error } = await supabase.from('clients').insert(payload).select('id').single();
+          if (error) throw error;
+          const realId = data?.id;
+          return (localId && realId && localId !== realId)
+            ? { localId, realId, storeKey: 'clients' }
+            : null;
+        }
+        case 'deleteClient': {
+          if (String(op.payload.clientId).startsWith('local_')) break; // was never on server
+          const { error } = await supabase.from('clients').delete().eq('id', op.payload.clientId);
+          if (error) throw error;
+          break;
+        }
+        case 'updateClient': {
+          const { clientId, ...payload } = op.payload;
+          if (String(clientId).startsWith('local_')) break;
+          const { error } = await supabase.from('clients').update(payload).eq('id', clientId);
+          if (error) throw error;
+          break;
+        }
+        case 'addSale': {
+          const { id: localId, created_at: _ca, client_id: rawClientId, created_by: rawCreatedBy, ...salePayload } = op.payload;
+          // If client was created offline (temp ID), use null for client_id; client_name still links correctly
+          const client_id = rawClientId && String(rawClientId).startsWith('local_') ? null : (rawClientId || null);
+          // Omit created_by when null/undefined so the DB DEFAULT auth.uid() fires;
+          // only pass it through when a real user id was captured at queue time.
+          const insertPayload = { ...salePayload, client_id };
+          if (rawCreatedBy != null) insertPayload.created_by = rawCreatedBy;
+          const { data: saleData, error: saleErr } = await supabase
+            .from('sales').insert(insertPayload).select('id').single();
+          if (saleErr) throw saleErr;
+          const realId = saleData?.id;
+          return (localId && realId && localId !== realId)
+            ? { localId, realId, storeKey: 'sales' }
+            : null;
+        }
+        case 'deleteSale': {
+          const { saleId } = op.payload;
+          if (!String(saleId).startsWith('local_')) {
+            const { error } = await supabase.from('sales').delete().eq('id', saleId);
+            if (error) throw error;
+          }
+          break;
+        }
+        case 'updateSale': {
+          // Destructure out legacy stock payload keys (populated by old queued ops in IndexedDB)
+          // so they are not forwarded to sales.update(); the DB trigger now handles stock adjustments.
+          const { saleId, stockOldPayload, stockNewPayload, ...salePayload } = op.payload; // eslint-disable-line no-unused-vars
+          if (String(saleId).startsWith('local_')) break;
+          const { error } = await supabase.from('sales').update(salePayload).eq('id', saleId);
+          if (error) throw error;
+          break;
+        }
+        case 'togglePaid': {
+          if (String(op.payload.saleId).startsWith('local_')) break;
+          const { error } = await supabase.from('sales').update({ paid: op.payload.paid }).eq('id', op.payload.saleId);
+          if (error) throw error;
+          break;
+        }
+        case 'stockUpdate': {
+          const { error } = await supabase.from('stocks').upsert(op.payload, { onConflict: 'category' });
+          if (error) throw error;
+          break;
+        }
+        default:
+          console.warn('[sync] unknown op type:', op.type);
+      }
+    }
+
+    function formatDh(value) {
+      const number = Number(value || 0);
+      return `${number.toFixed(2)} DHS`;
+    }
+
+    function formatQty(value) {
+      return Number(value || 0).toFixed(2).replace(/\.00$/, '');
+    }
+
+    function unitLabel(category, plural = false) {
+      return category === 'SUCRE' ? (plural ? 'paquets' : 'paquet') : 'kg';
+    }
+
+    function formatStockValue(category, value) {
+      const n = Number(value || 0);
+      return `${formatQty(n)} ${unitLabel(category, n > 1)}`;
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function isAdmin() {
+      return String(state.profile?.role || '').toLowerCase() === 'admin';
+    }
+
+    function isManager() {
+      return String(state.profile?.role || '').toLowerCase() === 'manager';
+    }
+
+    function isManagerOrAdmin() {
+      const r = String(state.profile?.role || '').toLowerCase();
+      return r === 'admin' || r === 'manager';
+    }
+
+    // ── Role-based permissions ────────────────────────────────────────────────
+    const ROLE_PERMISSIONS_DEF = [
+      { key: 'tasks.create',      label: 'Créer une vente' },
+      { key: 'tasks.edit',        label: 'Modifier une vente' },
+      { key: 'tasks.delete',      label: 'Supprimer une vente' },
+      { key: 'tasks.toggle_paid', label: 'Marquer payé / impayé' },
+      { key: 'clients.create',    label: 'Ajouter un client' },
+      { key: 'clients.edit',      label: 'Modifier un client' },
+      { key: 'clients.delete',    label: 'Supprimer un client' },
+      { key: 'reports.view',      label: 'Voir les analytiques' },
+      { key: 'stock.edit',        label: 'Modifier le stock' },
+      { key: 'users.view',        label: 'Voir les utilisateurs' },
+    ];
+
+    const DEFAULT_ROLE_PERMISSIONS = {
+      employee: {
+        'tasks.create': true,  'tasks.edit': true,   'tasks.delete': false,
+        'tasks.toggle_paid': false, 'clients.create': false, 'clients.edit': false,
+        'clients.delete': false, 'reports.view': false, 'stock.edit': false, 'users.view': false
+      },
+      manager: {
+        'tasks.create': true,  'tasks.edit': true,   'tasks.delete': true,
+        'tasks.toggle_paid': true, 'clients.create': true,  'clients.edit': true,
+        'clients.delete': true, 'reports.view': true, 'stock.edit': true, 'users.view': true
+      }
+    };
+
+    function hasPermission(key) {
+      if (isAdmin()) return true;
+      const role = String(state.profile?.role || '').toLowerCase();
+      const rolePerms = state.rolePermissions[role];
+      if (!rolePerms) return false;
+      return rolePerms[key] === true;
+    }
+
+    async function loadRolePermissions() {
+      try {
+        const { data, error } = await supabase.from('role_permissions').select('*');
+        if (error) {
+          console.warn('[loadRolePermissions] error:', error.message);
+          state.rolePermissions = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+          return;
+        }
+        const perms = {
+          employee: { ...DEFAULT_ROLE_PERMISSIONS.employee },
+          manager:  { ...DEFAULT_ROLE_PERMISSIONS.manager }
+        };
+        (data || []).forEach(row => {
+          if (perms[row.role] !== undefined) {
+            perms[row.role][row.permission_key] = row.allowed;
+          }
+        });
+        state.rolePermissions = perms;
+      } catch (e) {
+        console.warn('[loadRolePermissions] exception:', e?.message);
+        state.rolePermissions = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+      }
+    }
+
+    window.openPermissionsModal = function() {
+      closeAllMenus();
+      if (!isAdmin()) return;
+      renderPermissionsModal();
+      openModal('permissionsModal');
+    };
+
+    function renderPermissionsModal() {
+      const content = document.getElementById('permissionsContent');
+      if (!content) return;
+      const perms = state.rolePermissions;
+      let rows = '';
+      ROLE_PERMISSIONS_DEF.forEach(def => {
+        const empChecked = perms.employee[def.key] === true ? 'checked' : '';
+        const mgrChecked = perms.manager[def.key] === true ? 'checked' : '';
+        const k = escHtml(def.key);
+        rows += `<tr>
+          <td>${escHtml(def.label)}</td>
+          <td><label class="perm-toggle"><input type="checkbox" ${empChecked} onchange="toggleRolePermission('employee','${k}',this.checked)" /><span class="slider"></span></label></td>
+          <td><label class="perm-toggle"><input type="checkbox" ${mgrChecked} onchange="toggleRolePermission('manager','${k}',this.checked)" /><span class="slider"></span></label></td>
+        </tr>`;
+      });
+      content.innerHTML = `<table class="perm-table">
+        <thead><tr><th>Permission</th><th>👤 Employé</th><th>🔑 Manager</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    window.toggleRolePermission = async function(role, key, allowed) {
+      if (!isAdmin()) return;
+      if (!state.rolePermissions[role]) state.rolePermissions[role] = {};
+      state.rolePermissions[role][key] = allowed;
+      try {
+        const { error } = await supabase
+          .from('role_permissions')
+          .upsert({ role, permission_key: key, allowed, updated_at: new Date().toISOString() },
+                   { onConflict: 'role,permission_key' });
+        if (error) {
+          console.error('[toggleRolePermission] error:', error.message);
+          showSessionStatus('⚠️ Erreur lors de la sauvegarde', 'error');
+          state.rolePermissions[role][key] = !allowed;
+          renderPermissionsModal();
+        } else {
+          showSessionStatus('✅ Permission mise à jour', 'success');
+        }
+      } catch (e) {
+        console.error('[toggleRolePermission] exception:', e?.message);
+        showSessionStatus('⚠️ Erreur lors de la sauvegarde', 'error');
+        state.rolePermissions[role][key] = !allowed;
+        renderPermissionsModal();
+      }
+    };
+    const portaledMenus = new Map(); // menu el → original parent el
+
+    function closeAllMenus() {
+      document.querySelectorAll('.menu').forEach(m => {
+        m.style.display = 'none';
+        m.style.position = '';
+        m.style.top = '';
+        m.style.right = '';
+        m.style.left = '';
+        m.style.visibility = '';
+        m.style.zIndex = '';
+        // Restore portaled menus to their original DOM position.
+        const origParent = portaledMenus.get(m);
+        if (origParent) {
+          if (origParent.isConnected) {
+            origParent.appendChild(m);
+          } else {
+            // Original parent was removed (DOM rebuild), clean up from body.
+            m.remove();
+          }
+          portaledMenus.delete(m);
+        }
+      });
+      document.querySelectorAll('.header-menu').forEach(m => m.classList.remove('show'));
+    }
+    // Expose to global scope so inline onclick handlers (in dynamically generated HTML)
+    // can call it — the script is a module, so function declarations are not on window.
+    window.closeAllMenus = closeAllMenus;
+
+    function requireAdmin(label) {
+      if (!isAdmin()) {
+        showSessionStatus(`❌ Action réservée à l'admin : ${label}`, 'error');
+        return false;
+      }
+      return true;
+    }
+
+    function requireManagerOrAdmin(label) {
+      if (!isManagerOrAdmin()) {
+        showSessionStatus(`❌ Action réservée au manager ou à l'admin : ${label}`, 'error');
+        return false;
+      }
+      return true;
+    }
+
+    function getClientPrice(clientName, category) {
+      const client = state.clients.find(c => c.name === clientName);
+      const custom = client?.prices?.[category];
+      return custom === '' || custom === null || custom === undefined || Number(custom) <= 0
+        ? BASE_PRICES[category]
+        : Number(custom);
+    }
+
+    function readCustomPrice(id) {
+      const value = document.getElementById(id).value;
+      if (value === '') return null;
+      const n = Number(value);
+      if (isNaN(n) || n <= 0) return null;
+      return n;
+    }
+
+    function sortClientsAZ(clients) {
+      return [...clients].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    }
+
+    function updatePreview() {
+      const client = document.getElementById('clientSelect').value;
+      const category = document.getElementById('category').value;
+      const qty = parseFloat(document.getElementById('quantityInput').value) || 0;
+      const unit = client ? getClientPrice(client, category) : BASE_PRICES[category];
+      document.getElementById('previewUnitPrice').innerText = formatDh(unit);
+      document.getElementById('previewTotalPrice').innerText = formatDh(qty * unit);
+      document.getElementById('previewClientName').innerText = client || '—';
+    }
+
+    function loadClientSelectors() {
+      // Do not pre-fill the new sale client picker – leave it empty so users
+      // must explicitly choose a client for each new sale.
+      // reset client search filter
+      document.getElementById('filterClientSearch').value = document.getElementById('filterClient').value || '';
+    }
+
+    function getFilteredSales() {
+      const client = document.getElementById('filterClient').value;
+      const category = document.getElementById('filterCategory').value;
+      const date = document.getElementById('filterDate').value;
+
+      // Build the set of active client ids/names once for efficiency.
+      // Normalise ids to strings to avoid type mismatches (Supabase returns
+      // bigint as number, but dataset attributes and local ids are strings).
+      const activeClientIds   = new Set(state.clients.map(c => String(c.id)));
+      const activeClientNames = new Set(state.clients.map(c => c.name));
+
+      // Resolve the filtered client record once (used below to match by id)
+      const filterClientRecord = client ? state.clients.find(c => c.name === client) : null;
+
+      return state.sales.filter(s => {
+        // Exclude sales belonging to deleted clients.
+        // client_id is the source of truth; client_name alone must never keep
+        // an orphaned sale visible.
+        if (s.client_id !== null && s.client_id !== undefined && s.client_id !== '') {
+          if (!activeClientIds.has(String(s.client_id))) return false;
+        } else {
+          if (s.client_name && !activeClientNames.has(s.client_name)) return false;
+        }
+        // Apply UI filters – match by client_id (current identity) or client_name fallback
+        if (client) {
+          const matchById = filterClientRecord && s.client_id === filterClientRecord.id;
+          const matchByName = s.client_name === client;
+          if (!matchById && !matchByName) return false;
+        }
+        if (category && s.category !== category) return false;
+        if (date && new Date(s.created_at).toISOString().slice(0, 10) !== date) return false;
+        return true;
+      });
+    }
+
+    function getSalesForClient(client) {
+      return state.sales
+        .filter(s => s.client_id === client.id || s.client_name === client.name)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    function renderClients() {
+      const list = document.getElementById('clientList');
+      const q = (document.getElementById('clientSearchInput')?.value || '').trim().toLowerCase();
+      let clients = sortClientsAZ(state.clients);
+      if (q) {
+        clients = clients.filter(c => c.name.toLowerCase().includes(q));
+      }
+      let html = '';
+
+      clients.forEach((c, i) => {
+        const sales = getSalesForClient(c);
+        const totalUnpaid = sales
+          .filter(s => !s.paid)
+          .reduce((sum, s) => sum + Number(s.total_price || 0), 0);
+
+        html += `
+          <div class="client-card">
+            <div class="client-card-header">
+              <span class="client-card-name">${c.name}</span>
+              <div class="menu-wrap">
+                <button class="menu-btn" data-action="toggle-menu" data-menu-id="clientMenu${i}">⋯</button>
+                <div class="menu" id="clientMenu${i}">
+                  <button data-action="client-advanced" data-id="${c.id}">⚙️ Actions avancées</button>
+                  <button data-action="client-pdf" data-id="${c.id}">📄 Facture mensuelle</button>
+                  ${hasPermission('clients.edit') ? `<button data-action="client-edit" data-id="${c.id}">✏️ Modifier</button>` : ''}
+                  ${hasPermission('clients.delete') ? `<button data-action="client-delete" data-id="${c.id}">🗑️ Supprimer</button>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="client-card-info">
+              ${c.address ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${c.address}</span></div>` : ''}
+              ${c.ice ? `<div class="client-info-row"><span class="client-info-icon">💳</span><span>ICE: ${c.ice}</span></div>` : ''}
+              ${!c.address && !c.ice ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
+            </div>
+
+            <div class="client-stat-row">
+              <div class="client-stat">
+                <div class="client-stat-label">Total non payé</div>
+                <div class="client-stat-value${totalUnpaid > 0 ? ' unpaid' : ''}">${formatDh(totalUnpaid)}</div>
+              </div>
+              <div class="client-stat-sep"></div>
+              <div class="client-stat">
+                <div class="client-stat-label">Commandes</div>
+                <div class="client-stat-value">${sales.length}</div>
+              </div>
+            </div>
+          </div>`;
+      });
+
+      list.innerHTML = html || `<div class="empty-state">${q ? 'Aucun client trouvé.' : 'Aucun client enregistré.'}</div>`;
+    }
+
+    let _allSalesData = [];
+
+    // Coffee-themed icon pool – picks a consistent icon per client name
+    const VR_ICONS = ['☕', '🫘', '🍵', '🫗', '🏺'];
+    function vrIconForClient(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+      return VR_ICONS[Math.abs(h) % VR_ICONS.length];
+    }
+
+    function renderSalesClientCards(data) {
+      // Group sales by current client identity – prefer client_id so renames are reflected
+      const grouped = {};  // key → { displayName, sales[] }
+      const keyOrder = [];
+      data.forEach(s => {
+        let key, displayName;
+        if (s.client_id) {
+          const client = state.clients.find(c => String(c.id) === String(s.client_id));
+          if (!client) return; // orphaned record – defensively skip (already filtered by getFilteredSales)
+          key = 'id:' + String(s.client_id);
+          displayName = client.name;
+        } else {
+          displayName = s.client_name || 'Inconnu';
+          key = 'name:' + displayName;
+        }
+        if (!grouped[key]) { grouped[key] = { displayName, sales: [] }; keyOrder.push(key); }
+        grouped[key].sales.push(s);
+      });
+      keyOrder.sort((a, b) =>
+        grouped[a].displayName.localeCompare(grouped[b].displayName, undefined, { sensitivity: 'base' })
+      );
+
+      const cards = document.getElementById('vrClientCards');
+      const detail = document.getElementById('vrClientDetail');
+      detail.style.display = 'none';
+      document.getElementById('salesList').innerHTML = '';
+
+      if (keyOrder.length === 0) {
+        cards.innerHTML = `<div class="empty-state">Aucune vente trouvée.</div>`;
+      } else {
+        let html = '';
+        keyOrder.forEach(key => {
+          const { displayName } = grouped[key];
+          const icon = vrIconForClient(displayName);
+          html += `
+            <div class="vr-client-card" role="button" tabindex="0" data-action="open-client-sales" data-client="${escHtml(key)}">
+              <span class="vr-client-card-icon" aria-hidden="true">${icon}</span>
+              <span class="vr-client-card-name">${escHtml(displayName)}</span>
+              <span class="vr-client-card-arrow" aria-hidden="true">›</span>
+            </div>`;
+        });
+        cards.innerHTML = html;
+      }
+    }
+
+    function renderSalesForClient(clientKey, data) {
+      // clientKey is 'id:<clientId>' for id-based groups, or 'name:<name>' / plain name for legacy
+      let clientSales;
+      if (clientKey.startsWith('id:')) {
+        const cid = clientKey.slice(3);
+        // Use loose equality to handle id type differences (string vs number)
+        // eslint-disable-next-line eqeqeq
+        clientSales = data.filter(s => s.client_id != null && String(s.client_id) === cid);
+      } else {
+        const nameKey = clientKey.startsWith('name:') ? clientKey.slice(5) : clientKey;
+        clientSales = data.filter(s => !s.client_id && (s.client_name || 'Inconnu') === nameKey);
+      }
+      const list = document.getElementById('salesList');
+      let html = '';
+      if (clientSales.length === 0) {
+        html = `<div class="empty-state">Aucune vente pour ce client.</div>`;
+      } else {
+        html += `<div class="vr-client-group">`;
+        clientSales.forEach(s => {
+          const dateStr = new Date(s.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+          const creatorUser = s.created_by ? state.allUsers.find(u => u.id === s.created_by) : null;
+          const creatorName = creatorUser?.full_name || (s.created_by ? 'Utilisateur' : 'Inconnu');
+          html += `
+            <div class="vr-sale-item">
+              <div class="menu-wrap">
+                <button class="menu-btn" data-action="toggle-menu" data-menu-id="saleMenu${s.id}">⋯</button>
+                <div class="menu" id="saleMenu${s.id}">
+                  ${hasPermission('tasks.edit') ? `<button data-action="sale-edit" data-id="${s.id}">✏️ Modifier</button>` : ''}
+                  ${hasPermission('tasks.toggle_paid') ? `<button data-action="sale-toggle-paid" data-id="${s.id}" data-paid="${!s.paid}">${s.paid ? '❌ Marquer impayé' : '✅ Marquer payé'}</button>` : ''}
+                  ${hasPermission('tasks.delete') ? `<button class="danger" data-action="sale-delete" data-id="${s.id}">🗑️ Supprimer</button>` : ''}
+                </div>
+              </div>
+              <div class="vr-sale-row">
+                <span class="badge ${s.category}" style="padding:2px 7px;font-size:10px;margin:0;">${s.category}</span>
+                <span class="vr-sale-qty">${formatStockValue(s.category, s.quantity)}</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+                  <span class="vr-sale-total ${s.paid ? 'paid' : 'unpaid'}">${formatDh(s.total_price)}</span>
+                  <span>${s.paid ? '✅' : '❌'}</span>
+                </span>
+              </div>
+              <div class="vr-sale-footer">
+                <div class="vr-sale-meta">📅 ${dateStr}</div>
+                <div class="vr-sale-meta">Créée par : ${escHtml(creatorName)}</div>
+              </div>
+            </div>`;
+        });
+        html += `</div>`;
+      }
+      list.innerHTML = html;
+    }
+
+    function vrRefreshAccordion() {
+      initAccordions();
+      const vrAcc = document.getElementById('ventesRecentesAcc');
+      if (vrAcc && vrAcc.classList.contains('open')) {
+        const inner = vrAcc.querySelector('.accordion-inner');
+        if (inner) inner.style.maxHeight = inner.scrollHeight + 'px';
+      }
+    }
+
+    window.openClientSales = function(clientKey) {
+      const detail = document.getElementById('vrClientDetail');
+      const cards = document.getElementById('vrClientCards');
+      // Resolve the display name from the key so renames are always reflected
+      let displayName = clientKey;
+      if (clientKey.startsWith('id:')) {
+        const cid = clientKey.slice(3);
+        const client = state.clients.find(c => String(c.id) === cid);
+        displayName = client ? client.name : cid;
+      } else if (clientKey.startsWith('name:')) {
+        displayName = clientKey.slice(5);
+      }
+      document.getElementById('vrDetailTitle').textContent = displayName;
+      cards.style.display = 'none';
+      detail.style.display = 'block';
+      renderSalesForClient(clientKey, _allSalesData);
+      vrRefreshAccordion();
+      const area = document.getElementById('salesScrollArea');
+      if (area) area.scrollTop = 0;
+    };
+
+    window.closeClientSales = function() {
+      const detail = document.getElementById('vrClientDetail');
+      const cards = document.getElementById('vrClientCards');
+      detail.style.display = 'none';
+      cards.style.display = '';
+      vrRefreshAccordion();
+      const area = document.getElementById('salesScrollArea');
+      if (area) area.scrollTop = 0;
+    };
+
+    function renderSales() {
+      const data = getFilteredSales().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      _allSalesData = data;
+
+      // Always go back to step 1 (client cards) when re-rendering
+      document.getElementById('vrClientCards').style.display = '';
+      renderSalesClientCards(data);
+
+      // Re-init and reopen the ventes-récentes accordion after DOM update
+      vrRefreshAccordion();
+
+      let totalQty = 0;
+      let totalDh = 0;
+      let unpaidDh = 0;
+      data.forEach(s => {
+        totalQty += Number(s.quantity || 0);
+        totalDh += Number(s.total_price || 0);
+        if (!s.paid) unpaidDh += Number(s.total_price || 0);
+      });
+      document.getElementById('totalQty').innerText = formatQty(totalQty);
+      document.getElementById('totalDh').innerText = formatDh(totalDh);
+      document.getElementById('unpaidDh').innerText = formatDh(unpaidDh);
+      renderAnalytics(data);
+      renderBalance();
+    }
+
+    // Expose renderSales so static HTML onchange handlers can call it directly.
+    window.renderSales = renderSales;
+
+    function renderStock() {
+      const list = document.getElementById('stockList');
+      let anyLow = false;
+      let html = '';
+      Object.keys(DEFAULT_STOCKS).forEach(cat => {
+        const alertSettings = getItemAlertSettings(cat);
+        const qty = Number(state.stocks[cat] || 0);
+        const isLow = alertSettings.enabled && qty <= alertSettings.threshold;
+        if (isLow) anyLow = true;
+        html += `
+          <div class="stock-compact-card">
+            <div class="menu-wrap">
+              <button class="menu-btn" data-action="toggle-menu" data-menu-id="stockMenu${cat}">⋯</button>
+              <div class="menu" id="stockMenu${cat}">
+                ${
+                  hasPermission('stock.edit')
+                    ? `
+                  <button data-action="stock-add" data-cat="${cat}">➕ Ajouter</button>
+                  <button data-action="stock-set" data-cat="${cat}">🔧 Définir</button>
+                `
+                    : ''
+                }
+                <button data-action="stock-alert" data-cat="${cat}">⚙️ Seuil alerte</button>
+              </div>
+            </div>
+            <span class="badge ${cat}">${cat}</span>
+            <div class="stock-compact-qty">📦 ${formatStockValue(cat, qty)}</div>
+            ${isLow ? '<span class="stock-low-badge">⚠️ Bas</span>' : ''}
+          </div>`;
+      });
+      list.innerHTML = `<div class="stock-grid">${html}</div>`;
+
+      // Update Stock tab badge
+      const tabBadge = document.getElementById('stockAlert');
+      if (tabBadge) {
+        tabBadge.style.display = anyLow ? 'inline-block' : 'none';
+      }
+    }
+
+    function renderLogs() {
+      const list = document.getElementById('logsList');
+      if (!isAdmin()) {
+        list.innerHTML = `<div class="empty-state">Historique réservé à l'admin.</div>`;
+        return;
+      }
+      list.innerHTML = state.logs.length
+        ? `
+        <div class="logs-list">
+          ${state.logs
+            .map(
+              log => `
+            <div class="log-item">
+              <div class="line">
+                <strong>🔔 ${log.action_type}</strong><br>
+                👤 ${log.user_email || 'Utilisateur inconnu'}<br>
+                ⏰ ${new Date(log.created_at).toLocaleString()}
+              </div>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      `
+        : `<div class="empty-state">Aucune action enregistrée.</div>`;
+    }
+
+    async function loadProfile(userId) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id,email,full_name,role,last_seen_at')
+          .eq('id', userId)
+          .single();
+
+        if (error) throw error;
+        state.profile = data;
+
+        const menuRole = document.getElementById('menuUserRole');
+        if (menuRole) {
+          const r = String(data.role || '').toLowerCase();
+          menuRole.innerText = r === 'admin'
+            ? '👑 Admin'
+            : r === 'manager' ? '🔑 Manager' : `👤 ${data.role || 'Employé'}`;
+        }
+
+        return data;
+      } catch (err) {
+        // Keep full_name null so paintApp() falls through to session email — avoids
+        // showing a sentinel string like "Profil non chargé" as the display name.
+        state.profile = { id: userId, role: 'unknown', full_name: null };
+        const menuRole = document.getElementById('menuUserRole');
+        if (menuRole) menuRole.innerText = '⚠️ Profil non disponible';
+        console.error('[loadProfile] error:', err);
+        return null;
+      }
+    }
+
+    async function loadAllUsers() {
+      if (!isManagerOrAdmin()) return;
+      try {
+        const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        if (error) {
+          console.error('[loadAllUsers] Erreur chargement utilisateurs :', error?.message || error);
+          showSessionStatus('⚠️ La liste des utilisateurs n\'a pas pu être rafraîchie', 'error', 5000);
+        } else {
+          state.allUsers = data || [];
+        }
+      } catch (e) {
+        // Guard against unexpected throws from the Supabase SDK (e.g. HTML error page
+        // parsed as JSON during a Supabase outage or project-pause).
+        console.error('[loadAllUsers] Exception inattendue :', e?.message || e);
+        showSessionStatus('⚠️ La liste des utilisateurs n\'a pas pu être rafraîchie', 'error', 5000);
+      }
+    }
+
+    async function updateLastSeen() {
+      try {
+        const userId = state.session?.user?.id;
+        if (!userId) return;
+        const now = new Date().toISOString();
+        await supabase.from('profiles').update({ last_seen_at: now }).eq('id', userId);
+        // Keep local state fresh so the current user's own presence indicator is accurate
+        if (state.profile) state.profile.last_seen_at = now;
+        const myIdx = state.allUsers.findIndex(u => u.id === userId);
+        if (myIdx !== -1) state.allUsers[myIdx].last_seen_at = now;
+      } catch(e) { /* non-blocking */ }
+    }
+
+    // Update lastSeen periodically while app is active
+    let _lastSeenInterval = null;
+    function startLastSeenHeartbeat() {
+      if (_lastSeenInterval) clearInterval(_lastSeenInterval);
+      _lastSeenInterval = setInterval(() => { if (state.session?.user?.id) updateLastSeen(); }, 2 * 60 * 1000);
+    }
+
+    // ── Silent background permission refresh (non-admin sessions) ────────────
+    // Polls role_permissions every 30 s; when a change is detected for the
+    // current user's role, silently re-applies the UI without any notification.
+    let _permRefreshInterval = null;
+    function startPermRefresh() {
+      if (_permRefreshInterval) clearInterval(_permRefreshInterval);
+      // Admin always has all permissions — no need to poll for changes.
+      if (isAdmin()) return;
+      _permRefreshInterval = setInterval(async () => {
+        if (!state.session?.user || !navigator.onLine) return;
+        try {
+          const { data, error } = await supabase.from('role_permissions').select('*');
+          if (error || !data) return;
+          const role = String(state.profile?.role || '').toLowerCase();
+          const current = state.rolePermissions[role] || {};
+          // Build the updated permissions for current role from fresh DB data
+          const updated = { ...DEFAULT_ROLE_PERMISSIONS[role] };
+          data.forEach(row => { if (row.role === role) updated[row.permission_key] = row.allowed; });
+          // Detect any change relevant to this user's role
+          const changed = ROLE_PERMISSIONS_DEF.some(def => current[def.key] !== updated[def.key]);
+          if (!changed) return;
+          // Update only the current role's permissions and re-apply UI silently
+          state.rolePermissions = { ...state.rolePermissions, [role]: updated };
+          paintApp(); // silent UI re-render — no toast for employee/manager
+        } catch (e) { /* non-blocking: polling errors are silently ignored */ }
+      }, 30 * 1000);
+    }
+    function stopPermRefresh() {
+      if (_permRefreshInterval) { clearInterval(_permRefreshInterval); _permRefreshInterval = null; }
+    }
+
+    // ── Real-time synchronization ─────────────────────────────────────────────
+    // Supabase Realtime channels propagate shared-data changes made by ANY
+    // connected user to ALL other active sessions instantly.
+    //
+    // Covered tables:
+    //   clients, sales, stocks, action_logs  — core business data (all users)
+    //   profiles                             — user/role management (manager+admin)
+    //   role_permissions                     — permission config (affects all users)
+    //
+    // Intentionally excluded from real-time sync (local-per-session):
+    //   auth events (SIGNED_IN / SIGNED_OUT / TOKEN_REFRESHED) — handled by
+    //   onAuthStateChange; these are personal session events, not shared state.
+    //   last_seen_at-only heartbeat updates on profiles — filtered out below to
+    //   avoid triggering a full reload every 2 minutes per active user.
+    let _realtimeChannel = null;
+    let _realtimeDebounceTimer = null;
+    const REALTIME_DEBOUNCE_MS = 600; // coalesce rapid bursts into one refresh
+    // Delay before re-subscribing after coming back online — must be longer than
+    // the syncPendingOps() delay (800 ms) so the pending-ops flush completes first.
+    const REALTIME_RECONNECT_DELAY_MS = 1200;
+
+    function _scheduleRealtimeRefresh(source) {
+      if (!navigator.onLine || !state.session?.user) return;
+      if (_bootInProgress) return; // skip realtime refresh while boot is still in progress
+      if (_realtimeDebounceTimer) clearTimeout(_realtimeDebounceTimer);
+      _realtimeDebounceTimer = setTimeout(async () => {
+        _realtimeDebounceTimer = null;
+        try {
+          await loadCloudData();
+          paintApp();
+        } catch (e) {
+          console.warn('[realtime] refresh error from', source, ':', e?.message);
+        }
+      }, REALTIME_DEBOUNCE_MS);
+    }
+
+    function startRealtimeSync() {
+      if (_realtimeChannel) return; // already subscribed — avoid duplicate listeners
+      if (!navigator.onLine) return; // skip until reconnected
+      _realtimeChannel = supabase
+        .channel('app-realtime-sync')
+        // ── Core business data ───────────────────────────────────────────────
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
+          () => _scheduleRealtimeRefresh('clients'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' },
+          () => _scheduleRealtimeRefresh('sales'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'stocks' },
+          () => _scheduleRealtimeRefresh('stocks'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'action_logs' },
+          () => _scheduleRealtimeRefresh('action_logs'))
+        // ── User / role management ───────────────────────────────────────────
+        // For UPDATE events on profiles, suppress heartbeat-only last_seen_at
+        // changes to avoid triggering a full reload every 2 minutes per active user.
+        // INSERT/DELETE always trigger a refresh so new/removed users propagate
+        // immediately. Note: key-diff filtering only detects true no-ops when
+        // Postgres REPLICA IDENTITY FULL is set; with the default identity only
+        // the primary key is included in payload.old, so any non-last_seen_at
+        // UPDATE will still produce a non-empty changedKeys list and refresh.
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' },
+          (payload) => {
+            if (payload.eventType === 'UPDATE') {
+              const oldRow = payload.old || {};
+              const newRow = payload.new || {};
+              const changedKeys = Object.keys(newRow).filter(k => newRow[k] !== oldRow[k]);
+              if (changedKeys.length > 0 && changedKeys.every(k => k === 'last_seen_at')) return;
+            }
+            _scheduleRealtimeRefresh('profiles');
+          })
+        // ── Permission configuration ─────────────────────────────────────────
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'role_permissions' },
+          () => _scheduleRealtimeRefresh('role_permissions'))
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[realtime] Connected to app-realtime-sync channel');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('[realtime] Channel status:', status);
+          }
+        });
+    }
+
+    function stopRealtimeSync() {
+      if (_realtimeDebounceTimer) { clearTimeout(_realtimeDebounceTimer); _realtimeDebounceTimer = null; }
+      if (_realtimeChannel) {
+        // Non-critical cleanup: channel removal errors can be safely ignored;
+        // the channel will be garbage-collected with the WebSocket connection.
+        supabase.removeChannel(_realtimeChannel).catch(e => console.warn('[realtime] removeChannel error (non-critical):', e?.message));
+        _realtimeChannel = null;
+      }
+    }
+
+    // ── Action logs helper ─────────────────────────────────────────────────────
+    // Non-blocking: errors are silently swallowed so log failures never block the
+    // main user flow. The action_logs table is optional — if it does not exist yet
+    // (e.g. migration not yet applied) the insert simply fails quietly.
+    async function logAction(actionType, details = {}) {
+      try {
+        if (!state.session?.user) return;
+        await supabase.from('action_logs').insert({
+          action_type: actionType,
+          user_id: state.session.user.id,
+          user_email: state.session.user.email || state.profile?.email || '',
+          details,
+          created_at: new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn('[logAction] non-blocking error:', e?.message);
+      }
+    }
+
+
+    async function loadCloudData() {
+      if (!navigator.onLine) {
+        // Load from local cache when offline
+        try {
+          const [clients, sales, stockRows] = await Promise.all([
+            loadRecords('clients'),
+            loadRecords('sales'),
+            loadRecords('stocks')
+          ]);
+          state.clients = sortClientsAZ(clients);
+          state.sales = sales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          state.stocks = { ...DEFAULT_STOCKS };
+          stockRows.forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+        } catch (e) {
+          console.warn('[loadCloudData] cache read error:', e?.message);
+        }
+        updateOfflineBanner();
+        return;
+      }
+
+      const requests = [
+        supabase.from('clients').select('*').order('created_at', { ascending: false }),
+        supabase.from('sales').select('*').order('created_at', { ascending: false }),
+        supabase.from('stocks').select('*')
+      ];
+      if (isAdmin()) {
+        requests.push(
+          supabase.from('action_logs').select('*').order('created_at', { ascending: false }).limit(200)
+        );
+      }
+
+      const [clientsRes, salesRes, stocksRes, logsRes] = await Promise.all(requests);
+
+      // Attach the HTTP response status to each error object before throwing so
+      // that classifyCloudError() can read err.status accurately.  PostgREST
+      // query errors carry the HTTP status on the *response* (res.status), not
+      // on the error object itself (err.status is undefined), which previously
+      // caused every 403 / 404 to fall through to the DATA_QUERY bucket even
+      // when the real cause was an auth failure (401) or missing relation (404).
+      if (clientsRes.error) { clientsRes.error.status = clientsRes.error.status ?? clientsRes.status; throw clientsRes.error; }
+      if (salesRes.error)   { salesRes.error.status   = salesRes.error.status   ?? salesRes.status;   throw salesRes.error;   }
+      if (stocksRes.error)  { stocksRes.error.status  = stocksRes.error.status  ?? stocksRes.status;  throw stocksRes.error;  }
+
+      state.clients = sortClientsAZ(clientsRes.data || []);
+      state.sales = salesRes.data || [];
+      state.stocks = { ...DEFAULT_STOCKS };
+      (stocksRes.data || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+      state.logs = logsRes?.data || [];
+
+      await loadAllUsers();
+      await loadRolePermissions();
+
+      // Persist to local cache for offline use
+      try {
+        const stockArr = Object.entries(state.stocks).map(([category, quantity]) => ({ category, quantity }));
+        await Promise.all([
+          saveRecords('clients', state.clients),
+          saveRecords('sales', state.sales),
+          saveRecords('stocks', stockArr)
+        ]);
+      } catch (e) {
+        console.warn('[loadCloudData] cache write error:', e?.message);
+      }
+      updateOfflineBanner();
+    }
+
+    function paintApp() {
+      loadClientSelectors();
+      updateCategoryStyle();
+      updateQuantityPlaceholder();
+      updatePreview();
+      renderClients();
+      renderSales();
+      renderStock();
+      renderBalance();
+      renderLogs();
+
+      document.getElementById('menuUserName').innerText =
+        state.profile?.full_name || state.session?.user?.email || 'Utilisateur';
+
+      const roleEl = document.getElementById('menuUserRole');
+      const current = String(roleEl?.innerText || '');
+      if (roleEl && !current.startsWith('⚠️')) {
+        roleEl.innerText = isAdmin() ? '👑 Admin' : isManager() ? '🔑 Manager' : '👤 Employé';
+      }
+
+      document.getElementById('usersBtn').classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
+      document.getElementById('resetAppBtn').classList.toggle('hidden', !isAdmin());
+      document.getElementById('permissionsBtn').classList.toggle('hidden', !isAdmin());
+      document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('analyticsBtn').classList.toggle('hidden', !isManagerOrAdmin());
+
+      updateDarkModeBtn();
+      initAccordions();
+      loadProductPrices();
+    }
+
+    // ── Shared token-retrieval helper ────────────────────────────────────────
+    // Always tries to get the freshest possible token before a privileged call.
+    // Strategy 1 – refreshSession() to mint a new JWT.
+    // Strategy 2 – getSession() to read the cached (non-expired) token.
+    // Strategy 3 – state.session (last resort; may already be fresh from boot).
+    // Returns null only if the user has no valid session at all.
+    async function getFreshToken() {
+      try {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError && refreshData?.session?.access_token) {
+          state.session = refreshData.session;
+          const u = refreshData.session.user;
+          console.log('[getFreshToken] Token rafraîchi pour utilisateur :', u?.id?.substring(0, 8), '…');
+          return refreshData.session.access_token;
+        }
+        if (refreshError) {
+          console.warn('[getFreshToken] refreshSession échoué :', refreshError.message);
+        }
+      } catch (e) {
+        console.warn('[getFreshToken] refreshSession exception :', e?.message);
+      }
+
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.warn('[getFreshToken] getSession échoué :', sessionError.message);
+        }
+        if (sessionData?.session?.access_token) {
+          state.session = sessionData.session;
+          const u = sessionData.session.user;
+          console.log('[getFreshToken] Token depuis getSession pour utilisateur :', u?.id?.substring(0, 8), '…');
+          return sessionData.session.access_token;
+        }
+      } catch (e) {
+        console.warn('[getFreshToken] getSession exception :', e?.message);
+      }
+
+      // Final fallback: use the token that was stored in state at boot/login time.
+      // This covers cases where the Supabase client storage is not accessible (PWA
+      // on Safari) but the in-memory session is still valid.
+      // The API will return 401 if this token is expired; callers must handle that.
+      const stateToken = state.session?.access_token;
+      if (stateToken) {
+        const u = state.session?.user;
+        console.warn('[getFreshToken] Utilisation du token en mémoire (state.session) pour utilisateur :', u?.id?.substring(0, 8), '… — peut être expiré, le serveur validera');
+        return stateToken;
+      }
+
+      return null;
+    }
+
+    // Decode the payload of a JWT without verifying its signature.
+    // Used only for local expiry checks before sending to the backend.
+    function decodeJwtPayload(token) {
+      try {
+        const parts = (token || '').split('.');
+        if (parts.length !== 3) return null;
+        return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      } catch (_) {
+        return null;
+      }
+    }
+
+    // Shows the login screen and hides the app shell — used as a last-resort
+    // fallback whenever a critical boot error would otherwise leave the user
+    // on a blank page or stuck on the splash screen.
+    function showLoginFallback() {
+      try {
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('appShell').classList.add('hidden');
+      } catch (domErr) {
+        console.warn('[showLoginFallback] DOM error:', domErr);
+      }
+    }
+
+    // Classifies a cloud/backend error into one of four named categories so
+    // that bootFromSession() can show an accurate fallback message instead of
+    // a generic "cloud indisponible" label that is misleading when the device
+    // is online and the real cause is an auth or data-layer issue.
+    //
+    // Categories:
+    //   'OFFLINE'           — navigator.onLine is false (no network)
+    //   'AUTH_SESSION'      — JWT expired / invalid token / not authenticated
+    //   'CLOUD_UNAVAILABLE' — server 5xx or low-level network failure while online
+    //   'DATA_QUERY'        — RLS / permission denied / query-level error
+    function classifyCloudError(err) {
+      if (!navigator.onLine) return 'OFFLINE';
+      const msg    = (err?.message || '').toLowerCase();
+      const status = Number(err?.status) || 0;
+      const code   = String(err?.code   || '').toLowerCase();
+
+      // Auth / session token issues
+      if (
+        status === 401 ||
+        code   === 'pgrst301' ||       // PostgREST: JWT claim validation failed (expired / invalid)
+        code   === 'pgrst302' ||       // PostgREST: JWT signature mismatch (e.g. secret rotation)
+        msg.includes('jwt') ||
+        msg.includes('invalid_token') ||
+        msg.includes('not authenticated') ||
+        msg.includes('session_not_found') ||
+        msg.includes('unauthorized')
+      ) {
+        return 'AUTH_SESSION';
+      }
+
+      // Cloud service unreachable (infrastructure / gateway level)
+      if (
+        status >= 500 ||
+        err instanceof TypeError ||    // Failed to fetch (DNS / OS-level)
+        msg.includes('failed to fetch') ||
+        msg.includes('network request failed') ||
+        msg.includes('service unavailable') ||
+        msg.includes('bad gateway')
+      ) {
+        return 'CLOUD_UNAVAILABLE';
+      }
+
+      // Everything else: data-layer / query / RLS permission issue
+      return 'DATA_QUERY';
+    }
+
+    let _bootInProgress = false;
+    let _loggedOut = false;
+    async function bootFromSession(session) {
+      if (_bootInProgress) return;
+      if (_loggedOut) return; // explicit logout in progress — do not re-enter
+      _bootInProgress = true;
+      try {
+        state.session = session;
+
+        if (!session?.user) {
+          document.getElementById('authScreen').classList.remove('hidden');
+          document.getElementById('appShell').classList.add('hidden');
+          if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
+          stopPermRefresh();
+          stopRealtimeSync();
+          return;
+        }
+
+        const profileOk = await loadProfile(session.user.id);
+        if (!profileOk) {
+          // Profile failed to load — warn the user but continue the boot so
+          // the app shell is still shown.  The degraded role state is already
+          // set inside loadProfile(); the ⚠️ chip in the menu communicates
+          // that the identity is unconfirmed without blocking the session.
+          showSessionStatus('⚠️ Profil non disponible — accès restreint', 'error', 7000);
+        }
+        updateLastSeen();
+        startLastSeenHeartbeat();
+        startPermRefresh();
+        startRealtimeSync();
+
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('appShell').classList.remove('hidden');
+
+        try {
+          await loadCloudData();
+          paintApp();
+          // Ensure the page is scrolled to the very top so the pull-to-refresh
+          // touchstart guard (window.scrollY > 2) passes on the first attempt.
+          // Without this, browser scroll-restoration can leave scrollY > 0.
+          window.scrollTo(0, 0);
+          if (!navigator.onLine) {
+            showSessionStatus('📶 Hors ligne — données locales chargées', 'info', 4000);
+          }
+          // If back online at boot and pending ops exist, replay the queue
+          await updateOfflineBanner();
+          if (navigator.onLine) {
+            const pending = await countPendingOps().catch(() => 0);
+            if (pending > 0) {
+              setTimeout(() => syncPendingOps(), BOOT_SYNC_DELAY_MS);
+            }
+          }
+        } catch (error) {
+          console.error('[bootFromSession] Boot error:', error);
+          const errorClass = classifyCloudError(error);
+          // Cloud data unavailable — try loading from local IndexedDB cache so
+          // the user sees real data rather than empty lists.
+          let hadLocalData = false;
+          try {
+            const [clients, sales, stockRows] = await Promise.all([
+              loadRecords('clients'),
+              loadRecords('sales'),
+              loadRecords('stocks')
+            ]);
+            state.clients = sortClientsAZ(clients || []);
+            state.sales = (sales || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            state.stocks = { ...DEFAULT_STOCKS };
+            (stockRows || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+            hadLocalData = (clients || []).filter(Boolean).length > 0
+              || (sales || []).filter(Boolean).length > 0
+              || (stockRows || []).filter(Boolean).length > 0;
+          } catch (cacheErr) {
+            console.warn('[bootFromSession] local cache read error:', cacheErr?.message);
+          }
+          // Ensure permissions have a safe default if cloud loading did not set them.
+          if (!Object.keys(state.rolePermissions?.employee ?? {}).length) {
+            state.rolePermissions = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+          }
+          // Show a message that accurately reflects the actual failure type rather
+          // than a generic "cloud indisponible" label that is misleading when the
+          // device is online and the real cause is an auth or data-layer issue.
+          let statusMsg;
+          if (errorClass === 'OFFLINE') {
+            statusMsg = hadLocalData
+              ? '📶 Aucune connexion Internet — données locales utilisées'
+              : '📶 Aucune connexion Internet — aucune donnée locale disponible';
+          } else if (errorClass === 'AUTH_SESSION') {
+            statusMsg = hadLocalData
+              ? '🔐 Session expirée — données locales utilisées'
+              : '🔐 Session expirée — veuillez vous reconnecter';
+          } else if (errorClass === 'CLOUD_UNAVAILABLE') {
+            statusMsg = hadLocalData
+              ? '☁️ Serveur indisponible — données locales utilisées'
+              : '☁️ Serveur indisponible — aucune donnée locale disponible';
+          } else { // DATA_QUERY
+            statusMsg = hadLocalData
+              ? '⚠️ Erreur de chargement des données — données locales utilisées'
+              : '❌ Chargement échoué — aucune donnée locale disponible';
+          }
+          showSessionStatus(statusMsg, 'error', 5000);
+          // Profile was already loaded above; render the app with whatever state is
+          // available so the authenticated user is not left on a half-rendered shell.
+          try { paintApp(); } catch (paintErr) { console.warn('[bootFromSession] paintApp error:', paintErr?.message); }
+        }
+      } catch (fatalErr) {
+        // Unexpected error before the app shell was shown — fall back to the
+        // login screen so the user is never left on a blank / splash state.
+        console.error('[bootFromSession] Erreur critique, retour login:', fatalErr);
+        showLoginFallback();
+      } finally {
+        _bootInProgress = false;
+      }
+    }
+
+    window.login = async function () {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorBox = document.getElementById('authError');
+      const loginBtn = document.getElementById('loginBtn');
+
+      errorBox.style.display = 'none';
+      if (!email || !password) {
+        errorBox.innerText = "Veuillez remplir l'email et le mot de passe.";
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      loginBtn.disabled = true;
+      const originalText = loginBtn.innerText;
+      loginBtn.innerText = 'Connexion...';
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        loginBtn.disabled = false;
+        loginBtn.innerText = originalText;
+
+        if (error) {
+          errorBox.innerText = error.message;
+          errorBox.style.display = 'block';
+          return;
+        }
+
+        await bootFromSession(data.session);
+        logAction('login', { email: data.session?.user?.email });
+      } catch (e) {
+        loginBtn.disabled = false;
+        loginBtn.innerText = originalText;
+        errorBox.innerText = 'Erreur de connexion : ' + (e?.message || 'erreur inconnue');
+        errorBox.style.display = 'block';
+      }
+    };
+
+    window.logout = async function () {
+      _loggedOut = true; // block any boot re-entry triggered by auth state change
+      closeAllMenus();
+      if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
+      stopPermRefresh();
+      stopRealtimeSync();
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn('[logout] signOut error:', e?.message);
+      } finally {
+        state.session = null;
+        state.profile = null;
+        document.getElementById('appShell').classList.add('hidden');
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('loginPassword').value = '';
+        // LOGOUT_GUARD_DURATION_MS covers the SIGNED_OUT auth-state-change event that
+        // fires after signOut(); the flag prevents bootFromSession from re-entering.
+        setTimeout(() => { _loggedOut = false; }, LOGOUT_GUARD_DURATION_MS);
+      }
+    };
+
+    // ── Duplicate client detection helpers ─────────────────────────────────
+    function _normalizeName(n) {
+      if (!n) return '';
+      let s = n.trim().toLowerCase();
+      // Remove diacritics/accents so é=e, à=a, etc.
+      s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      // Strip generic leading prefix "cafe" / "café" (after accent removal) followed by whitespace
+      s = s.replace(/^cafe\s+/, '');
+      // Collapse all internal spaces so "test 2" == "test2"
+      s = s.replace(/\s+/g, '');
+      return s;
+    }
+
+    function _levenshtein(a, b) {
+      const m = a.length, n = b.length;
+      if (!m) return n;
+      if (!n) return m;
+      const dp = [];
+      for (let i = 0; i <= m; i++) dp[i] = [i];
+      for (let j = 1; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          dp[i][j] = a[i - 1] === b[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+      return dp[m][n];
+    }
+
+    // Conservative typo-tolerance: requires both names to be ≥ 6 chars after normalization,
+    // at most 2 edits, and capped at 35% of the longer name.
+    function _isNearDuplicate(normA, normB) {
+      if (!normA || !normB) return false;
+      if (Math.min(normA.length, normB.length) < 6) return false;
+      const dist = _levenshtein(normA, normB);
+      const maxLen = Math.max(normA.length, normB.length);
+      return dist <= 2 && dist / maxLen <= 0.35;
+    }
+
+    // Returns {client, fuzzy} or null.
+    function _findDuplicateClient(name, excludeId) {
+      const norm = _normalizeName(name);
+      if (!norm) return null;
+      const eligible = c => (excludeId === null || String(c.id) !== String(excludeId));
+      const exact = state.clients.find(c => eligible(c) && _normalizeName(c.name) === norm);
+      if (exact) return { client: exact, fuzzy: false };
+      const near = state.clients.find(c => eligible(c) && _isNearDuplicate(_normalizeName(c.name), norm));
+      if (near) return { client: near, fuzzy: true };
+      return null;
+    }
+
+    let _dupCtx = null;
+
+    function _openDuplicateModal(existingClient, newName, newAddress, isFuzzy) {
+      _dupCtx = { ..._dupCtx, existingClient, newName, newAddress };
+      document.getElementById('dupMsg').textContent = isFuzzy
+        ? 'Une fiche client au nom très proche existe déjà : « ' + existingClient.name + ' ».'
+        : 'Une fiche client existe déjà avec le nom « ' + existingClient.name + ' ».';
+      const info = [existingClient.name, existingClient.address].filter(Boolean).join('\n📍 ');
+      document.getElementById('dupExistingInfo').textContent = info;
+      document.getElementById('dupStep1').style.display = '';
+      document.getElementById('dupStep2Merge').style.display = 'none';
+      document.getElementById('dupStep2NewPos').style.display = 'none';
+      openModal('duplicateClientModal');
+    }
+
+    window._handleDupCancel = function() {
+      _dupCtx = null;
+      closeModal('duplicateClientModal');
+    };
+
+    window._handleDupChoice = function(choice) {
+      if (!_dupCtx) return;
+      if (choice === 'merge') {
+        const existAddr = (_dupCtx.existingClient.address || '').trim();
+        const newAddr = (_dupCtx.newAddress || '').trim();
+        if (existAddr && newAddr && existAddr !== newAddr) {
+          document.getElementById('dupAddrExistingLabel').textContent = existAddr;
+          document.getElementById('dupAddrNewLabel').textContent = newAddr;
+          document.getElementById('dupStep1').style.display = 'none';
+          document.getElementById('dupStep2Merge').style.display = '';
+        } else {
+          _performMerge(existAddr || newAddr);
+        }
+      } else if (choice === 'new-pos') {
+        // Pre-fill with city (last comma-separated part), or leave blank for user to fill
+        const parts = (_dupCtx.newAddress || '').split(',');
+        const city = parts.length > 1 ? parts[parts.length - 1].trim() : '';
+        document.getElementById('dupPosLabel').value = city;
+        // Show existing-record label section only if the existing client is not yet differentiated
+        const existingAlreadyLabeled = (_dupCtx.existingClient.name || '').includes(' — ');
+        const existSection = document.getElementById('dupExistPosSection');
+        existSection.style.display = existingAlreadyLabeled ? 'none' : '';
+        if (!existingAlreadyLabeled) {
+          document.getElementById('dupExistPosLabel').value = '';
+        }
+        window._updateDupPosFinalName();
+        document.getElementById('dupStep1').style.display = 'none';
+        document.getElementById('dupStep2NewPos').style.display = '';
+      }
+    };
+
+    window._updateDupPosFinalName = function() {
+      if (!_dupCtx) return;
+      const label = (document.getElementById('dupPosLabel').value || '').trim();
+      document.getElementById('dupPosFinalName').textContent =
+        label ? (_dupCtx.newName + ' — ' + label) : _dupCtx.newName;
+      // Update existing-record preview too
+      const existLabelEl = document.getElementById('dupExistPosLabel');
+      const existFinalEl = document.getElementById('dupExistPosFinalName');
+      if (existLabelEl && existFinalEl && _dupCtx.existingClient) {
+        const existLabel = existLabelEl.value.trim();
+        existFinalEl.textContent = existLabel
+          ? (_dupCtx.existingClient.name + ' — ' + existLabel)
+          : _dupCtx.existingClient.name;
+      }
+    };
+
+    window._handleDupAddrChoice = function(keepWhich) {
+      if (!_dupCtx) return;
+      const addr = keepWhich === 'existing'
+        ? (_dupCtx.existingClient.address || '').trim()
+        : (_dupCtx.newAddress || '').trim();
+      _performMerge(addr);
+    };
+
+    async function _performMerge(addressToUse) {
+      if (!_dupCtx) return;
+      const ctx = _dupCtx;
+      _dupCtx = null;
+      closeModal('duplicateClientModal');
+      const { existingClient, mode } = ctx;
+      const targetId = existingClient.id;
+
+      if (mode === 'create') {
+        // No new client to create — optionally update address/ICE on the existing client
+        const existAddr = (existingClient.address || '').trim();
+        const existIce = (existingClient.ice || '').trim();
+        const useAddr = (addressToUse || '').trim();
+        const useIce = ((ctx.payload && ctx.payload.ice) || '').trim() || existIce;
+        const updates = {};
+        if (useAddr && useAddr !== existAddr) updates.address = useAddr;
+        if (useIce && useIce !== existIce) updates.ice = useIce;
+        if (Object.keys(updates).length > 0) {
+          if (!navigator.onLine) {
+            const idx = state.clients.findIndex(c => c.id === targetId);
+            if (idx >= 0) Object.assign(state.clients[idx], updates);
+            await saveRecords('clients', state.clients).catch(() => {});
+          } else {
+            await supabase.from('clients').update(updates).eq('id', targetId);
+            const idx = state.clients.findIndex(c => c.id === targetId);
+            if (idx >= 0) Object.assign(state.clients[idx], updates);
+          }
+        }
+        ['clientName','clientAddrNum','clientAddrDetail','clientAddrCity','clientICE'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('clientAddrType').value = 'Rue';
+        renderClients(); loadClientSelectors();
+        showSessionStatus('✅ Fusionné avec la fiche existante', 'success');
+
+      } else if (mode === 'edit') {
+        const { clientId } = ctx;
+        const existAddr = (existingClient.address || '').trim();
+        const useAddr = (addressToUse || '').trim();
+        if (!navigator.onLine) {
+          state.sales.forEach(s => {
+            if (String(s.client_id) === String(clientId)) {
+              s.client_id = targetId;
+              s.client_name = existingClient.name;
+            }
+          });
+          await saveRecords('sales', state.sales).catch(() => {});
+          if (useAddr && useAddr !== existAddr) {
+            const idx = state.clients.findIndex(c => c.id === targetId);
+            if (idx >= 0) state.clients[idx].address = useAddr;
+          }
+          state.clients = state.clients.filter(c => String(c.id) !== String(clientId));
+          await saveRecords('clients', state.clients).catch(() => {});
+          closeModal('editClientModal');
+          renderClients(); loadClientSelectors(); renderSales();
+          showSessionStatus('📶 Fusion effectuée localement', 'info');
+          updateOfflineBanner();
+        } else {
+          await supabase.from('sales')
+            .update({ client_id: targetId, client_name: existingClient.name })
+            .eq('client_id', clientId);
+          if (useAddr && useAddr !== existAddr) {
+            await supabase.from('clients').update({ address: useAddr }).eq('id', targetId);
+          }
+          await supabase.from('clients').delete().eq('id', clientId);
+          closeModal('editClientModal');
+          showSessionStatus('✅ Fusion effectuée', 'success');
+          loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); })
+            .catch(e => console.warn('[refresh] merge:', e?.message));
+        }
+      }
+    }
+
+    window._handleDupNewPos = async function() {
+      if (!_dupCtx) return;
+      const ctx = _dupCtx;
+      _dupCtx = null;
+      closeModal('duplicateClientModal');
+      const label = (document.getElementById('dupPosLabel').value || '').trim();
+      const finalName = label ? (ctx.newName + ' — ' + label) : ctx.newName;
+
+      // Symmetrically rename the existing client if it isn't already differentiated
+      const existingAlreadyLabeled = (ctx.existingClient.name || '').includes(' — ');
+      if (!existingAlreadyLabeled) {
+        const existLabel = (document.getElementById('dupExistPosLabel')?.value || '').trim();
+        if (existLabel) {
+          const newExistingName = ctx.existingClient.name + ' — ' + existLabel;
+          const existId = ctx.existingClient.id;
+          if (!navigator.onLine) {
+            const idx = state.clients.findIndex(c => String(c.id) === String(existId));
+            if (idx >= 0) state.clients[idx].name = newExistingName;
+            state.sales.forEach(s => {
+              if (String(s.client_id) === String(existId)) s.client_name = newExistingName;
+            });
+            await saveRecords('clients', state.clients).catch(e => console.warn('[offline] rename existing client:', e?.message));
+            await saveRecords('sales', state.sales).catch(e => console.warn('[offline] rename sales for existing client:', e?.message));
+            await addPendingOp({ type: 'updateClient', payload: { clientId: existId, name: newExistingName } }).catch(e => console.warn('[offline] pendingOp rename:', e?.message));
+          } else {
+            const { error: errC } = await supabase.from('clients').update({ name: newExistingName }).eq('id', existId);
+            if (errC) { console.warn('[dup] rename existing client failed:', errC.message); }
+            else {
+              await supabase.from('sales').update({ client_name: newExistingName }).eq('client_id', existId);
+              const idx = state.clients.findIndex(c => String(c.id) === String(existId));
+              if (idx >= 0) state.clients[idx].name = newExistingName;
+            }
+          }
+        }
+      }
+
+      if (ctx.mode === 'create') {
+        document.getElementById('clientName').value = finalName;
+        await window.addClient();
+      } else if (ctx.mode === 'edit') {
+        document.getElementById('editClientName').value = finalName;
+        await window.saveEditClient();
+      }
+    };
+
+    window.addClient = async function () {
+      if (!hasPermission('clients.create')) return showSessionStatus('❌ Permission refusée : ajouter un client', 'error');
+      const name = document.getElementById('clientName').value.trim();
+      const addrNum = document.getElementById('clientAddrNum').value.trim();
+      const addrType = document.getElementById('clientAddrType').value;
+      const addrDetail = document.getElementById('clientAddrDetail').value.trim();
+      const addrCity = document.getElementById('clientAddrCity').value.trim();
+      const ice = document.getElementById('clientICE').value.trim();
+      if (!name) return showSessionStatus('❌ Nom client obligatoire', 'error');
+
+      // Build a clean formatted address string (backward-compatible plain string)
+      let addrParts = [];
+      if (addrNum) addrParts.push(addrNum);
+      if (addrDetail) addrParts.push(`${addrType} ${addrDetail}`);
+      if (addrCity) addrParts.push(addrCity);
+      const address = addrParts.join(', ');
+
+      const payload = {
+        name,
+        address,
+        ice,
+        prices: {
+          ORO: readCustomPrice('priceORO'),
+          RIO: readCustomPrice('priceRIO'),
+          ESPRESSO: readCustomPrice('priceESPRESSO'),
+          CLASSIC: readCustomPrice('priceCLASSIC'),
+          SANTOS: readCustomPrice('priceSANTOS'),
+          SUCRE: readCustomPrice('priceSUCRE')
+        }
+      };
+
+      // ── Duplicate detection (business-aware normalization + typo tolerance) ──
+      const _dupResult = _findDuplicateClient(name, null);
+      if (_dupResult) {
+        _dupCtx = { mode: 'create', payload };
+        _openDuplicateModal(_dupResult.client, name, address, _dupResult.fuzzy);
+        return;
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
+      ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('clientAddrType').value = 'Rue';
+      const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 150, priceSANTOS: 180, priceSUCRE: 100 };
+      Object.entries(defaults).forEach(([id, val]) => { document.getElementById(id).value = val; });
+
+      if (!navigator.onLine) {
+        const localClient = { ...payload, id: genLocalId(), created_at: new Date().toISOString() };
+        state.clients.unshift(localClient);
+        await saveRecords('clients', state.clients).catch(() => {});
+        await addPendingOp({ type: 'addClient', payload: localClient }).catch(() => {});
+        renderClients(); loadClientSelectors();
+        showSessionStatus('📶 Client enregistré localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      const { error } = await supabase.from('clients').insert(payload);
+      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+
+      showSessionStatus('✅ Client créé', 'success');
+      loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] addClient:', e?.message));
+    };
+
+    // ── Read & validate the new-sale form; returns null + shows error on failure ─
+    function readSaleForm() {
+      const clientName = document.getElementById('clientSelect').value;
+      const quantity = parseFloat(document.getElementById('quantityInput').value);
+      const category = document.getElementById('category').value;
+      const rawDate = document.getElementById('datetime').value;
+      const paidRadio = document.querySelector('input[name="paymentStatus"]:checked');
+
+      if (!clientName) { showSessionStatus('❌ Choisir un client', 'error'); return null; }
+      if (!category) { showSessionStatus('❌ Choisir une gamme', 'error'); return null; }
+      if (isNaN(quantity) || quantity <= 0) { showSessionStatus(`❌ ${category === 'SUCRE' ? 'Nombre de paquets' : 'Kilos'} invalide`, 'error'); return null; }
+      if (!rawDate) { showSessionStatus('❌ Date & heure obligatoires', 'error'); return null; }
+      if (!paidRadio) { showSessionStatus('❌ Choisir le statut de paiement (Payé / Non payé)', 'error'); return null; }
+      if (Number(state.stocks[category] || 0) < quantity) { showSessionStatus(`❌ Stock insuffisant pour ${category}`, 'error'); return null; }
+
+      return { clientName, quantity, category, rawDate, paid: paidRadio.value === 'paid' };
+    }
+
+    // Holds the validated sale data between addSale() and confirmAndSave()
+    let _pendingSale = null;
+
+    window.addSale = async function () {
+      if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+      const form = readSaleForm();
+      if (!form) return;
+
+      _pendingSale = form;
+
+      const { clientName, quantity, category, rawDate, paid } = form;
+      const unitPrice = getClientPrice(clientName, category);
+      const totalPrice = Number((quantity * unitPrice).toFixed(2));
+      // datetime-local format is YYYY-MM-DDTHH:MM – replace the 'T' separator
+      const formattedDate = rawDate.replace(/T/, ' ');
+      const qtyLabel = category === 'SUCRE' ? 'paquets' : 'kg';
+
+      // ── Build recap using safe DOM API to prevent XSS ───────────────────────
+      const rows = [
+        ['Client', clientName],
+        ['Gamme', category],
+        ['Quantité', `${quantity} ${qtyLabel}`],
+        ['Date & Heure', formattedDate],
+        ['Statut', paid ? '✅ Payé' : '❌ Non payé'],
+        ['Prix unitaire', formatDh(unitPrice)],
+      ];
+      const recap = document.getElementById('confirmSaleRecap');
+      recap.innerHTML = '';
+      rows.forEach(([label, value]) => {
+        const row = document.createElement('div');
+        row.className = 'recap-row';
+        const span = document.createElement('span');
+        span.textContent = label;
+        const strong = document.createElement('strong');
+        strong.textContent = value;
+        row.appendChild(span);
+        row.appendChild(strong);
+        recap.appendChild(row);
+      });
+      // Total row with special styling
+      const totalRow = document.createElement('div');
+      totalRow.className = 'recap-row recap-row--total';
+      const totalLabel = document.createElement('span');
+      totalLabel.textContent = 'Total';
+      const totalVal = document.createElement('strong');
+      totalVal.textContent = formatDh(totalPrice);
+      totalRow.appendChild(totalLabel);
+      totalRow.appendChild(totalVal);
+      recap.appendChild(totalRow);
+
+      openModal('confirmSaleModal');
+    };
+
+    window.confirmAndSave = async function() {
+      if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+
+      const form = _pendingSale;
+      _pendingSale = null;
+      if (!form) { closeModal('confirmSaleModal'); return; }
+
+      closeModal('confirmSaleModal');
+
+      const { clientName, quantity, category, rawDate, paid } = form;
+      const client = state.clients.find(c => c.name === clientName);
+      const createdAt = new Date(rawDate).toISOString();
+      const unitPrice = getClientPrice(clientName, category);
+      const totalPrice = Number((quantity * unitPrice).toFixed(2));
+      const newStockQty = Number(state.stocks[category] || 0) - quantity;
+
+      if (!navigator.onLine) {
+        const localSale = {
+          id: genLocalId(),
+          client_id: client?.id || null,
+          client_name: clientName,
+          category,
+          quantity,
+          unit_price: unitPrice,
+          total_price: totalPrice,
+          paid,
+          // Omit created_by when no user id is available so the DB DEFAULT
+          // auth.uid() fires on replay instead of receiving an explicit null.
+          ...(state.session?.user?.id ? { created_by: state.session.user.id } : {}),
+          created_at: createdAt
+        };
+        state.sales.unshift(localSale);
+        state.stocks[category] = newStockQty;
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('sales', state.sales).catch(() => {});
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({
+          type: 'addSale',
+          payload: localSale
+        }).catch(() => {});
+        resetSaleForm();
+        renderSales(); renderStock();
+        showSessionStatus('📶 Vente enregistrée localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      const { error: saleError } = await supabase.from('sales').insert({
+        client_id: client?.id || null,
+        client_name: clientName,
+        category,
+        quantity,
+        unit_price: unitPrice,
+        total_price: totalPrice,
+        paid,
+        created_by: state.session.user.id,
+        created_at: createdAt
+      });
+      if (saleError) return showSessionStatus('❌ ' + saleError.message, 'error');
+
+      // Optimistically add the new sale to state so client badge updates immediately
+      state.sales.unshift({
+        id: 'pending_' + Date.now(),
+        client_id: client?.id || null,
+        client_name: clientName,
+        category,
+        quantity,
+        unit_price: unitPrice,
+        total_price: totalPrice,
+        paid,
+        created_by: state.session.user.id,
+        created_at: createdAt
+      });
+      state.stocks[category] = newStockQty;
+
+      // Reset form only after successful save
+      resetSaleForm();
+      renderSales(); renderStock();
+      showSessionStatus('✅ Vente ajoutée', 'success');
+      loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
+    };
+
+    function resetSaleForm() {
+      document.getElementById('clientSelect').value = '';
+      document.getElementById('clientSelectSearch').value = '';
+      document.getElementById('quantityInput').value = '';
+      document.getElementById('datetime').value = '';
+      const paidEl = document.getElementById('paid');
+      const notPaidEl = document.getElementById('notPaid');
+      if (paidEl) paidEl.checked = false;
+      if (notPaidEl) notPaidEl.checked = false;
+      updatePaymentToggle();
+      // Reset category to placeholder
+      const catEl = document.getElementById('category');
+      if (catEl) catEl.value = '';
+      updateCategoryStyle();
+      updatePreview();
+    }
+
+    async function togglePaid(saleId, paid) {
+      if (!hasPermission('tasks.toggle_paid')) return showSessionStatus('❌ Permission refusée : modifier le statut de paiement', 'error');
+      if (!navigator.onLine) {
+        const sale = state.sales.find(s => s.id === saleId);
+        if (sale) {
+          sale.paid = paid;
+          await saveRecords('sales', state.sales).catch(() => {});
+          await addPendingOp({ type: 'togglePaid', payload: { saleId, paid } }).catch(() => {});
+        }
+        renderSales();
+        showSessionStatus(paid ? '📶 Marqué payé (local)' : '📶 Marqué non payé (local)', 'info');
+        updateOfflineBanner();
+        return;
+      }
+      const sale = state.sales.find(s => s.id === saleId);
+      if (!sale) return;
+      const prevPaid = sale.paid;
+      sale.paid = paid;
+      renderSales();
+      const { error } = await supabase.from('sales').update({ paid }).eq('id', saleId);
+      if (error) {
+        sale.paid = prevPaid;
+        renderSales();
+        return showSessionStatus('❌ ' + error.message, 'error');
+      }
+      showSessionStatus(paid ? '✅ Marqué payé' : '❌ Marqué non payé', 'success');
+      loadCloudData().then(() => { renderSales(); }).catch(e => console.warn('[refresh] togglePaid:', e?.message));
+    };
+
+    async function deleteSale(saleId) {
+      if (!hasPermission('tasks.delete')) return showSessionStatus('❌ Permission refusée : supprimer une vente', 'error');
+      if (!confirm('Voulez-vous vraiment supprimer cette commande ?')) return;
+
+      const sale = state.sales.find(s => s.id === saleId);
+      if (!sale) return;
+
+      const restoredQty = Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0);
+
+      if (!navigator.onLine) {
+        state.sales = state.sales.filter(s => s.id !== saleId);
+        state.stocks[sale.category] = restoredQty;
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('sales', state.sales).catch(() => {});
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({
+          type: 'deleteSale',
+          payload: { saleId }
+        }).catch(() => {});
+        renderSales(); renderStock();
+        showSessionStatus('📶 Vente supprimée localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      const salesSnapshot = state.sales.slice();
+      const stockSnapshot = Number(state.stocks[sale.category] || 0);
+      state.sales = state.sales.filter(s => s.id !== saleId);
+      state.stocks[sale.category] = restoredQty;
+      renderSales(); renderStock();
+
+      const { error } = await supabase.from('sales').delete().eq('id', saleId);
+      if (error) {
+        state.sales = salesSnapshot;
+        state.stocks[sale.category] = stockSnapshot;
+        renderSales(); renderStock();
+        return showSessionStatus('❌ ' + error.message, 'error');
+      }
+
+      showSessionStatus('✅ Vente supprimée', 'success');
+      loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] deleteSale:', e?.message));
+    };
+
+    async function deleteClient(clientId) {
+      if (!hasPermission('clients.delete')) return showSessionStatus('❌ Permission refusée : supprimer un client', 'error');
+      if (!confirm('Voulez-vous vraiment supprimer ce client ?')) return;
+      if (!navigator.onLine) {
+        state.clients = state.clients.filter(c => String(c.id) !== String(clientId));
+        await saveRecords('clients', state.clients).catch(() => {});
+        await addPendingOp({ type: 'deleteClient', payload: { clientId } }).catch(() => {});
+        renderClients(); loadClientSelectors(); renderSales();
+        showSessionStatus('📶 Client supprimé localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+      const clientsSnapshot = state.clients.slice();
+      state.clients = state.clients.filter(c => String(c.id) !== String(clientId));
+      renderClients(); loadClientSelectors(); renderSales();
+
+      const { error } = await supabase.from('clients').delete().eq('id', clientId);
+      if (error) {
+        state.clients = clientsSnapshot;
+        renderClients(); loadClientSelectors(); renderSales();
+        return showSessionStatus('❌ ' + error.message, 'error');
+      }
+      showSessionStatus('✅ Client supprimé', 'success');
+      loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] deleteClient:', e?.message));
+    };
+
+    function openEditClient(clientId) {
+      closeAllMenus();
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      document.getElementById('editClientId').value = clientId;
+      document.getElementById('editClientName').value = client.name || '';
+      document.getElementById('editClientICE').value = client.ice || '';
+
+      // Parse existing address string into parts (best-effort)
+      const addrParts = (client.address || '').split(',').map(s => s.trim());
+      let addrNum = '', addrType = 'Rue', addrDetail = '', addrCity = '';
+      if (addrParts.length >= 3) {
+        addrNum = addrParts[0];
+        const typeMatch = addrParts[1]?.match(/^(Rue|Avenue|Boulevard|Impasse|Chemin|Résidence|Lotissement|Passage|Allée|Square|Av|Bd|Imp|Chem|Res|Lot|Pass|Sq)\s+(.*)$/i);
+        if (typeMatch) { addrType = typeMatch[1]; addrDetail = typeMatch[2]; } else { addrDetail = addrParts[1]; }
+        addrCity = addrParts.slice(2).join(', ');
+      } else if (addrParts.length === 2) {
+        const typeMatch = addrParts[0]?.match(/^(Rue|Avenue|Boulevard|Impasse|Chemin|Résidence|Lotissement|Passage|Allée|Square|Av|Bd|Imp|Chem|Res|Lot|Pass|Sq)\s+(.*)$/i);
+        if (typeMatch) { addrType = typeMatch[1]; addrDetail = typeMatch[2]; } else { addrDetail = addrParts[0]; }
+        addrCity = addrParts[1];
+      } else if (addrParts.length === 1) {
+        addrDetail = addrParts[0];
+      }
+      document.getElementById('editClientAddrNum').value = addrNum;
+      // Map legacy abbreviations to full names for the select
+      const addrTypeMap = { Av:'Avenue', Bd:'Boulevard', Imp:'Impasse', Chem:'Chemin', Res:'Résidence', Lot:'Lotissement', Pass:'Passage', Sq:'Square' };
+      document.getElementById('editClientAddrType').value = addrTypeMap[addrType] || addrType;
+      document.getElementById('editClientAddrDetail').value = addrDetail;
+      document.getElementById('editClientAddrCity').value = addrCity;
+
+      // Load custom prices (or defaults)
+      const defaults = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
+      CATEGORIES.forEach(cat => {
+        const el = document.getElementById('editPrice' + cat);
+        if (el) el.value = (client.prices?.[cat] > 0) ? client.prices[cat] : defaults[cat];
+      });
+
+      openModal('editClientModal');
+    };
+
+    window.saveEditClient = async function() {
+      if (!hasPermission('clients.edit')) return showSessionStatus('❌ Permission refusée : modifier un client', 'error');
+      const clientId = document.getElementById('editClientId').value;
+      const name = document.getElementById('editClientName').value.trim();
+      const ice = document.getElementById('editClientICE').value.trim();
+      const addrNum = document.getElementById('editClientAddrNum').value.trim();
+      const addrType = document.getElementById('editClientAddrType').value;
+      const addrDetail = document.getElementById('editClientAddrDetail').value.trim();
+      const addrCity = document.getElementById('editClientAddrCity').value.trim();
+
+      if (!name) return showSessionStatus('❌ Nom client obligatoire', 'error');
+
+      // Capture the old name before any mutation so we can propagate a rename to sales
+      const existingClient = state.clients.find(c => c.id === clientId);
+      const oldName = existingClient?.name || null;
+      const nameChanged = oldName && oldName !== name;
+
+      let addrParts = [];
+      if (addrNum) addrParts.push(addrNum);
+      if (addrDetail) addrParts.push(`${addrType} ${addrDetail}`);
+      if (addrCity) addrParts.push(addrCity);
+      const address = addrParts.join(', ');
+
+      // ── Duplicate detection on rename (business-aware normalization + typo tolerance) ──
+      if (nameChanged) {
+        const _dupResult = _findDuplicateClient(name, clientId);
+        if (_dupResult) {
+          _dupCtx = { mode: 'edit', clientId };
+          _openDuplicateModal(_dupResult.client, name, address, _dupResult.fuzzy);
+          return;
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
+      const prices = {};
+      CATEGORIES.forEach(cat => {
+        const el = document.getElementById('editPrice' + cat);
+        const v = el ? parseInt(el.value, 10) : null;
+        prices[cat] = (v > 0) ? v : null;
+      });
+
+      if (!navigator.onLine) {
+        const idx = state.clients.findIndex(c => c.id === clientId);
+        if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices });
+        // Propagate rename to in-memory sales so renderSales() shows the new name
+        if (nameChanged) {
+          const orphaned = state.sales.filter(s => s.client_id === null && s.client_name === oldName);
+          let reattach = false;
+          if (orphaned.length > 0) {
+            reattach = confirm(
+              `${orphaned.length} vente(s) sans client associé portent le nom « ${oldName} ».\n` +
+              `Voulez-vous les rattacher à ce client (${name}) ?`
+            );
+          }
+          state.sales.forEach(s => {
+            if (s.client_id === clientId) {
+              s.client_name = name;
+            } else if (s.client_id === null && s.client_name === oldName) {
+              s.client_name = name;
+              if (reattach) s.client_id = clientId;
+            }
+          });
+          await saveRecords('sales', state.sales).catch(() => {});
+        }
+        await saveRecords('clients', state.clients).catch(() => {});
+        await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices } }).catch(() => {});
+        closeModal('editClientModal');
+        renderClients(); loadClientSelectors(); renderSales();
+        showSessionStatus('📶 Client modifié localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+      const { error } = await supabase.from('clients').update({ name, address, ice, prices }).eq('id', clientId);
+      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+      // Propagate rename to the sales table so ventes récentes shows the new name
+      if (nameChanged) {
+        // Match sales linked by client_id (the reliable foreign-key reference)
+        await supabase.from('sales').update({ client_name: name }).eq('client_id', clientId);
+        // Check for orphaned sales (client_id IS NULL) that can be reattached to this client
+        const { data: orphanSales } = await supabase
+          .from('sales').select('id').is('client_id', null).eq('client_name', oldName);
+        if (orphanSales && orphanSales.length > 0) {
+          const reattach = confirm(
+            `${orphanSales.length} vente(s) sans client associé portent le nom « ${oldName} ».\n` +
+            `Voulez-vous les rattacher à ce client (${name}) ?`
+          );
+          if (reattach) {
+            await supabase.from('sales').update({ client_name: name, client_id: clientId })
+              .is('client_id', null).eq('client_name', oldName);
+          } else {
+            await supabase.from('sales').update({ client_name: name })
+              .is('client_id', null).eq('client_name', oldName);
+          }
+        }
+      }
+      closeModal('editClientModal');
+      showSessionStatus('✅ Client modifié', 'success');
+      loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] editClient:', e?.message));
+    };
+
+
+        async function addToStock(category) {
+      if (!hasPermission('stock.edit')) return showSessionStatus('❌ Permission refusée : modifier le stock', 'error');
+      closeAllMenus();
+      const value = prompt(`Ajouter combien de ${category === 'SUCRE' ? 'paquets' : 'kg'} ?`, '0');
+      if (value === null) return;
+      const amount = Number(value);
+      if (isNaN(amount) || amount <= 0) return showSessionStatus('❌ Quantité invalide', 'error');
+
+      const newQty = Number(state.stocks[category] || 0) + amount;
+      if (!navigator.onLine) {
+        state.stocks[category] = newQty;
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({ type: 'stockUpdate', payload: { category, quantity: newQty } }).catch(() => {});
+        renderStock();
+        showSessionStatus('📶 Stock mis à jour localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      state.stocks[category] = newQty;
+      const { error } = await supabase.from('stocks').upsert({ category, quantity: newQty }, { onConflict: 'category' });
+      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+
+      showSessionStatus('✅ Stock mis à jour', 'success');
+      loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] addToStock:', e?.message));
+    };
+
+    async function setStock(category) {
+      if (!hasPermission('stock.edit')) return showSessionStatus('❌ Permission refusée : définir le stock', 'error');
+      closeAllMenus();
+      const value = prompt(`Définir la quantité pour ${category}`, String(state.stocks[category] || 0));
+      if (value === null) return;
+      const quantity = Number(value);
+      if (isNaN(quantity) || quantity < 0) return showSessionStatus('❌ Quantité invalide', 'error');
+
+      if (!navigator.onLine) {
+        state.stocks[category] = quantity;
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({ type: 'stockUpdate', payload: { category, quantity } }).catch(() => {});
+        renderStock();
+        showSessionStatus('📶 Stock défini localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      state.stocks[category] = quantity;
+      const { error } = await supabase.from('stocks').upsert({ category, quantity }, { onConflict: 'category' });
+      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+
+      showSessionStatus('✅ Stock défini', 'success');
+      loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] setStock:', e?.message));
+    };
+
+    function getActivityStatus(lastSeen) {
+      if (!lastSeen) return '<span class="activity-status offline">Jamais connecté</span>';
+      const diff = Date.now() - new Date(lastSeen).getTime();
+      const mins = Math.floor(diff / 60000);
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      if (mins < 4) return '<span class="activity-status online">🟢 En ligne</span>';
+      if (mins < 10) return `<span class="activity-status recent">🟡 Actif il y a ${mins} min</span>`;
+      if (mins < 60) return `<span class="activity-status recent">⚪ Vu il y a ${mins} min</span>`;
+      if (hours < 24) return `<span class="activity-status hours">Vu il y a ${hours} h</span>`;
+      if (days < 7) return `<span class="activity-status offline">Vu il y a ${days} j</span>`;
+      return `<span class="activity-status offline">Inactif (${days} j)</span>`;
+    }
+
+    function renderUsersList() {
+      const list = document.getElementById('usersList');
+      list.innerHTML = state.allUsers
+        .map(
+          user => {
+            const roleLabel = user.role === 'admin'
+              ? '👑 Admin'
+              : user.role === 'manager'
+                ? '🔑 Manager'
+                : 'Employé';
+            const activityHtml = getActivityStatus(user.last_seen_at);
+            const displayName = escHtml(user.full_name || user.email);
+            const displayEmail = escHtml(user.email);
+            return `
+        <div class="user-row">
+          <div class="user-info">
+            <div class="user-email">${displayName}</div>
+            <div class="user-role">👤 ${displayEmail} • ${roleLabel}</div>
+            <div class="user-activity">${activityHtml}</div>
+          </div>
+          ${
+            user.id === state.session?.user?.id
+              ? '<span style="font-size:11px;">TOI</span>'
+              : isAdmin()
+                ? `<div class="menu-wrap">
+                    <button class="menu-btn" data-action="toggle-menu" data-menu-id="userActMenu_${user.id}">⋯</button>
+                    <div class="menu" id="userActMenu_${user.id}">
+                      <button data-action="user-role" data-id="${user.id}" data-role="${user.role || 'employee'}">✏️ Rôle</button>
+                      <button class="danger" data-action="user-delete" data-id="${user.id}">🗑️ Supprimer</button>
+                    </div>
+                  </div>`
+                : ''
+          }
+        </div>
+      `;
+          }
+        )
+        .join('');
+    }
+
+    window.openUsersModal = async function () {
+      openModal('usersModal');
+      const list = document.getElementById('usersList');
+      if (list) list.innerHTML = '<div class="muted" style="padding:12px">⏳ Chargement…</div>';
+      try {
+        await loadAllUsers();
+        renderUsersList();
+      } catch (e) {
+        console.warn('[openUsersModal] Chargement liste utilisateurs échoué :', e?.message);
+        if (list) list.innerHTML = '<div class="muted" style="padding:12px">⚠️ Impossible de charger la liste.</div>';
+      }
+    };
+
+    window.openProfileModal = function () {
+      document.getElementById('profileName').innerText =
+        state.profile?.full_name || state.session?.user?.email || 'Utilisateur';
+      document.getElementById('profileUsername').innerText = `📧 ${state.session?.user?.email || '—'}`;
+      document.getElementById('profileRole').innerText = `🎖️ ${isAdmin() ? 'Admin' : isManager() ? 'Manager' : 'Employé'}`;
+      openModal('profileModal');
+    };
+
+    window.openSettingsHubModal = function () {
+      openModal('settingsHubModal');
+    };
+
+    // ── Per-item alert helpers ─────────────────────────────────────────────────
+    function getItemAlertSettings(cat) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(LS_ITEM_ALERTS) || '{}');
+        if (stored[cat] !== undefined) return stored[cat];
+      } catch(e) {
+        console.warn('[getItemAlertSettings] localStorage parse error:', e?.message);
+      }
+      // Default: alerts disabled until individually configured
+      return {
+        enabled: false,
+        threshold: LOW_STOCK_DEFAULT
+      };
+    }
+
+    function setItemAlertSettings(cat, settings) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(LS_ITEM_ALERTS) || '{}');
+        stored[cat] = settings;
+        localStorage.setItem(LS_ITEM_ALERTS, JSON.stringify(stored));
+      } catch(e) {
+        console.warn('[setItemAlertSettings] localStorage write error:', e?.message);
+      }
+    }
+
+    function openItemAlertModal(cat) {
+      closeAllMenus();
+      const settings = getItemAlertSettings(cat);
+      document.getElementById('itemAlertCat').value = cat;
+      document.getElementById('itemAlertModalTitle').textContent = `⚙️ Alerte — ${cat}`;
+      document.getElementById('itemAlertEnabled').checked = settings.enabled;
+      document.getElementById('itemAlertThreshold').value = settings.threshold;
+      document.getElementById('itemAlertUnit').textContent = cat === 'SUCRE' ? 'paquets' : 'kg';
+      openModal('itemAlertModal');
+    };
+
+    window.saveItemAlertSettings = function () {
+      const cat = document.getElementById('itemAlertCat').value;
+      if (!cat) return;
+      const enabled = document.getElementById('itemAlertEnabled').checked;
+      const threshold = parseFloat(document.getElementById('itemAlertThreshold').value) || 0;
+      setItemAlertSettings(cat, { enabled, threshold });
+      renderStock();
+    };
+
+    // ── Role icon helper ───────────────────────────────────────────────────────
+    function getRoleIcon(role) {
+      if (role === 'admin') return '👑';
+      if (role === 'manager') return '🔑';
+      // Employee: classic blue head SVG
+      return '<svg style="display:inline-block;vertical-align:middle;width:13px;height:13px;margin-right:1px" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="7" r="4" fill="#1f78ff"/><path d="M2 18c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#1f78ff" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+    }
+
+    window.openResumeModal = function () { openModal('resumeModal'); };
+
+    window.openAnalyticsModal = function () {
+      if (!isManagerOrAdmin()) return;
+      renderAnalytics(_allSalesData);
+      openModal('analyticsModal');
+    };
+
+    function openModal(id) { closeAllMenus(); document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    window.closeModal = closeModal;
+    window.backdropClose = function (event, id) { if (event.target.id === id) closeModal(id); };
+
+    window.toggleHeaderMenu = function (event) {
+      event.stopPropagation();
+      const menu = document.getElementById('headerMenu');
+      const open = menu.classList.contains('show');
+      closeAllMenus();
+      if (!open) menu.classList.add('show');
+    };
+
+    window.toggleMenu = function (event, id) {
+      event.stopPropagation();
+      const el = document.getElementById(id);
+      const open = el.style.display === 'block';
+      closeAllMenus();
+      if (!open) {
+        const saleItem = el.closest && el.closest('.vr-sale-item');
+        const userRow  = el.closest && el.closest('.user-row');
+        if (saleItem || userRow) {
+          const btn = el.parentElement.querySelector('.menu-btn');
+          if (btn) {
+            const rect = btn.getBoundingClientRect();
+
+            // Portal the menu to <body> so it escapes all overflow:hidden / overflow:auto
+            // ancestors AND the backdrop-filter stacking context on .modal-backdrop
+            // (backdrop-filter makes position:fixed relative to the element, not the viewport).
+            const origParent = el.parentElement;
+            document.body.appendChild(el);
+            portaledMenus.set(el, origParent);
+
+            // Now position:fixed is truly viewport-relative (body has no transforms).
+            el.style.position = 'fixed';
+            el.style.left = 'auto';
+            el.style.zIndex = '5000'; // above modal-backdrop (z-index: 4000)
+            // Measure height while invisible to avoid any flash at the wrong position
+            el.style.visibility = 'hidden';
+            el.style.display = 'block';
+
+            const menuW = el.offsetWidth;
+            const menuH = el.offsetHeight;
+            const vpW   = window.innerWidth;
+            const vpH   = window.innerHeight;
+
+            // Align right edge of menu with right edge of button.
+            // Clamp so the menu never overflows the left or right viewport edge.
+            const rightFromEdge = vpW - rect.right;
+            el.style.right = Math.max(8, Math.min(rightFromEdge, vpW - menuW - 8)) + 'px';
+
+            el.style.top = (rect.bottom + menuH + 4 < vpH - 10)
+              ? (rect.bottom + 4) + 'px'
+              : Math.max(0, rect.top - menuH - 4) + 'px';
+
+            el.style.visibility = '';
+            return;
+          }
+        }
+        el.style.display = 'block';
+      }
+    };
+
+    window.toggleAccordion = function (el) {
+      const acc = el.parentElement;
+      const inner = acc.querySelector('.accordion-inner');
+      // Consider the accordion "effectively open" only when the open class is present
+      // AND content is actually visible (maxHeight > 0).  This prevents the desync
+      // where the class says "open" but maxHeight is still 0 from the CSS default.
+      const effectivelyOpen = acc.classList.contains('open') &&
+                              parseInt(inner.style.maxHeight || '0') > 0;
+      const willOpen = !effectivelyOpen;
+      if (willOpen) {
+        acc.classList.add('open');
+        inner.style.overflow = 'hidden';
+        inner.style.maxHeight = inner.scrollHeight + 'px';
+        // After the max-height transition ends, lift overflow so absolute/fixed
+        // dropdown menus can extend beyond the accordion boundary.
+        inner.addEventListener('transitionend', function onEnd(e) {
+          if (e.propertyName !== 'max-height') return;
+          inner.removeEventListener('transitionend', onEnd);
+          if (acc.classList.contains('open')) inner.style.overflow = 'visible';
+        });
+      } else {
+        acc.classList.remove('open');
+        inner.style.overflow = 'hidden';
+        inner.style.maxHeight = inner.scrollHeight + 'px';
+        requestAnimationFrame(() => (inner.style.maxHeight = '0px'));
+      }
+    };
+
+    function initAccordions() {
+      document.querySelectorAll('.accordion').forEach(acc => {
+        const inner = acc.querySelector('.accordion-inner');
+        if (acc.classList.contains('open')) {
+          inner.style.maxHeight = inner.scrollHeight + 'px';
+          inner.style.overflow  = 'visible';
+        } else {
+          inner.style.maxHeight = '0px';
+          inner.style.overflow  = 'hidden';
+        }
+      });
+    }
+
+    function updateCategoryStyle() {
+      const select = document.getElementById('category');
+      const value = select.value;
+      select.classList.remove('ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE');
+      select.classList.add(value);
+    }
+    window.updateCategoryStyle = updateCategoryStyle;
+
+    function updateQuantityPlaceholder() {
+      const category = document.getElementById('category').value;
+      document.getElementById('quantityInput').placeholder = category === 'SUCRE' ? 'Nombre de paquets' : 'Kilos';
+    }
+    window.updateQuantityPlaceholder = updateQuantityPlaceholder;
+
+    window.setNow = function () {
+      const now = new Date();
+      const offset = now.getTimezoneOffset();
+      document.getElementById('datetime').value = new Date(now.getTime() - offset * 60000).toISOString().slice(0, 16);
+    };
+
+    window.updatePreview = updatePreview;
+
+    window.updatePaymentToggle = function() {
+      const paidEl = document.getElementById('paid');
+      const notPaidEl = document.getElementById('notPaid');
+      const labelPaid = document.getElementById('labelPaid');
+      const labelNotPaid = document.getElementById('labelNotPaid');
+      if (!labelPaid || !labelNotPaid) return;
+      labelPaid.classList.toggle('selected-paid', paidEl && paidEl.checked);
+      labelNotPaid.classList.toggle('selected-notpaid', notPaidEl && notPaidEl.checked);
+    };
+    window.updatePaymentToggle();
+
+    // ── Reusable client search dropdown factory ──────────────────────────────────
+    /**
+     * Creates a client-search dropdown bound to specific DOM elements.
+     * @param {object} opts
+     * @param {string} opts.inputId   - visible search input
+     * @param {string} opts.hiddenId  - hidden input storing the selected client name
+     * @param {string} opts.dropId    - dropdown container
+     * @param {string} opts.wrapId    - wrapper element (click-outside detection)
+     * @param {boolean} [opts.allOption] - include an "Tous les clients" entry
+     * @param {function} [opts.onSelect] - callback(name) when a client is selected
+     * @returns {{ show: function, onInput: function }}
+     */
+    function makeClientDrop({ inputId, hiddenId, dropId, wrapId, allOption = false, onSelect = null }) {
+      function render(q) {
+        const drop = document.getElementById(dropId);
+        if (!drop) return;
+        const current = document.getElementById(hiddenId)?.value || '';
+        const filtered = sortClientsAZ(
+          q ? state.clients.filter(c => c.name.toLowerCase().includes(q)) : state.clients
+        );
+
+        let html = '';
+        if (allOption) {
+          html += `<div class="csearch-item${!current ? ' selected' : ''}" data-client="">Tous les clients</div>`;
+        }
+        if (filtered.length === 0 && !allOption) {
+          html = `<div class="csearch-item" style="color:var(--color-text-muted);">Aucun client trouvé</div>`;
+        } else {
+          filtered.forEach(c => {
+            const escaped = escHtml(c.name);
+            html += `<div class="csearch-item${c.name === current ? ' selected' : ''}" data-client="${escaped}">${escaped}</div>`;
+          });
+        }
+        drop.innerHTML = html;
+        drop.classList.add('open');
+        drop.querySelectorAll('.csearch-item').forEach(item => {
+          item.addEventListener('click', () => select(item.dataset.client));
+        });
+
+        setTimeout(() => {
+          document.addEventListener('click', closeOutside, { once: true, capture: true });
+        }, 50);
+      }
+
+      function closeOutside(e) {
+        const wrap = document.getElementById(wrapId);
+        const drop = document.getElementById(dropId);
+        if (wrap && !wrap.contains(e.target)) {
+          drop && drop.classList.remove('open');
+        }
+      }
+
+      function select(name) {
+        const hiddenEl = document.getElementById(hiddenId);
+        const inputEl = document.getElementById(inputId);
+        const drop = document.getElementById(dropId);
+        if (hiddenEl) hiddenEl.value = name;
+        if (inputEl) inputEl.value = name;
+        if (drop) drop.classList.remove('open');
+        if (onSelect) onSelect(name);
+      }
+
+      return {
+        show() {
+          // Always show the full client list on focus so the user sees all options.
+          // The selected item is highlighted via the hidden-input value (not by filtering).
+          render('');
+        },
+        onInput() {
+          const q = (document.getElementById(inputId)?.value || '').trim().toLowerCase();
+          if (!q) {
+            const hiddenEl = document.getElementById(hiddenId);
+            if (hiddenEl) hiddenEl.value = '';
+            if (onSelect) onSelect('');
+          }
+          render(q);
+        }
+      };
+    }
+
+    // ── Wire up client search dropdown instances ──────────────────────────────────
+    const _filterDrop = makeClientDrop({
+      inputId: 'filterClientSearch', hiddenId: 'filterClient',
+      dropId: 'clientSearchDrop', wrapId: 'clientSearchWrap',
+      allOption: true,
+      onSelect: () => renderSales()
+    });
+    window.onFilterClientInput = () => _filterDrop.onInput();
+    window.showClientDropdown   = () => _filterDrop.show();
+
+    const _saleDrop = makeClientDrop({
+      inputId: 'clientSelectSearch', hiddenId: 'clientSelect',
+      dropId: 'clientSelectDrop', wrapId: 'clientSelectWrap',
+      onSelect: () => updatePreview()
+    });
+    window.onClientSelectInput  = () => _saleDrop.onInput();
+    window.showClientSelectDrop = () => _saleDrop.show();
+
+    const _editSaleDrop = makeClientDrop({
+      inputId: 'editSaleClientSearch', hiddenId: 'editSaleClient',
+      dropId: 'editSaleClientDrop', wrapId: 'editSaleClientWrap'
+    });
+    window.onEditSaleClientInput  = () => _editSaleDrop.onInput();
+    window.showEditSaleClientDrop = () => _editSaleDrop.show();
+
+    // ── Fiches clients search ────────────────────────────────────────────────────
+    window.filterClients = function() {
+      renderClients();
+    };
+
+        // ── Dark mode ───────────────────────────────────────────────────────────────
+    // (Initial dark class applied by inline script in <body> for FOUC prevention)
+
+    window.toggleDarkMode = function() {
+      closeAllMenus();
+      const isDark = document.body.classList.toggle('dark');
+      document.documentElement.classList.toggle('dark', isDark);
+      localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+      document.getElementById('darkModeBtn').textContent = isDark ? '☀️ Mode clair' : '🌙 Mode sombre';
+      const bg = isDark ? '#0f0f0f' : '#f4efe8';
+      document.body.style.backgroundColor = bg;
+      document.documentElement.style.backgroundColor = bg;
+    };
+
+    function updateDarkModeBtn() {
+      const btn = document.getElementById('darkModeBtn');
+      if (btn) btn.textContent = document.body.classList.contains('dark') ? '☀️ Mode clair' : '🌙 Mode sombre';
+    }
+
+    // ── Secure Reset ────────────────────────────────────────────────────────────
+    const RESET_CODE = 'RESET';
+
+    window.openResetModal = function() {
+      closeAllMenus();
+      if (!isAdmin()) return;
+      document.getElementById('resetCode').value = '';
+      document.getElementById('resetCodeError').textContent = '';
+      openModal('resetModal');
+    };
+
+    window.executeReset = function() {
+      const code = document.getElementById('resetCode').value.trim().toUpperCase();
+      if (code !== RESET_CODE) {
+        document.getElementById('resetCodeError').textContent = '❌ Code incorrect. Saisissez : RESET';
+        return;
+      }
+      closeModal('resetModal');
+      document.getElementById('filterClient').value = '';
+      document.getElementById('filterClientSearch').value = '';
+      document.getElementById('filterCategory').value = '';
+      document.getElementById('filterDate').value = '';
+      renderSales();
+      showSessionStatus('✅ Filtres réinitialisés', 'success');
+    };
+
+    // ── Product purchase price configuration ────────────────────────────────────
+    const DEFAULT_PURCHASE_PRICES = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
+    let _customPurchasePrices = { ...DEFAULT_PURCHASE_PRICES };
+
+    function loadProductPrices() {
+      try {
+        const saved = localStorage.getItem('productPurchasePrices');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          Object.assign(_customPurchasePrices, parsed);
+        }
+      } catch(e) { /* use defaults */ }
+    }
+
+    function getProductPurchasePrice(cat) {
+      return _customPurchasePrices[cat] || DEFAULT_PURCHASE_PRICES[cat] || 0;
+    }
+
+    window.openProductPricesModal = function() {
+      closeAllMenus();
+      if (!isManagerOrAdmin()) return;
+      const cats = CATEGORIES;
+      cats.forEach(cat => {
+        const el = document.getElementById('pp' + cat);
+        if (el) el.value = _customPurchasePrices[cat] || 0;
+      });
+      openModal('productPricesModal');
+    };
+
+    window.saveProductPrices = function() {
+      const cats = CATEGORIES;
+      cats.forEach(cat => {
+        const el = document.getElementById('pp' + cat);
+        if (el) _customPurchasePrices[cat] = Math.max(1, parseInt(el.value, 10) || 1);
+      });
+      localStorage.setItem('productPurchasePrices', JSON.stringify(_customPurchasePrices));
+      closeModal('productPricesModal');
+      renderAnalytics(_allSalesData);
+      showSessionStatus('✅ Prix produits enregistrés', 'success');
+    };
+
+    // ── Analytics ───────────────────────────────────────────────────────────────
+    function renderAnalytics(data) {
+      const analyticsBtn = document.getElementById('analyticsBtn');
+      if (analyticsBtn) analyticsBtn.classList.toggle('hidden', !isManagerOrAdmin());
+
+      const content = document.getElementById('analyticsContent');
+      if (!content) return;
+      if (!isManagerOrAdmin()) return;
+
+      const cats = CATEGORIES;
+
+      let rows = '';
+      let totQty = 0, totRevenu = 0, totAchat = 0, totMarge = 0;
+
+      cats.forEach(cat => {
+        const catSales = data.filter(s => s.category === cat);
+        if (catSales.length === 0) return;
+        const qty = catSales.reduce((s, x) => s + Number(x.quantity || 0), 0);
+        const revenu = catSales.reduce((s, x) => s + Number(x.total_price || 0), 0);
+        const purchaseUnit = getProductPurchasePrice(cat);
+        const achat = qty * purchaseUnit;
+        const marge = revenu - achat;
+        const margeClass = marge >= 0 ? 'margin-positive' : 'margin-negative';
+        totQty += qty; totRevenu += revenu; totAchat += achat; totMarge += marge;
+
+        rows += `<tr>
+          <td><span class="badge ${cat}" style="margin:0;padding:3px 8px;font-size:10px;">${cat}</span></td>
+          <td>${formatQty(qty)}</td>
+          <td>${formatDh(achat)}</td>
+          <td>${formatDh(revenu)}</td>
+          <td class="${margeClass}">${formatDh(marge)}</td>
+        </tr>`;
+      });
+
+      const totMargeClass = totMarge >= 0 ? 'margin-positive' : 'margin-negative';
+      rows += `<tr class="analytics-total-row">
+        <td>TOTAL</td>
+        <td>${formatQty(totQty)}</td>
+        <td>${formatDh(totAchat)}</td>
+        <td>${formatDh(totRevenu)}</td>
+        <td class="${totMargeClass}">${formatDh(totMarge)}</td>
+      </tr>`;
+
+      const paidAmount = data.filter(s => s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
+      const unpaidAmount = data.filter(s => !s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
+
+      content.innerHTML = `
+        <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">Basé sur les prix d'achat configurés. Filtres actifs.</div>
+        <table class="analytics-table">
+          <thead><tr><th>Gamme</th><th>Qté</th><th>Achat</th><th>Revente</th><th>Marge</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <div class="preview-chip" style="flex:1;"><span class="pchip-label">✅ Encaissé</span><span class="pchip-val" style="color:#148c37">${formatDh(paidAmount)}</span></div>
+          <div class="preview-chip" style="flex:1;"><span class="pchip-label">❌ En attente</span><span class="pchip-val" style="color:#cc2d2d">${formatDh(unpaidAmount)}</span></div>
+        </div>
+      `;
+    }
+
+    // ── Balance ──────────────────────────────────────────────────────────────────
+    function renderBalance() {
+      const content = document.getElementById('balanceContent');
+      if (!content) return;
+
+      const activeClientIds   = new Set(state.clients.map(c => c.id));
+      const activeClientNames = new Set(state.clients.map(c => c.name));
+
+      const clientMap = {};
+      state.sales.forEach(s => {
+        // Skip sales for deleted clients
+        if (s.client_id) {
+          if (!activeClientIds.has(s.client_id)) return;
+        } else {
+          if (s.client_name && !activeClientNames.has(s.client_name)) return;
+        }
+        const name = s.client_name || 'Inconnu';
+        if (!clientMap[name]) clientMap[name] = { totalSold: 0, paid: 0, unpaid: 0 };
+        const amount = Number(s.total_price || 0);
+        clientMap[name].totalSold += amount;
+        if (s.paid) clientMap[name].paid += amount;
+        else clientMap[name].unpaid += amount;
+      });
+
+      const entries = Object.entries(clientMap)
+        .map(([name, stats]) => ({ name, ...stats }))
+        .sort((a, b) => b.unpaid - a.unpaid);
+
+      if (entries.length === 0) {
+        content.innerHTML = `<div class="empty-state">Aucune vente enregistrée.</div>`;
+        return;
+      }
+
+      let totalSold = 0, totalPaid = 0, totalUnpaid = 0;
+      let rows = '';
+      entries.forEach(e => {
+        totalSold  += e.totalSold;
+        totalPaid  += e.paid;
+        totalUnpaid += e.unpaid;
+        rows += `<tr>
+          <td>${escHtml(e.name)}</td>
+          <td>${formatDh(e.totalSold)}</td>
+          <td style="color:#148c37">${formatDh(e.paid)}</td>
+          <td style="${e.unpaid > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(e.unpaid)}</td>
+        </tr>`;
+      });
+      rows += `<tr class="analytics-total-row">
+        <td>TOTAL</td>
+        <td>${formatDh(totalSold)}</td>
+        <td style="color:#148c37">${formatDh(totalPaid)}</td>
+        <td style="color:var(--color-error);font-weight:700;">${formatDh(totalUnpaid)}</td>
+      </tr>`;
+
+      content.innerHTML = `
+        <table class="analytics-table">
+          <thead><tr><th>Client</th><th>CA Total</th><th>Encaissé</th><th>Solde</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    // ── Edit sale ────────────────────────────────────────────────────────────────
+    function openEditSale(saleId) {
+      if (!hasPermission('tasks.edit')) return showSessionStatus('❌ Permission refusée : modifier une vente', 'error');
+      closeAllMenus();
+      const sale = state.sales.find(s => s.id === saleId);
+      if (!sale) return;
+
+      document.getElementById('editSaleId').value = saleId;
+
+      // Populate edit sale client picker
+      document.getElementById('editSaleClient').value = sale.client_name || '';
+      document.getElementById('editSaleClientSearch').value = sale.client_name || '';
+
+      document.getElementById('editSaleCategory').value = sale.category;
+      document.getElementById('editSaleQty').value = sale.quantity;
+
+      const d = new Date(sale.created_at);
+      const offset = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - offset * 60000);
+      document.getElementById('editSaleDate').value = local.toISOString().slice(0, 16);
+
+      document.getElementById('editSalePaid').checked = !!sale.paid;
+
+      const creator = sale.created_by ? state.allUsers.find(u => u.id === sale.created_by) : null;
+      document.getElementById('editSaleCreator').textContent = creator
+        ? `👤 Créée par : ${creator.full_name || creator.email}`
+        : '👤 Créateur inconnu';
+
+      openModal('editSaleModal');
+    };
+
+    window.saveEditSale = async function() {
+      if (!hasPermission('tasks.edit')) return showSessionStatus('❌ Permission refusée : modifier une vente', 'error');
+      const saleId = document.getElementById('editSaleId').value;
+      const clientName = document.getElementById('editSaleClient').value;
+      const category = document.getElementById('editSaleCategory').value;
+      const quantity = parseFloat(document.getElementById('editSaleQty').value);
+      const rawDate = document.getElementById('editSaleDate').value;
+      const paid = document.getElementById('editSalePaid').checked;
+
+      if (!clientName) return showSessionStatus('❌ Client obligatoire', 'error');
+      if (isNaN(quantity) || quantity <= 0) return showSessionStatus('❌ Quantité invalide', 'error');
+
+      const sale = state.sales.find(s => s.id === saleId);
+      if (!sale) return;
+
+      const client = state.clients.find(c => c.name === clientName);
+      const unitPrice = getClientPrice(clientName, category);
+      const totalPrice = Number((quantity * unitPrice).toFixed(2));
+      const createdAt = rawDate ? new Date(rawDate).toISOString() : sale.created_at;
+
+      const stockChanged = sale.category !== category || sale.quantity !== quantity;
+      let stockOldPayload = null, stockNewPayload = null;
+      if (stockChanged) {
+        const restoredOld = Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0);
+        const newStock = Number(state.stocks[category] || 0) - quantity;
+        if (newStock < 0) { showSessionStatus('❌ Stock insuffisant pour ' + category, 'error'); return; }
+        stockOldPayload = { category: sale.category, quantity: restoredOld };
+        stockNewPayload = { category, quantity: newStock };
+      }
+
+      const updatedSaleData = {
+        client_id: client?.id || null,
+        client_name: clientName,
+        category,
+        quantity,
+        unit_price: unitPrice,
+        total_price: totalPrice,
+        paid,
+        created_at: createdAt
+      };
+
+      if (!navigator.onLine) {
+        Object.assign(sale, updatedSaleData);
+        if (stockChanged && stockOldPayload && stockNewPayload) {
+          // Use payload categories (not sale.category which was just mutated by Object.assign)
+          state.stocks[stockOldPayload.category] = stockOldPayload.quantity;
+          state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
+        }
+        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        await saveRecords('sales', state.sales).catch(() => {});
+        await saveRecords('stocks', stockArr).catch(() => {});
+        await addPendingOp({
+          type: 'updateSale',
+          payload: { saleId, ...updatedSaleData }
+        }).catch(() => {});
+        closeModal('editSaleModal');
+        renderSales(); renderStock();
+        showSessionStatus('📶 Vente modifiée localement', 'info');
+        updateOfflineBanner();
+        return;
+      }
+
+      const { error } = await supabase.from('sales').update(updatedSaleData).eq('id', saleId);
+
+      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+      Object.assign(sale, updatedSaleData);
+      if (stockChanged && stockOldPayload && stockNewPayload) {
+        state.stocks[stockOldPayload.category] = stockOldPayload.quantity;
+        state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
+      }
+      closeModal('editSaleModal');
+      renderSales(); renderStock();
+      showSessionStatus('✅ Vente modifiée', 'success');
+      loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] editSale:', e?.message));
+    };
+
+
+    // ── Price spinner builder ────────────────────────────────────────────────────
+    /**
+     * Build the price-spinner grid HTML for all categories.
+     * @param {string} idPrefix  - e.g. 'price', 'editPrice', 'pp'
+     * @param {object} defaults  - map of category → default value
+     * @param {boolean} showHints - show default-value hints below each spinner
+     */
+    function buildPriceSpinnersHTML(idPrefix, defaults, showHints) {
+      return CATEGORIES.map(cat => {
+        const shortLabel = { ESPRESSO: 'ESP', CLASSIC: 'CLA', SANTOS: 'SAN' }[cat] || cat;
+        const defVal = defaults[cat] || 0;
+        const hint = showHints ? `<span class="price-default-hint">${defVal}</span>` : '';
+        return `<div class="price-scroll-item">
+          <span class="price-badge-label ${cat}">${shortLabel}</span>
+          <div class="price-compact-ctrl">
+            <button type="button" class="spin-btn-sm" onclick="adjustPrice('${idPrefix}${cat}',-1)">−</button>
+            <input id="${idPrefix}${cat}" type="number" value="${defVal}" min="1" step="1" />
+            <button type="button" class="spin-btn-sm" onclick="adjustPrice('${idPrefix}${cat}',1)">+</button>
+          </div>
+          ${hint}
+        </div>`;
+      }).join('');
+    }
+
+    function initPriceSpinners() {
+      const clientDefaults = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
+      const purchaseDefaults = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
+
+      // New client panel
+      const newClientGrid = document.querySelector('#clients .price-scroll-row');
+      if (newClientGrid) newClientGrid.innerHTML = buildPriceSpinnersHTML('price', clientDefaults, true);
+
+      // Edit client modal
+      const editClientGrid = document.querySelector('#editClientModal .price-scroll-row');
+      if (editClientGrid) editClientGrid.innerHTML = buildPriceSpinnersHTML('editPrice', clientDefaults, true);
+
+      // Product prices modal
+      const ppGrid = document.querySelector('#productPricesModal .price-scroll-row');
+      if (ppGrid) ppGrid.innerHTML = buildPriceSpinnersHTML('pp', purchaseDefaults, false);
+    }
+
+    // ── Price spinners ───────────────────────────────────────────────────────────
+    window.adjustPrice = function(id, delta) {
+      const input = document.getElementById(id);
+      const current = parseInt(input.value, 10) || 0;
+      input.value = Math.max(1, current + delta);
+    };
+
+    // ── Morocco cities autocomplete ──────────────────────────────────────────────
+    const MOROCCO_CITIES = [
+      'Casablanca','Rabat','Fès','Marrakech','Agadir','Tanger','Meknès','Oujda','Kénitra','Tétouan',
+      'Safi','El Jadida','Khouribga','Béni Mellal','Nador','Taza','Settat','Berrechid','Khémisset',
+      'Inezgane','Ksar El Kébir','Larache','Guelmim','Berkane','Taourirt','Tiznit','Sidi Slimane',
+      'Sidi Kacem','Al Hoceïma','Dakhla','Laâyoune','Errachidia','Ouarzazate','Taroudant','Ifrane',
+      'Azrou','Midelt','Tinghir','Zagora','Tan-Tan','Essaouira','Mohammedia','Temara','Salé',
+      'Fquih Ben Salah','Youssoufia','Demnate','Azilal','Chefchaouen','Ouazzane','Souk El Arbaa',
+      'Sidi Bennour','El Kelaa des Sraghna','Kelaat Sraghna','Bouznika','Benslimane','Aïn Harrouda'
+    ];
+
+
+    function makeCityDrop({ inputId, dropId, wrapId }) {
+      function render(q) {
+        const drop = document.getElementById(dropId);
+        if (!drop) return;
+        const filtered = q ? MOROCCO_CITIES.filter(c => c.toLowerCase().includes(q)) : MOROCCO_CITIES.slice(0, 15);
+        if (filtered.length === 0) { drop.classList.remove('open'); return; }
+        drop.innerHTML = filtered.map(c => {
+          const escaped = escHtml(c);
+          return `<div class="csearch-item" data-city="${escaped}">${escaped}</div>`;
+        }).join('');
+        drop.querySelectorAll('.csearch-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const input = document.getElementById(inputId);
+            if (input) input.value = item.dataset.city;
+            drop.classList.remove('open');
+          });
+        });
+        drop.classList.add('open');
+        setTimeout(() => {
+          document.addEventListener('click', e => {
+            const wrap = document.getElementById(wrapId);
+            if (wrap && !wrap.contains(e.target)) drop.classList.remove('open');
+          }, { once: true, capture: true });
+        }, 50);
+      }
+
+      return {
+        show() { render((document.getElementById(inputId)?.value || '').trim().toLowerCase()); },
+        onInput() { render((document.getElementById(inputId)?.value || '').trim().toLowerCase()); }
+      };
+    }
+
+    const _newClientCityDrop = makeCityDrop({ inputId: 'clientAddrCity', dropId: 'citySearchDrop', wrapId: 'citySearchWrap' });
+    window.onCityInput   = () => _newClientCityDrop.onInput();
+    window.showCityDrop  = () => _newClientCityDrop.show();
+
+    const _editClientCityDrop = makeCityDrop({ inputId: 'editClientAddrCity', dropId: 'editCitySearchDrop', wrapId: 'editCitySearchWrap' });
+    window.onEditCityInput  = () => _editClientCityDrop.onInput();
+    window.showEditCityDrop = () => _editClientCityDrop.show();
+
+
+    // ── Pull to refresh ──────────────────────────────────────────────────────────
+    initPullToRefresh(async () => {
+      try {
+        await loadCloudData();
+        paintApp();
+        showSessionStatus('✅ Données actualisées', 'success', 2000);
+      } catch(err) {
+        showSessionStatus('❌ Erreur actualisation', 'error');
+      }
+    });
+
+
+    // ── Central event delegation for dynamically-generated HTML ─────────────────
+    document.addEventListener('click', function handleDelegatedClick(e) {
+      const el = e.target.closest('[data-action]');
+      if (!el) return;
+      e.stopImmediatePropagation();
+      const action = el.dataset.action;
+      const id     = el.dataset.id;
+      const cat    = el.dataset.cat;
+      const menuId = el.dataset.menuId;
+      switch (action) {
+        case 'toggle-menu':   toggleMenu(e, menuId); break;
+        case 'client-advanced': openClientAdvanced(id); break;
+        case 'client-pdf':    generateClientMonthlyPDF(id); break;
+        case 'client-edit':   openEditClient(id); break;
+        case 'client-delete': deleteClient(id); break;
+        case 'sale-edit':     closeAllMenus(); openEditSale(id); break;
+        case 'sale-toggle-paid': closeAllMenus(); togglePaid(id, el.dataset.paid === 'true'); break;
+        case 'sale-delete':   closeAllMenus(); deleteSale(id); break;
+        case 'stock-add':     addToStock(cat); break;
+        case 'stock-set':     setStock(cat); break;
+        case 'stock-alert':   openItemAlertModal(cat); break;
+        case 'user-role':     openRoleModal(id, el.dataset.role); break;
+        case 'user-delete':   deleteUser(id, el); break;
+        case 'open-client-sales': openClientSales(el.dataset.client); break;
+      }
+    });
+
+    // Keyboard delegation for role="button" elements using data-action
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const el = e.target.closest('[data-action="open-client-sales"]');
+      if (!el) return;
+      e.preventDefault();
+      openClientSales(el.dataset.client);
+    });
+
+    document.addEventListener('click', closeAllMenus);
+
+    window.show = function(section) {
+      // Reset the Ventes récentes client detail when leaving the sales tab
+      if (section !== 'sales' && typeof closeClientSales === 'function') {
+        closeClientSales();
+      }
+      const ids = ['sales', 'clients', 'stock', 'balance', 'logs'];
+      ids.forEach(id => {
+        const sectionEl = document.getElementById(id);
+        const btnEl = document.getElementById('btn' + id.charAt(0).toUpperCase() + id.slice(1));
+        if (sectionEl) sectionEl.classList.add('hidden');
+        if (btnEl) btnEl.classList.remove('active');
+      });
+      if (document.getElementById(section)) document.getElementById(section).classList.remove('hidden');
+      const btnCurrent = document.getElementById('btn' + section.charAt(0).toUpperCase() + section.slice(1));
+      if (btnCurrent) btnCurrent.classList.add('active');
+      // Re-render the clients list whenever the user navigates to the Clients tab so
+      // that order counts reflect any sales that were added since the last render.
+      if (section === 'clients') renderClients();
+    };
+
+    window.showLogsSection = async function() {
+      closeAllMenus();
+      show('logs');
+      if (isAdmin()) {
+        try {
+          const { data, error } = await supabase
+            .from('action_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(200);
+          if (!error) {
+            state.logs = data || [];
+            renderLogs();
+          }
+        } catch (e) {
+          console.warn('[showLogsSection] Rechargement logs échoué :', e?.message);
+        }
+      }
+    };
+
+    window.createNewUser = async function () {
+      if (!requireAdmin('Créer un utilisateur')) return;
+
+      const btn = document.getElementById('createUserBtn');
+      const statusEl = document.getElementById('createUserStatus');
+
+      if (btn.disabled) return;
+
+      const email = document.getElementById('newUserEmail').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+      const fullName = document.getElementById('newUserName').value.trim();
+      const role = document.getElementById('newUserRole').value;
+
+      if (!email || !password) return showSessionStatus('❌ Email et mot de passe obligatoires', 'error');
+      if (password.length < 6) return showSessionStatus('❌ Mot de passe minimum 6 caractères', 'error');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Création en cours…';
+      statusEl.textContent = '';
+      statusEl.style.color = '';
+
+      try {
+        // Get the freshest possible session token (required for the admin auth check).
+        // getFreshToken() tries refreshSession() → getSession() → state.session in order.
+        const accessToken = await getFreshToken();
+        if (!accessToken) {
+          statusEl.textContent = '❌ Session expirée. Déconnectez-vous puis reconnectez-vous.';
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Session expirée — reconnexion requise', 'error', 6000);
+          return;
+        }
+
+        // Local sanity check: decode the JWT and verify it hasn't expired before sending.
+        // This catches the rare case where getFreshToken() returned a stale fallback token.
+        const jwtPayload = decodeJwtPayload(accessToken);
+        if (jwtPayload) {
+          const nowSec = Math.floor(Date.now() / 1000);
+          console.log('[createNewUser] Token JWT : sub =', jwtPayload.sub?.substring(0, 8), '… | exp =', jwtPayload.exp, '| expiré =', jwtPayload.exp < nowSec);
+          if (jwtPayload.exp && jwtPayload.exp < nowSec) {
+            statusEl.textContent = '❌ Token expiré localement. Déconnectez-vous puis reconnectez-vous.';
+            statusEl.style.color = '#e53935';
+            showSessionStatus('❌ Session expirée — reconnexion requise', 'error', 6000);
+            return;
+          }
+          // Cross-check: warn if the token user doesn't match the in-memory profile.
+          // This would indicate session confusion (two accounts in storage).
+          const profileId = state.profile?.id;
+          if (profileId && jwtPayload.sub && profileId !== jwtPayload.sub) {
+            console.warn('[createNewUser] ⚠️ Divergence identité : profile.id =', profileId, '≠ token.sub =', jwtPayload.sub);
+          }
+        }
+
+        // Call the secure backend API — the service role key never leaves the server
+        const apiUrl = '/api/create-user';
+        console.log('[createNewUser] → appel', apiUrl, '| method: POST');
+        const resp = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ email, password, full_name: fullName, role })
+        });
+
+        // Safely parse response — guard against HTML error pages from Vercel
+        // (e.g. 404 when the serverless function is unreachable, deployment errors, etc.)
+        let result;
+        const contentType = resp.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          try {
+            result = await resp.json();
+          } catch (parseErr) {
+            console.error('[createNewUser] Échec du parsing JSON :', parseErr);
+            statusEl.textContent = `❌ Réponse serveur invalide (statut ${resp.status}). Réessayez ou vérifiez le déploiement.`;
+            statusEl.style.color = '#e53935';
+            showSessionStatus('❌ Erreur serveur inattendue', 'error', 6000);
+            return;
+          }
+        } else {
+          // The server returned HTML or another non-JSON format — likely a Vercel routing
+          // issue or an unhandled server error; show a clear diagnostic instead of crashing.
+          const rawText = await resp.text().catch(() => '');
+          console.error('[createNewUser] Réponse non-JSON (statut', resp.status, ') :', rawText.substring(0, 300));
+          statusEl.textContent = `❌ L'API n'a pas répondu en JSON (statut ${resp.status}). Vérifiez le déploiement Vercel ou contactez l'administrateur.`;
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Erreur serveur : réponse non-JSON', 'error', 8000);
+          return;
+        }
+
+        if (!resp.ok) {
+          const msg = result?.error || 'Erreur inconnue';
+          const isAlreadyExists = resp.status === 409 || msg.toLowerCase().includes('already');
+          statusEl.textContent = isAlreadyExists
+            ? `⚠️ Cet email est déjà utilisé : ${email}`
+            : '❌ ' + msg;
+          statusEl.style.color = isAlreadyExists ? '#e65100' : '#e53935';
+          showSessionStatus('❌ Échec création utilisateur', 'error', 5000);
+          return;
+        }
+
+        document.getElementById('newUserEmail').value = '';
+        document.getElementById('newUserPassword').value = '';
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserRole').value = 'employee';
+
+        statusEl.textContent = `✅ Utilisateur créé : ${email}`;
+        statusEl.style.color = '#2e7d32';
+        // Auto-dismiss the success indicator after 4 seconds
+        clearTimeout(statusEl._dismissTimer);
+        statusEl._dismissTimer = setTimeout(() => { statusEl.textContent = ''; statusEl.style.color = ''; }, 4000);
+        showSessionStatus('✅ Utilisateur créé', 'success');
+
+        logAction('create_user', { email, role, targetUserId: result.userId });
+
+        // Refresh user list — errors here must not block or mask the success path.
+        try {
+          await loadAllUsers();
+          renderUsersList();
+        } catch (e) {
+          console.warn('[createNewUser] Rechargement liste utilisateurs échoué :', e?.message);
+        }
+      } catch (err) {
+        // Catch any unexpected exception (network failure, abort, etc.)
+        // so the user always gets a clear message instead of a silent failure.
+        let msg;
+        if (err?.name === 'AbortError') {
+          msg = 'Délai dépassé — réessayez dans quelques instants';
+        } else if (err instanceof TypeError) {
+          msg = 'Impossible de contacter le serveur — vérifiez votre connexion';
+        } else {
+          msg = err?.message || 'Erreur inattendue';
+        }
+        console.error('[createNewUser] Exception non gérée :', err);
+        statusEl.textContent = '❌ ' + msg;
+        statusEl.style.color = '#e53935';
+        showSessionStatus('❌ Erreur lors de la création utilisateur', 'error', 6000);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Créer';
+      }
+    };
+
+    async function deleteUser(userId, btn) {
+      if (!requireAdmin('Supprimer un utilisateur')) return;
+      const target = state.allUsers.find(u => u.id === userId);
+      const label = target?.full_name || target?.email || userId;
+      if (!confirm(`Supprimer définitivement "${label}" ?\n\n⚠️ Le compte de connexion et le profil seront supprimés. Cette action est irréversible.`)) return;
+
+      // Disable the button and show loading state immediately after confirmation
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳';
+      }
+      showSessionStatus('⏳ Suppression en cours…', 'info', 16000);
+
+      // Obtain the freshest possible token before a privileged API call.
+      // getFreshToken() tries refreshSession() → getSession() → state.session in order.
+      const accessToken = await getFreshToken();
+
+      if (!accessToken) {
+        if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+        showSessionStatus('❌ Session expirée. Déconnectez-vous puis reconnectez-vous.', 'error');
+        return;
+      }
+
+      // Re-verify that the current user is still admin by reloading their profile.
+      // This catches stale state (profile changed since last load) and ensures the
+      // backend receives a token that matches a known admin profile.
+      const currentUserId = state.session?.user?.id;
+      if (currentUserId) {
+        try {
+          const freshProfile = await loadProfile(currentUserId);
+          if (!freshProfile || String(freshProfile.role || '').toLowerCase() !== 'admin') {
+            if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+            showSessionStatus('❌ Profil admin introuvable — reconnectez-vous et réessayez.', 'error');
+            return;
+          }
+        } catch (profileErr) {
+          // Non-blocking: if the profile reload fails, we still attempt the API call
+          // because the backend will re-verify independently.
+          console.warn('[deleteUser] Rechargement profil échoué (non bloquant) :', profileErr?.message);
+        }
+      }
+
+      // AbortController gives us a hard 15-second timeout so the function
+      // can never be stuck in "suppression en cours" indefinitely.
+      const controller = new AbortController();
+      const fetchTimeout = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const res = await fetch('/api/delete-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ userId }),
+          signal: controller.signal
+        });
+
+        let result;
+        const deleteContentType = res.headers.get('content-type') || '';
+        if (!deleteContentType.includes('application/json')) {
+          const rawText = await res.text().catch(() => '');
+          console.error('[deleteUser] Réponse non-JSON (statut', res.status, ') :', rawText.substring(0, 300));
+          showSessionStatus(`❌ L'API n'a pas répondu en JSON (statut ${res.status}). Vérifiez le déploiement Vercel.`, 'error', 8000);
+          return;
+        }
+        try {
+          result = await res.json();
+        } catch (_parseErr) {
+          showSessionStatus('❌ Réponse inattendue du serveur', 'error');
+          return;
+        }
+
+        if (!res.ok) {
+          showSessionStatus('❌ ' + (result?.error || 'Erreur lors de la suppression'), 'error');
+          return;
+        }
+
+        // Refresh user list — errors here must not block the success path
+        try {
+          await loadAllUsers();
+          renderUsersList();
+        } catch (e) { console.warn('[deleteUser] Rechargement liste utilisateurs échoué :', e?.message); /* list will be refreshed at next load */ }
+
+        logAction('delete_user', { targetUserId: userId, targetLabel: label });
+        showSessionStatus(`✅ Compte de "${label}" supprimé`, 'success');
+      } catch (err) {
+        const msg = err?.name === 'AbortError'
+          ? 'Délai dépassé — réessayez dans quelques instants'
+          : (err instanceof Error ? err.message : 'Impossible de contacter le serveur');
+        showSessionStatus('❌ ' + msg, 'error');
+      } finally {
+        clearTimeout(fetchTimeout);
+        if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
+      }
+    };
+
+    // ── Role change ──────────────────────────────────────────────────────────
+    let _pendingRoleChangeUserId = null;
+
+    function openRoleModal(userId, currentRole) {
+      closeAllMenus();
+      if (!requireAdmin('Modifier le rôle')) return;
+      const user = state.allUsers.find(u => u.id === userId);
+      const label = user?.full_name || user?.email || userId;
+      document.getElementById('roleModalUserLabel').textContent = `👤 ${label}`;
+      document.getElementById('roleModalSelect').value = currentRole || 'employee';
+      document.getElementById('roleModalStatus').textContent = '';
+      document.getElementById('roleModalStatus').style.color = '';
+      const saveBtn = document.getElementById('roleModalSaveBtn');
+      saveBtn.disabled = false;
+      saveBtn.textContent = '✅ Enregistrer';
+      _pendingRoleChangeUserId = userId;
+      openModal('roleModal');
+    };
+
+    window.confirmRoleChange = async function () {
+      const userId = _pendingRoleChangeUserId;
+      if (!userId) return;
+      const newRole = document.getElementById('roleModalSelect').value;
+      const btn = document.getElementById('roleModalSaveBtn');
+      const statusEl = document.getElementById('roleModalStatus');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Enregistrement…';
+      statusEl.textContent = '';
+
+      try {
+        const accessToken = await getFreshToken();
+        if (!accessToken) {
+          statusEl.textContent = '❌ Session expirée. Déconnectez-vous puis reconnectez-vous.';
+          statusEl.style.color = '#e53935';
+          return;
+        }
+
+        const resp = await fetch('/api/update-role', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ userId, role: newRole })
+        });
+
+        const roleContentType = resp.headers.get('content-type') || '';
+        if (!roleContentType.includes('application/json')) {
+          const rawText = await resp.text().catch(() => '');
+          console.error('[updateRole] Réponse non-JSON (statut', resp.status, ') :', rawText.substring(0, 300));
+          statusEl.textContent = `❌ L'API n'a pas répondu en JSON (statut ${resp.status}). Vérifiez le déploiement Vercel.`;
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Erreur serveur : réponse non-JSON', 'error', 8000);
+          return;
+        }
+
+        let result;
+        try {
+          result = await resp.json();
+        } catch (_parseErr) {
+          console.error('[updateRole] Échec du parsing JSON :', _parseErr?.message);
+          statusEl.textContent = '❌ Réponse inattendue du serveur — réessayez';
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Réponse inattendue du serveur', 'error', 6000);
+          return;
+        }
+
+        if (!resp.ok) {
+          statusEl.textContent = '❌ ' + (result?.error || 'Erreur inconnue');
+          statusEl.style.color = '#e53935';
+          showSessionStatus('❌ Échec mise à jour du rôle', 'error', 5000);
+          return;
+        }
+
+        logAction('role_change', { targetUserId: userId, newRole });
+
+        statusEl.textContent = '✅ Rôle mis à jour';
+        statusEl.style.color = '#2e7d32';
+        showSessionStatus('✅ Rôle mis à jour', 'success');
+
+        // Refresh list from server so the change is always reflected correctly,
+        // then close the modal. Errors here must not block the success path.
+        try {
+          await loadAllUsers();
+        } catch (e) {
+          console.warn('[confirmRoleChange] Rechargement liste utilisateurs a échoué :', e?.message);
+          // Fall back to local update so the UI is not left stale
+          const userIdx = state.allUsers.findIndex(u => u.id === userId);
+          if (userIdx !== -1) state.allUsers[userIdx].role = newRole;
+        }
+
+        setTimeout(() => {
+          closeModal('roleModal');
+          renderUsersList();
+        }, 900);
+
+      } catch (err) {
+        let errMsg;
+        if (err?.name === 'AbortError') {
+          errMsg = 'Délai dépassé — réessayez dans quelques instants';
+        } else if (err instanceof TypeError) {
+          errMsg = 'Impossible de contacter le serveur — vérifiez votre connexion';
+        } else {
+          errMsg = 'Erreur réseau inattendue';
+        }
+        console.error('[confirmRoleChange] Exception non gérée :', err);
+        statusEl.textContent = '❌ ' + errMsg;
+        statusEl.style.color = '#e53935';
+        showSessionStatus('❌ Erreur réseau lors de la mise à jour du rôle', 'error', 5000);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Enregistrer';
+      }
+    };
+
+    window.exportData = async function () {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        clients: state.clients,
+        sales: state.sales,
+        stocks: state.stocks
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `taskafe-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showSessionStatus('✅ Export téléchargé', 'success');
+    };
+
+    window.openPasswordModal = function () {
+      closeAllMenus();
+      openModal('passwordModal');
+    };
+
+    window.changeMyPassword = async function () {
+      const newPassword = document.getElementById('newPassword').value;
+      if (!newPassword || newPassword.length < 6) return showSessionStatus('❌ Mot de passe minimum 6 caractères', 'error');
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+      document.getElementById('newPassword').value = '';
+      closeModal('passwordModal');
+      showSessionStatus('✅ Mot de passe mis à jour', 'success');
+    };
+
+    function openClientAdvanced(clientId) {
+      closeAllMenus();
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const sales = getSalesForClient(client);
+      const now = new Date();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const thisYear = String(now.getFullYear());
+
+      const monthlySales = sales.filter(s => {
+        const d = new Date(s.created_at);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === thisMonth;
+      });
+      const yearlySales = sales.filter(s => {
+        const d = new Date(s.created_at);
+        return String(d.getFullYear()) === thisYear;
+      });
+
+      const monthTotal = monthlySales.reduce((s,x) => s + Number(x.total_price||0), 0);
+      const yearTotal = yearlySales.reduce((s,x) => s + Number(x.total_price||0), 0);
+      const grandTotal = sales.reduce((s,x) => s + Number(x.total_price||0), 0);
+
+      document.getElementById('advancedClientName').innerText = client.name;
+      document.getElementById('advancedMonthlyCmd').innerText = `${monthlySales.length} cmd — ${formatDh(monthTotal)}`;
+      document.getElementById('advancedYearlyCmd').innerText = `${yearlySales.length} cmd — ${formatDh(yearTotal)}`;
+      document.getElementById('advancedTotalCmd').innerText = `${sales.length} cmd — ${formatDh(grandTotal)}`;
+      document.getElementById('advancedPdfBtn').dataset.clientId = clientId;
+
+      openModal('clientAdvancedModal');
+    };
+
+    window.generateClientMonthlyPDF = async function(clientId) {
+      closeAllMenus();
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const now = new Date();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const monthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+      const monthlySales = state.sales.filter(s => {
+        const d = new Date(s.created_at);
+        const sMonth = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        return (s.client_id === client.id || s.client_name === client.name) && sMonth === thisMonth;
+      }).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+      if (monthlySales.length === 0) {
+        showSessionStatus('ℹ️ Aucune vente ce mois pour ce client', 'info', 4000);
+        return;
+      }
+
+      await generateMonthlyPDF(client, monthlySales, monthLabel, thisMonth, formatDh, formatQty);
+      showSessionStatus('✅ Facture PDF générée', 'success');
+    };
+
+    // iOS PWA: ensure virtual keyboard opens reliably on login fields
+    ['loginEmail', 'loginPassword'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('touchend', function () {
+        setTimeout(() => this.focus(), 50);
+      }, { passive: true });
+    });
+
+    document.getElementById('loginBtn')?.addEventListener('click', () => window.login());
+    document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
+    document.getElementById('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
+
+    window.addEventListener('resize', initAccordions);
+
+    // ── Offline / online lifecycle ──────────────────────────────────────────────
+    await initOfflineDB().catch(e => console.warn('[offline-db] init failed:', e?.message));
+
+    window.addEventListener('offline', () => {
+      _syncState = 'idle';
+      updateOfflineBanner();
+      showSessionStatus('📶 Hors ligne — les modifications sont enregistrées localement', 'info', 5000);
+    });
+
+    window.addEventListener('online', () => {
+      showSessionStatus('✅ Connexion rétablie — synchronisation…', 'success', 4000);
+      // Small delay: let navigator.onLine stabilize and let network actually become usable
+      setTimeout(() => syncPendingOps(), 800);
+      // Re-establish the Realtime channel which was dropped while offline
+      setTimeout(() => { if (state.session?.user) { stopRealtimeSync(); startRealtimeSync(); } }, REALTIME_RECONNECT_DELAY_MS);
+    });
+
+    // Silently refresh data when the user switches back to this tab so that
+    // changes made in another session (e.g. client deletions) are reflected
+    // without requiring a manual page reload.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!navigator.onLine) return;
+      if (!state.session?.user) return;
+      loadCloudData().then(() => { paintApp(); }).catch(e => console.warn('[visibilitychange] refresh error:', e?.message));
+    });
+
+    // Run the initial boot; if getSession() or bootFromSession() throws
+    // unexpectedly we still register onAuthStateChange below so the user
+    // can log in manually, and we show the login screen as a final fallback.
+    let _initialUserId = null;
+    try {
+      const { data: initial } = await supabase.auth.getSession();
+      _initialUserId = initial?.session?.user?.id || null;
+      await bootFromSession(initial.session);
+    } catch (bootErr) {
+      console.error('[boot] Erreur critique au démarrage, affichage login:', bootErr);
+      showLoginFallback();
+    }
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      // TOKEN_REFRESHED is fired by refreshSession() inside deleteUser —
+      // the Supabase client already updated its internal token; no need
+      // to trigger a full boot cycle which would cause a concurrent UI reload.
+      // However we do keep state.session in sync so the stored token stays fresh.
+      if (event === 'TOKEN_REFRESHED') {
+        if (session) state.session = session;
+        return;
+      }
+      // Prevent a duplicate boot for the same user session that was already
+      // booted above via getSession() — Supabase fires SIGNED_IN for the
+      // initial session restore, which would otherwise cause a redundant reload.
+      const incomingUserId = session?.user?.id || null;
+      if (event === 'SIGNED_IN' && incomingUserId && incomingUserId === _initialUserId && state.session) {
+        state.session = session; // keep token fresh but skip full re-boot
+        return;
+      }
+      await bootFromSession(session);
+    });
+  </script>
+</body>
+</html>
