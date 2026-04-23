@@ -432,24 +432,40 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
       <input type="hidden" id="editClientId" />
-      <label for="editClientName">Nom du client</label>
-      <input id="editClientName" placeholder="Nom du client" />
-      <label>Adresse</label>
-      <div class="edit-addr-grid">
-        <input id="editClientAddrNum" type="text" placeholder="N°" />
-        <select id="editClientAddrType">
-          <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
-        </select>
+      <div class="ncp-field">
+        <label for="editClientName">Nom du client</label>
+        <input id="editClientName" placeholder="Nom du client" />
+      </div>
+      <div class="ncp-num-type-row">
+        <div class="ncp-field">
+          <label for="editClientAddrNum">Numéro</label>
+          <input id="editClientAddrNum" type="text" placeholder="N°" />
+        </div>
+        <div class="ncp-field">
+          <label for="editClientAddrType">Type de voie</label>
+          <select id="editClientAddrType">
+            <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
+          </select>
+        </div>
+      </div>
+      <div class="ncp-field">
+        <label for="editClientAddrDetail">Adresse</label>
         <input id="editClientAddrDetail" placeholder="Nom de voie" />
       </div>
-      <div class="city-search-wrap" id="editCitySearchWrap">
-        <input id="editClientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onEditCityInput()" onfocus="showEditCityDrop()" />
-        <div class="client-search-drop" id="editCitySearchDrop"></div>
+      <div class="ncp-field">
+        <label for="editClientAddrCity">Ville</label>
+        <div class="city-search-wrap" id="editCitySearchWrap">
+          <input id="editClientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onEditCityInput()" onfocus="showEditCityDrop()" />
+          <div class="client-search-drop" id="editCitySearchDrop"></div>
+        </div>
       </div>
-      <label for="editClientICE">💳 ICE</label>
-      <input id="editClientICE" placeholder="Numéro ICE (facturation)" />
+      <div class="ncp-field">
+        <label for="editClientICE">💳 ICE</label>
+        <input id="editClientICE" placeholder="Numéro ICE (facturation)" />
+      </div>
       <h4>💰 Prix personnalisés par gamme</h4>
       <div class="price-scroll-row"></div>
+      <div class="muted">Laisse vide pour utiliser les prix standard.</div>
       <button onclick="saveEditClient()">💾 Enregistrer</button>
     </div>
   </div>
