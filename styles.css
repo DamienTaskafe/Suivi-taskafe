@@ -693,6 +693,15 @@
     #category.CLASSIC { background-color: #6b4329; color: #f4d27a; }
     #category.SANTOS { background-color: #161616; color: #d4af37; }
     #category.SUCRE { background-color: #e6d3a3; color: black; }
+    /* Placeholder state: no category selected yet */
+    #category:not(.ORO):not(.RIO):not(.ESPRESSO):not(.CLASSIC):not(.SANTOS):not(.SUCRE) { color: var(--color-text-muted); }
+
+    /* Payment toggle: locked/gated until required fields are filled */
+    .payment-toggle.payment-gated {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
 
     .paid { color: #148c37; font-weight: 700; }
     .unpaid { color: #cc2d2d; font-weight: 700; }

@@ -151,7 +151,7 @@
         <div class="date-field">
           <label for="datetime">📅 Date & Heure</label>
           <div class="date-actions">
-            <input type="datetime-local" id="datetime" />
+            <input type="datetime-local" id="datetime" onchange="updatePaymentGate()" />
             <button type="button" class="small-btn" onclick="setNow()">Maintenant</button>
           </div>
         </div>
@@ -1140,6 +1140,7 @@
       document.getElementById('previewUnitPrice').innerText = formatDh(unit);
       document.getElementById('previewTotalPrice').innerText = formatDh(qty * unit);
       document.getElementById('previewClientName').innerText = client || '—';
+      updatePaymentGate();
     }
 
     function loadClientSelectors() {
@@ -2456,6 +2457,7 @@
       if (catEl) catEl.value = '';
       updateCategoryStyle();
       updatePreview();
+      updatePaymentGate();
     }
 
     async function togglePaid(saleId, paid) {
@@ -3001,7 +3003,7 @@
       const select = document.getElementById('category');
       const value = select.value;
       select.classList.remove('ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE');
-      select.classList.add(value);
+      if (value) select.classList.add(value);
     }
     window.updateCategoryStyle = updateCategoryStyle;
 
@@ -3015,6 +3017,7 @@
       const now = new Date();
       const offset = now.getTimezoneOffset();
       document.getElementById('datetime').value = new Date(now.getTime() - offset * 60000).toISOString().slice(0, 16);
+      updatePaymentGate();
     };
 
     window.updatePreview = updatePreview;
@@ -3029,6 +3032,37 @@
       labelNotPaid.classList.toggle('selected-notpaid', notPaidEl && notPaidEl.checked);
     };
     window.updatePaymentToggle();
+
+    // Enable/disable the payment toggles based on whether the other required fields are filled.
+    function updatePaymentGate() {
+      const clientName = document.getElementById('clientSelect').value;
+      const category = document.getElementById('category').value;
+      const quantity = parseFloat(document.getElementById('quantityInput').value);
+      const rawDate = document.getElementById('datetime').value;
+
+      const ready = !!(clientName && category && !isNaN(quantity) && quantity > 0 && rawDate);
+
+      const paidEl = document.getElementById('paid');
+      const notPaidEl = document.getElementById('notPaid');
+      const labelPaid = document.getElementById('labelPaid');
+      const labelNotPaid = document.getElementById('labelNotPaid');
+
+      if (!paidEl || !notPaidEl) return;
+
+      const wasReady = !paidEl.disabled;
+      if (wasReady && !ready) {
+        // Fields were cleared — deselect payment and re-gate
+        paidEl.checked = false;
+        notPaidEl.checked = false;
+        updatePaymentToggle();
+      }
+      paidEl.disabled = !ready;
+      notPaidEl.disabled = !ready;
+      labelPaid?.classList.toggle('payment-gated', !ready);
+      labelNotPaid?.classList.toggle('payment-gated', !ready);
+    }
+    window.updatePaymentGate = updatePaymentGate;
+    updatePaymentGate();
 
     // ── Reusable client search dropdown factory ──────────────────────────────────
     /**
