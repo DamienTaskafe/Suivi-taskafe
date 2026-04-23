@@ -156,9 +156,15 @@
           </div>
         </div>
 
-        <div class="checkbox-line">
-          <input type="checkbox" id="paid" />
-          <label for="paid" style="margin: 0; flex: 1;">✅ Payé</label>
+        <div class="payment-status-row">
+          <label class="payment-toggle" id="labelPaid">
+            <input type="radio" name="paymentStatus" id="paid" value="paid" onchange="updatePaymentToggle()" />
+            <span class="payment-toggle-inner">✅ Payé</span>
+          </label>
+          <label class="payment-toggle" id="labelNotPaid">
+            <input type="radio" name="paymentStatus" id="notPaid" value="notpaid" onchange="updatePaymentToggle()" />
+            <span class="payment-toggle-inner">❌ Non payé</span>
+          </label>
         </div>
 
         <div class="preview-bar">
@@ -168,7 +174,7 @@
         </div>
 
         <div style="display:flex;justify-content:center;">
-          <button class="add-sale-btn" onclick="addSale()">✅ Ajouter vente</button>
+          <button class="add-sale-btn" onclick="addSale()">🛒 Valider la commande</button>
         </div>
 
         <hr />
@@ -432,6 +438,18 @@
     </div>
   </div>
 
+  <div id="confirmSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'confirmSaleModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="closeModal('confirmSaleModal')">✕</button></div>
+      <p style="text-align:center;font-weight:600;margin-bottom:12px;color:var(--color-text);">Voulez-vous valider cette commande ?</p>
+      <div id="confirmSaleRecap" class="confirm-recap"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button onclick="closeModal('confirmSaleModal')" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
+        <button id="confirmSaleBtn" onclick="confirmAndSave()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;">✅ Confirmer</button>
+      </div>
+    </div>
+  </div>
+
   <div id="editClientModal" class="modal-backdrop" onclick="backdropClose(event, 'editClientModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
@@ -605,10 +623,11 @@
     function initCategorySelects() {
       const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
       const filterOpts = `<option value="">Toutes catégories</option>` + opts;
-      ['category', 'editSaleCategory'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = opts;
-      });
+      const mainOpts = `<option value="">Sélectionner une gamme</option>` + opts;
+      const mainCat = document.getElementById('category');
+      if (mainCat) mainCat.innerHTML = mainOpts;
+      const editCat = document.getElementById('editSaleCategory');
+      if (editCat) editCat.innerHTML = opts;
       const fc = document.getElementById('filterCategory');
       if (fc) fc.innerHTML = filterOpts;
     }
@@ -1124,14 +1143,8 @@
     }
 
     function loadClientSelectors() {
-      const sorted = sortClientsAZ(state.clients);
-      // Pre-fill the new sale client picker with the first alphabetical client if none is selected.
-      // The dropdown renders on demand from state.clients (always sorted) when the user interacts.
-      const currentVal = document.getElementById('clientSelect').value;
-      if (!currentVal && sorted.length > 0) {
-        document.getElementById('clientSelect').value = sorted[0].name;
-        document.getElementById('clientSelectSearch').value = sorted[0].name;
-      }
+      // Do not pre-fill the new sale client picker – leave it empty so users
+      // must explicitly choose a client for each new sale.
       // reset client search filter
       document.getElementById('filterClientSearch').value = document.getElementById('filterClient').value || '';
     }
@@ -2281,22 +2294,57 @@
       const quantity = parseFloat(document.getElementById('quantityInput').value);
       const category = document.getElementById('category').value;
       const rawDate = document.getElementById('datetime').value;
-      const paid = document.getElementById('paid').checked;
-      const client = state.clients.find(c => c.name === clientName);
-      const createdAt = rawDate ? new Date(rawDate).toISOString() : new Date().toISOString();
+      const paidRadio = document.querySelector('input[name="paymentStatus"]:checked');
 
+      // ── All-fields-required validation ──────────────────────────────────────
       if (!clientName) return showSessionStatus('❌ Choisir un client', 'error');
+      if (!category) return showSessionStatus('❌ Choisir une gamme', 'error');
       if (isNaN(quantity) || quantity <= 0) return showSessionStatus(`❌ ${category === 'SUCRE' ? 'Nombre de paquets' : 'Kilos'} invalide`, 'error');
+      if (!rawDate) return showSessionStatus('❌ Date & heure obligatoires', 'error');
+      if (!paidRadio) return showSessionStatus('❌ Choisir le statut de paiement (Payé / Non payé)', 'error');
       if (Number(state.stocks[category] || 0) < quantity) return showSessionStatus(`❌ Stock insuffisant pour ${category}`, 'error');
 
+      const paid = paidRadio.value === 'paid';
       const unitPrice = getClientPrice(clientName, category);
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
+      const formattedDate = rawDate.replace('T', ' ');
+      const qtyLabel = category === 'SUCRE' ? 'paquets' : 'kg';
 
-      document.getElementById('quantityInput').value = '';
-      document.getElementById('datetime').value = '';
-      document.getElementById('paid').checked = false;
+      // ── Show confirmation modal with recap ───────────────────────────────────
+      document.getElementById('confirmSaleRecap').innerHTML = `
+        <div class="recap-row"><span>Client</span><strong>${clientName}</strong></div>
+        <div class="recap-row"><span>Gamme</span><strong>${category}</strong></div>
+        <div class="recap-row"><span>Quantité</span><strong>${quantity} ${qtyLabel}</strong></div>
+        <div class="recap-row"><span>Date &amp; Heure</span><strong>${formattedDate}</strong></div>
+        <div class="recap-row"><span>Statut</span><strong>${paid ? '✅ Payé' : '❌ Non payé'}</strong></div>
+        <div class="recap-row"><span>Prix unitaire</span><strong>${formatDh(unitPrice)}</strong></div>
+        <div class="recap-row recap-row--total"><span>Total</span><strong>${formatDh(totalPrice)}</strong></div>
+      `;
+      openModal('confirmSaleModal');
+    };
 
+    window.confirmAndSave = async function() {
+      if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+      closeModal('confirmSaleModal');
+
+      const clientName = document.getElementById('clientSelect').value;
+      const quantity = parseFloat(document.getElementById('quantityInput').value);
+      const category = document.getElementById('category').value;
+      const rawDate = document.getElementById('datetime').value;
+      const paidRadio = document.querySelector('input[name="paymentStatus"]:checked');
+      if (!clientName || !category || isNaN(quantity) || quantity <= 0 || !rawDate || !paidRadio) {
+        return showSessionStatus('❌ Formulaire incomplet', 'error');
+      }
+
+      const paid = paidRadio.value === 'paid';
+      const client = state.clients.find(c => c.name === clientName);
+      const createdAt = new Date(rawDate).toISOString();
+      const unitPrice = getClientPrice(clientName, category);
+      const totalPrice = Number((quantity * unitPrice).toFixed(2));
       const newStockQty = Number(state.stocks[category] || 0) - quantity;
+
+      // Reset form immediately so the user can start a new entry
+      resetSaleForm();
 
       if (!navigator.onLine) {
         const localSale = {
@@ -2360,6 +2408,23 @@
       showSessionStatus('✅ Vente ajoutée', 'success');
       loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
     };
+
+    function resetSaleForm() {
+      document.getElementById('clientSelect').value = '';
+      document.getElementById('clientSelectSearch').value = '';
+      document.getElementById('quantityInput').value = '';
+      document.getElementById('datetime').value = '';
+      const paidEl = document.getElementById('paid');
+      const notPaidEl = document.getElementById('notPaid');
+      if (paidEl) paidEl.checked = false;
+      if (notPaidEl) notPaidEl.checked = false;
+      updatePaymentToggle();
+      // Reset category to placeholder
+      const catEl = document.getElementById('category');
+      if (catEl) catEl.value = '';
+      updateCategoryStyle();
+      updatePreview();
+    }
 
     async function togglePaid(saleId, paid) {
       if (!hasPermission('tasks.toggle_paid')) return showSessionStatus('❌ Permission refusée : modifier le statut de paiement', 'error');
@@ -2921,6 +2986,17 @@
     };
 
     window.updatePreview = updatePreview;
+
+    window.updatePaymentToggle = function() {
+      const paidEl = document.getElementById('paid');
+      const notPaidEl = document.getElementById('notPaid');
+      const labelPaid = document.getElementById('labelPaid');
+      const labelNotPaid = document.getElementById('labelNotPaid');
+      if (!labelPaid || !labelNotPaid) return;
+      labelPaid.classList.toggle('selected-paid', paidEl && paidEl.checked);
+      labelNotPaid.classList.toggle('selected-notpaid', notPaidEl && notPaidEl.checked);
+    };
+    window.updatePaymentToggle();
 
     // ── Reusable client search dropdown factory ──────────────────────────────────
     /**
