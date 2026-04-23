@@ -1565,6 +1565,95 @@
       if (_permRefreshInterval) { clearInterval(_permRefreshInterval); _permRefreshInterval = null; }
     }
 
+    // ── Real-time synchronization ─────────────────────────────────────────────
+    // Supabase Realtime channels propagate shared-data changes made by ANY
+    // connected user to ALL other active sessions instantly.
+    //
+    // Covered tables:
+    //   clients, sales, stocks, action_logs  — core business data (all users)
+    //   profiles                             — user/role management (manager+admin)
+    //   role_permissions                     — permission config (affects all users)
+    //
+    // Intentionally excluded from real-time sync (local-per-session):
+    //   auth events (SIGNED_IN / SIGNED_OUT / TOKEN_REFRESHED) — handled by
+    //   onAuthStateChange; these are personal session events, not shared state.
+    //   last_seen_at-only heartbeat updates on profiles — filtered out below to
+    //   avoid triggering a full reload every 2 minutes per active user.
+    let _realtimeChannel = null;
+    let _realtimeDebounceTimer = null;
+    const REALTIME_DEBOUNCE_MS = 600; // coalesce rapid bursts into one refresh
+    // Delay before re-subscribing after coming back online — must be longer than
+    // the syncPendingOps() delay (800 ms) so the pending-ops flush completes first.
+    const REALTIME_RECONNECT_DELAY_MS = 1200;
+
+    function _scheduleRealtimeRefresh(source) {
+      if (!navigator.onLine || !state.session?.user) return;
+      if (_realtimeDebounceTimer) clearTimeout(_realtimeDebounceTimer);
+      _realtimeDebounceTimer = setTimeout(async () => {
+        _realtimeDebounceTimer = null;
+        try {
+          await loadCloudData();
+          paintApp();
+        } catch (e) {
+          console.warn('[realtime] refresh error from', source, ':', e?.message);
+        }
+      }, REALTIME_DEBOUNCE_MS);
+    }
+
+    function startRealtimeSync() {
+      if (_realtimeChannel) return; // already subscribed — avoid duplicate listeners
+      if (!navigator.onLine) return; // skip until reconnected
+      _realtimeChannel = supabase
+        .channel('app-realtime-sync')
+        // ── Core business data ───────────────────────────────────────────────
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
+          () => _scheduleRealtimeRefresh('clients'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' },
+          () => _scheduleRealtimeRefresh('sales'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'stocks' },
+          () => _scheduleRealtimeRefresh('stocks'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'action_logs' },
+          () => _scheduleRealtimeRefresh('action_logs'))
+        // ── User / role management ───────────────────────────────────────────
+        // For UPDATE events on profiles, suppress heartbeat-only last_seen_at
+        // changes to avoid triggering a full reload every 2 minutes per active user.
+        // INSERT/DELETE always trigger a refresh so new/removed users propagate
+        // immediately. Note: key-diff filtering only detects true no-ops when
+        // Postgres REPLICA IDENTITY FULL is set; with the default identity only
+        // the primary key is included in payload.old, so any non-last_seen_at
+        // UPDATE will still produce a non-empty changedKeys list and refresh.
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' },
+          (payload) => {
+            if (payload.eventType === 'UPDATE') {
+              const oldRow = payload.old || {};
+              const newRow = payload.new || {};
+              const changedKeys = Object.keys(newRow).filter(k => newRow[k] !== oldRow[k]);
+              if (changedKeys.length > 0 && changedKeys.every(k => k === 'last_seen_at')) return;
+            }
+            _scheduleRealtimeRefresh('profiles');
+          })
+        // ── Permission configuration ─────────────────────────────────────────
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'role_permissions' },
+          () => _scheduleRealtimeRefresh('role_permissions'))
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[realtime] Connected to app-realtime-sync channel');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('[realtime] Channel status:', status);
+          }
+        });
+    }
+
+    function stopRealtimeSync() {
+      if (_realtimeDebounceTimer) { clearTimeout(_realtimeDebounceTimer); _realtimeDebounceTimer = null; }
+      if (_realtimeChannel) {
+        // Non-critical cleanup: channel removal errors can be safely ignored;
+        // the channel will be garbage-collected with the WebSocket connection.
+        supabase.removeChannel(_realtimeChannel).catch(e => console.warn('[realtime] removeChannel error (non-critical):', e?.message));
+        _realtimeChannel = null;
+      }
+    }
+
     // ── Action logs helper ─────────────────────────────────────────────────────
     // Non-blocking: errors are silently swallowed so log failures never block the
     // main user flow. The action_logs table is optional — if it does not exist yet
@@ -1766,6 +1855,7 @@
           document.getElementById('appShell').classList.add('hidden');
           if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
           stopPermRefresh();
+          stopRealtimeSync();
           return;
         }
 
@@ -1773,6 +1863,7 @@
         updateLastSeen();
         startLastSeenHeartbeat();
         startPermRefresh();
+        startRealtimeSync();
 
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('appShell').classList.remove('hidden');
@@ -1853,6 +1944,7 @@
       closeAllMenus();
       if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
       stopPermRefresh();
+      stopRealtimeSync();
       try {
         await supabase.auth.signOut();
       } catch (e) {
@@ -3910,6 +4002,8 @@
       showSessionStatus('✅ Connexion rétablie — synchronisation…', 'success', 4000);
       // Small delay: let navigator.onLine stabilize and let network actually become usable
       setTimeout(() => syncPendingOps(), 800);
+      // Re-establish the Realtime channel which was dropped while offline
+      setTimeout(() => { if (state.session?.user) { stopRealtimeSync(); startRealtimeSync(); } }, REALTIME_RECONNECT_DELAY_MS);
     });
 
     // Silently refresh data when the user switches back to this tab so that
