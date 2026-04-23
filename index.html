@@ -1129,17 +1129,21 @@
       const category = document.getElementById('filterCategory').value;
       const date = document.getElementById('filterDate').value;
 
-      // Build the set of active client ids/names once for efficiency
-      const activeClientIds   = new Set(state.clients.map(c => c.id));
+      // Build the set of active client ids/names once for efficiency.
+      // Normalise ids to strings to avoid type mismatches (Supabase returns
+      // bigint as number, but dataset attributes and local ids are strings).
+      const activeClientIds   = new Set(state.clients.map(c => String(c.id)));
       const activeClientNames = new Set(state.clients.map(c => c.name));
 
       // Resolve the filtered client record once (used below to match by id)
       const filterClientRecord = client ? state.clients.find(c => c.name === client) : null;
 
       return state.sales.filter(s => {
-        // Exclude sales belonging to deleted clients
-        if (s.client_id) {
-          if (!activeClientIds.has(s.client_id)) return false;
+        // Exclude sales belonging to deleted clients.
+        // client_id is the source of truth; client_name alone must never keep
+        // an orphaned sale visible.
+        if (s.client_id !== null && s.client_id !== undefined && s.client_id !== '') {
+          if (!activeClientIds.has(String(s.client_id))) return false;
         } else {
           if (s.client_name && !activeClientNames.has(s.client_name)) return false;
         }
@@ -2243,7 +2247,7 @@
       if (!hasPermission('clients.delete')) return showSessionStatus('❌ Permission refusée : supprimer un client', 'error');
       if (!confirm('Voulez-vous vraiment supprimer ce client ?')) return;
       if (!navigator.onLine) {
-        state.clients = state.clients.filter(c => c.id !== clientId);
+        state.clients = state.clients.filter(c => String(c.id) !== String(clientId));
         await saveRecords('clients', state.clients).catch(() => {});
         await addPendingOp({ type: 'deleteClient', payload: { clientId } }).catch(() => {});
         renderClients(); loadClientSelectors(); renderSales();
@@ -2252,7 +2256,7 @@
         return;
       }
       const clientsSnapshot = state.clients.slice();
-      state.clients = state.clients.filter(c => c.id !== clientId);
+      state.clients = state.clients.filter(c => String(c.id) !== String(clientId));
       renderClients(); loadClientSelectors(); renderSales();
 
       const { error } = await supabase.from('clients').delete().eq('id', clientId);
