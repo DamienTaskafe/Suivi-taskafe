@@ -1861,6 +1861,51 @@
       }
     }
 
+    // Classifies a cloud/backend error into one of four named categories so
+    // that bootFromSession() can show an accurate fallback message instead of
+    // a generic "cloud indisponible" label that is misleading when the device
+    // is online and the real cause is an auth or data-layer issue.
+    //
+    // Categories:
+    //   'OFFLINE'           — navigator.onLine is false (no network)
+    //   'AUTH_SESSION'      — JWT expired / invalid token / not authenticated
+    //   'CLOUD_UNAVAILABLE' — server 5xx or low-level network failure while online
+    //   'DATA_QUERY'        — RLS / permission denied / query-level error
+    function classifyCloudError(err) {
+      if (!navigator.onLine) return 'OFFLINE';
+      const msg    = (err?.message || '').toLowerCase();
+      const status = Number(err?.status) || 0;
+      const code   = String(err?.code   || '').toLowerCase();
+
+      // Auth / session token issues
+      if (
+        status === 401 ||
+        code   === 'pgrst301' ||       // PostgREST: JWT claim validation failed (expired / invalid)
+        msg.includes('jwt') ||
+        msg.includes('invalid_token') ||
+        msg.includes('not authenticated') ||
+        msg.includes('session_not_found') ||
+        msg.includes('unauthorized')
+      ) {
+        return 'AUTH_SESSION';
+      }
+
+      // Cloud service unreachable (infrastructure / gateway level)
+      if (
+        status >= 500 ||
+        err instanceof TypeError ||    // Failed to fetch (DNS / OS-level)
+        msg.includes('failed to fetch') ||
+        msg.includes('network request failed') ||
+        msg.includes('service unavailable') ||
+        msg.includes('bad gateway')
+      ) {
+        return 'CLOUD_UNAVAILABLE';
+      }
+
+      // Everything else: data-layer / query / RLS permission issue
+      return 'DATA_QUERY';
+    }
+
     let _bootInProgress = false;
     let _loggedOut = false;
     async function bootFromSession(session) {
@@ -1915,6 +1960,7 @@
           }
         } catch (error) {
           console.error('[bootFromSession] Boot error:', error);
+          const errorClass = classifyCloudError(error);
           // Cloud data unavailable — try loading from local IndexedDB cache so
           // the user sees real data rather than empty lists.
           let hadLocalData = false;
@@ -1938,13 +1984,28 @@
           if (!Object.keys(state.rolePermissions?.employee ?? {}).length) {
             state.rolePermissions = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
           }
-          showSessionStatus(
-            hadLocalData
-              ? '⚠️ Données locales utilisées — cloud indisponible'
-              : '❌ Chargement échoué — aucune donnée locale disponible',
-            'error',
-            5000
-          );
+          // Show a message that accurately reflects the actual failure type rather
+          // than a generic "cloud indisponible" label that is misleading when the
+          // device is online and the real cause is an auth or data-layer issue.
+          let statusMsg;
+          if (errorClass === 'OFFLINE') {
+            statusMsg = hadLocalData
+              ? '📶 Aucune connexion Internet — données locales utilisées'
+              : '📶 Aucune connexion Internet — aucune donnée locale disponible';
+          } else if (errorClass === 'AUTH_SESSION') {
+            statusMsg = hadLocalData
+              ? '🔐 Session expirée — données locales utilisées'
+              : '🔐 Session expirée — veuillez vous reconnecter';
+          } else if (errorClass === 'CLOUD_UNAVAILABLE') {
+            statusMsg = hadLocalData
+              ? '☁️ Serveur indisponible — données locales utilisées'
+              : '☁️ Serveur indisponible — aucune donnée locale disponible';
+          } else { // DATA_QUERY
+            statusMsg = hadLocalData
+              ? '⚠️ Erreur de chargement des données — données locales utilisées'
+              : '❌ Chargement échoué — aucune donnée locale disponible';
+          }
+          showSessionStatus(statusMsg, 'error', 5000);
           // Profile was already loaded above; render the app with whatever state is
           // available so the authenticated user is not left on a half-rendered shell.
           try { paintApp(); } catch (paintErr) { console.warn('[bootFromSession] paintApp error:', paintErr?.message); }
