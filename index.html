@@ -1499,8 +1499,8 @@
         if (menuRole) {
           const r = String(data.role || '').toLowerCase();
           menuRole.innerText = r === 'admin'
-            ? '👑 Admin (DB)'
-            : r === 'manager' ? '🔑 Manager (DB)' : `👤 ${data.role || 'employee'} (DB)`;
+            ? '👑 Admin'
+            : r === 'manager' ? '🔑 Manager' : `👤 ${data.role || 'Employé'}`;
         }
 
         return data;
@@ -1905,7 +1905,11 @@
           }
         } catch (error) {
           console.error('Boot error:', error);
-          showSessionStatus('❌ Erreur de chargement', 'error', 5000);
+          showSessionStatus('❌ Erreur de chargement — données locales utilisées', 'error', 5000);
+          // Profile was already loaded successfully above; render the UI so the
+          // admin account is shown with its real identity and not left with any
+          // stale/intermediate label (e.g. the raw DB suffix set by loadProfile).
+          try { paintApp(); } catch (paintErr) { console.warn('[bootFromSession] paintApp error:', paintErr?.message); }
         }
       } catch (fatalErr) {
         // Unexpected error before the app shell was shown — fall back to the
