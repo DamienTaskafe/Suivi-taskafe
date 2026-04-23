@@ -1097,6 +1097,9 @@
       const activeClientIds   = new Set(state.clients.map(c => c.id));
       const activeClientNames = new Set(state.clients.map(c => c.name));
 
+      // Resolve the filtered client record once (used below to match by id)
+      const filterClientRecord = client ? state.clients.find(c => c.name === client) : null;
+
       return state.sales.filter(s => {
         // Exclude sales belonging to deleted clients
         if (s.client_id) {
@@ -1104,8 +1107,12 @@
         } else {
           if (s.client_name && !activeClientNames.has(s.client_name)) return false;
         }
-        // Apply UI filters
-        if (client && s.client_name !== client) return false;
+        // Apply UI filters – match by client_id (current identity) or client_name fallback
+        if (client) {
+          const matchById = filterClientRecord && s.client_id === filterClientRecord.id;
+          const matchByName = s.client_name === client;
+          if (!matchById && !matchByName) return false;
+        }
         if (category && s.category !== category) return false;
         if (date && new Date(s.created_at).toISOString().slice(0, 10) !== date) return false;
         return true;
@@ -1182,31 +1189,43 @@
     }
 
     function renderSalesClientCards(data) {
-      // Group sales by client name and sort A→Z
-      const grouped = {};
-      const clientOrder = [];
+      // Group sales by current client identity – prefer client_id so renames are reflected
+      const grouped = {};  // key → { displayName, sales[] }
+      const keyOrder = [];
       data.forEach(s => {
-        const key = s.client_name || 'Inconnu';
-        if (!grouped[key]) { grouped[key] = []; clientOrder.push(key); }
-        grouped[key].push(s);
+        let key, displayName;
+        if (s.client_id) {
+          const client = state.clients.find(c => String(c.id) === String(s.client_id));
+          if (!client) return; // orphaned record – defensively skip (already filtered by getFilteredSales)
+          key = 'id:' + String(s.client_id);
+          displayName = client.name;
+        } else {
+          displayName = s.client_name || 'Inconnu';
+          key = 'name:' + displayName;
+        }
+        if (!grouped[key]) { grouped[key] = { displayName, sales: [] }; keyOrder.push(key); }
+        grouped[key].sales.push(s);
       });
-      clientOrder.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      keyOrder.sort((a, b) =>
+        grouped[a].displayName.localeCompare(grouped[b].displayName, undefined, { sensitivity: 'base' })
+      );
 
       const cards = document.getElementById('vrClientCards');
       const detail = document.getElementById('vrClientDetail');
       detail.style.display = 'none';
       document.getElementById('salesList').innerHTML = '';
 
-      if (clientOrder.length === 0) {
+      if (keyOrder.length === 0) {
         cards.innerHTML = `<div class="empty-state">Aucune vente trouvée.</div>`;
       } else {
         let html = '';
-        clientOrder.forEach(clientName => {
-          const icon = vrIconForClient(clientName);
+        keyOrder.forEach(key => {
+          const { displayName } = grouped[key];
+          const icon = vrIconForClient(displayName);
           html += `
-            <div class="vr-client-card" role="button" tabindex="0" data-action="open-client-sales" data-client="${escHtml(clientName)}">
+            <div class="vr-client-card" role="button" tabindex="0" data-action="open-client-sales" data-client="${escHtml(key)}">
               <span class="vr-client-card-icon" aria-hidden="true">${icon}</span>
-              <span class="vr-client-card-name">${escHtml(clientName)}</span>
+              <span class="vr-client-card-name">${escHtml(displayName)}</span>
               <span class="vr-client-card-arrow" aria-hidden="true">›</span>
             </div>`;
         });
@@ -1214,8 +1233,18 @@
       }
     }
 
-    function renderSalesForClient(clientName, data) {
-      const clientSales = data.filter(s => (s.client_name || 'Inconnu') === clientName);
+    function renderSalesForClient(clientKey, data) {
+      // clientKey is 'id:<clientId>' for id-based groups, or 'name:<name>' / plain name for legacy
+      let clientSales;
+      if (clientKey.startsWith('id:')) {
+        const cid = clientKey.slice(3);
+        // Use loose equality to handle id type differences (string vs number)
+        // eslint-disable-next-line eqeqeq
+        clientSales = data.filter(s => s.client_id != null && String(s.client_id) === cid);
+      } else {
+        const nameKey = clientKey.startsWith('name:') ? clientKey.slice(5) : clientKey;
+        clientSales = data.filter(s => !s.client_id && (s.client_name || 'Inconnu') === nameKey);
+      }
       const list = document.getElementById('salesList');
       let html = '';
       if (clientSales.length === 0) {
@@ -1264,13 +1293,22 @@
       }
     }
 
-    window.openClientSales = function(clientName) {
+    window.openClientSales = function(clientKey) {
       const detail = document.getElementById('vrClientDetail');
       const cards = document.getElementById('vrClientCards');
-      document.getElementById('vrDetailTitle').textContent = clientName;
+      // Resolve the display name from the key so renames are always reflected
+      let displayName = clientKey;
+      if (clientKey.startsWith('id:')) {
+        const cid = clientKey.slice(3);
+        const client = state.clients.find(c => String(c.id) === cid);
+        displayName = client ? client.name : cid;
+      } else if (clientKey.startsWith('name:')) {
+        displayName = clientKey.slice(5);
+      }
+      document.getElementById('vrDetailTitle').textContent = displayName;
       cards.style.display = 'none';
       detail.style.display = 'block';
-      renderSalesForClient(clientName, _allSalesData);
+      renderSalesForClient(clientKey, _allSalesData);
       vrRefreshAccordion();
       const area = document.getElementById('salesScrollArea');
       if (area) area.scrollTop = 0;
@@ -2099,9 +2137,20 @@
         if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices });
         // Propagate rename to in-memory sales so renderSales() shows the new name
         if (nameChanged) {
+          const orphaned = state.sales.filter(s => s.client_id === null && s.client_name === oldName);
+          let reattach = false;
+          if (orphaned.length > 0) {
+            reattach = confirm(
+              `${orphaned.length} vente(s) sans client associé portent le nom « ${oldName} ».\n` +
+              `Voulez-vous les rattacher à ce client (${name}) ?`
+            );
+          }
           state.sales.forEach(s => {
-            if (s.client_id === clientId || (s.client_id == null && s.client_name === oldName)) {
+            if (s.client_id === clientId) {
               s.client_name = name;
+            } else if (s.client_id === null && s.client_name === oldName) {
+              s.client_name = name;
+              if (reattach) s.client_id = clientId;
             }
           });
           await saveRecords('sales', state.sales).catch(() => {});
@@ -2120,8 +2169,22 @@
       if (nameChanged) {
         // Match sales linked by client_id (the reliable foreign-key reference)
         await supabase.from('sales').update({ client_name: name }).eq('client_id', clientId);
-        // Also update legacy / offline-created sales that only carry a name (null client_id)
-        await supabase.from('sales').update({ client_name: name }).is('client_id', null).eq('client_name', oldName);
+        // Check for orphaned sales (client_id IS NULL) that can be reattached to this client
+        const { data: orphanSales } = await supabase
+          .from('sales').select('id').is('client_id', null).eq('client_name', oldName);
+        if (orphanSales && orphanSales.length > 0) {
+          const reattach = confirm(
+            `${orphanSales.length} vente(s) sans client associé portent le nom « ${oldName} ».\n` +
+            `Voulez-vous les rattacher à ce client (${name}) ?`
+          );
+          if (reattach) {
+            await supabase.from('sales').update({ client_name: name, client_id: clientId })
+              .is('client_id', null).eq('client_name', oldName);
+          } else {
+            await supabase.from('sales').update({ client_name: name })
+              .is('client_id', null).eq('client_name', oldName);
+          }
+        }
       }
       closeModal('editClientModal');
       showSessionStatus('✅ Client modifié', 'success');
