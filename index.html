@@ -494,9 +494,17 @@
       </div>
 
       <div id="dupStep2NewPos" style="display:none;">
-        <p style="margin-bottom:8px;font-size:14px;">Ajoutez un libellé pour différencier ce point de vente.</p>
+        <p style="margin-bottom:8px;font-size:14px;">Ajoutez un libellé pour différencier les points de vente.</p>
+        <div id="dupExistPosSection" style="display:none;border:1px solid rgba(0,0,0,0.12);border-radius:8px;padding:10px;margin-bottom:12px;background:rgba(0,0,0,0.03);">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;">📋 Fiche existante — ajoutez aussi un repère</p>
+          <div class="ncp-field">
+            <label for="dupExistPosLabel">Libellé de la fiche existante (ex : Siège, Maarif…)</label>
+            <input id="dupExistPosLabel" type="text" placeholder="Ex : Siège, Maarif…" oninput="_updateDupPosFinalName()" />
+          </div>
+          <p class="muted" style="margin-bottom:0;">Nom final : <strong id="dupExistPosFinalName"></strong></p>
+        </div>
         <div class="ncp-field">
-          <label for="dupPosLabel">Libellé (ex : Hay Riad, Centre, Succursale 2…)</label>
+          <label for="dupPosLabel">Libellé du nouveau point de vente (ex : Hay Riad, Centre…)</label>
           <input id="dupPosLabel" type="text" placeholder="Ex : Hay Riad, Centre…" oninput="_updateDupPosFinalName()" />
         </div>
         <p class="muted" style="margin-bottom:10px;">Nom final : <strong id="dupPosFinalName"></strong></p>
@@ -1862,23 +1870,64 @@
     };
 
     // ── Duplicate client detection helpers ─────────────────────────────────
-    function _normalizeName(n) { return (n || '').trim().toLowerCase(); }
+    function _normalizeName(n) {
+      if (!n) return '';
+      let s = n.trim().toLowerCase();
+      // Remove diacritics/accents so é=e, à=a, etc.
+      s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      // Strip generic leading prefix "cafe" / "café" (after accent removal) followed by whitespace
+      s = s.replace(/^cafe\s+/, '');
+      // Collapse all internal spaces so "test 2" == "test2"
+      s = s.replace(/\s+/g, '');
+      return s;
+    }
 
+    function _levenshtein(a, b) {
+      const m = a.length, n = b.length;
+      if (!m) return n;
+      if (!n) return m;
+      const dp = [];
+      for (let i = 0; i <= m; i++) dp[i] = [i];
+      for (let j = 1; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          dp[i][j] = a[i - 1] === b[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+      return dp[m][n];
+    }
+
+    // Conservative typo-tolerance: requires both names to be ≥ 6 chars after normalization,
+    // at most 2 edits, and capped at 35% of the longer name.
+    function _isNearDuplicate(normA, normB) {
+      if (!normA || !normB) return false;
+      if (Math.min(normA.length, normB.length) < 6) return false;
+      const dist = _levenshtein(normA, normB);
+      const maxLen = Math.max(normA.length, normB.length);
+      return dist <= 2 && dist / maxLen <= 0.35;
+    }
+
+    // Returns {client, fuzzy} or null.
     function _findDuplicateClient(name, excludeId) {
       const norm = _normalizeName(name);
       if (!norm) return null;
-      return state.clients.find(c =>
-        (excludeId === null || String(c.id) !== String(excludeId)) &&
-        _normalizeName(c.name) === norm
-      ) || null;
+      const eligible = c => (excludeId === null || String(c.id) !== String(excludeId));
+      const exact = state.clients.find(c => eligible(c) && _normalizeName(c.name) === norm);
+      if (exact) return { client: exact, fuzzy: false };
+      const near = state.clients.find(c => eligible(c) && _isNearDuplicate(_normalizeName(c.name), norm));
+      if (near) return { client: near, fuzzy: true };
+      return null;
     }
 
     let _dupCtx = null;
 
-    function _openDuplicateModal(existingClient, newName, newAddress) {
+    function _openDuplicateModal(existingClient, newName, newAddress, isFuzzy) {
       _dupCtx = { ..._dupCtx, existingClient, newName, newAddress };
-      document.getElementById('dupMsg').textContent =
-        'Une fiche client existe déjà avec le nom « ' + existingClient.name + ' ».';
+      document.getElementById('dupMsg').textContent = isFuzzy
+        ? 'Une fiche client au nom très proche existe déjà : « ' + existingClient.name + ' ».'
+        : 'Une fiche client existe déjà avec le nom « ' + existingClient.name + ' ».';
       const info = [existingClient.name, existingClient.address].filter(Boolean).join('\n📍 ');
       document.getElementById('dupExistingInfo').textContent = info;
       document.getElementById('dupStep1').style.display = '';
@@ -1910,6 +1959,13 @@
         const parts = (_dupCtx.newAddress || '').split(',');
         const city = parts.length > 1 ? parts[parts.length - 1].trim() : '';
         document.getElementById('dupPosLabel').value = city;
+        // Show existing-record label section only if the existing client is not yet differentiated
+        const existingAlreadyLabeled = (_dupCtx.existingClient.name || '').includes(' — ');
+        const existSection = document.getElementById('dupExistPosSection');
+        existSection.style.display = existingAlreadyLabeled ? 'none' : '';
+        if (!existingAlreadyLabeled) {
+          document.getElementById('dupExistPosLabel').value = '';
+        }
         window._updateDupPosFinalName();
         document.getElementById('dupStep1').style.display = 'none';
         document.getElementById('dupStep2NewPos').style.display = '';
@@ -1921,6 +1977,15 @@
       const label = (document.getElementById('dupPosLabel').value || '').trim();
       document.getElementById('dupPosFinalName').textContent =
         label ? (_dupCtx.newName + ' — ' + label) : _dupCtx.newName;
+      // Update existing-record preview too
+      const existLabelEl = document.getElementById('dupExistPosLabel');
+      const existFinalEl = document.getElementById('dupExistPosFinalName');
+      if (existLabelEl && existFinalEl && _dupCtx.existingClient) {
+        const existLabel = existLabelEl.value.trim();
+        existFinalEl.textContent = existLabel
+          ? (_dupCtx.existingClient.name + ' — ' + existLabel)
+          : _dupCtx.existingClient.name;
+      }
     };
 
     window._handleDupAddrChoice = function(keepWhich) {
@@ -2011,6 +2076,32 @@
       closeModal('duplicateClientModal');
       const label = (document.getElementById('dupPosLabel').value || '').trim();
       const finalName = label ? (ctx.newName + ' — ' + label) : ctx.newName;
+
+      // Symmetrically rename the existing client if it isn't already differentiated
+      const existingAlreadyLabeled = (ctx.existingClient.name || '').includes(' — ');
+      if (!existingAlreadyLabeled) {
+        const existLabel = (document.getElementById('dupExistPosLabel')?.value || '').trim();
+        if (existLabel) {
+          const newExistingName = ctx.existingClient.name + ' — ' + existLabel;
+          const existId = ctx.existingClient.id;
+          if (!navigator.onLine) {
+            const idx = state.clients.findIndex(c => String(c.id) === String(existId));
+            if (idx >= 0) state.clients[idx].name = newExistingName;
+            state.sales.forEach(s => {
+              if (String(s.client_id) === String(existId)) s.client_name = newExistingName;
+            });
+            await saveRecords('clients', state.clients).catch(() => {});
+            await saveRecords('sales', state.sales).catch(() => {});
+            await addPendingOp({ type: 'updateClient', payload: { clientId: existId, name: newExistingName } }).catch(() => {});
+          } else {
+            await supabase.from('clients').update({ name: newExistingName }).eq('id', existId);
+            await supabase.from('sales').update({ client_name: newExistingName }).eq('client_id', existId);
+            const idx = state.clients.findIndex(c => String(c.id) === String(existId));
+            if (idx >= 0) state.clients[idx].name = newExistingName;
+          }
+        }
+      }
+
       if (ctx.mode === 'create') {
         document.getElementById('clientName').value = finalName;
         await window.addClient();
@@ -2051,11 +2142,11 @@
         }
       };
 
-      // ── Duplicate detection (case-insensitive) ────────────────────────────
-      const _dupFound = _findDuplicateClient(name, null);
-      if (_dupFound) {
+      // ── Duplicate detection (business-aware normalization + typo tolerance) ──
+      const _dupResult = _findDuplicateClient(name, null);
+      if (_dupResult) {
         _dupCtx = { mode: 'create', payload };
-        _openDuplicateModal(_dupFound, name, address);
+        _openDuplicateModal(_dupResult.client, name, address, _dupResult.fuzzy);
         return;
       }
       // ─────────────────────────────────────────────────────────────────────
@@ -2333,12 +2424,12 @@
       if (addrCity) addrParts.push(addrCity);
       const address = addrParts.join(', ');
 
-      // ── Duplicate detection on rename (case-insensitive) ─────────────────
+      // ── Duplicate detection on rename (business-aware normalization + typo tolerance) ──
       if (nameChanged) {
-        const _dupFound = _findDuplicateClient(name, clientId);
-        if (_dupFound) {
+        const _dupResult = _findDuplicateClient(name, clientId);
+        if (_dupResult) {
           _dupCtx = { mode: 'edit', clientId };
-          _openDuplicateModal(_dupFound, name, address);
+          _openDuplicateModal(_dupResult.client, name, address, _dupResult.fuzzy);
           return;
         }
       }
