@@ -3040,7 +3040,11 @@
       const quantity = parseFloat(document.getElementById('quantityInput').value);
       const rawDate = document.getElementById('datetime').value;
 
-      const ready = !!(clientName && category && !isNaN(quantity) && quantity > 0 && rawDate);
+      const hasClient   = !!clientName;
+      const hasCategory = !!category;
+      const hasValidQty = !isNaN(quantity) && quantity > 0;
+      const hasDate     = !!rawDate;
+      const ready       = hasClient && hasCategory && hasValidQty && hasDate;
 
       const paidEl = document.getElementById('paid');
       const notPaidEl = document.getElementById('notPaid');
