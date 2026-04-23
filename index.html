@@ -1528,12 +1528,11 @@
         roleEl.innerText = isAdmin() ? '👑 Admin' : isManager() ? '🔑 Manager' : '👤 Employé';
       }
 
-      document.getElementById('usersBtn').classList.toggle('hidden', !hasPermission('users.view'));
       document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
       document.getElementById('resetAppBtn').classList.toggle('hidden', !isAdmin());
       document.getElementById('permissionsBtn').classList.toggle('hidden', !isAdmin());
       document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
-      document.getElementById('analyticsBtn').classList.toggle('hidden', !hasPermission('reports.view'));
+      applyPermissionsToUI();
 
       updateDarkModeBtn();
       initAccordions();
