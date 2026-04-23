@@ -800,10 +800,6 @@
           const { data: saleData, error: saleErr } = await supabase
             .from('sales').insert(insertPayload).select('id').single();
           if (saleErr) throw saleErr;
-          if (op.stockPayload) {
-            const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload, { onConflict: 'category' });
-            if (stockErr) console.warn('[sync] stock upsert warning (addSale):', stockErr.message);
-          }
           const realId = saleData?.id;
           return (localId && realId && localId !== realId)
             ? { localId, realId, storeKey: 'sales' }
@@ -815,23 +811,11 @@
             const { error } = await supabase.from('sales').delete().eq('id', saleId);
             if (error) throw error;
           }
-          if (op.stockPayload) {
-            const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload, { onConflict: 'category' });
-            if (stockErr) console.warn('[sync] stock upsert warning (deleteSale):', stockErr.message);
-          }
           break;
         }
         case 'updateSale': {
           const { saleId, stockOldPayload, stockNewPayload, ...salePayload } = op.payload;
           if (String(saleId).startsWith('local_')) break;
-          if (stockOldPayload) {
-            const { error: e1 } = await supabase.from('stocks').upsert(stockOldPayload, { onConflict: 'category' });
-            if (e1) console.warn('[sync] stock upsert warning (updateSale old):', e1.message);
-          }
-          if (stockNewPayload) {
-            const { error: e2 } = await supabase.from('stocks').upsert(stockNewPayload, { onConflict: 'category' });
-            if (e2) console.warn('[sync] stock upsert warning (updateSale new):', e2.message);
-          }
           const { error } = await supabase.from('sales').update(salePayload).eq('id', saleId);
           if (error) throw error;
           break;
@@ -1834,8 +1818,7 @@
         await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({
           type: 'addSale',
-          payload: localSale,
-          stockPayload: { category, quantity: newStockQty }
+          payload: localSale
         }).catch(() => {});
         renderSales(); renderStock();
         showSessionStatus('📶 Vente enregistrée localement', 'info');
@@ -1870,8 +1853,6 @@
         created_at: createdAt
       });
       state.stocks[category] = newStockQty;
-      const { error: stockError } = await supabase.from('stocks').upsert({ category, quantity: newStockQty }, { onConflict: 'category' });
-      if (stockError) console.warn('[addSale] stock upsert:', stockError.message);
 
       renderSales(); renderStock();
       showSessionStatus('✅ Vente ajoutée', 'success');
@@ -1924,8 +1905,7 @@
         await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({
           type: 'deleteSale',
-          payload: { saleId },
-          stockPayload: { category: sale.category, quantity: restoredQty }
+          payload: { saleId }
         }).catch(() => {});
         renderSales(); renderStock();
         showSessionStatus('📶 Vente supprimée localement', 'info');
@@ -1946,12 +1926,6 @@
         renderSales(); renderStock();
         return showSessionStatus('❌ ' + error.message, 'error');
       }
-
-      const { error: stockError } = await supabase.from('stocks').upsert(
-        { category: sale.category, quantity: restoredQty },
-        { onConflict: 'category' }
-      );
-      if (stockError) console.warn('[deleteSale] stock upsert:', stockError.message);
 
       showSessionStatus('✅ Vente supprimée', 'success');
       loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] deleteSale:', e?.message));
@@ -2776,20 +2750,13 @@
         await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({
           type: 'updateSale',
-          payload: { saleId, ...updatedSaleData, stockOldPayload, stockNewPayload }
+          payload: { saleId, ...updatedSaleData }
         }).catch(() => {});
         closeModal('editSaleModal');
         renderSales(); renderStock();
         showSessionStatus('📶 Vente modifiée localement', 'info');
         updateOfflineBanner();
         return;
-      }
-
-      if (stockChanged) {
-        const { error: stockErr1 } = await supabase.from('stocks').upsert(stockOldPayload, { onConflict: 'category' });
-        if (stockErr1) return showSessionStatus('❌ ' + stockErr1.message, 'error');
-        const { error: stockErr2 } = await supabase.from('stocks').upsert(stockNewPayload, { onConflict: 'category' });
-        if (stockErr2) return showSessionStatus('❌ ' + stockErr2.message, 'error');
       }
 
       const { error } = await supabase.from('sales').update(updatedSaleData).eq('id', saleId);
