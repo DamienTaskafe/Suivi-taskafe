@@ -1092,12 +1092,24 @@
       const client = document.getElementById('filterClient').value;
       const category = document.getElementById('filterCategory').value;
       const date = document.getElementById('filterDate').value;
-      return state.sales.filter(
-        s =>
-          (!client || s.client_name === client) &&
-          (!category || s.category === category) &&
-          (!date || new Date(s.created_at).toISOString().slice(0, 10) === date)
-      );
+
+      // Build the set of active client ids/names once for efficiency
+      const activeClientIds   = new Set(state.clients.map(c => c.id));
+      const activeClientNames = new Set(state.clients.map(c => c.name));
+
+      return state.sales.filter(s => {
+        // Exclude sales belonging to deleted clients
+        if (s.client_id) {
+          if (!activeClientIds.has(s.client_id)) return false;
+        } else {
+          if (s.client_name && !activeClientNames.has(s.client_name)) return false;
+        }
+        // Apply UI filters
+        if (client && s.client_name !== client) return false;
+        if (category && s.category !== category) return false;
+        if (date && new Date(s.created_at).toISOString().slice(0, 10) !== date) return false;
+        return true;
+      });
     }
 
     function getSalesForClient(client) {
@@ -1170,15 +1182,6 @@
     }
 
     function renderSalesClientCards(data) {
-      // Exclude sales whose client record has been deleted
-      const activeClientIds  = new Set(state.clients.map(c => c.id));
-      const activeClientNames = new Set(state.clients.map(c => c.name));
-      data = data.filter(s =>
-        s.client_id
-          ? activeClientIds.has(s.client_id)
-          : activeClientNames.has(s.client_name)
-      );
-
       // Group sales by client name and sort A→Z
       const grouped = {};
       const clientOrder = [];
@@ -2704,8 +2707,17 @@
       const content = document.getElementById('balanceContent');
       if (!content) return;
 
+      const activeClientIds   = new Set(state.clients.map(c => c.id));
+      const activeClientNames = new Set(state.clients.map(c => c.name));
+
       const clientMap = {};
       state.sales.forEach(s => {
+        // Skip sales for deleted clients
+        if (s.client_id) {
+          if (!activeClientIds.has(s.client_id)) return;
+        } else {
+          if (s.client_name && !activeClientNames.has(s.client_name)) return;
+        }
         const name = s.client_name || 'Inconnu';
         if (!clientMap[name]) clientMap[name] = { totalSold: 0, paid: 0, unpaid: 0 };
         const amount = Number(s.total_price || 0);
@@ -3519,6 +3531,16 @@
       showSessionStatus('✅ Connexion rétablie — synchronisation…', 'success', 4000);
       // Small delay: let navigator.onLine stabilize and let network actually become usable
       setTimeout(() => syncPendingOps(), 800);
+    });
+
+    // Silently refresh data when the user switches back to this tab so that
+    // changes made in another session (e.g. client deletions) are reflected
+    // without requiring a manual page reload.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!navigator.onLine) return;
+      if (!state.session?.user) return;
+      loadCloudData().then(() => { paintApp(); }).catch(e => console.warn('[visibilitychange] refresh error:', e?.message));
     });
 
     // Run the initial boot; if getSession() or bootFromSession() throws
