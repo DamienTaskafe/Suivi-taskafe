@@ -2090,14 +2090,17 @@
             state.sales.forEach(s => {
               if (String(s.client_id) === String(existId)) s.client_name = newExistingName;
             });
-            await saveRecords('clients', state.clients).catch(() => {});
-            await saveRecords('sales', state.sales).catch(() => {});
-            await addPendingOp({ type: 'updateClient', payload: { clientId: existId, name: newExistingName } }).catch(() => {});
+            await saveRecords('clients', state.clients).catch(e => console.warn('[offline] rename existing client:', e?.message));
+            await saveRecords('sales', state.sales).catch(e => console.warn('[offline] rename sales for existing client:', e?.message));
+            await addPendingOp({ type: 'updateClient', payload: { clientId: existId, name: newExistingName } }).catch(e => console.warn('[offline] pendingOp rename:', e?.message));
           } else {
-            await supabase.from('clients').update({ name: newExistingName }).eq('id', existId);
-            await supabase.from('sales').update({ client_name: newExistingName }).eq('client_id', existId);
-            const idx = state.clients.findIndex(c => String(c.id) === String(existId));
-            if (idx >= 0) state.clients[idx].name = newExistingName;
+            const { error: errC } = await supabase.from('clients').update({ name: newExistingName }).eq('id', existId);
+            if (errC) { console.warn('[dup] rename existing client failed:', errC.message); }
+            else {
+              await supabase.from('sales').update({ client_name: newExistingName }).eq('client_id', existId);
+              const idx = state.clients.findIndex(c => String(c.id) === String(existId));
+              if (idx >= 0) state.clients[idx].name = newExistingName;
+            }
           }
         }
       }
