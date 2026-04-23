@@ -974,6 +974,9 @@
           showSessionStatus('⚠️ Erreur lors de la sauvegarde', 'error');
           state.rolePermissions[role][key] = !allowed;
           renderPermissionsModal();
+        } else {
+          showSessionStatus(`✅ Permission « ${key} » ${allowed ? 'activée' : 'désactivée'} pour ${role}`, 'success');
+          applyPermissionsToUI();
         }
       } catch (e) {
         console.error('[toggleRolePermission] exception:', e?.message);
@@ -982,6 +985,13 @@
         renderPermissionsModal();
       }
     };
+
+    function applyPermissionsToUI() {
+      const usersBtn = document.getElementById('usersBtn');
+      if (usersBtn) usersBtn.classList.toggle('hidden', !hasPermission('users.view'));
+      const analyticsBtn = document.getElementById('analyticsBtn');
+      if (analyticsBtn) analyticsBtn.classList.toggle('hidden', !hasPermission('reports.view'));
+    }
     const portaledMenus = new Map(); // menu el → original parent el
 
     function closeAllMenus() {
@@ -1381,7 +1391,7 @@
     }
 
     async function loadAllUsers() {
-      if (!isManagerOrAdmin()) return;
+      if (!hasPermission('users.view')) return;
       try {
         const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
         if (error) {
@@ -1518,12 +1528,12 @@
         roleEl.innerText = isAdmin() ? '👑 Admin' : isManager() ? '🔑 Manager' : '👤 Employé';
       }
 
-      document.getElementById('usersBtn').classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('usersBtn').classList.toggle('hidden', !hasPermission('users.view'));
       document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
       document.getElementById('resetAppBtn').classList.toggle('hidden', !isAdmin());
       document.getElementById('permissionsBtn').classList.toggle('hidden', !isAdmin());
       document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
-      document.getElementById('analyticsBtn').classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('analyticsBtn').classList.toggle('hidden', !hasPermission('reports.view'));
 
       updateDarkModeBtn();
       initAccordions();
@@ -2234,7 +2244,7 @@
     window.openResumeModal = function () { openModal('resumeModal'); };
 
     window.openAnalyticsModal = function () {
-      if (!isManagerOrAdmin()) return;
+      if (!hasPermission('reports.view')) return;
       renderAnalytics(_allSalesData);
       openModal('analyticsModal');
     };
@@ -2561,11 +2571,11 @@
     // ── Analytics ───────────────────────────────────────────────────────────────
     function renderAnalytics(data) {
       const analyticsBtn = document.getElementById('analyticsBtn');
-      if (analyticsBtn) analyticsBtn.classList.toggle('hidden', !isManagerOrAdmin());
+      if (analyticsBtn) analyticsBtn.classList.toggle('hidden', !hasPermission('reports.view'));
 
       const content = document.getElementById('analyticsContent');
       if (!content) return;
-      if (!isManagerOrAdmin()) return;
+      if (!hasPermission('reports.view')) return;
 
       const cats = CATEGORIES;
 
