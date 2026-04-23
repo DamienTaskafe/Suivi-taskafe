@@ -40,11 +40,12 @@
       content: "";
       position: fixed;
       inset: 0;
-      background: url("icon-512.png.PNG") center center / cover no-repeat;
-      opacity: 0.08;
-      filter: blur(2px);
-      transform: scale(1.05);
+      background: url("icon-512.png.PNG") center center / 60vmin no-repeat;
+      opacity: 0.06;
+      filter: blur(2.5px);
+      transform: scale(1.02);
       z-index: -2;
+      pointer-events: none;
     }
 
     body::after {
@@ -53,6 +54,7 @@
       inset: 0;
       background: linear-gradient(to bottom, rgba(0,0,0,0.03), rgba(0,0,0,0.08));
       z-index: -1;
+      pointer-events: none;
     }
 
     .session-status {
@@ -1003,8 +1005,8 @@
       --color-secondary: #c8beb6;
       background-color: #0f0f0f;
     }
-    body.dark::before { opacity: 0.03; }
-    body.dark::after { background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.4)); }
+    body.dark::before { opacity: 0.08; filter: blur(2.5px) brightness(0.92); }
+    body.dark::after { background: linear-gradient(to bottom, rgba(0,0,0,0.10), rgba(0,0,0,0.20)); }
     body.dark .section-shell { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
     body.dark .card { background: rgba(30,26,22,0.98); border-color: rgba(255,255,255,0.07); }
     body.dark input[type="text"], body.dark input[type="email"], body.dark input[type="password"], body.dark input[type="number"], body.dark input[type="date"], body.dark input[type="month"], body.dark input[type="datetime-local"], body.dark select, body.dark textarea { background: rgba(30,26,22,0.95); color: var(--color-text); border-color: rgba(255,255,255,0.1); }
