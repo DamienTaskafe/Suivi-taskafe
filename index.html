@@ -156,9 +156,15 @@
           </div>
         </div>
 
-        <div class="checkbox-line">
-          <input type="checkbox" id="paid" />
-          <label for="paid" style="margin: 0; flex: 1;">✅ Payé</label>
+        <div class="payment-status-row">
+          <label class="payment-toggle" id="labelPaid">
+            <input type="radio" name="paymentStatus" id="paid" value="paid" onchange="updatePaymentToggle()" />
+            <span class="payment-toggle-inner">✅ Payé</span>
+          </label>
+          <label class="payment-toggle" id="labelNotPaid">
+            <input type="radio" name="paymentStatus" id="notPaid" value="notpaid" onchange="updatePaymentToggle()" />
+            <span class="payment-toggle-inner">❌ Non payé</span>
+          </label>
         </div>
 
         <div class="preview-bar">
@@ -168,7 +174,7 @@
         </div>
 
         <div style="display:flex;justify-content:center;">
-          <button class="add-sale-btn" onclick="addSale()">✅ Ajouter vente</button>
+          <button class="add-sale-btn" onclick="addSale()">🛒 Valider la commande</button>
         </div>
 
         <hr />
@@ -432,6 +438,18 @@
     </div>
   </div>
 
+  <div id="confirmSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'confirmSaleModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="closeModal('confirmSaleModal')">✕</button></div>
+      <p style="text-align:center;font-weight:600;margin-bottom:12px;color:var(--color-text);">Voulez-vous valider cette commande ?</p>
+      <div id="confirmSaleRecap" class="confirm-recap"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button onclick="closeModal('confirmSaleModal')" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
+        <button id="confirmSaleBtn" onclick="confirmAndSave()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;">✅ Confirmer</button>
+      </div>
+    </div>
+  </div>
+
   <div id="editClientModal" class="modal-backdrop" onclick="backdropClose(event, 'editClientModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
@@ -605,10 +623,11 @@
     function initCategorySelects() {
       const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
       const filterOpts = `<option value="">Toutes catégories</option>` + opts;
-      ['category', 'editSaleCategory'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerHTML = opts;
-      });
+      const mainOpts = `<option value="">Sélectionner une gamme</option>` + opts;
+      const mainCat = document.getElementById('category');
+      if (mainCat) mainCat.innerHTML = mainOpts;
+      const editCat = document.getElementById('editSaleCategory');
+      if (editCat) editCat.innerHTML = opts;
       const fc = document.getElementById('filterCategory');
       if (fc) fc.innerHTML = filterOpts;
     }
@@ -1124,14 +1143,8 @@
     }
 
     function loadClientSelectors() {
-      const sorted = sortClientsAZ(state.clients);
-      // Pre-fill the new sale client picker with the first alphabetical client if none is selected.
-      // The dropdown renders on demand from state.clients (always sorted) when the user interacts.
-      const currentVal = document.getElementById('clientSelect').value;
-      if (!currentVal && sorted.length > 0) {
-        document.getElementById('clientSelect').value = sorted[0].name;
-        document.getElementById('clientSelectSearch').value = sorted[0].name;
-      }
+      // Do not pre-fill the new sale client picker – leave it empty so users
+      // must explicitly choose a client for each new sale.
       // reset client search filter
       document.getElementById('filterClientSearch').value = document.getElementById('filterClient').value || '';
     }
@@ -2275,27 +2288,91 @@
       loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] addClient:', e?.message));
     };
 
-    window.addSale = async function () {
-      if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+    // ── Read & validate the new-sale form; returns null + shows error on failure ─
+    function readSaleForm() {
       const clientName = document.getElementById('clientSelect').value;
       const quantity = parseFloat(document.getElementById('quantityInput').value);
       const category = document.getElementById('category').value;
       const rawDate = document.getElementById('datetime').value;
-      const paid = document.getElementById('paid').checked;
-      const client = state.clients.find(c => c.name === clientName);
-      const createdAt = rawDate ? new Date(rawDate).toISOString() : new Date().toISOString();
+      const paidRadio = document.querySelector('input[name="paymentStatus"]:checked');
 
-      if (!clientName) return showSessionStatus('❌ Choisir un client', 'error');
-      if (isNaN(quantity) || quantity <= 0) return showSessionStatus(`❌ ${category === 'SUCRE' ? 'Nombre de paquets' : 'Kilos'} invalide`, 'error');
-      if (Number(state.stocks[category] || 0) < quantity) return showSessionStatus(`❌ Stock insuffisant pour ${category}`, 'error');
+      if (!clientName) { showSessionStatus('❌ Choisir un client', 'error'); return null; }
+      if (!category) { showSessionStatus('❌ Choisir une gamme', 'error'); return null; }
+      if (isNaN(quantity) || quantity <= 0) { showSessionStatus(`❌ ${category === 'SUCRE' ? 'Nombre de paquets' : 'Kilos'} invalide`, 'error'); return null; }
+      if (!rawDate) { showSessionStatus('❌ Date & heure obligatoires', 'error'); return null; }
+      if (!paidRadio) { showSessionStatus('❌ Choisir le statut de paiement (Payé / Non payé)', 'error'); return null; }
+      if (Number(state.stocks[category] || 0) < quantity) { showSessionStatus(`❌ Stock insuffisant pour ${category}`, 'error'); return null; }
 
+      return { clientName, quantity, category, rawDate, paid: paidRadio.value === 'paid' };
+    }
+
+    // Holds the validated sale data between addSale() and confirmAndSave()
+    let _pendingSale = null;
+
+    window.addSale = async function () {
+      if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+      const form = readSaleForm();
+      if (!form) return;
+
+      _pendingSale = form;
+
+      const { clientName, quantity, category, rawDate, paid } = form;
       const unitPrice = getClientPrice(clientName, category);
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
+      // datetime-local format is YYYY-MM-DDTHH:MM – replace the 'T' separator
+      const formattedDate = rawDate.replace(/T/, ' ');
+      const qtyLabel = category === 'SUCRE' ? 'paquets' : 'kg';
 
-      document.getElementById('quantityInput').value = '';
-      document.getElementById('datetime').value = '';
-      document.getElementById('paid').checked = false;
+      // ── Build recap using safe DOM API to prevent XSS ───────────────────────
+      const rows = [
+        ['Client', clientName],
+        ['Gamme', category],
+        ['Quantité', `${quantity} ${qtyLabel}`],
+        ['Date & Heure', formattedDate],
+        ['Statut', paid ? '✅ Payé' : '❌ Non payé'],
+        ['Prix unitaire', formatDh(unitPrice)],
+      ];
+      const recap = document.getElementById('confirmSaleRecap');
+      recap.innerHTML = '';
+      rows.forEach(([label, value]) => {
+        const row = document.createElement('div');
+        row.className = 'recap-row';
+        const span = document.createElement('span');
+        span.textContent = label;
+        const strong = document.createElement('strong');
+        strong.textContent = value;
+        row.appendChild(span);
+        row.appendChild(strong);
+        recap.appendChild(row);
+      });
+      // Total row with special styling
+      const totalRow = document.createElement('div');
+      totalRow.className = 'recap-row recap-row--total';
+      const totalLabel = document.createElement('span');
+      totalLabel.textContent = 'Total';
+      const totalVal = document.createElement('strong');
+      totalVal.textContent = formatDh(totalPrice);
+      totalRow.appendChild(totalLabel);
+      totalRow.appendChild(totalVal);
+      recap.appendChild(totalRow);
 
+      openModal('confirmSaleModal');
+    };
+
+    window.confirmAndSave = async function() {
+      if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+
+      const form = _pendingSale;
+      _pendingSale = null;
+      if (!form) { closeModal('confirmSaleModal'); return; }
+
+      closeModal('confirmSaleModal');
+
+      const { clientName, quantity, category, rawDate, paid } = form;
+      const client = state.clients.find(c => c.name === clientName);
+      const createdAt = new Date(rawDate).toISOString();
+      const unitPrice = getClientPrice(clientName, category);
+      const totalPrice = Number((quantity * unitPrice).toFixed(2));
       const newStockQty = Number(state.stocks[category] || 0) - quantity;
 
       if (!navigator.onLine) {
@@ -2322,6 +2399,7 @@
           type: 'addSale',
           payload: localSale
         }).catch(() => {});
+        resetSaleForm();
         renderSales(); renderStock();
         showSessionStatus('📶 Vente enregistrée localement', 'info');
         updateOfflineBanner();
@@ -2356,10 +2434,29 @@
       });
       state.stocks[category] = newStockQty;
 
+      // Reset form only after successful save
+      resetSaleForm();
       renderSales(); renderStock();
       showSessionStatus('✅ Vente ajoutée', 'success');
       loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
     };
+
+    function resetSaleForm() {
+      document.getElementById('clientSelect').value = '';
+      document.getElementById('clientSelectSearch').value = '';
+      document.getElementById('quantityInput').value = '';
+      document.getElementById('datetime').value = '';
+      const paidEl = document.getElementById('paid');
+      const notPaidEl = document.getElementById('notPaid');
+      if (paidEl) paidEl.checked = false;
+      if (notPaidEl) notPaidEl.checked = false;
+      updatePaymentToggle();
+      // Reset category to placeholder
+      const catEl = document.getElementById('category');
+      if (catEl) catEl.value = '';
+      updateCategoryStyle();
+      updatePreview();
+    }
 
     async function togglePaid(saleId, paid) {
       if (!hasPermission('tasks.toggle_paid')) return showSessionStatus('❌ Permission refusée : modifier le statut de paiement', 'error');
@@ -2921,6 +3018,17 @@
     };
 
     window.updatePreview = updatePreview;
+
+    window.updatePaymentToggle = function() {
+      const paidEl = document.getElementById('paid');
+      const notPaidEl = document.getElementById('notPaid');
+      const labelPaid = document.getElementById('labelPaid');
+      const labelNotPaid = document.getElementById('labelNotPaid');
+      if (!labelPaid || !labelNotPaid) return;
+      labelPaid.classList.toggle('selected-paid', paidEl && paidEl.checked);
+      labelNotPaid.classList.toggle('selected-notpaid', notPaidEl && notPaidEl.checked);
+    };
+    window.updatePaymentToggle();
 
     // ── Reusable client search dropdown factory ──────────────────────────────────
     /**
