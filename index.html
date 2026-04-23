@@ -784,11 +784,15 @@
           break;
         }
         case 'addSale': {
-          const { id: localId, created_at: _ca, client_id: rawClientId, ...salePayload } = op.payload;
+          const { id: localId, created_at: _ca, client_id: rawClientId, created_by: rawCreatedBy, ...salePayload } = op.payload;
           // If client was created offline (temp ID), use null for client_id; client_name still links correctly
           const client_id = rawClientId && String(rawClientId).startsWith('local_') ? null : (rawClientId || null);
+          // Omit created_by when null/undefined so the DB DEFAULT auth.uid() fires;
+          // only pass it through when a real user id was captured at queue time.
+          const insertPayload = { ...salePayload, client_id };
+          if (rawCreatedBy != null) insertPayload.created_by = rawCreatedBy;
           const { data: saleData, error: saleErr } = await supabase
-            .from('sales').insert({ ...salePayload, client_id }).select('id').single();
+            .from('sales').insert(insertPayload).select('id').single();
           if (saleErr) throw saleErr;
           if (op.stockPayload) {
             const { error: stockErr } = await supabase.from('stocks').upsert(op.stockPayload, { onConflict: 'category' });
@@ -1810,7 +1814,9 @@
           unit_price: unitPrice,
           total_price: totalPrice,
           paid,
-          created_by: state.session?.user?.id || null,
+          // Omit created_by when no user id is available so the DB DEFAULT
+          // auth.uid() fires on replay instead of receiving an explicit null.
+          ...(state.session?.user?.id ? { created_by: state.session.user.id } : {}),
           created_at: createdAt
         };
         state.sales.unshift(localSale);
