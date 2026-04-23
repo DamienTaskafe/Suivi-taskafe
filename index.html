@@ -2064,6 +2064,11 @@
 
       if (!name) return showSessionStatus('❌ Nom client obligatoire', 'error');
 
+      // Capture the old name before any mutation so we can propagate a rename to sales
+      const existingClient = state.clients.find(c => c.id === clientId);
+      const oldName = existingClient?.name || null;
+      const nameChanged = oldName && oldName !== name;
+
       let addrParts = [];
       if (addrNum) addrParts.push(addrNum);
       if (addrDetail) addrParts.push(`${addrType} ${addrDetail}`);
@@ -2080,19 +2085,35 @@
       if (!navigator.onLine) {
         const idx = state.clients.findIndex(c => c.id === clientId);
         if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices });
+        // Propagate rename to in-memory sales so renderSales() shows the new name
+        if (nameChanged) {
+          state.sales.forEach(s => {
+            if (s.client_id === clientId || (s.client_id == null && s.client_name === oldName)) {
+              s.client_name = name;
+            }
+          });
+          await saveRecords('sales', state.sales).catch(() => {});
+        }
         await saveRecords('clients', state.clients).catch(() => {});
         await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices } }).catch(() => {});
         closeModal('editClientModal');
-        renderClients(); loadClientSelectors();
+        renderClients(); loadClientSelectors(); renderSales();
         showSessionStatus('📶 Client modifié localement', 'info');
         updateOfflineBanner();
         return;
       }
       const { error } = await supabase.from('clients').update({ name, address, ice, prices }).eq('id', clientId);
       if (error) return showSessionStatus('❌ ' + error.message, 'error');
+      // Propagate rename to the sales table so ventes récentes shows the new name
+      if (nameChanged) {
+        // Match sales linked by client_id (the reliable foreign-key reference)
+        await supabase.from('sales').update({ client_name: name }).eq('client_id', clientId);
+        // Also update legacy / offline-created sales that only carry a name (null client_id)
+        await supabase.from('sales').update({ client_name: name }).is('client_id', null).eq('client_name', oldName);
+      }
       closeModal('editClientModal');
       showSessionStatus('✅ Client modifié', 'success');
-      loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] editClient:', e?.message));
+      loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] editClient:', e?.message));
     };
 
 
