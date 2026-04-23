@@ -1505,10 +1505,12 @@
 
         return data;
       } catch (err) {
-        state.profile = { id: userId, role: 'unknown', full_name: 'Profil non chargé' };
+        // Keep full_name null so paintApp() falls through to session email — avoids
+        // showing a sentinel string like "Profil non chargé" as the display name.
+        state.profile = { id: userId, role: 'unknown', full_name: null };
         const menuRole = document.getElementById('menuUserRole');
-        if (menuRole) menuRole.innerText = `⚠️ Profil KO: ${err?.message || 'erreur'}`;
-        console.error('loadProfile error:', err);
+        if (menuRole) menuRole.innerText = '⚠️ Profil non disponible';
+        console.error('[loadProfile] error:', err);
         return null;
       }
     }
@@ -1605,6 +1607,7 @@
 
     function _scheduleRealtimeRefresh(source) {
       if (!navigator.onLine || !state.session?.user) return;
+      if (_bootInProgress) return; // skip realtime refresh while boot is still in progress
       if (_realtimeDebounceTimer) clearTimeout(_realtimeDebounceTimer);
       _realtimeDebounceTimer = setTimeout(async () => {
         _realtimeDebounceTimer = null;
@@ -1876,7 +1879,14 @@
           return;
         }
 
-        await loadProfile(session.user.id);
+        const profileOk = await loadProfile(session.user.id);
+        if (!profileOk) {
+          // Profile failed to load — warn the user but continue the boot so
+          // the app shell is still shown.  The degraded role state is already
+          // set inside loadProfile(); the ⚠️ chip in the menu communicates
+          // that the identity is unconfirmed without blocking the session.
+          showSessionStatus('⚠️ Profil non disponible — accès restreint', 'error', 7000);
+        }
         updateLastSeen();
         startLastSeenHeartbeat();
         startPermRefresh();
@@ -1904,11 +1914,39 @@
             }
           }
         } catch (error) {
-          console.error('Boot error:', error);
-          showSessionStatus('❌ Erreur de chargement — données locales utilisées', 'error', 5000);
-          // Profile was already loaded successfully above; render the UI so the
-          // admin account is shown with its real identity and not left with any
-          // stale/intermediate label (e.g. the raw DB suffix set by loadProfile).
+          console.error('[bootFromSession] Boot error:', error);
+          // Cloud data unavailable — try loading from local IndexedDB cache so
+          // the user sees real data rather than empty lists.
+          let hadLocalData = false;
+          try {
+            const [clients, sales, stockRows] = await Promise.all([
+              loadRecords('clients'),
+              loadRecords('sales'),
+              loadRecords('stocks')
+            ]);
+            state.clients = sortClientsAZ(clients || []);
+            state.sales = (sales || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            state.stocks = { ...DEFAULT_STOCKS };
+            (stockRows || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+            hadLocalData = (clients || []).filter(Boolean).length > 0
+              || (sales || []).filter(Boolean).length > 0
+              || (stockRows || []).filter(Boolean).length > 0;
+          } catch (cacheErr) {
+            console.warn('[bootFromSession] local cache read error:', cacheErr?.message);
+          }
+          // Ensure permissions have a safe default if cloud loading did not set them.
+          if (!Object.keys(state.rolePermissions?.employee ?? {}).length) {
+            state.rolePermissions = JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS));
+          }
+          showSessionStatus(
+            hadLocalData
+              ? '⚠️ Données locales utilisées — cloud indisponible'
+              : '❌ Chargement échoué — aucune donnée locale disponible',
+            'error',
+            5000
+          );
+          // Profile was already loaded above; render the app with whatever state is
+          // available so the authenticated user is not left on a half-rendered shell.
           try { paintApp(); } catch (paintErr) { console.warn('[bootFromSession] paintApp error:', paintErr?.message); }
         }
       } catch (fatalErr) {
