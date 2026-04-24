@@ -1649,6 +1649,15 @@
               const newRow = payload.new || {};
               const changedKeys = Object.keys(newRow).filter(k => newRow[k] !== oldRow[k]);
               if (changedKeys.length > 0 && changedKeys.every(k => k === 'last_seen_at')) return;
+              // If this update affects the currently signed-in user's own profile
+              // (e.g. a role change applied by an admin), reload it immediately so
+              // role-based UI — menu chips, hidden buttons, permission checks — all
+              // reflect the new role without requiring a re-login or manual refresh.
+              const selfId = state.session?.user?.id;
+              if (selfId && newRow.id === selfId) {
+                loadProfile(selfId).catch(e =>
+                  console.warn('[realtime] self-profile reload failed:', e?.message));
+              }
             }
             _scheduleRealtimeRefresh('profiles');
           })
