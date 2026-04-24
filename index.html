@@ -685,6 +685,15 @@
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
     const CATEGORIES = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
+
+    // Returns true when the current user's sales for this category should consume
+    // commercial stock rather than central stock.  Mirrors the database trigger
+    // logic: commercial stock is used only when a stock_commercial row exists for
+    // (current_user, category).  Row absence keeps the legacy central-stock path.
+    function _useCommercialStockFor(category) {
+      if (isManagerOrAdmin()) return false;
+      return Object.prototype.hasOwnProperty.call(state.commercialStock, category);
+    }
     function initCategorySelects() {
       const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
       const filterOpts = `<option value="">Toutes catégories</option>` + opts;
@@ -734,7 +743,7 @@
       profile: null,
       session: null,
       allUsers: [],
-      commercialStock: {},      // current user's commercial mini-stock { category: qty }
+      commercialStock: {},      // current user's commercial mini-stock; only populated for categories that have a DB row
       allCommercialStocks: [],  // all employees' rows [{ user_id, category, quantity }]
       rolePermissions: { employee: {}, manager: {} }
     };
@@ -2031,7 +2040,7 @@
           state.sales = sales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           state.stocks = { ...DEFAULT_STOCKS };
           stockRows.forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
-          state.commercialStock = { ...DEFAULT_STOCKS };
+          state.commercialStock = {};
           commercialRows.forEach(row => { state.commercialStock[row.category] = Number(row.quantity || 0); });
         } catch (e) {
           console.warn('[loadCloudData] cache read error:', e?.message);
@@ -2097,7 +2106,7 @@
 
       // Process commercial stocks — non-blocking (gracefully degrade if table absent).
       const commercialRows = commercialRes?.data || [];
-      state.commercialStock = { ...DEFAULT_STOCKS };
+      state.commercialStock = {};
       state.allCommercialStocks = [];
       if (isManagerOrAdmin()) {
         state.allCommercialStocks = commercialRows;
@@ -2117,8 +2126,8 @@
       // Persist to local cache for offline use
       try {
         const stockArr = Object.entries(state.stocks).map(([category, quantity]) => ({ category, quantity }));
-        const myCommercialArr = Object.keys(DEFAULT_STOCKS).map(cat => ({
-          category: cat, quantity: state.commercialStock[cat]
+        const myCommercialArr = Object.entries(state.commercialStock).map(([category, quantity]) => ({
+          category, quantity
         }));
         await Promise.all([
           saveRecords('clients', state.clients),
@@ -2344,15 +2353,18 @@
           // the user sees real data rather than empty lists.
           let hadLocalData = false;
           try {
-            const [clients, sales, stockRows] = await Promise.all([
+            const [clients, sales, stockRows, commercialRows] = await Promise.all([
               loadRecords('clients'),
               loadRecords('sales'),
-              loadRecords('stocks')
+              loadRecords('stocks'),
+              loadRecords('commercial_stocks').catch(() => [])
             ]);
             state.clients = sortClientsAZ(clients || []);
             state.sales = (sales || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             state.stocks = { ...DEFAULT_STOCKS };
             (stockRows || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+            state.commercialStock = {};
+            (commercialRows || []).forEach(row => { state.commercialStock[row.category] = Number(row.quantity || 0); });
             hadLocalData = (clients || []).filter(Boolean).length > 0
               || (sales || []).filter(Boolean).length > 0
               || (stockRows || []).filter(Boolean).length > 0;
@@ -2790,13 +2802,15 @@
       if (!rawDate) { showSessionStatus('❌ Date & heure obligatoires', 'error'); return null; }
       if (!paidRadio) { showSessionStatus('❌ Choisir le statut de paiement (Payé / Non payé)', 'error'); return null; }
 
-      // Stock check: employees sell from their commercial mini-stock;
-      // admins and managers sell from the central stock.
-      const availableQty = !isManagerOrAdmin()
+      // Stock check: mirrors the DB trigger — commercial stock is used when
+      // the current user has a stock_commercial row for this category; otherwise
+      // falls back to central stock (legacy path, backward-compatible).
+      const useCommercial = _useCommercialStockFor(category);
+      const availableQty = useCommercial
         ? Number(state.commercialStock[category] || 0)
         : Number(state.stocks[category] || 0);
       if (availableQty < quantity) {
-        const stockLabel = !isManagerOrAdmin() ? 'stock commercial' : 'stock central';
+        const stockLabel = useCommercial ? 'stock commercial' : 'stock central';
         showSessionStatus(`❌ Stock insuffisant pour ${category} (${stockLabel} : ${formatStockValue(category, availableQty)})`, 'error');
         return null;
       }
@@ -2871,8 +2885,8 @@
       const createdAt = new Date(rawDate).toISOString();
       const unitPrice = getClientPrice(clientName, category);
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
-      // Compute the new quantity for the appropriate stock pool.
-      const useCommercial = !isManagerOrAdmin();
+      // Compute the new quantity for the appropriate stock pool — matches _useCommercialStockFor().
+      const useCommercial = _useCommercialStockFor(category);
       const newStockQty = useCommercial
         ? Number(state.commercialStock[category] || 0) - quantity
         : Number(state.stocks[category] || 0) - quantity;
@@ -2895,8 +2909,8 @@
         state.sales.unshift(localSale);
         if (useCommercial) {
           state.commercialStock[category] = newStockQty;
-          const commercialArr = Object.keys(DEFAULT_STOCKS).map(cat => ({
-            category: cat, quantity: state.commercialStock[cat]
+          const commercialArr = Object.entries(state.commercialStock).map(([cat, qty]) => ({
+            category: cat, quantity: qty
           }));
           await saveRecords('commercial_stocks', commercialArr).catch(() => {});
         } else {
@@ -3008,11 +3022,11 @@
       const sale = state.sales.find(s => s.id === saleId);
       if (!sale) return;
 
-      // Determine which stock pool to restore to.
-      // If the sale was created by the current user and they have commercial stock
-      // for this category, the original deduction was from commercial stock.
+      // Determine which stock pool to restore to — mirrors the DB trigger logic:
+      // restore to commercial stock only when the selling user has a stock_commercial
+      // row for this category AND it was their own sale.
       const myUserId = state.session?.user?.id;
-      const isMyCommercialSale = !isManagerOrAdmin() && sale.created_by === myUserId;
+      const isMyCommercialSale = sale.created_by === myUserId && _useCommercialStockFor(sale.category);
       const restoredQty = isMyCommercialSale
         ? Number(state.commercialStock[sale.category] || 0) + Number(sale.quantity || 0)
         : Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0);
@@ -3021,8 +3035,8 @@
         state.sales = state.sales.filter(s => s.id !== saleId);
         if (isMyCommercialSale) {
           state.commercialStock[sale.category] = restoredQty;
-          const commercialArr = Object.keys(DEFAULT_STOCKS).map(cat => ({
-            category: cat, quantity: state.commercialStock[cat]
+          const commercialArr = Object.entries(state.commercialStock).map(([cat, qty]) => ({
+            category: cat, quantity: qty
           }));
           await saveRecords('commercial_stocks', commercialArr).catch(() => {});
         } else {
