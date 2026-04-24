@@ -704,6 +704,8 @@
     .stock-compact-card .badge { font-size: 8px; padding: 2px 5px; border-radius: 6px; margin: 0; align-self: flex-start; max-width: calc(100% - 28px); }
     .stock-compact-qty { font-size: 11px; color: var(--color-secondary); line-height: 1.4; }
     .stock-compact-card .stock-low-badge { font-size: 8px; padding: 1px 5px; margin-left: 0; align-self: flex-start; }
+    .stock-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted); margin-bottom: 8px; }
+    .stock-section-sublabel { font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin: 10px 0 6px; }
 
     #category.ORO { background-color: #f39a1e; color: white; }
     #category.RIO { background-color: #1f78ff; color: white; }

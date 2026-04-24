@@ -622,6 +622,41 @@
     </div>
   </div>
 
+  <!-- ── Stock transfer modal (admin / manager only) ────────────────────────── -->
+  <div id="transferStockModal" class="modal-backdrop" onclick="backdropClose(event, 'transferStockModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔄 Transférer du stock</h3><button class="close-x" onclick="closeModal('transferStockModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;font-size:12px;">Déduire du stock central et ajouter au stock commercial d'un employé.</div>
+      <label for="transferUserSelect">👤 Commercial</label>
+      <select id="transferUserSelect"></select>
+      <label for="transferCategorySelect" style="margin-top:12px;">📦 Gamme</label>
+      <select id="transferCategorySelect" onchange="updateTransferAvailable()"></select>
+      <label for="transferQuantityInput" style="margin-top:12px;">Quantité à transférer</label>
+      <input id="transferQuantityInput" type="number" step="0.01" min="0.01" placeholder="Quantité" />
+      <div id="transferStockAvailable" class="muted" style="margin-top:4px;font-size:12px;"></div>
+      <button style="margin-top:16px;" onclick="confirmTransferStock()">✅ Transférer</button>
+      <div id="transferStockStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- ── Stock return modal (admin / manager only) ──────────────────────────── -->
+  <div id="returnStockModal" class="modal-backdrop" onclick="backdropClose(event, 'returnStockModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>↩️ Récupérer du stock</h3><button class="close-x" onclick="closeModal('returnStockModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;font-size:12px;">Retirer du stock commercial d'un employé et le remettre dans le stock central.</div>
+      <div class="settings-option">
+        <div class="title" id="returnStockUserName">—</div>
+      </div>
+      <label for="returnCategorySelect">📦 Gamme</label>
+      <select id="returnCategorySelect" onchange="updateReturnAvailable()"></select>
+      <label for="returnQuantityInput" style="margin-top:12px;">Quantité à récupérer</label>
+      <input id="returnQuantityInput" type="number" step="0.01" min="0.01" placeholder="Quantité" />
+      <div id="returnStockAvailable" class="muted" style="margin-top:4px;font-size:12px;"></div>
+      <button style="margin-top:16px;" onclick="confirmReturnStock()">✅ Récupérer</button>
+      <div id="returnStockStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script type="module">
@@ -650,6 +685,15 @@
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
     const CATEGORIES = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
+
+    // Returns true when the current user's sales for this category should consume
+    // commercial stock rather than central stock.  Mirrors the database trigger
+    // logic: commercial stock is used only when a stock_commercial row exists for
+    // (current_user, category).  Row absence keeps the legacy central-stock path.
+    function _useCommercialStockFor(category) {
+      if (isManagerOrAdmin()) return false;
+      return Object.prototype.hasOwnProperty.call(state.commercialStock, category);
+    }
     function initCategorySelects() {
       const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
       const filterOpts = `<option value="">Toutes catégories</option>` + opts;
@@ -699,6 +743,8 @@
       profile: null,
       session: null,
       allUsers: [],
+      commercialStock: {},      // current user's commercial mini-stock; only populated for categories that have a DB row
+      allCommercialStocks: [],  // all employees' rows [{ user_id, category, quantity }]
       rolePermissions: { employee: {}, manager: {} }
     };
 
@@ -1473,42 +1519,264 @@
 
     function renderStock() {
       const list = document.getElementById('stockList');
+      if (!list) return;
       let anyLow = false;
-      let html = '';
-      Object.keys(DEFAULT_STOCKS).forEach(cat => {
-        const alertSettings = getItemAlertSettings(cat);
-        const qty = Number(state.stocks[cat] || 0);
-        const isLow = alertSettings.enabled && qty <= alertSettings.threshold;
-        if (isLow) anyLow = true;
-        html += `
-          <div class="stock-compact-card">
-            <div class="menu-wrap">
-              <button class="menu-btn" data-action="toggle-menu" data-menu-id="stockMenu${cat}">⋯</button>
-              <div class="menu" id="stockMenu${cat}">
-                ${
-                  hasPermission('stock.edit')
-                    ? `
-                  <button data-action="stock-add" data-cat="${cat}">➕ Ajouter</button>
-                  <button data-action="stock-set" data-cat="${cat}">🔧 Définir</button>
-                `
-                    : ''
-                }
-                <button data-action="stock-alert" data-cat="${cat}">⚙️ Seuil alerte</button>
+
+      if (!isManagerOrAdmin()) {
+        // ── Employee view: read-only commercial mini-stock ─────────────────────
+        let html = `<p class="muted" style="margin-bottom:12px;font-size:12px;">🚗 Votre stock personnel reçu de l'admin. Les ventes déduisent de ce stock.</p>`;
+        html += `<div class="stock-grid">`;
+        Object.keys(DEFAULT_STOCKS).forEach(cat => {
+          const alertSettings = getItemAlertSettings(cat);
+          const qty = Number(state.commercialStock[cat] || 0);
+          const isLow = alertSettings.enabled && qty <= alertSettings.threshold;
+          if (isLow) anyLow = true;
+          html += `
+            <div class="stock-compact-card">
+              <div class="menu-wrap">
+                <button class="menu-btn" data-action="toggle-menu" data-menu-id="stockMenu${cat}">⋯</button>
+                <div class="menu" id="stockMenu${cat}">
+                  <button data-action="stock-alert" data-cat="${cat}">⚙️ Seuil alerte</button>
+                </div>
               </div>
-            </div>
-            <span class="badge ${cat}">${cat}</span>
-            <div class="stock-compact-qty">📦 ${formatStockValue(cat, qty)}</div>
-            ${isLow ? '<span class="stock-low-badge">⚠️ Bas</span>' : ''}
-          </div>`;
-      });
-      list.innerHTML = `<div class="stock-grid">${html}</div>`;
+              <span class="badge ${cat}">${cat}</span>
+              <div class="stock-compact-qty">📦 ${formatStockValue(cat, qty)}</div>
+              ${isLow ? '<span class="stock-low-badge">⚠️ Bas</span>' : ''}
+            </div>`;
+        });
+        html += `</div>`;
+        list.innerHTML = html;
+      } else {
+        // ── Admin / manager view: central stock + employee stocks + transfer UI ──
+        let html = `<div class="stock-section-label">🏭 Stock central</div>`;
+        html += `<div class="stock-grid">`;
+        Object.keys(DEFAULT_STOCKS).forEach(cat => {
+          const alertSettings = getItemAlertSettings(cat);
+          const qty = Number(state.stocks[cat] || 0);
+          const isLow = alertSettings.enabled && qty <= alertSettings.threshold;
+          if (isLow) anyLow = true;
+          html += `
+            <div class="stock-compact-card">
+              <div class="menu-wrap">
+                <button class="menu-btn" data-action="toggle-menu" data-menu-id="stockMenu${cat}">⋯</button>
+                <div class="menu" id="stockMenu${cat}">
+                  ${hasPermission('stock.edit') ? `
+                    <button data-action="stock-add" data-cat="${cat}">➕ Ajouter</button>
+                    <button data-action="stock-set" data-cat="${cat}">🔧 Définir</button>
+                  ` : ''}
+                  <button data-action="stock-alert" data-cat="${cat}">⚙️ Seuil alerte</button>
+                </div>
+              </div>
+              <span class="badge ${cat}">${cat}</span>
+              <div class="stock-compact-qty">📦 ${formatStockValue(cat, qty)}</div>
+              ${isLow ? '<span class="stock-low-badge">⚠️ Bas</span>' : ''}
+            </div>`;
+        });
+        html += `</div>`;
+
+        // Transfer button
+        html += `<div style="margin-top:14px;">
+          <button data-action="stock-transfer" style="width:100%;">🔄 Transférer stock → commercial</button>
+        </div>`;
+
+        // Per-employee commercial stocks
+        if (state.allCommercialStocks.length > 0) {
+          // Group rows by user_id
+          const userMap = {};
+          state.allCommercialStocks.forEach(row => {
+            if (!userMap[row.user_id]) userMap[row.user_id] = {};
+            userMap[row.user_id][row.category] = Number(row.quantity || 0);
+          });
+          const userIds = Object.keys(userMap);
+          if (userIds.length > 0) {
+            html += `<div class="stock-section-label" style="margin-top:20px;">👥 Stocks commerciaux</div>`;
+            userIds.forEach(uid => {
+              const user = state.allUsers.find(u => u.id === uid);
+              const name = escHtml(user ? (user.full_name || user.email || '—') : '—');
+              const safeUid = escHtml(uid);
+              html += `<div class="stock-section-sublabel">👤 ${name}</div><div class="stock-grid">`;
+              Object.keys(DEFAULT_STOCKS).forEach(cat => {
+                const qty = userMap[uid][cat] !== undefined ? userMap[uid][cat] : 0;
+                const menuId = `stockMenuC${uid.slice(0, 6)}_${cat}`;
+                html += `
+                  <div class="stock-compact-card">
+                    <div class="menu-wrap">
+                      <button class="menu-btn" data-action="toggle-menu" data-menu-id="${menuId}">⋯</button>
+                      <div class="menu" id="${menuId}">
+                        <button data-action="stock-return" data-uid="${safeUid}" data-cat="${cat}">↩️ Récupérer</button>
+                      </div>
+                    </div>
+                    <span class="badge ${cat}">${cat}</span>
+                    <div class="stock-compact-qty">📦 ${formatStockValue(cat, qty)}</div>
+                  </div>`;
+              });
+              html += `</div>`;
+            });
+          }
+        } else {
+          html += `<p class="muted" style="margin-top:12px;font-size:12px;">Aucun stock commercial attribué pour l'instant.</p>`;
+        }
+
+        list.innerHTML = html;
+      }
 
       // Update Stock tab badge
       const tabBadge = document.getElementById('stockAlert');
-      if (tabBadge) {
-        tabBadge.style.display = anyLow ? 'inline-block' : 'none';
-      }
+      if (tabBadge) tabBadge.style.display = anyLow ? 'inline-block' : 'none';
     }
+
+    // ── Stock transfer helpers (admin / manager only) ──────────────────────────
+
+    function openTransferStockModal() {
+      if (!isManagerOrAdmin()) return;
+      closeAllMenus();
+      const userSel = document.getElementById('transferUserSelect');
+      const catSel  = document.getElementById('transferCategorySelect');
+      if (!userSel || !catSel) return;
+
+      // Populate employee/manager dropdown
+      userSel.innerHTML = `<option value="">— Choisir un commercial —</option>` +
+        getAssignableUsers().map(u =>
+          `<option value="${escHtml(u.id)}">${escHtml(u.full_name || u.email || u.id)}</option>`
+        ).join('');
+
+      // Populate category dropdown
+      catSel.innerHTML = Object.keys(DEFAULT_STOCKS)
+        .map(cat => `<option value="${cat}">${cat}</option>`)
+        .join('');
+
+      document.getElementById('transferQuantityInput').value = '';
+      document.getElementById('transferStockStatus').textContent = '';
+      updateTransferAvailable();
+      openModal('transferStockModal');
+    }
+    window.openTransferStockModal = openTransferStockModal;
+
+    window.updateTransferAvailable = function() {
+      const cat = document.getElementById('transferCategorySelect')?.value;
+      const el  = document.getElementById('transferStockAvailable');
+      if (!el || !cat) return;
+      el.textContent = `Stock central disponible : ${formatStockValue(cat, state.stocks[cat] || 0)}`;
+    };
+
+    window.confirmTransferStock = async function() {
+      if (!isManagerOrAdmin()) return;
+      if (!navigator.onLine) {
+        showSessionStatus('❌ Transfert nécessite une connexion', 'error');
+        return;
+      }
+      const employeeId = document.getElementById('transferUserSelect').value;
+      const category   = document.getElementById('transferCategorySelect').value;
+      const quantity   = Number(document.getElementById('transferQuantityInput').value);
+      const statusEl   = document.getElementById('transferStockStatus');
+
+      if (!employeeId) { statusEl.textContent = '❌ Choisissez un commercial'; return; }
+      if (!quantity || quantity <= 0) { statusEl.textContent = '❌ Quantité invalide'; return; }
+
+      statusEl.textContent = '⏳ Transfert en cours…';
+
+      const { error } = await supabase.rpc('transfer_stock_to_commercial', {
+        p_employee_id: employeeId,
+        p_category:    category,
+        p_quantity:    quantity
+      });
+
+      if (error) {
+        const msg = error.message || '';
+        if (msg.includes('STOCK_CENTRAL_INSUFFISANT')) {
+          statusEl.textContent = `❌ Stock central insuffisant pour ${category}`;
+        } else if (msg.includes('PERMISSION_DENIED')) {
+          statusEl.textContent = '❌ Permission refusée';
+        } else {
+          statusEl.textContent = '❌ ' + msg;
+        }
+        return;
+      }
+
+      logAction('stock_transfer_to_commercial', { employeeId, category, quantity });
+      closeModal('transferStockModal');
+      showSessionStatus('✅ Stock transféré', 'success');
+      loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
+    };
+
+    let _returnTargetUserId = null;
+    let _returnTargetCat    = null;
+
+    function openReturnStockModal(userId, category) {
+      if (!isManagerOrAdmin()) return;
+      closeAllMenus();
+      _returnTargetUserId = userId;
+      _returnTargetCat    = category;
+
+      const user = state.allUsers.find(u => u.id === userId);
+      const name = user ? (user.full_name || user.email || '—') : '—';
+      const nameEl = document.getElementById('returnStockUserName');
+      if (nameEl) nameEl.textContent = `👤 ${name}`;
+
+      const catSel = document.getElementById('returnCategorySelect');
+      if (catSel) {
+        catSel.innerHTML = Object.keys(DEFAULT_STOCKS)
+          .map(cat => `<option value="${cat}" ${cat === category ? 'selected' : ''}>${cat}</option>`)
+          .join('');
+      }
+
+      document.getElementById('returnQuantityInput').value = '';
+      document.getElementById('returnStockStatus').textContent = '';
+      updateReturnAvailable();
+      openModal('returnStockModal');
+    }
+    window.openReturnStockModal = openReturnStockModal;
+
+    window.updateReturnAvailable = function() {
+      const cat  = document.getElementById('returnCategorySelect')?.value;
+      const el   = document.getElementById('returnStockAvailable');
+      if (!el || !cat || !_returnTargetUserId) return;
+      const row  = state.allCommercialStocks.find(s => s.user_id === _returnTargetUserId && s.category === cat);
+      el.textContent = `Stock commercial disponible : ${formatStockValue(cat, row?.quantity || 0)}`;
+    };
+
+    window.confirmReturnStock = async function() {
+      if (!isManagerOrAdmin()) return;
+      if (!navigator.onLine) {
+        showSessionStatus('❌ Récupération nécessite une connexion', 'error');
+        return;
+      }
+      const category = document.getElementById('returnCategorySelect').value;
+      const quantity = Number(document.getElementById('returnQuantityInput').value);
+      const statusEl = document.getElementById('returnStockStatus');
+
+      if (!_returnTargetUserId) { statusEl.textContent = '❌ Utilisateur manquant'; return; }
+      if (!quantity || quantity <= 0) { statusEl.textContent = '❌ Quantité invalide'; return; }
+
+      statusEl.textContent = '⏳ Récupération en cours…';
+
+      const { error } = await supabase.rpc('return_stock_from_commercial', {
+        p_employee_id: _returnTargetUserId,
+        p_category:    category,
+        p_quantity:    quantity
+      });
+
+      if (error) {
+        const msg = error.message || '';
+        if (msg.includes('STOCK_COMMERCIAL_INSUFFISANT')) {
+          statusEl.textContent = `❌ Stock commercial insuffisant pour ${category}`;
+        } else if (msg.includes('PERMISSION_DENIED')) {
+          statusEl.textContent = '❌ Permission refusée';
+        } else {
+          statusEl.textContent = '❌ ' + msg;
+        }
+        return;
+      }
+
+      logAction('stock_return_from_commercial', {
+        employeeId: _returnTargetUserId, category, quantity
+      });
+      _returnTargetUserId = null;
+      _returnTargetCat    = null;
+      closeModal('returnStockModal');
+      showSessionStatus('✅ Stock récupéré', 'success');
+      loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[return] refresh:', e?.message));
+    };
 
     function renderLogs() {
       const list = document.getElementById('logsList');
@@ -1685,6 +1953,8 @@
           () => _scheduleRealtimeRefresh('sales'))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'stocks' },
           () => _scheduleRealtimeRefresh('stocks'))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'stock_commercial' },
+          () => _scheduleRealtimeRefresh('stock_commercial'))
         .on('postgres_changes', { event: '*', schema: 'public', table: 'action_logs' },
           () => _scheduleRealtimeRefresh('action_logs'))
         // ── User / role management ───────────────────────────────────────────
@@ -1760,15 +2030,18 @@
       if (!navigator.onLine) {
         // Load from local cache when offline
         try {
-          const [clients, sales, stockRows] = await Promise.all([
-            loadRecords('clients'),
-            loadRecords('sales'),
-            loadRecords('stocks')
+          const [clients, sales, stockRows, commercialRows] = await Promise.all([
+            loadRecords('clients').catch(() => []),
+            loadRecords('sales').catch(() => []),
+            loadRecords('stocks').catch(() => []),
+            loadRecords('commercial_stocks').catch(() => [])
           ]);
           state.clients = sortClientsAZ(clients);
           state.sales = sales.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           state.stocks = { ...DEFAULT_STOCKS };
           stockRows.forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+          state.commercialStock = {};
+          commercialRows.forEach(row => { state.commercialStock[row.category] = Number(row.quantity || 0); });
         } catch (e) {
           console.warn('[loadCloudData] cache read error:', e?.message);
         }
@@ -1776,13 +2049,13 @@
         return;
       }
 
+      const userId = state.session?.user?.id;
       const requests = [
         // Employees see their own assigned clients + unassigned (legacy) clients.
         // Managers and admins see all clients without restriction.
         (() => {
           const base = supabase.from('clients').select('*').order('created_at', { ascending: false });
           if (!isManagerOrAdmin()) {
-            const userId = state.session?.user?.id;
             // Validate UUID format before interpolating into the filter string to
             // prevent unexpected behaviour with malformed values.  The user ID
             // originates from the server-signed JWT so injection is not a realistic
@@ -1798,7 +2071,14 @@
           return base;
         })(),
         supabase.from('sales').select('*').order('created_at', { ascending: false }),
-        supabase.from('stocks').select('*')
+        supabase.from('stocks').select('*'),
+        // Commercial stocks: admins/managers load all rows (for the overview panel);
+        // employees load only their own row (for the mini-stock display and sale check).
+        (() => {
+          if (!userId) return Promise.resolve({ data: [], error: null });
+          if (isManagerOrAdmin()) return supabase.from('stock_commercial').select('*');
+          return supabase.from('stock_commercial').select('*').eq('user_id', userId);
+        })()
       ];
       if (isAdmin()) {
         requests.push(
@@ -1806,7 +2086,13 @@
         );
       }
 
-      const [clientsRes, salesRes, stocksRes, logsRes] = await Promise.all(requests);
+      const results = await Promise.all(requests);
+      const clientsRes   = results[0];
+      const salesRes     = results[1];
+      const stocksRes    = results[2];
+      const commercialRes = results[3];
+      // logsRes is only present when isAdmin() pushed a 5th request
+      const logsRes      = isAdmin() ? results[4] : null;
 
       // Attach the HTTP response status to each error object before throwing so
       // that classifyCloudError() can read err.status accurately.  PostgREST
@@ -1824,16 +2110,36 @@
       (stocksRes.data || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
       state.logs = logsRes?.data || [];
 
+      // Process commercial stocks — non-blocking (gracefully degrade if table absent).
+      const commercialRows = commercialRes?.data || [];
+      state.commercialStock = {};
+      state.allCommercialStocks = [];
+      if (isManagerOrAdmin()) {
+        state.allCommercialStocks = commercialRows;
+        // Populate current user's commercial stock (in case admin also has one)
+        const myUserId = state.session?.user?.id;
+        if (myUserId) {
+          commercialRows.filter(r => r.user_id === myUserId)
+            .forEach(r => { state.commercialStock[r.category] = Number(r.quantity || 0); });
+        }
+      } else {
+        commercialRows.forEach(r => { state.commercialStock[r.category] = Number(r.quantity || 0); });
+      }
+
       await loadAllUsers();
       await loadRolePermissions();
 
       // Persist to local cache for offline use
       try {
         const stockArr = Object.entries(state.stocks).map(([category, quantity]) => ({ category, quantity }));
+        const myCommercialArr = Object.entries(state.commercialStock).map(([category, quantity]) => ({
+          category, quantity
+        }));
         await Promise.all([
           saveRecords('clients', state.clients),
           saveRecords('sales', state.sales),
-          saveRecords('stocks', stockArr)
+          saveRecords('stocks', stockArr),
+          saveRecords('commercial_stocks', myCommercialArr)
         ]);
       } catch (e) {
         console.warn('[loadCloudData] cache write error:', e?.message);
@@ -2053,15 +2359,18 @@
           // the user sees real data rather than empty lists.
           let hadLocalData = false;
           try {
-            const [clients, sales, stockRows] = await Promise.all([
+            const [clients, sales, stockRows, commercialRows] = await Promise.all([
               loadRecords('clients'),
               loadRecords('sales'),
-              loadRecords('stocks')
+              loadRecords('stocks'),
+              loadRecords('commercial_stocks').catch(() => [])
             ]);
             state.clients = sortClientsAZ(clients || []);
             state.sales = (sales || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             state.stocks = { ...DEFAULT_STOCKS };
             (stockRows || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+            state.commercialStock = {};
+            (commercialRows || []).forEach(row => { state.commercialStock[row.category] = Number(row.quantity || 0); });
             hadLocalData = (clients || []).filter(Boolean).length > 0
               || (sales || []).filter(Boolean).length > 0
               || (stockRows || []).filter(Boolean).length > 0;
@@ -2498,7 +2807,19 @@
       if (isNaN(quantity) || quantity <= 0) { showSessionStatus(`❌ ${category === 'SUCRE' ? 'Nombre de paquets' : 'Kilos'} invalide`, 'error'); return null; }
       if (!rawDate) { showSessionStatus('❌ Date & heure obligatoires', 'error'); return null; }
       if (!paidRadio) { showSessionStatus('❌ Choisir le statut de paiement (Payé / Non payé)', 'error'); return null; }
-      if (Number(state.stocks[category] || 0) < quantity) { showSessionStatus(`❌ Stock insuffisant pour ${category}`, 'error'); return null; }
+
+      // Stock check: mirrors the DB trigger — commercial stock is used when
+      // the current user has a stock_commercial row for this category; otherwise
+      // falls back to central stock (legacy path, backward-compatible).
+      const useCommercial = _useCommercialStockFor(category);
+      const availableQty = useCommercial
+        ? Number(state.commercialStock[category] || 0)
+        : Number(state.stocks[category] || 0);
+      if (availableQty < quantity) {
+        const stockLabel = useCommercial ? 'stock commercial' : 'stock central';
+        showSessionStatus(`❌ Stock insuffisant pour ${category} (${stockLabel} : ${formatStockValue(category, availableQty)})`, 'error');
+        return null;
+      }
 
       return { clientName, quantity, category, rawDate, paid: paidRadio.value === 'paid' };
     }
@@ -2570,7 +2891,11 @@
       const createdAt = new Date(rawDate).toISOString();
       const unitPrice = getClientPrice(clientName, category);
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
-      const newStockQty = Number(state.stocks[category] || 0) - quantity;
+      // Compute the new quantity for the appropriate stock pool — matches _useCommercialStockFor().
+      const useCommercial = _useCommercialStockFor(category);
+      const newStockQty = useCommercial
+        ? Number(state.commercialStock[category] || 0) - quantity
+        : Number(state.stocks[category] || 0) - quantity;
 
       if (!navigator.onLine) {
         const localSale = {
@@ -2588,10 +2913,18 @@
           created_at: createdAt
         };
         state.sales.unshift(localSale);
-        state.stocks[category] = newStockQty;
-        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        if (useCommercial) {
+          state.commercialStock[category] = newStockQty;
+          const commercialArr = Object.entries(state.commercialStock).map(([cat, qty]) => ({
+            category: cat, quantity: qty
+          }));
+          await saveRecords('commercial_stocks', commercialArr).catch(() => {});
+        } else {
+          state.stocks[category] = newStockQty;
+          const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+          await saveRecords('stocks', stockArr).catch(() => {});
+        }
         await saveRecords('sales', state.sales).catch(() => {});
-        await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({
           type: 'addSale',
           payload: localSale
@@ -2629,7 +2962,11 @@
         created_by: state.session.user.id,
         created_at: createdAt
       });
-      state.stocks[category] = newStockQty;
+      if (useCommercial) {
+        state.commercialStock[category] = newStockQty;
+      } else {
+        state.stocks[category] = newStockQty;
+      }
 
       // Reset form only after successful save
       resetSaleForm();
@@ -2691,14 +3028,29 @@
       const sale = state.sales.find(s => s.id === saleId);
       if (!sale) return;
 
-      const restoredQty = Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0);
+      // Determine which stock pool to restore to — mirrors the DB trigger logic:
+      // restore to commercial stock only when the selling user has a stock_commercial
+      // row for this category AND it was their own sale.
+      const myUserId = state.session?.user?.id;
+      const isMyCommercialSale = sale.created_by === myUserId && _useCommercialStockFor(sale.category);
+      const restoredQty = isMyCommercialSale
+        ? Number(state.commercialStock[sale.category] || 0) + Number(sale.quantity || 0)
+        : Number(state.stocks[sale.category] || 0) + Number(sale.quantity || 0);
 
       if (!navigator.onLine) {
         state.sales = state.sales.filter(s => s.id !== saleId);
-        state.stocks[sale.category] = restoredQty;
-        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+        if (isMyCommercialSale) {
+          state.commercialStock[sale.category] = restoredQty;
+          const commercialArr = Object.entries(state.commercialStock).map(([cat, qty]) => ({
+            category: cat, quantity: qty
+          }));
+          await saveRecords('commercial_stocks', commercialArr).catch(() => {});
+        } else {
+          state.stocks[sale.category] = restoredQty;
+          const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+          await saveRecords('stocks', stockArr).catch(() => {});
+        }
         await saveRecords('sales', state.sales).catch(() => {});
-        await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({
           type: 'deleteSale',
           payload: { saleId }
@@ -2710,15 +3062,25 @@
       }
 
       const salesSnapshot = state.sales.slice();
-      const stockSnapshot = Number(state.stocks[sale.category] || 0);
+      const stockSnapshot = isMyCommercialSale
+        ? Number(state.commercialStock[sale.category] || 0)
+        : Number(state.stocks[sale.category] || 0);
       state.sales = state.sales.filter(s => s.id !== saleId);
-      state.stocks[sale.category] = restoredQty;
+      if (isMyCommercialSale) {
+        state.commercialStock[sale.category] = restoredQty;
+      } else {
+        state.stocks[sale.category] = restoredQty;
+      }
       renderSales(); renderStock();
 
       const { error } = await supabase.from('sales').delete().eq('id', saleId);
       if (error) {
         state.sales = salesSnapshot;
-        state.stocks[sale.category] = stockSnapshot;
+        if (isMyCommercialSale) {
+          state.commercialStock[sale.category] = stockSnapshot;
+        } else {
+          state.stocks[sale.category] = stockSnapshot;
+        }
         renderSales(); renderStock();
         return showSessionStatus('❌ ' + error.message, 'error');
       }
@@ -3869,6 +4231,8 @@
         case 'stock-add':     addToStock(cat); break;
         case 'stock-set':     setStock(cat); break;
         case 'stock-alert':   openItemAlertModal(cat); break;
+        case 'stock-transfer': openTransferStockModal(); break;
+        case 'stock-return':  openReturnStockModal(el.dataset.uid, el.dataset.cat); break;
         case 'user-role':     openRoleModal(id, el.dataset.role); break;
         case 'user-delete':   deleteUser(id, el); break;
         case 'open-client-sales': openClientSales(el.dataset.client); break;
