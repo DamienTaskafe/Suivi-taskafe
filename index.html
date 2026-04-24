@@ -2031,9 +2031,9 @@
         // Load from local cache when offline
         try {
           const [clients, sales, stockRows, commercialRows] = await Promise.all([
-            loadRecords('clients'),
-            loadRecords('sales'),
-            loadRecords('stocks'),
+            loadRecords('clients').catch(() => []),
+            loadRecords('sales').catch(() => []),
+            loadRecords('stocks').catch(() => []),
             loadRecords('commercial_stocks').catch(() => [])
           ]);
           state.clients = sortClientsAZ(clients);
@@ -2086,7 +2086,13 @@
         );
       }
 
-      const [clientsRes, salesRes, stocksRes, commercialRes, logsRes] = await Promise.all(requests);
+      const results = await Promise.all(requests);
+      const clientsRes   = results[0];
+      const salesRes     = results[1];
+      const stocksRes    = results[2];
+      const commercialRes = results[3];
+      // logsRes is only present when isAdmin() pushed a 5th request
+      const logsRes      = isAdmin() ? results[4] : null;
 
       // Attach the HTTP response status to each error object before throwing so
       // that classifyCloudError() can read err.status accurately.  PostgREST
