@@ -402,6 +402,27 @@
     </div>
   </div>
 
+  <!-- ── Client reassignment modal (manager / admin only) ──────────────────── -->
+  <div id="reassignClientModal" class="modal-backdrop" onclick="backdropClose(event, 'reassignClientModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔁 Réaffecter le client</h3><button class="close-x" onclick="closeModal('reassignClientModal')">✕</button></div>
+      <input type="hidden" id="reassignClientId" />
+      <div class="settings-option">
+        <div class="title" id="reassignClientName">—</div>
+      </div>
+      <label for="reassignUserSelect">👤 Assigner à</label>
+      <select id="reassignUserSelect"></select>
+      <label for="reassignStatusSelect" style="margin-top:12px;">📊 Statut client</label>
+      <select id="reassignStatusSelect">
+        <option value="prospect">Prospect</option>
+        <option value="active">Actif</option>
+        <option value="inactive">Inactif</option>
+        <option value="lost">Perdu</option>
+      </select>
+      <button style="margin-top:16px;" onclick="saveReassignment()">✅ Enregistrer</button>
+    </div>
+  </div>
+
   <div id="resetModal" class="modal-backdrop" onclick="backdropClose(event, 'resetModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>🔄 Réinitialiser</h3><button class="close-x" onclick="closeModal('resetModal')">✕</button></div>
@@ -484,6 +505,15 @@
       <div class="ncp-field">
         <label for="editClientICE">💳 ICE</label>
         <input id="editClientICE" placeholder="Numéro ICE (facturation)" />
+      </div>
+      <div class="ncp-field">
+        <label for="editClientStatus">📊 Statut client</label>
+        <select id="editClientStatus">
+          <option value="prospect">Prospect</option>
+          <option value="active">Actif</option>
+          <option value="inactive">Inactif</option>
+          <option value="lost">Perdu</option>
+        </select>
       </div>
       <h4>💰 Prix personnalisés par gamme</h4>
       <div class="price-scroll-row"></div>
@@ -956,6 +986,12 @@
       return r === 'admin' || r === 'manager';
     }
 
+    // Returns the list of users that can be assigned to a client (employees and
+    // managers only — excludes admins who manage the system, not client accounts).
+    function getAssignableUsers() {
+      return state.allUsers.filter(u => u.role === 'employee' || u.role === 'manager');
+    }
+
     // ── Role-based permissions ────────────────────────────────────────────────
     const ROLE_PERMISSIONS_DEF = [
       { key: 'tasks.create',      label: 'Créer une vente' },
@@ -1205,25 +1241,42 @@
           .filter(s => !s.paid)
           .reduce((sum, s) => sum + Number(s.total_price || 0), 0);
 
+        // Status badge (only when the column is present and non-default)
+        const status = c.client_status || 'active';
+        const statusLabels = { prospect: 'Prospect', active: 'Actif', inactive: 'Inactif', lost: 'Perdu' };
+        const statusBadge = `<span class="client-status-badge ${escHtml(status)}">${escHtml(statusLabels[status] || status)}</span>`;
+
+        // Assigned user chip — only shown to managers/admins to keep employee UI clean
+        let assignedChip = '';
+        if (isManagerOrAdmin() && c.assigned_user_id) {
+          const assignedUser = state.allUsers.find(u => u.id === c.assigned_user_id);
+          const assignedName = assignedUser ? (assignedUser.full_name || assignedUser.email || '—') : '—';
+          assignedChip = `<div class="client-info-row client-assigned-chip"><span class="client-info-icon">👤</span><span>${escHtml(assignedName)}</span></div>`;
+        } else if (isManagerOrAdmin() && !c.assigned_user_id) {
+          assignedChip = `<div class="client-info-row client-assigned-chip"><span class="client-info-icon">👤</span><span style="font-style:italic;opacity:0.6;">Non assigné</span></div>`;
+        }
+
         html += `
           <div class="client-card">
             <div class="client-card-header">
-              <span class="client-card-name">${c.name}</span>
+              <span class="client-card-name">${escHtml(c.name)}${statusBadge}</span>
               <div class="menu-wrap">
                 <button class="menu-btn" data-action="toggle-menu" data-menu-id="clientMenu${i}">⋯</button>
                 <div class="menu" id="clientMenu${i}">
                   <button data-action="client-advanced" data-id="${c.id}">⚙️ Actions avancées</button>
                   <button data-action="client-pdf" data-id="${c.id}">📄 Facture mensuelle</button>
                   ${hasPermission('clients.edit') ? `<button data-action="client-edit" data-id="${c.id}">✏️ Modifier</button>` : ''}
+                  ${isManagerOrAdmin() ? `<button data-action="client-reassign" data-id="${c.id}">🔁 Réaffecter</button>` : ''}
                   ${hasPermission('clients.delete') ? `<button data-action="client-delete" data-id="${c.id}">🗑️ Supprimer</button>` : ''}
                 </div>
               </div>
             </div>
 
             <div class="client-card-info">
-              ${c.address ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${c.address}</span></div>` : ''}
-              ${c.ice ? `<div class="client-info-row"><span class="client-info-icon">💳</span><span>ICE: ${c.ice}</span></div>` : ''}
-              ${!c.address && !c.ice ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
+              ${c.address ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(c.address)}</span></div>` : ''}
+              ${c.ice ? `<div class="client-info-row"><span class="client-info-icon">💳</span><span>ICE: ${escHtml(c.ice)}</span></div>` : ''}
+              ${assignedChip}
+              ${!c.address && !c.ice && !assignedChip ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
             </div>
 
             <div class="client-stat-row">
@@ -1724,7 +1777,26 @@
       }
 
       const requests = [
-        supabase.from('clients').select('*').order('created_at', { ascending: false }),
+        // Employees see their own assigned clients + unassigned (legacy) clients.
+        // Managers and admins see all clients without restriction.
+        (() => {
+          const base = supabase.from('clients').select('*').order('created_at', { ascending: false });
+          if (!isManagerOrAdmin()) {
+            const userId = state.session?.user?.id;
+            // Validate UUID format before interpolating into the filter string to
+            // prevent unexpected behaviour with malformed values.  The user ID
+            // originates from the server-signed JWT so injection is not a realistic
+            // threat, but sanitising early is good defence-in-depth.
+            const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (userId && UUID_RE.test(userId)) {
+              // Filter: assigned to me OR unassigned (NULL) — legacy clients are always visible
+              return base.or(`assigned_user_id.eq.${userId},assigned_user_id.is.null`);
+            }
+            // Fallback: no valid user id — show only unassigned clients
+            return base.is('assigned_user_id', null);
+          }
+          return base;
+        })(),
         supabase.from('sales').select('*').order('created_at', { ascending: false }),
         supabase.from('stocks').select('*')
       ];
@@ -2370,7 +2442,13 @@
           CLASSIC: readCustomPrice('priceCLASSIC'),
           SANTOS: readCustomPrice('priceSANTOS'),
           SUCRE: readCustomPrice('priceSUCRE')
-        }
+        },
+        // Assignment: employees are auto-assigned to the client they create.
+        // Managers/admins create unassigned clients (they can reassign later).
+        client_status: 'prospect',
+        assigned_user_id: isManagerOrAdmin() ? null : (state.session?.user?.id || null),
+        assigned_at:      isManagerOrAdmin() ? null : new Date().toISOString(),
+        assigned_by:      isManagerOrAdmin() ? null : (state.session?.user?.id || null)
       };
 
       // ── Duplicate detection (business-aware normalization + typo tolerance) ──
@@ -2713,6 +2791,10 @@
         if (el) el.value = (client.prices?.[cat] > 0) ? client.prices[cat] : defaults[cat];
       });
 
+      // Set client status (fall back to 'active' for legacy rows that predate the column)
+      const statusEl = document.getElementById('editClientStatus');
+      if (statusEl) statusEl.value = client.client_status || 'active';
+
       openModal('editClientModal');
     };
 
@@ -2757,9 +2839,13 @@
         prices[cat] = (v > 0) ? v : null;
       });
 
+      // Read client_status from the form (falls back to current value if field absent)
+      const statusEl = document.getElementById('editClientStatus');
+      const client_status = statusEl ? statusEl.value : (state.clients.find(c => c.id === clientId)?.client_status || 'active');
+
       if (!navigator.onLine) {
         const idx = state.clients.findIndex(c => c.id === clientId);
-        if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices });
+        if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices, client_status });
         // Propagate rename to in-memory sales so renderSales() shows the new name
         if (nameChanged) {
           const orphaned = state.sales.filter(s => s.client_id === null && s.client_name === oldName);
@@ -2781,14 +2867,14 @@
           await saveRecords('sales', state.sales).catch(() => {});
         }
         await saveRecords('clients', state.clients).catch(() => {});
-        await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices } }).catch(() => {});
+        await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices, client_status } }).catch(() => {});
         closeModal('editClientModal');
         renderClients(); loadClientSelectors(); renderSales();
         showSessionStatus('📶 Client modifié localement', 'info');
         updateOfflineBanner();
         return;
       }
-      const { error } = await supabase.from('clients').update({ name, address, ice, prices }).eq('id', clientId);
+      const { error } = await supabase.from('clients').update({ name, address, ice, prices, client_status }).eq('id', clientId);
       if (error) return showSessionStatus('❌ ' + error.message, 'error');
       // Propagate rename to the sales table so ventes récentes shows the new name
       if (nameChanged) {
@@ -2814,6 +2900,79 @@
       closeModal('editClientModal');
       showSessionStatus('✅ Client modifié', 'success');
       loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] editClient:', e?.message));
+    };
+
+    // ── Client reassignment (manager / admin only) ────────────────────────────
+
+    function openReassignModal(clientId) {
+      closeAllMenus();
+      if (!isManagerOrAdmin()) return;
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      document.getElementById('reassignClientId').value = clientId;
+      document.getElementById('reassignClientName').innerText = client.name;
+
+      // Pre-select current status
+      const statusSel = document.getElementById('reassignStatusSelect');
+      if (statusSel) statusSel.value = client.client_status || 'active';
+
+      // Populate user dropdown — include all employees and managers the admin can see
+      const sel = document.getElementById('reassignUserSelect');
+      sel.innerHTML = `<option value="">— Non assigné —</option>` +
+        getAssignableUsers().map(u => {
+          const selected = u.id === client.assigned_user_id ? 'selected' : '';
+          return `<option value="${escHtml(u.id)}" ${selected}>${escHtml(u.full_name || u.email || u.id)}</option>`;
+        }).join('');
+
+      openModal('reassignClientModal');
+    }
+
+    window.saveReassignment = async function() {
+      if (!isManagerOrAdmin()) return;
+      if (!navigator.onLine) {
+        showSessionStatus('❌ Réaffectation nécessite une connexion', 'error');
+        return;
+      }
+
+      const clientId = document.getElementById('reassignClientId').value;
+      const newUserId = document.getElementById('reassignUserSelect').value || null;
+      const newStatus = document.getElementById('reassignStatusSelect').value || 'active';
+
+      const client = state.clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const previousUserId = client.assigned_user_id || null;
+      const changedBy = state.session?.user?.id || null;
+      const now = new Date().toISOString();
+
+      // Update the client row
+      const { error } = await supabase.from('clients').update({
+        assigned_user_id: newUserId,
+        assigned_at: newUserId ? now : null,
+        assigned_by: changedBy,
+        client_status: newStatus
+      }).eq('id', clientId);
+
+      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+
+      // Record the reassignment in the audit history (non-blocking)
+      supabase.from('client_assignment_history').insert({
+        client_id: clientId,
+        previous_user_id: previousUserId,
+        new_user_id: newUserId,
+        changed_by: changedBy,
+        changed_at: now
+      }).catch(e => console.warn('[reassign] history insert failed (non-blocking):', e?.message));
+
+      // Non-blocking action log
+      logAction('client_reassigned', { clientId, clientName: client.name, previousUserId, newUserId, newStatus });
+
+      closeModal('reassignClientModal');
+      showSessionStatus('✅ Client réaffecté', 'success');
+      loadCloudData()
+        .then(() => { renderClients(); })
+        .catch(e => console.warn('[refresh] reassign:', e?.message));
     };
 
 
@@ -3703,6 +3862,7 @@
         case 'client-pdf':    generateClientMonthlyPDF(id); break;
         case 'client-edit':   openEditClient(id); break;
         case 'client-delete': deleteClient(id); break;
+        case 'client-reassign': openReassignModal(id); break;
         case 'sale-edit':     closeAllMenus(); openEditSale(id); break;
         case 'sale-toggle-paid': closeAllMenus(); togglePaid(id, el.dataset.paid === 'true'); break;
         case 'sale-delete':   closeAllMenus(); deleteSale(id); break;

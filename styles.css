@@ -906,6 +906,30 @@
     /* Client badge: keep category badge compact in client card header */
     .client-cmd-badge { flex-shrink: 0; }
 
+    /* ── Client status badge ── */
+    .client-status-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 2px 7px;
+      border-radius: 20px;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    .client-status-badge.prospect { background: rgba(30,130,255,0.15); color: #1564c0; }
+    .client-status-badge.active   { background: rgba(52,199,89,0.15);  color: #148c37; }
+    .client-status-badge.inactive { background: rgba(120,120,120,0.15); color: #666; }
+    .client-status-badge.lost     { background: rgba(213,42,42,0.15);  color: #c0392b; }
+
+    /* ── Assigned-to chip in client card info row ── */
+    .client-assigned-chip {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+
     /* Clients section label for "Fiches clients" */
     .clients-list-header { margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-md); }
     .clients-list-header h3 { margin: 0; }
@@ -1037,6 +1061,10 @@
     body.dark .csearch-item:hover, body.dark .csearch-item.active { background: rgba(255,255,255,0.06); }
     body.dark .analytics-table { background: rgba(20,17,14,0.98); }
     body.dark .analytics-table td, body.dark .analytics-table th { border-color: rgba(255,255,255,0.06); color: var(--color-text); }
+    body.dark .client-status-badge.prospect { background: rgba(30,130,255,0.22); color: #82b4ff; }
+    body.dark .client-status-badge.active   { background: rgba(52,199,89,0.22);  color: #48d870; }
+    body.dark .client-status-badge.inactive { background: rgba(180,180,180,0.15); color: #aaa; }
+    body.dark .client-status-badge.lost     { background: rgba(213,42,42,0.22);  color: #e67e7e; }
 
     /* ── User activity status ── */
     .user-activity { margin-top: 4px; }
