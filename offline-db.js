@@ -2,7 +2,7 @@
 // Provides local cache for clients/sales/stocks and a pending operations queue.
 
 const DB_NAME = 'taskafe-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let _db = null;
 
@@ -18,6 +18,10 @@ function openDB() {
         db.createObjectStore('sales', { keyPath: 'id' });
       if (!db.objectStoreNames.contains('stocks'))
         db.createObjectStore('stocks', { keyPath: 'category' });
+      // commercial_stocks stores the current user's per-category commercial stock
+      // keyed by category (same shape as the 'stocks' store for easy reuse).
+      if (!db.objectStoreNames.contains('commercial_stocks'))
+        db.createObjectStore('commercial_stocks', { keyPath: 'category' });
       if (!db.objectStoreNames.contains('pendingOps')) {
         const opStore = db.createObjectStore('pendingOps', { keyPath: 'id', autoIncrement: true });
         opStore.createIndex('by_timestamp', 'timestamp');
