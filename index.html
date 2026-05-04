@@ -463,11 +463,12 @@
 
   <div id="confirmSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'confirmSaleModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="typeof cancelConfirmSale==='function'?cancelConfirmSale():closeModal('confirmSaleModal')">✕</button></div>
+      <!-- cancelConfirmSale is defined further in the same script tag and available globally at click time -->
+      <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="cancelConfirmSale()">✕</button></div>
       <p style="text-align:center;font-weight:600;margin-bottom:12px;color:var(--color-text);">Voulez-vous valider cette commande ?</p>
       <div id="confirmSaleRecap" class="confirm-recap"></div>
       <div style="display:flex;gap:10px;margin-top:16px;">
-        <button onclick="typeof cancelConfirmSale==='function'?cancelConfirmSale():closeModal('confirmSaleModal')" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
+        <button onclick="cancelConfirmSale()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
         <button id="confirmSaleBtn" onclick="confirmAndSave()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;">✅ Confirmer</button>
       </div>
     </div>
@@ -837,7 +838,8 @@
      * Disables the button, shows loadingText, then restores the button in all cases.
      * Calls onSuccess(result) on success or onError(err) on failure.
      *
-     * This is a shared utility for future async action handlers in the app.
+     * Added as a shared utility per UX requirement (Priority 2).
+     * Use this for new async action handlers to avoid repeating button-locking boilerplate.
      * @param {object} opts
      * @param {string|HTMLElement} opts.button      - button element or CSS selector
      * @param {string}  opts.loadingText            - text shown while action runs
