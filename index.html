@@ -4816,7 +4816,9 @@
     // ── Commission and Remuneration module ──────────────────────────────────────
 
     /**
-     * Returns { start, end } ISO date strings for the current month (first day → today).
+     * Returns the default calculation period: first day of the current month → today.
+     * Both dates are returned as 'YYYY-MM-DD' strings suitable for <input type="date">.
+     * @returns {{ start: string, end: string }}
      */
     function getDefaultPeriod() {
       const now = new Date();
@@ -4827,6 +4829,16 @@
     }
 
     /**
+     * Escapes a single value for RFC-4180 CSV output (wraps in double-quotes,
+     * escapes any embedded double-quote characters by doubling them).
+     * @param {*} value
+     * @returns {string}
+     */
+    function escapeCSVField(value) {
+      return `"${String(value).replace(/"/g, '""')}"`;
+    }
+
+    /**
      * Calculate commission for a user over a given period.
      * @param {object} user        - profile row (must include commission_rates, remuneration_mode, etc.)
      * @param {Array}  allSales    - full sales array; filtered here by user + date range
@@ -4834,8 +4846,12 @@
      * @param {string} periodEnd   - 'YYYY-MM-DD'
      */
     function calcCommissionForUser(user, allSales, periodStart, periodEnd) {
-      const start = new Date(periodStart + 'T00:00:00');
-      const end   = new Date(periodEnd   + 'T23:59:59.999');
+      // 'YYYY-MM-DD' strings without a time component are parsed by JS engines
+      // as UTC midnight, ensuring the range boundaries are consistent with the
+      // UTC timestamps stored in created_at regardless of the user's local timezone.
+      const start = new Date(periodStart);
+      const end   = new Date(periodEnd);
+      end.setUTCHours(23, 59, 59, 999);
 
       const userSales = allSales.filter(s => {
         if (s.created_by !== user.id) return false;
@@ -4977,7 +4993,7 @@
         ]);
       });
 
-      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const csv = rows.map(r => r.map(escapeCSVField).join(',')).join('\n');
       const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
