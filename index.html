@@ -2539,7 +2539,7 @@
         // Incoherence: local state looks sufficient but DB refused → stale cache
         if (avail !== null && req !== null && avail >= req) {
           const poolLabel = isCommercial ? 'Stock voiture' : 'Stock central';
-          return `Incohérence stock détectée pour ${cat || 'la gamme'} : ${poolLabel} affiché ${fmtQty(avail)} pour ${fmtQty(req)} demandé, mais Supabase a refusé. Rafraîchissez les données et réessayez. Si le problème persiste, vérifiez le trigger stock.`;
+          return `Incohérence stock détectée pour ${cat || 'la gamme'} : ${poolLabel} indique ${fmtQty(avail)} disponible pour ${fmtQty(req)} demandé, mais Supabase a refusé. Rafraîchissez les données et réessayez. Si le problème persiste, vérifiez le trigger stock.`;
         }
         let msg;
         if (isCommercial) {
@@ -3380,7 +3380,7 @@
           if (liveCtx && isStockError) {
             if (liveCtx.availableQty >= quantity) {
               // DB has enough stock but refused → real incoherence (e.g. stale trigger)
-              msg = `Incohérence stock détectée pour ${category} : ${liveCtx.label} voit ${formatStockValue(category, liveCtx.availableQty)} disponible pour ${formatStockValue(category, quantity)} demandé, mais Supabase a refusé. Rafraîchissez les données et réessayez. Si le problème persiste, vérifiez le trigger stock.`;
+              msg = `Incohérence stock détectée pour ${category} : ${liveCtx.label} indique ${formatStockValue(category, liveCtx.availableQty)} disponible pour ${formatStockValue(category, quantity)} demandé, mais Supabase a refusé. Rafraîchissez les données et réessayez. Si le problème persiste, vérifiez le trigger stock.`;
             } else {
               // Real insufficiency — use live DB quantities for an accurate message
               msg = getFriendlyErrorMessage(saleError, {
