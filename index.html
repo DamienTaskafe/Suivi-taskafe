@@ -114,7 +114,9 @@
           <button id="darkModeBtn" onclick="toggleDarkMode()">🌙 Mode sombre</button>
           <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden">💲 Prix produits</button>
           <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden">📈 Analytiques</button>
+          <button id="commissionsBtn" onclick="openCommissionsModal()" class="hidden">💰 Commissions</button>
           <button onclick="openResumeModal()">📊 Résumé rapide</button>
+          <button onclick="openMyCommissionsModal()">💸 Mes commissions</button>
           <button id="usersBtn" onclick="openUsersModal()" class="hidden">👥 Gérer utilisateurs</button>
           <button id="resetAppBtn" class="hidden" onclick="openResetModal()">🔄 Réinitialiser filtres</button>
           <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()">📋 Logs</button>
@@ -654,6 +656,79 @@
       <div id="returnStockAvailable" class="muted" style="margin-top:4px;font-size:12px;"></div>
       <button style="margin-top:16px;" onclick="confirmReturnStock()">✅ Récupérer</button>
       <div id="returnStockStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- ── Admin Commissions Dashboard Modal ─────────────────────────────────── -->
+  <div id="commissionsModal" class="modal-backdrop" onclick="backdropClose(event, 'commissionsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>💰 Commissions</h3><button class="close-x" onclick="closeModal('commissionsModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:10px;font-size:12px;">Calculez et exportez les rémunérations dues par commercial sur une période.</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <label for="commPeriodStart">📅 Du</label>
+          <input type="date" id="commPeriodStart" />
+        </div>
+        <div style="flex:1;">
+          <label for="commPeriodEnd">📅 Au</label>
+          <input type="date" id="commPeriodEnd" />
+        </div>
+      </div>
+      <button onclick="renderCommissionsModal()" style="width:100%;margin-bottom:10px;">🔄 Calculer</button>
+      <div id="commissionsContent" style="max-height:55vh;overflow-y:auto;margin-bottom:10px;">
+        <div class="muted">Sélectionnez une période et cliquez sur Calculer.</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button onclick="exportCommissionsCSV()" style="flex:1;">📥 Exporter CSV</button>
+        <button onclick="saveRemunerationSnapshot()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;color:#fff;">💾 Snapshot</button>
+      </div>
+      <div id="commissionsStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- ── Employee "Mes commissions" Modal ───────────────────────────────────── -->
+  <div id="myCommissionsModal" class="modal-backdrop" onclick="backdropClose(event, 'myCommissionsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>💸 Mes commissions</h3><button class="close-x" onclick="closeModal('myCommissionsModal')">✕</button></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <label for="myCommStart">📅 Du</label>
+          <input type="date" id="myCommStart" oninput="renderMyCommissions()" />
+        </div>
+        <div style="flex:1;">
+          <label for="myCommEnd">📅 Au</label>
+          <input type="date" id="myCommEnd" oninput="renderMyCommissions()" />
+        </div>
+      </div>
+      <div id="myCommissionsContent">
+        <div class="muted">Chargement…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Per-user Remuneration Settings Modal (admin only) ─────────────────── -->
+  <div id="remunerationSettingsModal" class="modal-backdrop" onclick="backdropClose(event, 'remunerationSettingsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>💰 Rémunération</h3><button class="close-x" onclick="closeModal('remunerationSettingsModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title" id="remuSettingsUserName">—</div>
+      </div>
+      <label for="remuMode">Mode de rémunération</label>
+      <select id="remuMode" onchange="toggleRemuFixed()">
+        <option value="commission_only">Commission uniquement</option>
+        <option value="fixed_plus_commission">Fixe + Commission</option>
+      </select>
+      <div id="remuFixedSection" style="display:none;">
+        <label for="remuFixedSalary" style="margin-top:12px;">💼 Salaire fixe mensuel (DHS)</label>
+        <input id="remuFixedSalary" type="number" min="0" step="100" placeholder="0" />
+      </div>
+      <label for="remuFuel" style="margin-top:12px;">⛽ Frais carburant mensuel (DHS)</label>
+      <input id="remuFuel" type="number" min="0" step="50" placeholder="0" />
+      <h4 style="margin-top:16px;margin-bottom:8px;">💲 Taux de commission par gamme (DHS/unité)</h4>
+      <div id="remuRatesGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;"></div>
+      <button onclick="saveRemunerationSettings()">💾 Enregistrer</button>
+      <div id="remuSettingsStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      <input type="hidden" id="remuSettingsUserId" />
     </div>
   </div>
 
@@ -1809,7 +1884,7 @@
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id,email,full_name,role,last_seen_at')
+          .select('*')
           .eq('id', userId)
           .single();
 
@@ -2173,6 +2248,7 @@
       document.getElementById('permissionsBtn').classList.toggle('hidden', !isAdmin());
       document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('analyticsBtn').classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('commissionsBtn').classList.toggle('hidden', !isAdmin());
 
       updateDarkModeBtn();
       initAccordions();
@@ -3435,6 +3511,7 @@
                     <button class="menu-btn" data-action="toggle-menu" data-menu-id="userActMenu_${user.id}">⋯</button>
                     <div class="menu" id="userActMenu_${user.id}">
                       <button data-action="user-role" data-id="${user.id}" data-role="${user.role || 'employee'}">✏️ Rôle</button>
+                      <button data-action="user-commission" data-id="${user.id}">💰 Rémunération</button>
                       <button class="danger" data-action="user-delete" data-id="${user.id}">🗑️ Supprimer</button>
                     </div>
                   </div>`
@@ -4234,6 +4311,7 @@
         case 'stock-transfer': openTransferStockModal(); break;
         case 'stock-return':  openReturnStockModal(el.dataset.uid, el.dataset.cat); break;
         case 'user-role':     openRoleModal(id, el.dataset.role); break;
+        case 'user-commission': openRemunerationSettingsModal(id); break;
         case 'user-delete':   deleteUser(id, el); break;
         case 'open-client-sales': openClientSales(el.dataset.client); break;
       }
@@ -4733,6 +4811,388 @@
 
       await generateMonthlyPDF(client, monthlySales, monthLabel, thisMonth, formatDh, formatQty);
       showSessionStatus('✅ Facture PDF générée', 'success');
+    };
+
+    // ── Commission and Remuneration module ──────────────────────────────────────
+
+    /**
+     * Returns { start, end } ISO date strings for the current month (first day → today).
+     */
+    function getDefaultPeriod() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm   = String(now.getMonth() + 1).padStart(2, '0');
+      const dd   = String(now.getDate()).padStart(2, '0');
+      return { start: `${yyyy}-${mm}-01`, end: `${yyyy}-${mm}-${dd}` };
+    }
+
+    /**
+     * Calculate commission for a user over a given period.
+     * @param {object} user        - profile row (must include commission_rates, remuneration_mode, etc.)
+     * @param {Array}  allSales    - full sales array; filtered here by user + date range
+     * @param {string} periodStart - 'YYYY-MM-DD'
+     * @param {string} periodEnd   - 'YYYY-MM-DD'
+     */
+    function calcCommissionForUser(user, allSales, periodStart, periodEnd) {
+      const start = new Date(periodStart + 'T00:00:00');
+      const end   = new Date(periodEnd   + 'T23:59:59.999');
+
+      const userSales = allSales.filter(s => {
+        if (s.created_by !== user.id) return false;
+        const d = new Date(s.created_at);
+        return d >= start && d <= end;
+      });
+
+      const rates = user.commission_rates || {};
+      const kgByCategory = {};
+      let totalCommission = 0;
+
+      CATEGORIES.forEach(cat => {
+        const catSales = userSales.filter(s => s.category === cat);
+        const qty = catSales.reduce((sum, s) => sum + Number(s.quantity || 0), 0);
+        kgByCategory[cat] = qty;
+        const rate = Number(rates[cat] || 0);
+        totalCommission += qty * rate;
+      });
+
+      const mode          = user.remuneration_mode || 'commission_only';
+      const totalFixed    = mode === 'fixed_plus_commission' ? Number(user.fixed_monthly_salary || 0) : 0;
+      const fuelReimb     = Number(user.fuel_allowance || 0);
+
+      return {
+        kgByCategory,
+        totalCommission,
+        totalFixed,
+        fuelReimbursement: fuelReimb,
+        totalRemuneration: totalCommission + totalFixed + fuelReimb
+      };
+    }
+
+    // ── Admin Commissions Dashboard ─────────────────────────────────────────────
+    let _lastCommissionData = [];
+
+    window.openCommissionsModal = function () {
+      closeAllMenus();
+      if (!isAdmin()) return;
+      const { start, end } = getDefaultPeriod();
+      const s = document.getElementById('commPeriodStart');
+      const e = document.getElementById('commPeriodEnd');
+      if (s && !s.value) s.value = start;
+      if (e && !e.value) e.value = end;
+      renderCommissionsModal();
+      openModal('commissionsModal');
+    };
+
+    window.renderCommissionsModal = function () {
+      if (!isAdmin()) return;
+      const periodStart = document.getElementById('commPeriodStart')?.value;
+      const periodEnd   = document.getElementById('commPeriodEnd')?.value;
+      const content     = document.getElementById('commissionsContent');
+      const statusEl    = document.getElementById('commissionsStatus');
+      if (!content) return;
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+
+      if (!periodStart || !periodEnd || periodStart > periodEnd) {
+        content.innerHTML = '<div class="muted">Sélectionnez une période valide.</div>';
+        return;
+      }
+
+      const commercials = state.allUsers.filter(u => u.role === 'employee' || u.role === 'manager');
+      if (commercials.length === 0) {
+        content.innerHTML = '<div class="muted">Aucun commercial enregistré.</div>';
+        return;
+      }
+
+      _lastCommissionData = [];
+      let html = '';
+
+      commercials.forEach(user => {
+        const result = calcCommissionForUser(user, state.sales, periodStart, periodEnd);
+        _lastCommissionData.push({ user, result, periodStart, periodEnd });
+
+        const name     = escHtml(user.full_name || user.email || '—');
+        const modeIcon = user.remuneration_mode === 'fixed_plus_commission' ? '💼+💰' : '💰';
+        const rates    = user.commission_rates || {};
+
+        let catRows = '';
+        CATEGORIES.forEach(cat => {
+          const qty  = result.kgByCategory[cat] || 0;
+          const rate = Number(rates[cat] || 0);
+          if (qty > 0 || rate > 0) {
+            catRows += `<div style="font-size:11px;color:var(--color-text-muted);margin-bottom:2px;">` +
+              `<span class="badge ${cat}" style="margin:0 4px 0 0;padding:1px 5px;font-size:9px;">${cat}</span>` +
+              `${formatQty(qty)} ${unitLabel(cat)} × ${rate} DHS = ${formatDh(qty * rate)}</div>`;
+          }
+        });
+
+        html += `<div class="settings-option" style="margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <div class="title" style="flex:1;font-size:13px;">${name}</div>
+            <span style="font-size:11px;background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:6px;">${modeIcon}</span>
+          </div>
+          ${catRows || '<div style="font-size:11px;color:var(--color-text-muted);">Aucune vente sur la période.</div>'}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;margin-top:6px;">
+            <div class="adv-stat-row"><span class="adv-stat-label">💰 Commission</span><span class="adv-stat-val" style="color:var(--color-success)">${formatDh(result.totalCommission)}</span></div>
+            ${result.totalFixed > 0 ? `<div class="adv-stat-row"><span class="adv-stat-label">💼 Fixe</span><span class="adv-stat-val">${formatDh(result.totalFixed)}</span></div>` : ''}
+            ${result.fuelReimbursement > 0 ? `<div class="adv-stat-row"><span class="adv-stat-label">⛽ Carburant</span><span class="adv-stat-val">${formatDh(result.fuelReimbursement)}</span></div>` : ''}
+            <div class="adv-stat-row" style="grid-column:1/-1;border-top:1px solid var(--color-border);padding-top:3px;margin-top:2px;">
+              <span class="adv-stat-label" style="font-weight:700;">TOTAL DÛ</span>
+              <span class="adv-stat-val" style="font-weight:700;">${formatDh(result.totalRemuneration)}</span>
+            </div>
+          </div>
+        </div>`;
+      });
+
+      content.innerHTML = html;
+    };
+
+    window.exportCommissionsCSV = function () {
+      if (!_lastCommissionData.length) {
+        showSessionStatus('⚠️ Calculez d\'abord les commissions', 'error');
+        return;
+      }
+
+      const header = [
+        'Employé', 'Email', 'Mode', 'Période',
+        ...CATEGORIES.map(c => c + ' (quantité)'),
+        ...CATEGORIES.map(c => c + ' taux (DHS)'),
+        'Commission (DHS)', 'Fixe (DHS)', 'Carburant (DHS)', 'Total (DHS)'
+      ];
+
+      const rows = [header];
+      _lastCommissionData.forEach(({ user, result, periodStart, periodEnd }) => {
+        const kgVals   = CATEGORIES.map(c => result.kgByCategory[c] || 0);
+        const rateVals = CATEGORIES.map(c => Number((user.commission_rates || {})[c] || 0));
+        rows.push([
+          user.full_name || '—',
+          user.email || '—',
+          user.remuneration_mode === 'fixed_plus_commission' ? 'Fixe+Commission' : 'Commission',
+          `${periodStart} → ${periodEnd}`,
+          ...kgVals,
+          ...rateVals,
+          result.totalCommission.toFixed(2),
+          result.totalFixed.toFixed(2),
+          result.fuelReimbursement.toFixed(2),
+          result.totalRemuneration.toFixed(2)
+        ]);
+      });
+
+      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      const ps   = document.getElementById('commPeriodStart')?.value || 'export';
+      const pe   = document.getElementById('commPeriodEnd')?.value   || '';
+      a.download = `commissions-${ps}${pe ? '-' + pe : ''}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showSessionStatus('✅ Export CSV téléchargé', 'success');
+    };
+
+    window.saveRemunerationSnapshot = async function () {
+      if (!isAdmin()) return;
+      if (!_lastCommissionData.length) {
+        showSessionStatus('⚠️ Calculez d\'abord les commissions', 'error');
+        return;
+      }
+      const statusEl = document.getElementById('commissionsStatus');
+      if (statusEl) { statusEl.textContent = '⏳ Enregistrement…'; statusEl.style.color = ''; }
+
+      try {
+        const inserts = _lastCommissionData.map(({ user, result, periodStart, periodEnd }) => ({
+          user_id:              user.id,
+          period_start:         periodStart,
+          period_end:           periodEnd,
+          total_kg_by_category: result.kgByCategory,
+          total_commission:     result.totalCommission,
+          total_fixed:          result.totalFixed,
+          fuel_reimbursement:   result.fuelReimbursement,
+          calculated_by:        state.session?.user?.id || null
+        }));
+        const { error } = await supabase.from('remuneration_history').insert(inserts);
+        if (error) throw error;
+        if (statusEl) { statusEl.textContent = '✅ Snapshot enregistré'; statusEl.style.color = '#2e7d32'; }
+        showSessionStatus('✅ Snapshot de rémunération enregistré', 'success');
+        logAction('remuneration_snapshot', {
+          period: `${_lastCommissionData[0]?.periodStart} → ${_lastCommissionData[0]?.periodEnd}`,
+          count:  inserts.length
+        });
+      } catch (e) {
+        if (statusEl) { statusEl.textContent = '❌ ' + (e?.message || e); statusEl.style.color = '#e53935'; }
+        showSessionStatus('❌ Erreur lors de l\'enregistrement', 'error');
+      }
+    };
+
+    // ── Employee "Mes commissions" Modal ────────────────────────────────────────
+    window.openMyCommissionsModal = function () {
+      closeAllMenus();
+      const { start, end } = getDefaultPeriod();
+      const s = document.getElementById('myCommStart');
+      const e = document.getElementById('myCommEnd');
+      if (s && !s.value) s.value = start;
+      if (e && !e.value) e.value = end;
+      renderMyCommissions();
+      openModal('myCommissionsModal');
+    };
+
+    window.renderMyCommissions = function () {
+      const periodStart = document.getElementById('myCommStart')?.value;
+      const periodEnd   = document.getElementById('myCommEnd')?.value;
+      const content     = document.getElementById('myCommissionsContent');
+      if (!content) return;
+
+      if (!periodStart || !periodEnd || periodStart > periodEnd) {
+        content.innerHTML = '<div class="muted">Sélectionnez une période valide.</div>';
+        return;
+      }
+
+      const user = state.profile;
+      if (!user) {
+        content.innerHTML = '<div class="muted">Profil non disponible.</div>';
+        return;
+      }
+
+      const result = calcCommissionForUser(user, state.sales, periodStart, periodEnd);
+      const rates  = user.commission_rates || {};
+      const noRates = Object.keys(rates).length === 0;
+
+      let catRows = '';
+      CATEGORIES.forEach(cat => {
+        const qty  = result.kgByCategory[cat] || 0;
+        const rate = Number(rates[cat] || 0);
+        if (qty > 0 || rate > 0) {
+          catRows += `<div class="adv-stat-row" style="margin-bottom:2px;">
+            <span class="adv-stat-label">
+              <span class="badge ${cat}" style="margin:0 4px 0 0;padding:1px 5px;font-size:9px;">${cat}</span>
+              ${formatQty(qty)} ${unitLabel(cat)} × ${rate} DHS
+            </span>
+            <span class="adv-stat-val">${formatDh(qty * rate)}</span>
+          </div>`;
+        }
+      });
+
+      let html = '';
+
+      if (catRows) {
+        html += `<div class="settings-option" style="margin-bottom:8px;">
+          <div class="title" style="margin-bottom:6px;">📦 Détail par gamme</div>
+          ${catRows}
+        </div>`;
+      } else {
+        html += `<div class="muted" style="margin-bottom:10px;font-size:12px;">Aucune vente enregistrée à votre nom sur cette période.</div>`;
+      }
+
+      html += `<div class="settings-option">
+        <div class="title" style="margin-bottom:6px;">📊 Récapitulatif</div>
+        <div class="adv-stat-row"><span class="adv-stat-label">💰 Commission</span><span class="adv-stat-val" style="color:var(--color-success)">${formatDh(result.totalCommission)}</span></div>
+        ${result.totalFixed > 0 ? `<div class="adv-stat-row"><span class="adv-stat-label">💼 Salaire fixe</span><span class="adv-stat-val">${formatDh(result.totalFixed)}</span></div>` : ''}
+        ${result.fuelReimbursement > 0 ? `<div class="adv-stat-row"><span class="adv-stat-label">⛽ Carburant</span><span class="adv-stat-val">${formatDh(result.fuelReimbursement)}</span></div>` : ''}
+        <div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:4px;margin-top:4px;">
+          <span class="adv-stat-label" style="font-weight:700;">TOTAL</span>
+          <span class="adv-stat-val" style="font-weight:700;font-size:15px;">${formatDh(result.totalRemuneration)}</span>
+        </div>
+      </div>`;
+
+      if (noRates && !isAdmin()) {
+        html += `<div class="muted" style="margin-top:8px;font-size:11px;">⚠️ Aucun taux de commission configuré. Contactez votre administrateur.</div>`;
+      }
+
+      content.innerHTML = html;
+    };
+
+    // ── Per-user Remuneration Settings (admin) ──────────────────────────────────
+    function openRemunerationSettingsModal(userId) {
+      if (!isAdmin()) return;
+      closeAllMenus();
+      const user = state.allUsers.find(u => u.id === userId);
+      if (!user) return;
+
+      document.getElementById('remuSettingsUserName').textContent = `👤 ${user.full_name || user.email || '—'}`;
+      document.getElementById('remuSettingsUserId').value         = userId;
+      document.getElementById('remuMode').value                   = user.remuneration_mode || 'commission_only';
+      document.getElementById('remuFixedSalary').value            = user.fixed_monthly_salary || 0;
+      document.getElementById('remuFuel').value                   = user.fuel_allowance || 0;
+      document.getElementById('remuSettingsStatus').textContent   = '';
+      document.getElementById('remuSettingsStatus').style.color   = '';
+
+      window.toggleRemuFixed();
+
+      const rates = user.commission_rates || {};
+      const grid  = document.getElementById('remuRatesGrid');
+      if (grid) {
+        grid.innerHTML = CATEGORIES.map(cat => `
+          <div>
+            <label style="margin:0;font-size:11px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:4px;">
+              <span class="badge ${cat}" style="margin:0;padding:1px 5px;font-size:9px;">${cat}</span>
+              DHS/${unitLabel(cat)}
+            </label>
+            <input id="remuRate${cat}" type="number" min="0" step="0.5" value="${Number(rates[cat] || 0)}" style="margin:4px 0 0;"/>
+          </div>`).join('');
+      }
+
+      openModal('remunerationSettingsModal');
+    }
+    window.openRemunerationSettingsModal = openRemunerationSettingsModal;
+
+    window.toggleRemuFixed = function () {
+      const mode    = document.getElementById('remuMode')?.value;
+      const section = document.getElementById('remuFixedSection');
+      if (section) section.style.display = mode === 'fixed_plus_commission' ? '' : 'none';
+    };
+
+    window.saveRemunerationSettings = async function () {
+      if (!isAdmin()) return;
+      const userId = document.getElementById('remuSettingsUserId').value;
+      if (!userId) return;
+
+      const mode        = document.getElementById('remuMode').value;
+      const fixedSalary = Number(document.getElementById('remuFixedSalary').value || 0);
+      const fuel        = Number(document.getElementById('remuFuel').value || 0);
+
+      const rates = {};
+      CATEGORIES.forEach(cat => {
+        const v = Number(document.getElementById('remuRate' + cat)?.value || 0);
+        if (v > 0) rates[cat] = v;
+      });
+
+      const statusEl = document.getElementById('remuSettingsStatus');
+      if (statusEl) { statusEl.textContent = '⏳ Enregistrement…'; statusEl.style.color = ''; }
+
+      try {
+        const { error } = await supabase.from('profiles').update({
+          remuneration_mode:    mode,
+          commission_rates:     rates,
+          fixed_monthly_salary: fixedSalary,
+          fuel_allowance:       fuel
+        }).eq('id', userId);
+        if (error) throw error;
+
+        // Update local state so re-calculations are immediately accurate
+        const idx = state.allUsers.findIndex(u => u.id === userId);
+        if (idx !== -1) {
+          Object.assign(state.allUsers[idx], {
+            remuneration_mode: mode, commission_rates: rates,
+            fixed_monthly_salary: fixedSalary, fuel_allowance: fuel
+          });
+        }
+        // Also refresh own profile if admin edited their own settings
+        if (userId === state.profile?.id) {
+          Object.assign(state.profile, {
+            remuneration_mode: mode, commission_rates: rates,
+            fixed_monthly_salary: fixedSalary, fuel_allowance: fuel
+          });
+        }
+
+        if (statusEl) { statusEl.textContent = '✅ Paramètres enregistrés'; statusEl.style.color = '#2e7d32'; }
+        showSessionStatus('✅ Rémunération configurée', 'success');
+        logAction('remuneration_settings_updated', { targetUserId: userId, mode });
+      } catch (e) {
+        if (statusEl) { statusEl.textContent = '❌ ' + (e?.message || e); statusEl.style.color = '#e53935'; }
+        showSessionStatus('❌ Erreur lors de la sauvegarde', 'error');
+      }
     };
 
     // iOS PWA: ensure virtual keyboard opens reliably on login fields
