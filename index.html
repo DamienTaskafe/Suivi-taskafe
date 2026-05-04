@@ -801,6 +801,73 @@
         hasCommercialRow: false
       };
     }
+
+    // Variant of getSaleStockContext that accepts an explicit userId.
+    // Mirrors the DB trigger routing logic exactly:
+    //   - admin/manager always → central
+    //   - user with stock_commercial row for category → commercial
+    //   - otherwise → central (backward-compatible)
+    // Uses local state; for live DB values use fetchLiveSaleStockContext().
+    function getSaleStockContextForUser(category, userId) {
+      if (isManagerOrAdmin()) {
+        return {
+          pool: 'central',
+          label: 'Stock central',
+          availableQty: Number(state.stocks[category] || 0),
+          hasCommercialRow: false
+        };
+      }
+      // Check commercial stock — mirrors trigger's
+      // EXISTS (SELECT 1 FROM stock_commercial WHERE user_id = NEW.created_by AND category = …)
+      const hasCommercialRow = Object.prototype.hasOwnProperty.call(state.commercialStock, category);
+      if (hasCommercialRow) {
+        return {
+          pool: 'commercial',
+          label: 'Stock voiture',
+          availableQty: Number(state.commercialStock[category] || 0),
+          hasCommercialRow: true
+        };
+      }
+      return {
+        pool: 'central',
+        label: 'Stock central',
+        availableQty: Number(state.stocks[category] || 0),
+        hasCommercialRow: false
+      };
+    }
+
+    // Reads the real stock context directly from Supabase for a given user/category.
+    // Mirrors the DB trigger routing logic so the result reflects what the trigger
+    // will actually use when the sale is inserted.
+    // Returns null on any network / permission failure.
+    async function fetchLiveSaleStockContext(category, userId) {
+      try {
+        const [stockRes, commercialRes, profileRes] = await Promise.all([
+          supabase.from('stocks').select('quantity').eq('category', category).maybeSingle(),
+          supabase.from('stock_commercial').select('quantity').eq('user_id', userId).eq('category', category).maybeSingle(),
+          supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
+        ]);
+        const centralQty    = Number(stockRes.data?.quantity ?? 0);
+        const commercialQty = Number(commercialRes.data?.quantity ?? 0);
+        const hasCommercialRow = !!commercialRes.data;
+        const role    = profileRes.data?.role || 'employee';
+        const isAdmin = role === 'admin' || role === 'manager';
+        // Mirror DB trigger: admin/manager always central; commercial row → voiture
+        const useCommercial = !isAdmin && hasCommercialRow;
+        return {
+          pool: useCommercial ? 'commercial' : 'central',
+          label: useCommercial ? 'Stock voiture' : 'Stock central',
+          availableQty: useCommercial ? commercialQty : centralQty,
+          hasCommercialRow,
+          centralQty,
+          commercialQty,
+          role
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
     function initCategorySelects() {
       const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
       const filterOpts = `<option value="">Toutes catégories</option>` + opts;
@@ -2412,7 +2479,12 @@
     }
 
     // Translates Supabase/PostgreSQL technical errors into French business messages.
-    // context: { category, requested, available, pool } — used for richer messages.
+    // context: { category, requested, available, pool } — used only as fallback
+    //   when the DB error message does not embed qty values.
+    // IMPORTANT: for STOCK_INSUFFISANT / STOCK_COMMERCIAL_INSUFFISANT, always
+    //   prefer values extracted from the DB error message over local context,
+    //   because the local state may be stale (cache/offline) while the DB values
+    //   are the ground truth.
     function getFriendlyErrorMessage(err, context = {}) {
       const raw = err?.message || err?.details || err?.hint || (err ? String(err) : '');
       const cat = context.category || '';
@@ -2432,8 +2504,9 @@
         const reqMatch = raw.match(/demandé=([^,\s]+)/);
         const availMatch = raw.match(/disponible=([^,\s]+)/);
         const catLabel = cat || (catMatch ? catMatch[1] : '');
-        const reqQty = req !== null ? req : (reqMatch ? Number(reqMatch[1]) : null);
-        const availQty = avail !== null ? avail : (availMatch ? Number(availMatch[1]) : null);
+        // DB error values take priority — local context only as fallback
+        const reqQty = reqMatch ? Number(reqMatch[1]) : req;
+        const availQty = availMatch ? Number(availMatch[1]) : avail;
         let msg = `Stock voiture insuffisant${catLabel ? ` pour ${catLabel}` : ''}`;
         if (availQty !== null) msg += `. Disponible : ${fmtQty(availQty)}`;
         if (reqQty !== null) msg += `. Demandé : ${fmtQty(reqQty)}`;
@@ -2447,8 +2520,9 @@
         const reqMatch = raw.match(/demandé=([^,\s]+)/);
         const availMatch = raw.match(/disponible=([^,\s]+)/);
         const catLabel = cat || (catMatch ? catMatch[1] : '');
-        const reqQty = req !== null ? req : (reqMatch ? Number(reqMatch[1]) : null);
-        const availQty = avail !== null ? avail : (availMatch ? Number(availMatch[1]) : null);
+        // DB error values take priority — local context only as fallback
+        const reqQty = reqMatch ? Number(reqMatch[1]) : req;
+        const availQty = availMatch ? Number(availMatch[1]) : avail;
         let msg = `Stock central insuffisant${catLabel ? ` pour ${catLabel}` : ''}`;
         if (availQty !== null) msg += `. Disponible : ${fmtQty(availQty)}`;
         if (reqQty !== null) msg += `. Demandé : ${fmtQty(reqQty)}`;
@@ -2457,8 +2531,16 @@
       }
 
       // ── Contrainte CHECK Postgres (stocks_quantity_check) ────────────────────
+      // This path is a fallback for older DB versions that don't embed qty values.
+      // If local state shows avail >= req, display an incoherence warning instead
+      // of a misleading "disponible X, demandé Y" message where X >= Y.
       if (raw.includes('stocks_quantity_check') || raw.includes('violates check constraint')) {
         const isCommercial = pool === 'commercial';
+        // Incoherence: local state looks sufficient but DB refused → stale cache
+        if (avail !== null && req !== null && avail >= req) {
+          const poolLabel = isCommercial ? 'Stock voiture' : 'Stock central';
+          return `Incohérence stock détectée pour ${cat || 'la gamme'} : ${poolLabel} affiché ${fmtQty(avail)} pour ${fmtQty(req)} demandé, mais Supabase a refusé. Rafraîchissez les données et réessayez. Si le problème persiste, vérifiez le trigger stock.`;
+        }
         let msg;
         if (isCommercial) {
           msg = `Stock voiture insuffisant${cat ? ` pour ${cat}` : ''}`;
@@ -3270,6 +3352,11 @@
 
         // Get a fresh session before inserting so state.session.user.id is always valid.
         const session = await requireFreshSession();
+
+        // Re-derive the stock pool using the actual session user ID so it
+        // matches what the DB trigger will use (NEW.created_by = session.user.id).
+        const liveUseCommercial = getSaleStockContextForUser(category, session.user.id).pool === 'commercial';
+
         const { error: saleError } = await supabase.from('sales').insert({
           client_id: client?.id || null,
           client_name: clientName,
@@ -3282,12 +3369,36 @@
           created_at: createdAt
         });
         if (saleError) {
-          const msg = getFriendlyErrorMessage(saleError, {
-            category,
-            requested: quantity,
-            available: currentStockQty,
-            pool: useCommercial ? 'commercial' : 'central'
-          });
+          // Read the real stock from the DB to build a coherent error message.
+          let liveCtx = null;
+          try { liveCtx = await fetchLiveSaleStockContext(category, session.user.id); } catch (_) {}
+
+          let msg;
+          const isStockError = /STOCK_(COMMERCIAL_)?INSUFFISANT|stocks_quantity_check|violates check constraint/.test(
+            saleError?.message || ''
+          );
+          if (liveCtx && isStockError) {
+            if (liveCtx.availableQty >= quantity) {
+              // DB has enough stock but refused → real incoherence (e.g. stale trigger)
+              msg = `Incohérence stock détectée pour ${category} : ${liveCtx.label} voit ${formatStockValue(category, liveCtx.availableQty)} disponible pour ${formatStockValue(category, quantity)} demandé, mais Supabase a refusé. Rafraîchissez les données et réessayez. Si le problème persiste, vérifiez le trigger stock.`;
+            } else {
+              // Real insufficiency — use live DB quantities for an accurate message
+              msg = getFriendlyErrorMessage(saleError, {
+                category,
+                requested: quantity,
+                available: liveCtx.availableQty,
+                pool: liveCtx.pool
+              });
+            }
+          } else {
+            // No live context (network issue) — getFriendlyErrorMessage will use
+            // DB-embedded values (demandé=/disponible=) when available.
+            msg = getFriendlyErrorMessage(saleError, {
+              category,
+              requested: quantity,
+              pool: liveUseCommercial ? 'commercial' : 'central'
+            });
+          }
           const statusEl = document.getElementById('confirmSaleStatus');
           if (statusEl) statusEl.textContent = `❌ Commande non enregistrée : ${msg}`;
           showSessionStatus(`❌ Commande non enregistrée : ${msg}`, 'error', 6000);
@@ -3307,7 +3418,7 @@
           created_by: session.user.id,
           created_at: createdAt
         });
-        if (useCommercial) {
+        if (liveUseCommercial) {
           state.commercialStock[category] = newStockQty;
         } else {
           state.stocks[category] = newStockQty;
@@ -3325,13 +3436,12 @@
       } catch (err) {
         const errCategory = form?.category || '';
         const errUseCommercial = errCategory ? _useCommercialStockFor(errCategory) : false;
-        const errAvail = errCategory
-          ? (errUseCommercial ? Number(state.commercialStock[errCategory] || 0) : Number(state.stocks[errCategory] || 0))
-          : undefined;
+        // Do not inject local available here — getFriendlyErrorMessage will extract
+        // values from the DB error message (STOCK_INSUFFISANT demandé=/disponible=).
+        // Passing local available risks showing an incoherent "dispo 60, demandé 10".
         const msg = getFriendlyErrorMessage(err, {
           category: errCategory,
           requested: form?.quantity,
-          available: errAvail,
           pool: errUseCommercial ? 'commercial' : 'central'
         });
         const statusEl = document.getElementById('confirmSaleStatus');
