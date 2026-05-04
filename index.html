@@ -836,7 +836,9 @@
      * Runs an async UI action with button locking and status feedback.
      * Disables the button, shows loadingText, then restores the button in all cases.
      * Calls onSuccess(result) on success or onError(err) on failure.
-     * This helper is available for all async actions in the app.
+     *
+     * This is a shared utility available for all async actions in the app.
+     * New action handlers should use this helper to avoid repeating button-locking boilerplate.
      * @param {object} opts
      * @param {string|HTMLElement} opts.button      - button element or CSS selector
      * @param {string}  opts.loadingText            - text shown while action runs
@@ -2932,7 +2934,7 @@
           await addPendingOp({ type: 'addClient', payload: localClient }).catch(() => {});
           _resetClientForm();
           renderClients(); loadClientSelectors();
-          showSessionStatus('📶 Client enregistré localement — synchronisation automatique au retour réseau', 'info', 6000);
+          showSessionStatus('📶 Client enregistré localement — synchronisation automatique au retour réseau', 'info', 5000);
           updateOfflineBanner();
           return;
         }
@@ -3062,7 +3064,6 @@
         const createdAt = new Date(rawDate).toISOString();
         const unitPrice = getClientPrice(clientName, category);
         const totalPrice = Number((quantity * unitPrice).toFixed(2));
-        const unit = category === 'SUCRE' ? 'paquets' : 'kg';
         // Compute the new quantity for the appropriate stock pool — matches _useCommercialStockFor().
         const useCommercial = _useCommercialStockFor(category);
         const newStockQty = useCommercial
@@ -3105,7 +3106,7 @@
           closeModal('confirmSaleModal');
           resetSaleForm();
           renderSales(); renderStock();
-          showSessionStatus('📶 Commande enregistrée localement — synchronisation automatique au retour réseau', 'info', 6000);
+          showSessionStatus('📶 Commande enregistrée localement — synchronisation automatique au retour réseau', 'info', 5000);
           updateOfflineBanner();
           return;
         }
@@ -3150,7 +3151,7 @@
         closeModal('confirmSaleModal');
         resetSaleForm();
         renderSales(); renderStock();
-        showSessionStatus(`✅ Commande enregistrée : ${clientName} · ${category} · ${quantity} ${unit} · ${formatDh(totalPrice)}`, 'success', 5000);
+        showSessionStatus(`✅ Commande enregistrée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
         loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
       } finally {
         _isSavingSale = false;
@@ -3537,8 +3538,7 @@
         async function addToStock(category) {
       if (!hasPermission('stock.edit')) return showSessionStatus('❌ Permission refusée : modifier le stock', 'error');
       closeAllMenus();
-      const unit = category === 'SUCRE' ? 'paquets' : 'kg';
-      const value = prompt(`Ajouter combien de ${unit} ?`, '0');
+      const value = prompt(`Ajouter combien de ${unitLabel(category, true)} ?`, '0');
       if (value === null) return;
       const amount = Number(value);
       if (isNaN(amount) || amount <= 0) return showSessionStatus('❌ Quantité invalide', 'error');
@@ -3559,14 +3559,13 @@
       const { error } = await supabase.from('stocks').upsert({ category, quantity: newQty }, { onConflict: 'category' });
       if (error) return showSessionStatus('❌ ' + error.message, 'error');
 
-      showSessionStatus(`✅ Stock ${category} mis à jour : +${amount} ${unit} (total : ${formatStockValue(category, newQty)})`, 'success', 5000);
+      showSessionStatus(`✅ Stock ${category} mis à jour : +${amount} ${unitLabel(category, amount !== 1)} (total : ${formatStockValue(category, newQty)})`, 'success', 5000);
       loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] addToStock:', e?.message));
     };
 
     async function setStock(category) {
       if (!hasPermission('stock.edit')) return showSessionStatus('❌ Permission refusée : définir le stock', 'error');
       closeAllMenus();
-      const unit = category === 'SUCRE' ? 'paquets' : 'kg';
       const value = prompt(`Définir la quantité pour ${category}`, String(state.stocks[category] || 0));
       if (value === null) return;
       const quantity = Number(value);
@@ -4300,7 +4299,7 @@
         }
         closeModal('editSaleModal');
         renderSales(); renderStock();
-        showSessionStatus(`✅ Vente modifiée : ${clientName} · ${category} · ${quantity} ${category === 'SUCRE' ? 'paquets' : 'kg'} · ${formatDh(totalPrice)}`, 'success', 5000);
+        showSessionStatus(`✅ Vente modifiée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
         loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] editSale:', e?.message));
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
