@@ -771,6 +771,36 @@
       if (isManagerOrAdmin()) return false;
       return Object.prototype.hasOwnProperty.call(state.commercialStock, category);
     }
+
+    // Returns a full stock context for the current user and category.
+    // Mirrors the DB trigger routing: commercial row → voiture, otherwise → central.
+    // { pool: 'commercial'|'central', label: string, availableQty: number, hasCommercialRow: boolean }
+    function getSaleStockContext(category) {
+      if (isManagerOrAdmin()) {
+        return {
+          pool: 'central',
+          label: 'Stock central',
+          availableQty: Number(state.stocks[category] || 0),
+          hasCommercialRow: false
+        };
+      }
+      const hasCommercialRow = Object.prototype.hasOwnProperty.call(state.commercialStock, category);
+      if (hasCommercialRow) {
+        return {
+          pool: 'commercial',
+          label: 'Stock voiture',
+          availableQty: Number(state.commercialStock[category] || 0),
+          hasCommercialRow: true
+        };
+      }
+      // No commercial row: fallback to central (backward-compatible legacy path)
+      return {
+        pool: 'central',
+        label: 'Stock central',
+        availableQty: Number(state.stocks[category] || 0),
+        hasCommercialRow: false
+      };
+    }
     function initCategorySelects() {
       const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
       const filterOpts = `<option value="">Toutes catégories</option>` + opts;
@@ -1806,14 +1836,7 @@
         });
 
         if (error) {
-          const msg = error.message || '';
-          if (msg.includes('STOCK_CENTRAL_INSUFFISANT')) {
-            statusEl.textContent = `❌ Stock central insuffisant pour ${category}`;
-          } else if (msg.includes('PERMISSION_DENIED')) {
-            statusEl.textContent = '❌ Permission refusée';
-          } else {
-            statusEl.textContent = '❌ ' + msg;
-          }
+          statusEl.textContent = '❌ ' + getFriendlyErrorMessage(error, { category, requested: quantity, available: Number(state.stocks[category] || 0), pool: 'central' });
           return;
         }
 
@@ -1822,7 +1845,7 @@
         showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} transférés à ${employeeName}`, 'success', 5000);
         loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
       } catch (err) {
-        statusEl.textContent = `❌ Erreur : ${getErrorMessage(err)}`;
+        statusEl.textContent = `❌ Erreur : ${getFriendlyErrorMessage(err)}`;
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
@@ -1899,14 +1922,7 @@
         });
 
         if (error) {
-          const msg = error.message || '';
-          if (msg.includes('STOCK_COMMERCIAL_INSUFFISANT')) {
-            statusEl.textContent = `❌ Stock commercial insuffisant pour ${category}`;
-          } else if (msg.includes('PERMISSION_DENIED')) {
-            statusEl.textContent = '❌ Permission refusée';
-          } else {
-            statusEl.textContent = '❌ ' + msg;
-          }
+          statusEl.textContent = '❌ ' + getFriendlyErrorMessage(error, { category, requested: quantity, pool: 'commercial' });
           return;
         }
 
@@ -1919,7 +1935,7 @@
         showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} récupérés vers stock central`, 'success', 5000);
         loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[return] refresh:', e?.message));
       } catch (err) {
-        statusEl.textContent = `❌ Erreur : ${getErrorMessage(err)}`;
+        statusEl.textContent = `❌ Erreur : ${getFriendlyErrorMessage(err)}`;
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
@@ -2393,6 +2409,92 @@
     // Extract a human-readable message from a Supabase or JS error object.
     function getErrorMessage(err, fallback = 'Erreur inconnue') {
       return err?.message || err?.details || err?.hint || (err ? String(err) : fallback);
+    }
+
+    // Translates Supabase/PostgreSQL technical errors into French business messages.
+    // context: { category, requested, available, pool } — used for richer messages.
+    function getFriendlyErrorMessage(err, context = {}) {
+      const raw = err?.message || err?.details || err?.hint || (err ? String(err) : '');
+      const cat = context.category || '';
+      const req = context.requested !== undefined ? context.requested : null;
+      const avail = context.available !== undefined ? context.available : null;
+      const pool = context.pool || null; // 'commercial' | 'central'
+
+      const fmtQty = (qty) => {
+        if (qty === null || qty === undefined) return '?';
+        if (cat === 'SUCRE') return `${qty} paquet${qty !== 1 ? 's' : ''}`;
+        return `${qty} kg`;
+      };
+
+      // ── Stock voiture insuffisant ────────────────────────────────────────────
+      if (raw.includes('STOCK_COMMERCIAL_INSUFFISANT')) {
+        const catMatch = raw.match(/catégorie=([^,\s]+)/);
+        const reqMatch = raw.match(/demandé=([^,\s]+)/);
+        const availMatch = raw.match(/disponible=([^,\s]+)/);
+        const catLabel = cat || (catMatch ? catMatch[1] : '');
+        const reqQty = req !== null ? req : (reqMatch ? Number(reqMatch[1]) : null);
+        const availQty = avail !== null ? avail : (availMatch ? Number(availMatch[1]) : null);
+        let msg = `Stock voiture insuffisant${catLabel ? ` pour ${catLabel}` : ''}`;
+        if (availQty !== null) msg += `. Disponible : ${fmtQty(availQty)}`;
+        if (reqQty !== null) msg += `. Demandé : ${fmtQty(reqQty)}`;
+        msg += ". Demandez un transfert de stock à l'admin.";
+        return msg;
+      }
+
+      // ── Stock central insuffisant ────────────────────────────────────────────
+      if (raw.includes('STOCK_INSUFFISANT')) {
+        const catMatch = raw.match(/catégorie=([^,\s]+)/);
+        const reqMatch = raw.match(/demandé=([^,\s]+)/);
+        const availMatch = raw.match(/disponible=([^,\s]+)/);
+        const catLabel = cat || (catMatch ? catMatch[1] : '');
+        const reqQty = req !== null ? req : (reqMatch ? Number(reqMatch[1]) : null);
+        const availQty = avail !== null ? avail : (availMatch ? Number(availMatch[1]) : null);
+        let msg = `Stock central insuffisant${catLabel ? ` pour ${catLabel}` : ''}`;
+        if (availQty !== null) msg += `. Disponible : ${fmtQty(availQty)}`;
+        if (reqQty !== null) msg += `. Demandé : ${fmtQty(reqQty)}`;
+        msg += '. Ajoutez du stock avant de valider.';
+        return msg;
+      }
+
+      // ── Contrainte CHECK Postgres (stocks_quantity_check) ────────────────────
+      if (raw.includes('stocks_quantity_check') || raw.includes('violates check constraint')) {
+        const isCommercial = pool === 'commercial';
+        let msg;
+        if (isCommercial) {
+          msg = `Stock voiture insuffisant${cat ? ` pour ${cat}` : ''}`;
+          if (avail !== null) msg += `. Disponible : ${fmtQty(avail)}`;
+          if (req !== null) msg += `. Demandé : ${fmtQty(req)}`;
+          msg += ". Demandez un transfert de stock à l'admin.";
+        } else {
+          msg = `Stock insuffisant${cat ? ` pour ${cat}` : ''}`;
+          if (avail !== null) msg += `. Disponible : ${fmtQty(avail)}`;
+          if (req !== null) msg += `. Demandé : ${fmtQty(req)}`;
+          msg += '. Ajoutez du stock avant de valider la commande.';
+        }
+        return msg;
+      }
+
+      // ── Permission refusée / RLS ─────────────────────────────────────────────
+      if (raw.includes('permission denied') || raw.includes('PERMISSION_DENIED') || raw.includes('violates row-level security')) {
+        return 'Permission refusée — vérifiez votre rôle.';
+      }
+
+      // ── Session / JWT expirée ────────────────────────────────────────────────
+      if (raw.toLowerCase().includes('jwt') || raw.includes('Session expirée') || raw.includes('not authenticated') || (raw.toLowerCase().includes('token') && raw.toLowerCase().includes('expir'))) {
+        return 'Session expirée — reconnectez-vous.';
+      }
+
+      // ── Doublon ──────────────────────────────────────────────────────────────
+      if (raw.includes('duplicate key') || raw.includes('unique_violation') || raw.includes('already exists')) {
+        return 'Doublon déjà existant — cet enregistrement existe déjà.';
+      }
+
+      // ── Réseau / serveur indisponible ────────────────────────────────────────
+      if (raw.includes('Failed to fetch') || raw.includes('NetworkError') || (raw.includes('fetch') && raw.toLowerCase().includes('fail'))) {
+        return 'Connexion ou serveur indisponible — réessayez.';
+      }
+
+      return raw || 'Erreur inconnue';
     }
 
     // Decode the payload of a JWT without verifying its signature.
@@ -2969,7 +3071,7 @@
 
         const { error } = await supabase.from('clients').insert(payload);
         if (error) {
-          showSessionStatus(`❌ Client non créé : ${error.message}`, 'error', 6000);
+          showSessionStatus(`❌ Client non créé : ${getFriendlyErrorMessage(error)}`, 'error', 6000);
           return;
         }
 
@@ -2978,7 +3080,7 @@
         showSessionStatus(`✅ Client créé : ${name}`, 'success', 5000);
         loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] addClient:', e?.message));
       } catch (err) {
-        showSessionStatus(`❌ Client non créé : ${getErrorMessage(err)}`, 'error', 6000);
+        showSessionStatus(`❌ Client non créé : ${getFriendlyErrorMessage(err)}`, 'error', 6000);
       } finally {
         _isCreatingClient = false;
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
@@ -2999,16 +3101,16 @@
       if (!rawDate) { showSessionStatus('❌ Date & heure obligatoires', 'error'); return null; }
       if (!paidRadio) { showSessionStatus('❌ Choisir le statut de paiement (Payé / Non payé)', 'error'); return null; }
 
-      // Stock check: mirrors the DB trigger — commercial stock is used when
-      // the current user has a stock_commercial row for this category; otherwise
-      // falls back to central stock (legacy path, backward-compatible).
-      const useCommercial = _useCommercialStockFor(category);
-      const availableQty = useCommercial
-        ? Number(state.commercialStock[category] || 0)
-        : Number(state.stocks[category] || 0);
-      if (availableQty < quantity) {
-        const stockLabel = useCommercial ? 'stock commercial' : 'stock central';
-        showSessionStatus(`❌ Stock insuffisant pour ${category} (${stockLabel} : ${formatStockValue(category, availableQty)})`, 'error');
+      // Stock check using getSaleStockContext() — mirrors the DB trigger routing.
+      const stockCtx = getSaleStockContext(category);
+      if (stockCtx.availableQty < quantity) {
+        let msg;
+        if (stockCtx.pool === 'commercial') {
+          msg = `❌ Stock voiture insuffisant pour ${category}. Disponible : ${formatStockValue(category, stockCtx.availableQty)}. Demandé : ${formatStockValue(category, quantity)}. Demandez un transfert de stock à l'admin.`;
+        } else {
+          msg = `❌ Stock central insuffisant pour ${category}. Disponible : ${formatStockValue(category, stockCtx.availableQty)}. Demandé : ${formatStockValue(category, quantity)}. Ajoutez du stock avant de valider.`;
+        }
+        showSessionStatus(msg, 'error');
         return null;
       }
 
@@ -3042,6 +3144,8 @@
       const qtyLabel = category === 'SUCRE' ? 'paquets' : 'kg';
 
       // ── Build recap using safe DOM API to prevent XSS ───────────────────────
+      const stockCtx = getSaleStockContext(category);
+      const afterQty = stockCtx.availableQty - quantity;
       const rows = [
         ['Client', clientName],
         ['Gamme', category],
@@ -3049,6 +3153,9 @@
         ['Date & Heure', formattedDate],
         ['Statut', paid ? '✅ Payé' : '❌ Non payé'],
         ['Prix unitaire', formatDh(unitPrice)],
+        ['Stock utilisé', stockCtx.label],
+        ['Stock disponible', formatStockValue(category, stockCtx.availableQty)],
+        ['Après commande', formatStockValue(category, afterQty)],
       ];
       const recap = document.getElementById('confirmSaleRecap');
       recap.innerHTML = '';
@@ -3100,9 +3207,21 @@
         const totalPrice = Number((quantity * unitPrice).toFixed(2));
         // Compute the new quantity for the appropriate stock pool — matches _useCommercialStockFor().
         const useCommercial = _useCommercialStockFor(category);
-        const newStockQty = useCommercial
-          ? Number(state.commercialStock[category] || 0) - quantity
-          : Number(state.stocks[category] || 0) - quantity;
+        const currentStockQty = useCommercial
+          ? Number(state.commercialStock[category] || 0)
+          : Number(state.stocks[category] || 0);
+        const newStockQty = currentStockQty - quantity;
+
+        // Block if local stock is insufficient (safety net in case state changed since readSaleForm).
+        if (newStockQty < 0) {
+          const statusEl = document.getElementById('confirmSaleStatus');
+          const msg = useCommercial
+            ? `❌ Stock voiture insuffisant pour ${category}. Disponible : ${formatStockValue(category, currentStockQty)}. Demandé : ${formatStockValue(category, quantity)}. Demandez un transfert de stock à l'admin.`
+            : `❌ Stock local insuffisant pour ${category}. Disponible : ${formatStockValue(category, currentStockQty)}. Demandé : ${formatStockValue(category, quantity)}.`;
+          if (statusEl) statusEl.textContent = msg;
+          showSessionStatus(msg, 'error', 6000);
+          return;
+        }
 
         if (!navigator.onLine) {
           const localSale = {
@@ -3159,7 +3278,12 @@
           created_at: createdAt
         });
         if (saleError) {
-          const msg = getErrorMessage(saleError);
+          const msg = getFriendlyErrorMessage(saleError, {
+            category,
+            requested: quantity,
+            available: currentStockQty,
+            pool: useCommercial ? 'commercial' : 'central'
+          });
           const statusEl = document.getElementById('confirmSaleStatus');
           if (statusEl) statusEl.textContent = `❌ Commande non enregistrée : ${msg}`;
           showSessionStatus(`❌ Commande non enregistrée : ${msg}`, 'error', 6000);
@@ -3195,7 +3319,17 @@
         showSessionStatus(`✅ Commande enregistrée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
         loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); renderBalance(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
       } catch (err) {
-        const msg = getErrorMessage(err);
+        const errCategory = form?.category || '';
+        const errUseCommercial = errCategory ? _useCommercialStockFor(errCategory) : false;
+        const errAvail = errCategory
+          ? (errUseCommercial ? Number(state.commercialStock[errCategory] || 0) : Number(state.stocks[errCategory] || 0))
+          : undefined;
+        const msg = getFriendlyErrorMessage(err, {
+          category: errCategory,
+          requested: form?.quantity,
+          available: errAvail,
+          pool: errUseCommercial ? 'commercial' : 'central'
+        });
         const statusEl = document.getElementById('confirmSaleStatus');
         if (statusEl) statusEl.textContent = `❌ Commande non enregistrée : ${msg}`;
         showSessionStatus(`❌ Commande non enregistrée : ${msg}`, 'error', 8000);
@@ -3246,7 +3380,7 @@
       if (error) {
         sale.paid = prevPaid;
         renderSales();
-        return showSessionStatus('❌ ' + error.message, 'error');
+        return showSessionStatus('❌ ' + getFriendlyErrorMessage(error), 'error');
       }
       showSessionStatus(paid ? '✅ Commande marquée payée' : '✅ Commande marquée non payée', 'success', 5000);
       loadCloudData().then(() => { renderSales(); }).catch(e => console.warn('[refresh] togglePaid:', e?.message));
@@ -3313,7 +3447,7 @@
           state.stocks[sale.category] = stockSnapshot;
         }
         renderSales(); renderStock();
-        return showSessionStatus('❌ ' + error.message, 'error');
+        return showSessionStatus('❌ ' + getFriendlyErrorMessage(error), 'error');
       }
 
       showSessionStatus('✅ Commande supprimée', 'success', 5000);
@@ -3476,7 +3610,7 @@
         }
         const { error } = await supabase.from('clients').update({ name, address, ice, prices, client_status }).eq('id', clientId);
         if (error) {
-          showSessionStatus(`❌ Client non modifié : ${error.message}`, 'error', 6000);
+          showSessionStatus(`❌ Client non modifié : ${getFriendlyErrorMessage(error)}`, 'error', 6000);
           return;
         }
         // Propagate rename to the sales table so ventes récentes shows the new name
@@ -3504,7 +3638,7 @@
         showSessionStatus(`✅ Client modifié : ${name}`, 'success', 5000);
         loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] editClient:', e?.message));
       } catch (err) {
-        showSessionStatus(`❌ Client non modifié : ${getErrorMessage(err)}`, 'error', 6000);
+        showSessionStatus(`❌ Client non modifié : ${getFriendlyErrorMessage(err)}`, 'error', 6000);
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
@@ -3606,7 +3740,7 @@
 
       state.stocks[category] = newQty;
       const { error } = await supabase.from('stocks').upsert({ category, quantity: newQty }, { onConflict: 'category' });
-      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+      if (error) return showSessionStatus(`❌ ${getFriendlyErrorMessage(error)}`, 'error');
 
       showSessionStatus(`✅ Stock ${category} mis à jour : +${amount} ${unitLabel(category, amount !== 1)} (total : ${formatStockValue(category, newQty)})`, 'success', 5000);
       loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] addToStock:', e?.message));
@@ -3633,7 +3767,7 @@
 
       state.stocks[category] = quantity;
       const { error } = await supabase.from('stocks').upsert({ category, quantity }, { onConflict: 'category' });
-      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+      if (error) return showSessionStatus(`❌ ${getFriendlyErrorMessage(error)}`, 'error');
 
       showSessionStatus(`✅ Stock ${category} défini à ${formatStockValue(category, quantity)}`, 'success', 5000);
       loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] setStock:', e?.message));
@@ -4338,7 +4472,7 @@
         const { error } = await supabase.from('sales').update(updatedSaleData).eq('id', saleId);
 
         if (error) {
-          showSessionStatus(`❌ Vente non modifiée : ${error.message}`, 'error', 6000);
+          showSessionStatus(`❌ Vente non modifiée : ${getFriendlyErrorMessage(error, { category, requested: quantity, available: Number(state.stocks[category] || 0) })}`, 'error', 6000);
           return;
         }
         Object.assign(sale, updatedSaleData);
@@ -4351,7 +4485,7 @@
         showSessionStatus(`✅ Vente modifiée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
         loadCloudData().then(() => { renderSales(); renderStock(); renderBalance(); }).catch(e => console.warn('[refresh] editSale:', e?.message));
       } catch (err) {
-        showSessionStatus(`❌ Vente non modifiée : ${getErrorMessage(err)}`, 'error', 6000);
+        showSessionStatus(`❌ Vente non modifiée : ${getFriendlyErrorMessage(err)}`, 'error', 6000);
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
