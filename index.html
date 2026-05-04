@@ -836,6 +836,7 @@
      * Runs an async UI action with button locking and status feedback.
      * Disables the button, shows loadingText, then restores the button in all cases.
      * Calls onSuccess(result) on success or onError(err) on failure.
+     * This helper is available for all async actions in the app.
      * @param {object} opts
      * @param {string|HTMLElement} opts.button      - button element or CSS selector
      * @param {string}  opts.loadingText            - text shown while action runs
@@ -1783,10 +1784,9 @@
         const u = state.allUsers.find(u => u.id === employeeId);
         return u ? (u.full_name || u.email || '—') : '—';
       })();
-      const unit = category === 'SUCRE' ? 'paquets' : 'kg';
       const available = Number(state.stocks[category] || 0);
       if (quantity > available) {
-        statusEl.textContent = `❌ Stock insuffisant : demandé ${quantity} ${unit}, disponible ${formatStockValue(category, available)}`;
+        statusEl.textContent = `❌ Stock insuffisant : demandé ${formatStockValue(category, quantity)}, disponible ${formatStockValue(category, available)}`;
         return;
       }
 
@@ -1815,7 +1815,7 @@
 
         logAction('stock_transfer_to_commercial', { employeeId, category, quantity });
         closeModal('transferStockModal');
-        showSessionStatus(`✅ ${quantity} ${unit} ${category} transférés à ${employeeName}`, 'success', 5000);
+        showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} transférés à ${employeeName}`, 'success', 5000);
         loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
@@ -1874,11 +1874,10 @@
       if (!_returnTargetUserId) { statusEl.textContent = '❌ Utilisateur manquant'; return; }
       if (!quantity || quantity <= 0) { statusEl.textContent = '❌ Quantité invalide'; return; }
 
-      const unit = category === 'SUCRE' ? 'paquets' : 'kg';
       const commercialRow = state.allCommercialStocks.find(s => s.user_id === _returnTargetUserId && s.category === category);
       const available = Number(commercialRow?.quantity || 0);
       if (quantity > available) {
-        statusEl.textContent = `❌ Stock insuffisant : demandé ${quantity} ${unit}, disponible ${formatStockValue(category, available)}`;
+        statusEl.textContent = `❌ Stock insuffisant : demandé ${formatStockValue(category, quantity)}, disponible ${formatStockValue(category, available)}`;
         return;
       }
 
@@ -1911,7 +1910,7 @@
         _returnTargetUserId = null;
         _returnTargetCat    = null;
         closeModal('returnStockModal');
-        showSessionStatus(`✅ ${quantity} ${unit} ${category} récupérés vers stock central`, 'success', 5000);
+        showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} récupérés vers stock central`, 'success', 5000);
         loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[return] refresh:', e?.message));
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
@@ -2933,7 +2932,7 @@
           await addPendingOp({ type: 'addClient', payload: localClient }).catch(() => {});
           _resetClientForm();
           renderClients(); loadClientSelectors();
-          showSessionStatus('📶 Client enregistré localement — synchro en attente', 'info', 6000);
+          showSessionStatus('📶 Client enregistré localement — synchronisation automatique au retour réseau', 'info', 6000);
           updateOfflineBanner();
           return;
         }
@@ -3240,7 +3239,7 @@
           payload: { saleId }
         }).catch(() => {});
         renderSales(); renderStock();
-        showSessionStatus('📶 Commande supprimée localement — synchro en attente', 'info', 5000);
+        showSessionStatus('📶 Commande supprimée localement — synchronisation automatique au retour réseau', 'info', 5000);
         updateOfflineBanner();
         return;
       }
@@ -3423,7 +3422,7 @@
           await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices, client_status } }).catch(() => {});
           closeModal('editClientModal');
           renderClients(); loadClientSelectors(); renderSales();
-          showSessionStatus('📶 Client modifié localement — synchro en attente', 'info', 5000);
+          showSessionStatus('📶 Client modifié localement — synchronisation automatique au retour réseau', 'info', 5000);
           updateOfflineBanner();
           return;
         }
@@ -3551,7 +3550,7 @@
         await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({ type: 'stockUpdate', payload: { category, quantity: newQty } }).catch(() => {});
         renderStock();
-        showSessionStatus(`📶 Stock ${category} mis à jour localement — synchro en attente`, 'info', 5000);
+        showSessionStatus(`📶 Stock ${category} mis à jour localement — synchronisation automatique au retour réseau`, 'info', 5000);
         updateOfflineBanner();
         return;
       }
@@ -3579,7 +3578,7 @@
         await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({ type: 'stockUpdate', payload: { category, quantity } }).catch(() => {});
         renderStock();
-        showSessionStatus(`📶 Stock ${category} défini localement — synchro en attente`, 'info', 5000);
+        showSessionStatus(`📶 Stock ${category} défini localement — synchronisation automatique au retour réseau`, 'info', 5000);
         updateOfflineBanner();
         return;
       }
@@ -4283,7 +4282,7 @@
           }).catch(() => {});
           closeModal('editSaleModal');
           renderSales(); renderStock();
-          showSessionStatus('📶 Vente modifiée localement — synchro en attente', 'info', 5000);
+          showSessionStatus('📶 Vente modifiée localement — synchronisation automatique au retour réseau', 'info', 5000);
           updateOfflineBanner();
           return;
         }
