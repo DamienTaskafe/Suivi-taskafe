@@ -2866,8 +2866,12 @@
       }
     };
 
+    // Lock to prevent double-submission on the add-client form
+    let _isCreatingClient = false;
+
     window.addClient = async function () {
       if (!hasPermission('clients.create')) return showSessionStatus('❌ Permission refusée : ajouter un client', 'error');
+      if (_isCreatingClient) return;  // belt-and-suspenders: prevent double submit
       const btn = document.getElementById('addClientBtn');
       if (btn && btn.disabled) return;  // prevent double submit
 
@@ -2916,6 +2920,7 @@
       // ─────────────────────────────────────────────────────────────────────
 
       const origBtnText = btn ? btn.textContent : '✅ Créer client';
+      _isCreatingClient = true;
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Création du client…'; }
 
       function _resetClientForm() {
@@ -2951,6 +2956,7 @@
         showSessionStatus(`✅ Client créé : ${name}`, 'success', 5000);
         loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] addClient:', e?.message));
       } finally {
+        _isCreatingClient = false;
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
     };
@@ -3106,7 +3112,7 @@
           _pendingSale = null;
           closeModal('confirmSaleModal');
           resetSaleForm();
-          renderSales(); renderStock();
+          renderSales(); renderStock(); renderBalance();
           showSessionStatus('📶 Commande enregistrée localement — synchronisation automatique au retour réseau', 'info', 5000);
           updateOfflineBanner();
           return;
@@ -3151,9 +3157,9 @@
         _pendingSale = null;
         closeModal('confirmSaleModal');
         resetSaleForm();
-        renderSales(); renderStock();
+        renderSales(); renderStock(); renderBalance();
         showSessionStatus(`✅ Commande enregistrée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
-        loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
+        loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); renderBalance(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
       } finally {
         _isSavingSale = false;
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
@@ -4281,7 +4287,7 @@
             payload: { saleId, ...updatedSaleData }
           }).catch(() => {});
           closeModal('editSaleModal');
-          renderSales(); renderStock();
+          renderSales(); renderStock(); renderBalance();
           showSessionStatus('📶 Vente modifiée localement — synchronisation automatique au retour réseau', 'info', 5000);
           updateOfflineBanner();
           return;
@@ -4299,9 +4305,9 @@
           state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
         }
         closeModal('editSaleModal');
-        renderSales(); renderStock();
+        renderSales(); renderStock(); renderBalance();
         showSessionStatus(`✅ Vente modifiée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
-        loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] editSale:', e?.message));
+        loadCloudData().then(() => { renderSales(); renderStock(); renderBalance(); }).catch(e => console.warn('[refresh] editSale:', e?.message));
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
