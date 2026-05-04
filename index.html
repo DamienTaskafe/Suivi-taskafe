@@ -2480,7 +2480,11 @@
       }
 
       // ── Session / JWT expirée ────────────────────────────────────────────────
-      if (raw.toLowerCase().includes('jwt') || raw.includes('Session expirée') || raw.includes('not authenticated') || (raw.toLowerCase().includes('token') && raw.toLowerCase().includes('expir'))) {
+      const isSessionError = raw.toLowerCase().includes('jwt') ||
+        raw.includes('Session expirée') ||
+        raw.includes('not authenticated') ||
+        (raw.toLowerCase().includes('token') && raw.toLowerCase().includes('expir'));
+      if (isSessionError) {
         return 'Session expirée — reconnectez-vous.';
       }
 
@@ -2490,7 +2494,7 @@
       }
 
       // ── Réseau / serveur indisponible ────────────────────────────────────────
-      if (raw.includes('Failed to fetch') || raw.includes('NetworkError') || (raw.includes('fetch') && raw.toLowerCase().includes('fail'))) {
+      if (raw.includes('Failed to fetch') || raw.includes('NetworkError')) {
         return 'Connexion ou serveur indisponible — réessayez.';
       }
 
@@ -3217,7 +3221,7 @@
           const statusEl = document.getElementById('confirmSaleStatus');
           const msg = useCommercial
             ? `❌ Stock voiture insuffisant pour ${category}. Disponible : ${formatStockValue(category, currentStockQty)}. Demandé : ${formatStockValue(category, quantity)}. Demandez un transfert de stock à l'admin.`
-            : `❌ Stock local insuffisant pour ${category}. Disponible : ${formatStockValue(category, currentStockQty)}. Demandé : ${formatStockValue(category, quantity)}.`;
+            : `❌ Stock central insuffisant pour ${category}. Disponible : ${formatStockValue(category, currentStockQty)}. Demandé : ${formatStockValue(category, quantity)}.`;
           if (statusEl) statusEl.textContent = msg;
           showSessionStatus(msg, 'error', 6000);
           return;
