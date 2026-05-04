@@ -2866,6 +2866,9 @@
       }
     };
 
+    // Lock to prevent double-submission on the add-client form
+    let _isCreatingClient = false;
+
     window.addClient = async function () {
       if (!hasPermission('clients.create')) return showSessionStatus('❌ Permission refusée : ajouter un client', 'error');
       if (_isCreatingClient) return;  // belt-and-suspenders: prevent double submit
@@ -2992,8 +2995,6 @@
     let _pendingSale = null;
     // Lock to prevent double-submission on the confirmation modal
     let _isSavingSale = false;
-    // Lock to prevent double-submission on the add-client form
-    let _isCreatingClient = false;
 
     // Called when user explicitly cancels the confirmation modal (Annuler or ✕)
     window.cancelConfirmSale = function() {
