@@ -264,7 +264,7 @@
             <h4>💰 Prix personnalisés par gamme</h4>
             <div class="price-scroll-row"></div>
             <div class="muted">Laisse vide pour utiliser les prix standard.</div>
-            <button onclick="addClient()">✅ Créer client</button>
+            <button id="addClientBtn" onclick="addClient()">✅ Créer client</button>
           </div>
         </div>
 
@@ -457,17 +457,18 @@
         <label for="editSalePaid" style="margin:0;flex:1;">✅ Payé</label>
       </div>
       <input type="hidden" id="editSaleId" />
-      <button onclick="saveEditSale()">💾 Enregistrer</button>
+      <button id="saveEditSaleBtn" onclick="saveEditSale()">💾 Enregistrer</button>
     </div>
   </div>
 
   <div id="confirmSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'confirmSaleModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="closeModal('confirmSaleModal')">✕</button></div>
+      <!-- cancelConfirmSale is defined further in the same script tag and available globally at click time -->
+      <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="cancelConfirmSale()">✕</button></div>
       <p style="text-align:center;font-weight:600;margin-bottom:12px;color:var(--color-text);">Voulez-vous valider cette commande ?</p>
       <div id="confirmSaleRecap" class="confirm-recap"></div>
       <div style="display:flex;gap:10px;margin-top:16px;">
-        <button onclick="closeModal('confirmSaleModal')" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
+        <button onclick="cancelConfirmSale()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
         <button id="confirmSaleBtn" onclick="confirmAndSave()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;">✅ Confirmer</button>
       </div>
     </div>
@@ -520,7 +521,7 @@
       <h4>💰 Prix personnalisés par gamme</h4>
       <div class="price-scroll-row"></div>
       <div class="muted">Laisse vide pour utiliser les prix standard.</div>
-      <button onclick="saveEditClient()">💾 Enregistrer</button>
+      <button id="saveEditClientBtn" onclick="saveEditClient()">💾 Enregistrer</button>
     </div>
   </div>
 
@@ -636,7 +637,7 @@
       <label for="transferQuantityInput" style="margin-top:12px;">Quantité à transférer</label>
       <input id="transferQuantityInput" type="number" step="0.01" min="0.01" placeholder="Quantité" />
       <div id="transferStockAvailable" class="muted" style="margin-top:4px;font-size:12px;"></div>
-      <button style="margin-top:16px;" onclick="confirmTransferStock()">✅ Transférer</button>
+      <button id="confirmTransferBtn" style="margin-top:16px;" onclick="confirmTransferStock()">✅ Transférer</button>
       <div id="transferStockStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
   </div>
@@ -654,7 +655,7 @@
       <label for="returnQuantityInput" style="margin-top:12px;">Quantité à récupérer</label>
       <input id="returnQuantityInput" type="number" step="0.01" min="0.01" placeholder="Quantité" />
       <div id="returnStockAvailable" class="muted" style="margin-top:4px;font-size:12px;"></div>
-      <button style="margin-top:16px;" onclick="confirmReturnStock()">✅ Récupérer</button>
+      <button id="confirmReturnBtn" style="margin-top:16px;" onclick="confirmReturnStock()">✅ Récupérer</button>
       <div id="returnStockStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
   </div>
@@ -832,6 +833,37 @@
       _statusTimer = setTimeout(() => { el.classList.remove('show'); _statusTimer = null; }, duration);
     }
 
+    /**
+     * Runs an async UI action with button locking and status feedback.
+     * Disables the button, shows loadingText, then restores the button in all cases.
+     * Calls onSuccess(result) on success or onError(err) on failure.
+     *
+     * Added as a shared utility per UX requirement (Priority 2).
+     * Use this for new async action handlers to avoid repeating button-locking boilerplate.
+     * @param {object} opts
+     * @param {string|HTMLElement} opts.button      - button element or CSS selector
+     * @param {string}  opts.loadingText            - text shown while action runs
+     * @param {Function} opts.action                - async function to execute
+     * @param {Function} [opts.onSuccess]           - called with action result on success
+     * @param {Function} [opts.onError]             - called with error on failure
+     * @param {HTMLElement} [opts.statusEl]         - optional local status element
+     */
+    async function runUiAction({ button, loadingText, action, onSuccess, onError, statusEl } = {}) {
+      const btn = typeof button === 'string' ? document.querySelector(button) : button;
+      const origText = btn ? btn.textContent : '';
+      const origDisabled = btn ? btn.disabled : false;
+      try {
+        if (btn) { btn.disabled = true; btn.textContent = loadingText || '⏳…'; }
+        if (statusEl) statusEl.textContent = loadingText || '⏳…';
+        const result = await action();
+        if (onSuccess) onSuccess(result);
+      } catch (err) {
+        if (onError) onError(err);
+      } finally {
+        if (btn) { btn.disabled = origDisabled; btn.textContent = origText; }
+      }
+    }
+
     // ── Offline helpers ────────────────────────────────────────────────────────
     function genLocalId() {
       return 'local_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
@@ -964,7 +996,7 @@
       if (failed === 0) {
         _syncState = 'idle';
         _syncErrorCount = 0;
-        showSessionStatus(`✅ ${done} action(s) synchronisée(s)`, 'success');
+        showSessionStatus(`✅ ${done} action(s) synchronisée(s)`, 'success', 5000);
       } else {
         _syncState = 'error';
         _syncErrorCount = failed;
@@ -1740,6 +1772,9 @@
         showSessionStatus('❌ Transfert nécessite une connexion', 'error');
         return;
       }
+      const btn = document.getElementById('confirmTransferBtn');
+      if (btn && btn.disabled) return;  // prevent double submit
+
       const employeeId = document.getElementById('transferUserSelect').value;
       const category   = document.getElementById('transferCategorySelect').value;
       const quantity   = Number(document.getElementById('transferQuantityInput').value);
@@ -1748,30 +1783,46 @@
       if (!employeeId) { statusEl.textContent = '❌ Choisissez un commercial'; return; }
       if (!quantity || quantity <= 0) { statusEl.textContent = '❌ Quantité invalide'; return; }
 
-      statusEl.textContent = '⏳ Transfert en cours…';
-
-      const { error } = await supabase.rpc('transfer_stock_to_commercial', {
-        p_employee_id: employeeId,
-        p_category:    category,
-        p_quantity:    quantity
-      });
-
-      if (error) {
-        const msg = error.message || '';
-        if (msg.includes('STOCK_CENTRAL_INSUFFISANT')) {
-          statusEl.textContent = `❌ Stock central insuffisant pour ${category}`;
-        } else if (msg.includes('PERMISSION_DENIED')) {
-          statusEl.textContent = '❌ Permission refusée';
-        } else {
-          statusEl.textContent = '❌ ' + msg;
-        }
+      const employeeName = (() => {
+        const u = state.allUsers.find(u => u.id === employeeId);
+        return u ? (u.full_name || u.email || '—') : '—';
+      })();
+      const available = Number(state.stocks[category] || 0);
+      if (quantity > available) {
+        statusEl.textContent = `❌ Stock insuffisant : demandé ${formatStockValue(category, quantity)}, disponible ${formatStockValue(category, available)}`;
         return;
       }
 
-      logAction('stock_transfer_to_commercial', { employeeId, category, quantity });
-      closeModal('transferStockModal');
-      showSessionStatus('✅ Stock transféré', 'success');
-      loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
+      const origBtnText = btn ? btn.textContent : '✅ Transférer';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Transfert en cours…'; }
+      statusEl.textContent = '⏳ Transfert en cours…';
+
+      try {
+        const { error } = await supabase.rpc('transfer_stock_to_commercial', {
+          p_employee_id: employeeId,
+          p_category:    category,
+          p_quantity:    quantity
+        });
+
+        if (error) {
+          const msg = error.message || '';
+          if (msg.includes('STOCK_CENTRAL_INSUFFISANT')) {
+            statusEl.textContent = `❌ Stock central insuffisant pour ${category}`;
+          } else if (msg.includes('PERMISSION_DENIED')) {
+            statusEl.textContent = '❌ Permission refusée';
+          } else {
+            statusEl.textContent = '❌ ' + msg;
+          }
+          return;
+        }
+
+        logAction('stock_transfer_to_commercial', { employeeId, category, quantity });
+        closeModal('transferStockModal');
+        showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} transférés à ${employeeName}`, 'success', 5000);
+        loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
+      }
     };
 
     let _returnTargetUserId = null;
@@ -1816,6 +1867,9 @@
         showSessionStatus('❌ Récupération nécessite une connexion', 'error');
         return;
       }
+      const btn = document.getElementById('confirmReturnBtn');
+      if (btn && btn.disabled) return;  // prevent double submit
+
       const category = document.getElementById('returnCategorySelect').value;
       const quantity = Number(document.getElementById('returnQuantityInput').value);
       const statusEl = document.getElementById('returnStockStatus');
@@ -1823,34 +1877,47 @@
       if (!_returnTargetUserId) { statusEl.textContent = '❌ Utilisateur manquant'; return; }
       if (!quantity || quantity <= 0) { statusEl.textContent = '❌ Quantité invalide'; return; }
 
-      statusEl.textContent = '⏳ Récupération en cours…';
-
-      const { error } = await supabase.rpc('return_stock_from_commercial', {
-        p_employee_id: _returnTargetUserId,
-        p_category:    category,
-        p_quantity:    quantity
-      });
-
-      if (error) {
-        const msg = error.message || '';
-        if (msg.includes('STOCK_COMMERCIAL_INSUFFISANT')) {
-          statusEl.textContent = `❌ Stock commercial insuffisant pour ${category}`;
-        } else if (msg.includes('PERMISSION_DENIED')) {
-          statusEl.textContent = '❌ Permission refusée';
-        } else {
-          statusEl.textContent = '❌ ' + msg;
-        }
+      const commercialRow = state.allCommercialStocks.find(s => s.user_id === _returnTargetUserId && s.category === category);
+      const available = Number(commercialRow?.quantity || 0);
+      if (quantity > available) {
+        statusEl.textContent = `❌ Stock insuffisant : demandé ${formatStockValue(category, quantity)}, disponible ${formatStockValue(category, available)}`;
         return;
       }
 
-      logAction('stock_return_from_commercial', {
-        employeeId: _returnTargetUserId, category, quantity
-      });
-      _returnTargetUserId = null;
-      _returnTargetCat    = null;
-      closeModal('returnStockModal');
-      showSessionStatus('✅ Stock récupéré', 'success');
-      loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[return] refresh:', e?.message));
+      const origBtnText = btn ? btn.textContent : '✅ Récupérer';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Récupération en cours…'; }
+      statusEl.textContent = '⏳ Récupération en cours…';
+
+      try {
+        const { error } = await supabase.rpc('return_stock_from_commercial', {
+          p_employee_id: _returnTargetUserId,
+          p_category:    category,
+          p_quantity:    quantity
+        });
+
+        if (error) {
+          const msg = error.message || '';
+          if (msg.includes('STOCK_COMMERCIAL_INSUFFISANT')) {
+            statusEl.textContent = `❌ Stock commercial insuffisant pour ${category}`;
+          } else if (msg.includes('PERMISSION_DENIED')) {
+            statusEl.textContent = '❌ Permission refusée';
+          } else {
+            statusEl.textContent = '❌ ' + msg;
+          }
+          return;
+        }
+
+        logAction('stock_return_from_commercial', {
+          employeeId: _returnTargetUserId, category, quantity
+        });
+        _returnTargetUserId = null;
+        _returnTargetCat    = null;
+        closeModal('returnStockModal');
+        showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} récupérés vers stock central`, 'success', 5000);
+        loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[return] refresh:', e?.message));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
+      }
     };
 
     function renderLogs() {
@@ -2801,6 +2868,9 @@
 
     window.addClient = async function () {
       if (!hasPermission('clients.create')) return showSessionStatus('❌ Permission refusée : ajouter un client', 'error');
+      const btn = document.getElementById('addClientBtn');
+      if (btn && btn.disabled) return;  // prevent double submit
+
       const name = document.getElementById('clientName').value.trim();
       const addrNum = document.getElementById('clientAddrNum').value.trim();
       const addrType = document.getElementById('clientAddrType').value;
@@ -2845,29 +2915,44 @@
       }
       // ─────────────────────────────────────────────────────────────────────
 
-      ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE'].forEach(id => {
-        document.getElementById(id).value = '';
-      });
-      document.getElementById('clientAddrType').value = 'Rue';
-      const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 150, priceSANTOS: 180, priceSUCRE: 100 };
-      Object.entries(defaults).forEach(([id, val]) => { document.getElementById(id).value = val; });
+      const origBtnText = btn ? btn.textContent : '✅ Créer client';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Création du client…'; }
 
-      if (!navigator.onLine) {
-        const localClient = { ...payload, id: genLocalId(), created_at: new Date().toISOString() };
-        state.clients.unshift(localClient);
-        await saveRecords('clients', state.clients).catch(() => {});
-        await addPendingOp({ type: 'addClient', payload: localClient }).catch(() => {});
-        renderClients(); loadClientSelectors();
-        showSessionStatus('📶 Client enregistré localement', 'info');
-        updateOfflineBanner();
-        return;
+      function _resetClientForm() {
+        ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+        document.getElementById('clientAddrType').value = 'Rue';
+        const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 150, priceSANTOS: 180, priceSUCRE: 100 };
+        Object.entries(defaults).forEach(([id, val]) => { document.getElementById(id).value = val; });
       }
 
-      const { error } = await supabase.from('clients').insert(payload);
-      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+      try {
+        if (!navigator.onLine) {
+          const localClient = { ...payload, id: genLocalId(), created_at: new Date().toISOString() };
+          state.clients.unshift(localClient);
+          await saveRecords('clients', state.clients).catch(() => {});
+          await addPendingOp({ type: 'addClient', payload: localClient }).catch(() => {});
+          _resetClientForm();
+          renderClients(); loadClientSelectors();
+          showSessionStatus('📶 Client enregistré localement — synchronisation automatique au retour réseau', 'info', 5000);
+          updateOfflineBanner();
+          return;
+        }
 
-      showSessionStatus('✅ Client créé', 'success');
-      loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] addClient:', e?.message));
+        const { error } = await supabase.from('clients').insert(payload);
+        if (error) {
+          showSessionStatus(`❌ Client non créé : ${error.message}`, 'error', 6000);
+          return;
+        }
+
+        // Reset form only after successful save
+        _resetClientForm();
+        showSessionStatus(`✅ Client créé : ${name}`, 'success', 5000);
+        loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] addClient:', e?.message));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
+      }
     };
 
     // ── Read & validate the new-sale form; returns null + shows error on failure ─
@@ -2902,6 +2987,15 @@
 
     // Holds the validated sale data between addSale() and confirmAndSave()
     let _pendingSale = null;
+    // Lock to prevent double-submission on the confirmation modal
+    let _isSavingSale = false;
+
+    // Called when user explicitly cancels the confirmation modal (Annuler or ✕)
+    window.cancelConfirmSale = function() {
+      if (_isSavingSale) return;  // don't cancel while saving is in progress
+      _pendingSale = null;
+      closeModal('confirmSaleModal');
+    };
 
     window.addSale = async function () {
       if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
@@ -2955,27 +3049,70 @@
 
     window.confirmAndSave = async function() {
       if (!hasPermission('tasks.create')) return showSessionStatus('❌ Permission refusée : créer une vente', 'error');
+      if (_isSavingSale) return;  // prevent double submit
 
       const form = _pendingSale;
-      _pendingSale = null;
       if (!form) { closeModal('confirmSaleModal'); return; }
 
-      closeModal('confirmSaleModal');
+      const btn = document.getElementById('confirmSaleBtn');
+      const origBtnText = btn ? btn.textContent : '✅ Confirmer';
+      _isSavingSale = true;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Enregistrement…'; }
 
-      const { clientName, quantity, category, rawDate, paid } = form;
-      const client = state.clients.find(c => c.name === clientName);
-      const createdAt = new Date(rawDate).toISOString();
-      const unitPrice = getClientPrice(clientName, category);
-      const totalPrice = Number((quantity * unitPrice).toFixed(2));
-      // Compute the new quantity for the appropriate stock pool — matches _useCommercialStockFor().
-      const useCommercial = _useCommercialStockFor(category);
-      const newStockQty = useCommercial
-        ? Number(state.commercialStock[category] || 0) - quantity
-        : Number(state.stocks[category] || 0) - quantity;
+      try {
+        const { clientName, quantity, category, rawDate, paid } = form;
+        const client = state.clients.find(c => c.name === clientName);
+        const createdAt = new Date(rawDate).toISOString();
+        const unitPrice = getClientPrice(clientName, category);
+        const totalPrice = Number((quantity * unitPrice).toFixed(2));
+        // Compute the new quantity for the appropriate stock pool — matches _useCommercialStockFor().
+        const useCommercial = _useCommercialStockFor(category);
+        const newStockQty = useCommercial
+          ? Number(state.commercialStock[category] || 0) - quantity
+          : Number(state.stocks[category] || 0) - quantity;
 
-      if (!navigator.onLine) {
-        const localSale = {
-          id: genLocalId(),
+        if (!navigator.onLine) {
+          const localSale = {
+            id: genLocalId(),
+            client_id: client?.id || null,
+            client_name: clientName,
+            category,
+            quantity,
+            unit_price: unitPrice,
+            total_price: totalPrice,
+            paid,
+            // Omit created_by when no user id is available so the DB DEFAULT
+            // auth.uid() fires on replay instead of receiving an explicit null.
+            ...(state.session?.user?.id ? { created_by: state.session.user.id } : {}),
+            created_at: createdAt
+          };
+          state.sales.unshift(localSale);
+          if (useCommercial) {
+            state.commercialStock[category] = newStockQty;
+            const commercialArr = Object.entries(state.commercialStock).map(([cat, qty]) => ({
+              category: cat, quantity: qty
+            }));
+            await saveRecords('commercial_stocks', commercialArr).catch(() => {});
+          } else {
+            state.stocks[category] = newStockQty;
+            const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+            await saveRecords('stocks', stockArr).catch(() => {});
+          }
+          await saveRecords('sales', state.sales).catch(() => {});
+          await addPendingOp({
+            type: 'addSale',
+            payload: localSale
+          }).catch(() => {});
+          _pendingSale = null;
+          closeModal('confirmSaleModal');
+          resetSaleForm();
+          renderSales(); renderStock();
+          showSessionStatus('📶 Commande enregistrée localement — synchronisation automatique au retour réseau', 'info', 5000);
+          updateOfflineBanner();
+          return;
+        }
+
+        const { error: saleError } = await supabase.from('sales').insert({
           client_id: client?.id || null,
           client_name: clientName,
           category,
@@ -2983,72 +3120,44 @@
           unit_price: unitPrice,
           total_price: totalPrice,
           paid,
-          // Omit created_by when no user id is available so the DB DEFAULT
-          // auth.uid() fires on replay instead of receiving an explicit null.
-          ...(state.session?.user?.id ? { created_by: state.session.user.id } : {}),
+          created_by: state.session.user.id,
           created_at: createdAt
-        };
-        state.sales.unshift(localSale);
+        });
+        if (saleError) {
+          showSessionStatus(`❌ Commande non enregistrée : ${saleError.message}`, 'error', 6000);
+          return;  // keep modal open, keep _pendingSale so user can retry
+        }
+
+        // Optimistically add the new sale to state so client badge updates immediately
+        state.sales.unshift({
+          id: 'pending_' + Date.now(),
+          client_id: client?.id || null,
+          client_name: clientName,
+          category,
+          quantity,
+          unit_price: unitPrice,
+          total_price: totalPrice,
+          paid,
+          created_by: state.session.user.id,
+          created_at: createdAt
+        });
         if (useCommercial) {
           state.commercialStock[category] = newStockQty;
-          const commercialArr = Object.entries(state.commercialStock).map(([cat, qty]) => ({
-            category: cat, quantity: qty
-          }));
-          await saveRecords('commercial_stocks', commercialArr).catch(() => {});
         } else {
           state.stocks[category] = newStockQty;
-          const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
-          await saveRecords('stocks', stockArr).catch(() => {});
         }
-        await saveRecords('sales', state.sales).catch(() => {});
-        await addPendingOp({
-          type: 'addSale',
-          payload: localSale
-        }).catch(() => {});
+
+        // Reset form only after successful save
+        _pendingSale = null;
+        closeModal('confirmSaleModal');
         resetSaleForm();
         renderSales(); renderStock();
-        showSessionStatus('📶 Vente enregistrée localement', 'info');
-        updateOfflineBanner();
-        return;
+        showSessionStatus(`✅ Commande enregistrée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
+        loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
+      } finally {
+        _isSavingSale = false;
+        if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
-
-      const { error: saleError } = await supabase.from('sales').insert({
-        client_id: client?.id || null,
-        client_name: clientName,
-        category,
-        quantity,
-        unit_price: unitPrice,
-        total_price: totalPrice,
-        paid,
-        created_by: state.session.user.id,
-        created_at: createdAt
-      });
-      if (saleError) return showSessionStatus('❌ ' + saleError.message, 'error');
-
-      // Optimistically add the new sale to state so client badge updates immediately
-      state.sales.unshift({
-        id: 'pending_' + Date.now(),
-        client_id: client?.id || null,
-        client_name: clientName,
-        category,
-        quantity,
-        unit_price: unitPrice,
-        total_price: totalPrice,
-        paid,
-        created_by: state.session.user.id,
-        created_at: createdAt
-      });
-      if (useCommercial) {
-        state.commercialStock[category] = newStockQty;
-      } else {
-        state.stocks[category] = newStockQty;
-      }
-
-      // Reset form only after successful save
-      resetSaleForm();
-      renderSales(); renderStock();
-      showSessionStatus('✅ Vente ajoutée', 'success');
-      loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
     };
 
     function resetSaleForm() {
@@ -3078,7 +3187,7 @@
           await addPendingOp({ type: 'togglePaid', payload: { saleId, paid } }).catch(() => {});
         }
         renderSales();
-        showSessionStatus(paid ? '📶 Marqué payé (local)' : '📶 Marqué non payé (local)', 'info');
+        showSessionStatus(paid ? '📶 Marqué payé (local) — synchronisation automatique au retour réseau' : '📶 Marqué non payé (local) — synchronisation automatique au retour réseau', 'info', 5000);
         updateOfflineBanner();
         return;
       }
@@ -3093,7 +3202,7 @@
         renderSales();
         return showSessionStatus('❌ ' + error.message, 'error');
       }
-      showSessionStatus(paid ? '✅ Marqué payé' : '❌ Marqué non payé', 'success');
+      showSessionStatus(paid ? '✅ Commande marquée payée' : '✅ Commande marquée non payée', 'success', 5000);
       loadCloudData().then(() => { renderSales(); }).catch(e => console.warn('[refresh] togglePaid:', e?.message));
     };
 
@@ -3132,7 +3241,7 @@
           payload: { saleId }
         }).catch(() => {});
         renderSales(); renderStock();
-        showSessionStatus('📶 Vente supprimée localement', 'info');
+        showSessionStatus('📶 Commande supprimée localement — synchronisation automatique au retour réseau', 'info', 5000);
         updateOfflineBanner();
         return;
       }
@@ -3161,7 +3270,7 @@
         return showSessionStatus('❌ ' + error.message, 'error');
       }
 
-      showSessionStatus('✅ Vente supprimée', 'success');
+      showSessionStatus('✅ Commande supprimée', 'success', 5000);
       loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] deleteSale:', e?.message));
     };
 
@@ -3238,6 +3347,9 @@
 
     window.saveEditClient = async function() {
       if (!hasPermission('clients.edit')) return showSessionStatus('❌ Permission refusée : modifier un client', 'error');
+      const btn = document.getElementById('saveEditClientBtn');
+      if (btn && btn.disabled) return;  // prevent double submit
+
       const clientId = document.getElementById('editClientId').value;
       const name = document.getElementById('editClientName').value.trim();
       const ice = document.getElementById('editClientICE').value.trim();
@@ -3281,63 +3393,73 @@
       const statusEl = document.getElementById('editClientStatus');
       const client_status = statusEl ? statusEl.value : (state.clients.find(c => c.id === clientId)?.client_status || 'active');
 
-      if (!navigator.onLine) {
-        const idx = state.clients.findIndex(c => c.id === clientId);
-        if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices, client_status });
-        // Propagate rename to in-memory sales so renderSales() shows the new name
+      const origBtnText = btn ? btn.textContent : '💾 Enregistrer';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Enregistrement…'; }
+
+      try {
+        if (!navigator.onLine) {
+          const idx = state.clients.findIndex(c => c.id === clientId);
+          if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices, client_status });
+          // Propagate rename to in-memory sales so renderSales() shows the new name
+          if (nameChanged) {
+            const orphaned = state.sales.filter(s => s.client_id === null && s.client_name === oldName);
+            let reattach = false;
+            if (orphaned.length > 0) {
+              reattach = confirm(
+                `${orphaned.length} vente(s) sans client associé portent le nom « ${oldName} ».\n` +
+                `Voulez-vous les rattacher à ce client (${name}) ?`
+              );
+            }
+            state.sales.forEach(s => {
+              if (s.client_id === clientId) {
+                s.client_name = name;
+              } else if (s.client_id === null && s.client_name === oldName) {
+                s.client_name = name;
+                if (reattach) s.client_id = clientId;
+              }
+            });
+            await saveRecords('sales', state.sales).catch(() => {});
+          }
+          await saveRecords('clients', state.clients).catch(() => {});
+          await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices, client_status } }).catch(() => {});
+          closeModal('editClientModal');
+          renderClients(); loadClientSelectors(); renderSales();
+          showSessionStatus('📶 Client modifié localement — synchronisation automatique au retour réseau', 'info', 5000);
+          updateOfflineBanner();
+          return;
+        }
+        const { error } = await supabase.from('clients').update({ name, address, ice, prices, client_status }).eq('id', clientId);
+        if (error) {
+          showSessionStatus(`❌ Client non modifié : ${error.message}`, 'error', 6000);
+          return;
+        }
+        // Propagate rename to the sales table so ventes récentes shows the new name
         if (nameChanged) {
-          const orphaned = state.sales.filter(s => s.client_id === null && s.client_name === oldName);
-          let reattach = false;
-          if (orphaned.length > 0) {
-            reattach = confirm(
-              `${orphaned.length} vente(s) sans client associé portent le nom « ${oldName} ».\n` +
+          // Match sales linked by client_id (the reliable foreign-key reference)
+          await supabase.from('sales').update({ client_name: name }).eq('client_id', clientId);
+          // Check for orphaned sales (client_id IS NULL) that can be reattached to this client
+          const { data: orphanSales } = await supabase
+            .from('sales').select('id').is('client_id', null).eq('client_name', oldName);
+          if (orphanSales && orphanSales.length > 0) {
+            const reattach = confirm(
+              `${orphanSales.length} vente(s) sans client associé portent le nom « ${oldName} ».\n` +
               `Voulez-vous les rattacher à ce client (${name}) ?`
             );
-          }
-          state.sales.forEach(s => {
-            if (s.client_id === clientId) {
-              s.client_name = name;
-            } else if (s.client_id === null && s.client_name === oldName) {
-              s.client_name = name;
-              if (reattach) s.client_id = clientId;
+            if (reattach) {
+              await supabase.from('sales').update({ client_name: name, client_id: clientId })
+                .is('client_id', null).eq('client_name', oldName);
+            } else {
+              await supabase.from('sales').update({ client_name: name })
+                .is('client_id', null).eq('client_name', oldName);
             }
-          });
-          await saveRecords('sales', state.sales).catch(() => {});
-        }
-        await saveRecords('clients', state.clients).catch(() => {});
-        await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices, client_status } }).catch(() => {});
-        closeModal('editClientModal');
-        renderClients(); loadClientSelectors(); renderSales();
-        showSessionStatus('📶 Client modifié localement', 'info');
-        updateOfflineBanner();
-        return;
-      }
-      const { error } = await supabase.from('clients').update({ name, address, ice, prices, client_status }).eq('id', clientId);
-      if (error) return showSessionStatus('❌ ' + error.message, 'error');
-      // Propagate rename to the sales table so ventes récentes shows the new name
-      if (nameChanged) {
-        // Match sales linked by client_id (the reliable foreign-key reference)
-        await supabase.from('sales').update({ client_name: name }).eq('client_id', clientId);
-        // Check for orphaned sales (client_id IS NULL) that can be reattached to this client
-        const { data: orphanSales } = await supabase
-          .from('sales').select('id').is('client_id', null).eq('client_name', oldName);
-        if (orphanSales && orphanSales.length > 0) {
-          const reattach = confirm(
-            `${orphanSales.length} vente(s) sans client associé portent le nom « ${oldName} ».\n` +
-            `Voulez-vous les rattacher à ce client (${name}) ?`
-          );
-          if (reattach) {
-            await supabase.from('sales').update({ client_name: name, client_id: clientId })
-              .is('client_id', null).eq('client_name', oldName);
-          } else {
-            await supabase.from('sales').update({ client_name: name })
-              .is('client_id', null).eq('client_name', oldName);
           }
         }
+        closeModal('editClientModal');
+        showSessionStatus(`✅ Client modifié : ${name}`, 'success', 5000);
+        loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] editClient:', e?.message));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
-      closeModal('editClientModal');
-      showSessionStatus('✅ Client modifié', 'success');
-      loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] editClient:', e?.message));
     };
 
     // ── Client reassignment (manager / admin only) ────────────────────────────
@@ -3417,7 +3539,7 @@
         async function addToStock(category) {
       if (!hasPermission('stock.edit')) return showSessionStatus('❌ Permission refusée : modifier le stock', 'error');
       closeAllMenus();
-      const value = prompt(`Ajouter combien de ${category === 'SUCRE' ? 'paquets' : 'kg'} ?`, '0');
+      const value = prompt(`Ajouter combien de ${unitLabel(category, true)} ?`, '0');
       if (value === null) return;
       const amount = Number(value);
       if (isNaN(amount) || amount <= 0) return showSessionStatus('❌ Quantité invalide', 'error');
@@ -3429,7 +3551,7 @@
         await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({ type: 'stockUpdate', payload: { category, quantity: newQty } }).catch(() => {});
         renderStock();
-        showSessionStatus('📶 Stock mis à jour localement', 'info');
+        showSessionStatus(`📶 Stock ${category} mis à jour localement — synchronisation automatique au retour réseau`, 'info', 5000);
         updateOfflineBanner();
         return;
       }
@@ -3438,7 +3560,7 @@
       const { error } = await supabase.from('stocks').upsert({ category, quantity: newQty }, { onConflict: 'category' });
       if (error) return showSessionStatus('❌ ' + error.message, 'error');
 
-      showSessionStatus('✅ Stock mis à jour', 'success');
+      showSessionStatus(`✅ Stock ${category} mis à jour : +${amount} ${unitLabel(category, amount !== 1)} (total : ${formatStockValue(category, newQty)})`, 'success', 5000);
       loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] addToStock:', e?.message));
     };
 
@@ -3456,7 +3578,7 @@
         await saveRecords('stocks', stockArr).catch(() => {});
         await addPendingOp({ type: 'stockUpdate', payload: { category, quantity } }).catch(() => {});
         renderStock();
-        showSessionStatus('📶 Stock défini localement', 'info');
+        showSessionStatus(`📶 Stock ${category} défini localement — synchronisation automatique au retour réseau`, 'info', 5000);
         updateOfflineBanner();
         return;
       }
@@ -3465,7 +3587,7 @@
       const { error } = await supabase.from('stocks').upsert({ category, quantity }, { onConflict: 'category' });
       if (error) return showSessionStatus('❌ ' + error.message, 'error');
 
-      showSessionStatus('✅ Stock défini', 'success');
+      showSessionStatus(`✅ Stock ${category} défini à ${formatStockValue(category, quantity)}`, 'success', 5000);
       loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] setStock:', e?.message));
     };
 
@@ -4098,6 +4220,9 @@
 
     window.saveEditSale = async function() {
       if (!hasPermission('tasks.edit')) return showSessionStatus('❌ Permission refusée : modifier une vente', 'error');
+      const btn = document.getElementById('saveEditSaleBtn');
+      if (btn && btn.disabled) return;  // prevent double submit
+
       const saleId = document.getElementById('editSaleId').value;
       const clientName = document.getElementById('editSaleClient').value;
       const category = document.getElementById('editSaleCategory').value;
@@ -4137,39 +4262,49 @@
         created_at: createdAt
       };
 
-      if (!navigator.onLine) {
+      const origBtnText = btn ? btn.textContent : '💾 Enregistrer';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Enregistrement…'; }
+
+      try {
+        if (!navigator.onLine) {
+          Object.assign(sale, updatedSaleData);
+          if (stockChanged && stockOldPayload && stockNewPayload) {
+            // Use payload categories (not sale.category which was just mutated by Object.assign)
+            state.stocks[stockOldPayload.category] = stockOldPayload.quantity;
+            state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
+          }
+          const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
+          await saveRecords('sales', state.sales).catch(() => {});
+          await saveRecords('stocks', stockArr).catch(() => {});
+          await addPendingOp({
+            type: 'updateSale',
+            payload: { saleId, ...updatedSaleData }
+          }).catch(() => {});
+          closeModal('editSaleModal');
+          renderSales(); renderStock();
+          showSessionStatus('📶 Vente modifiée localement — synchronisation automatique au retour réseau', 'info', 5000);
+          updateOfflineBanner();
+          return;
+        }
+
+        const { error } = await supabase.from('sales').update(updatedSaleData).eq('id', saleId);
+
+        if (error) {
+          showSessionStatus(`❌ Vente non modifiée : ${error.message}`, 'error', 6000);
+          return;
+        }
         Object.assign(sale, updatedSaleData);
         if (stockChanged && stockOldPayload && stockNewPayload) {
-          // Use payload categories (not sale.category which was just mutated by Object.assign)
           state.stocks[stockOldPayload.category] = stockOldPayload.quantity;
           state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
         }
-        const stockArr = Object.entries(state.stocks).map(([cat, qty]) => ({ category: cat, quantity: qty }));
-        await saveRecords('sales', state.sales).catch(() => {});
-        await saveRecords('stocks', stockArr).catch(() => {});
-        await addPendingOp({
-          type: 'updateSale',
-          payload: { saleId, ...updatedSaleData }
-        }).catch(() => {});
         closeModal('editSaleModal');
         renderSales(); renderStock();
-        showSessionStatus('📶 Vente modifiée localement', 'info');
-        updateOfflineBanner();
-        return;
+        showSessionStatus(`✅ Vente modifiée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
+        loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] editSale:', e?.message));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
-
-      const { error } = await supabase.from('sales').update(updatedSaleData).eq('id', saleId);
-
-      if (error) return showSessionStatus('❌ ' + error.message, 'error');
-      Object.assign(sale, updatedSaleData);
-      if (stockChanged && stockOldPayload && stockNewPayload) {
-        state.stocks[stockOldPayload.category] = stockOldPayload.quantity;
-        state.stocks[stockNewPayload.category] = stockNewPayload.quantity;
-      }
-      closeModal('editSaleModal');
-      renderSales(); renderStock();
-      showSessionStatus('✅ Vente modifiée', 'success');
-      loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] editSale:', e?.message));
     };
 
 
