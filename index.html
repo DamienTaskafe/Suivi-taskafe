@@ -467,6 +467,7 @@
       <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="cancelConfirmSale()">✕</button></div>
       <p style="text-align:center;font-weight:600;margin-bottom:12px;color:var(--color-text);">Voulez-vous valider cette commande ?</p>
       <div id="confirmSaleRecap" class="confirm-recap"></div>
+      <div id="confirmSaleStatus" style="min-height:20px;margin-top:8px;font-size:13px;text-align:center;color:#e53935;"></div>
       <div style="display:flex;gap:10px;margin-top:16px;">
         <button onclick="cancelConfirmSale()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
         <button id="confirmSaleBtn" onclick="confirmAndSave()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;">✅ Confirmer</button>
@@ -1820,6 +1821,8 @@
         closeModal('transferStockModal');
         showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} transférés à ${employeeName}`, 'success', 5000);
         loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
+      } catch (err) {
+        statusEl.textContent = `❌ Erreur : ${getErrorMessage(err)}`;
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
@@ -1915,6 +1918,8 @@
         closeModal('returnStockModal');
         showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} récupérés vers stock central`, 'success', 5000);
         loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[return] refresh:', e?.message));
+      } catch (err) {
+        statusEl.textContent = `❌ Erreur : ${getErrorMessage(err)}`;
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
@@ -2371,6 +2376,23 @@
       }
 
       return null;
+    }
+
+    // Require a fresh session for Supabase direct-API calls.
+    // Internally calls getFreshToken() (refresh → getSession → state.session),
+    // then throws a user-visible error if no valid session is available.
+    // Also updates state.session so subsequent calls see the refreshed data.
+    async function requireFreshSession() {
+      await getFreshToken(); // updates state.session as a side-effect
+      if (!state.session?.user?.id) {
+        throw new Error('Session expirée — reconnectez-vous');
+      }
+      return state.session;
+    }
+
+    // Extract a human-readable message from a Supabase or JS error object.
+    function getErrorMessage(err, fallback = 'Erreur inconnue') {
+      return err?.message || err?.details || err?.hint || String(err || fallback);
     }
 
     // Decode the payload of a JWT without verifying its signature.
@@ -2955,6 +2977,8 @@
         _resetClientForm();
         showSessionStatus(`✅ Client créé : ${name}`, 'success', 5000);
         loadCloudData().then(() => { renderClients(); loadClientSelectors(); }).catch(e => console.warn('[refresh] addClient:', e?.message));
+      } catch (err) {
+        showSessionStatus(`❌ Client non créé : ${getErrorMessage(err)}`, 'error', 6000);
       } finally {
         _isCreatingClient = false;
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
@@ -3051,6 +3075,9 @@
       recap.appendChild(totalRow);
 
       openModal('confirmSaleModal');
+      // Clear any previous error shown inside the modal
+      const confirmStatus = document.getElementById('confirmSaleStatus');
+      if (confirmStatus) confirmStatus.textContent = '';
     };
 
     window.confirmAndSave = async function() {
@@ -3118,6 +3145,8 @@
           return;
         }
 
+        // Get a fresh session before inserting so state.session.user.id is always valid.
+        const session = await requireFreshSession();
         const { error: saleError } = await supabase.from('sales').insert({
           client_id: client?.id || null,
           client_name: clientName,
@@ -3126,11 +3155,14 @@
           unit_price: unitPrice,
           total_price: totalPrice,
           paid,
-          created_by: state.session.user.id,
+          created_by: session.user.id,
           created_at: createdAt
         });
         if (saleError) {
-          showSessionStatus(`❌ Commande non enregistrée : ${saleError.message}`, 'error', 6000);
+          const msg = getErrorMessage(saleError);
+          const statusEl = document.getElementById('confirmSaleStatus');
+          if (statusEl) statusEl.textContent = `❌ Commande non enregistrée : ${msg}`;
+          showSessionStatus(`❌ Commande non enregistrée : ${msg}`, 'error', 6000);
           return;  // keep modal open, keep _pendingSale so user can retry
         }
 
@@ -3144,7 +3176,7 @@
           unit_price: unitPrice,
           total_price: totalPrice,
           paid,
-          created_by: state.session.user.id,
+          created_by: session.user.id,
           created_at: createdAt
         });
         if (useCommercial) {
@@ -3155,11 +3187,19 @@
 
         // Reset form only after successful save
         _pendingSale = null;
+        const confirmStatusEl = document.getElementById('confirmSaleStatus');
+        if (confirmStatusEl) confirmStatusEl.textContent = '';
         closeModal('confirmSaleModal');
         resetSaleForm();
         renderSales(); renderStock(); renderBalance();
         showSessionStatus(`✅ Commande enregistrée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
         loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); renderBalance(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
+      } catch (err) {
+        const msg = getErrorMessage(err);
+        const statusEl = document.getElementById('confirmSaleStatus');
+        if (statusEl) statusEl.textContent = `❌ Commande non enregistrée : ${msg}`;
+        showSessionStatus(`❌ Commande non enregistrée : ${msg}`, 'error', 8000);
+        // _pendingSale is intentionally kept so user can retry
       } finally {
         _isSavingSale = false;
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
@@ -3463,6 +3503,8 @@
         closeModal('editClientModal');
         showSessionStatus(`✅ Client modifié : ${name}`, 'success', 5000);
         loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] editClient:', e?.message));
+      } catch (err) {
+        showSessionStatus(`❌ Client non modifié : ${getErrorMessage(err)}`, 'error', 6000);
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
@@ -4308,6 +4350,8 @@
         renderSales(); renderStock(); renderBalance();
         showSessionStatus(`✅ Vente modifiée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
         loadCloudData().then(() => { renderSales(); renderStock(); renderBalance(); }).catch(e => console.warn('[refresh] editSale:', e?.message));
+      } catch (err) {
+        showSessionStatus(`❌ Vente non modifiée : ${getErrorMessage(err)}`, 'error', 6000);
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
       }
