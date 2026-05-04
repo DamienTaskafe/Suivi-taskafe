@@ -2392,7 +2392,7 @@
 
     // Extract a human-readable message from a Supabase or JS error object.
     function getErrorMessage(err, fallback = 'Erreur inconnue') {
-      return err?.message || err?.details || err?.hint || String(err || fallback);
+      return err?.message || err?.details || err?.hint || (err ? String(err) : fallback);
     }
 
     // Decode the payload of a JWT without verifying its signature.
