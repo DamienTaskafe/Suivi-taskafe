@@ -3320,6 +3320,7 @@
     // Called asynchronously after login — must never block app startup.
     // Returns true if subscription was saved to DB, false otherwise.
     async function _registerPushSubscription() {
+      if (!state.session?.user?.id) return false; // no session — abort silently
       if (!_isPushSupported()) return false;
       if (Notification.permission !== 'granted') return false;
       await _loadVapidKey();
@@ -4995,6 +4996,43 @@
       }
     }
 
+    // Translates raw Supabase / fetch error messages to friendly French strings
+    // for display in #authError on the login screen.
+    function _translateLoginError(msg) {
+      const m = (msg || '').toLowerCase();
+      if (m.includes('invalid login credentials') || m.includes('invalid_credentials') || m.includes('invalid credentials'))
+        return 'Email ou mot de passe incorrect.';
+      if (m.includes('email not confirmed'))
+        return 'Email non confirmé. Vérifiez votre boîte mail.';
+      if (m.includes('too many requests') || m.includes('rate limit'))
+        return 'Trop de tentatives. Réessayez dans quelques minutes.';
+      if (m.includes('user not found'))
+        return 'Aucun compte trouvé pour cet email.';
+      if (m.includes('failed to fetch') || m.includes('network') || m.includes('load failed'))
+        return 'Erreur réseau. Vérifiez votre connexion et réessayez.';
+      if (m.includes('timeout'))
+        return 'La connexion a pris trop de temps. Réessayez.';
+      if (msg) return msg;
+      return 'Erreur de connexion. Réessayez.';
+    }
+
+    // Shows #authError with the given message and scrolls it into view on mobile.
+    function _showAuthError(message) {
+      const errorBox = document.getElementById('authError');
+      if (!errorBox) return;
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+      // Reset animation so it plays each time the error is shown
+      errorBox.style.animation = 'none';
+      // Force reflow then re-enable animation
+      void errorBox.offsetHeight;
+      errorBox.style.animation = '';
+      // Scroll into view on small/mobile screens
+      setTimeout(function() {
+        errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+
     window.login = async function () {
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
@@ -5003,34 +5041,37 @@
 
       errorBox.style.display = 'none';
       if (!email || !password) {
-        errorBox.innerText = "Veuillez remplir l'email et le mot de passe.";
-        errorBox.style.display = 'block';
+        _showAuthError("Veuillez remplir l'email et le mot de passe.");
         return;
       }
 
       loginBtn.disabled = true;
-      const originalText = loginBtn.innerText;
-      loginBtn.innerText = 'Connexion...';
+      const originalText = loginBtn.textContent;
+      loginBtn.textContent = 'Connexion…';
 
       try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         loginBtn.disabled = false;
-        loginBtn.innerText = originalText;
+        loginBtn.textContent = originalText;
 
         if (error) {
-          errorBox.innerText = error.message;
-          errorBox.style.display = 'block';
+          _showAuthError(_translateLoginError(error.message));
           return;
         }
 
+        if (!data?.session) {
+          _showAuthError('Connexion échouée. Réessayez.');
+          return;
+        }
+
+        // Boot the app — detach logAction so it never throws into this path
         await bootFromSession(data.session);
-        logAction('login', { email: data.session?.user?.email });
+        logAction('login', { email: data.session?.user?.email }).catch(e => console.warn('[login] logAction error:', e?.message));
       } catch (e) {
         loginBtn.disabled = false;
-        loginBtn.innerText = originalText;
-        errorBox.innerText = 'Erreur de connexion : ' + (e?.message || 'erreur inconnue');
-        errorBox.style.display = 'block';
+        loginBtn.textContent = originalText;
+        _showAuthError(_translateLoginError(e?.message || ''));
       }
     };
 
