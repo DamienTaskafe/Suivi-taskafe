@@ -4753,7 +4753,7 @@
               ? '<span style="font-size:11px;">TOI</span>'
               : isAdmin()
                 ? `<div class="user-row-actions">
-                    <button class="user-remu-btn" type="button" data-action="user-commission" data-id="${user.id}">💰 Régler</button>
+                    <button class="user-remu-btn" type="button" data-id="${user.id}" onclick="openRemunerationSettingsModal(this.dataset.id)">💰 Régler</button>
                     <div class="menu-wrap">
                       <button class="menu-btn" data-action="toggle-menu" data-menu-id="userActMenu_${user.id}">⋯</button>
                       <div class="menu" id="userActMenu_${user.id}">
@@ -6527,6 +6527,20 @@
     }
     window.openRemunerationSettingsModal = openRemunerationSettingsModal;
 
+    // Robust direct helper: closes the list modal then opens the per-user settings
+    // modal. Uses onclick on buttons so it works even when stopPropagation is
+    // present on the modal-card wrapper.
+    window.openRemunerationSettingsFromList = function (userId) {
+      if (!isAdmin()) return;
+      if (!userId) return;
+      const listModal = document.getElementById('remunerationsListModal');
+      if (listModal && listModal.classList.contains('show')) {
+        closeModal('remunerationsListModal');
+      }
+      // Small delay lets the list-modal CSS close animation finish before opening the next one.
+      setTimeout(function () { openRemunerationSettingsModal(userId); }, 50);
+    };
+
     // ── Remunerations List Modal (admin direct access) ──────────────────────────
     window.openRemunerationsListModal = async function () {
       if (!isAdmin()) return;
@@ -6553,10 +6567,11 @@
                   <div style="font-size:11px;color:var(--color-text-muted);">${email} · ${role}</div>
                 </div>
                 <button
-                  style="padding:6px 14px;font-size:12px;min-width:70px;white-space:nowrap;"
-                  data-action="open-remu-settings"
+                  type="button"
+                  style="padding:8px 16px;font-size:13px;min-width:80px;white-space:nowrap;"
                   data-id="${escHtml(u.id)}"
-                >Régler</button>
+                  onclick="openRemunerationSettingsFromList(this.dataset.id)"
+                >💰 Régler</button>
               </div>`;
           }).join('');
         }
