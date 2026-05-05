@@ -4465,13 +4465,15 @@
             user.id === state.session?.user?.id
               ? '<span style="font-size:11px;">TOI</span>'
               : isAdmin()
-                ? `<div class="menu-wrap">
-                    <button class="menu-btn" data-action="toggle-menu" data-menu-id="userActMenu_${user.id}">⋯</button>
-                    <div class="menu" id="userActMenu_${user.id}">
-                      <button data-action="user-role" data-id="${user.id}" data-role="${user.role || 'employee'}">✏️ Rôle</button>
-                      <button data-action="user-commission" data-id="${user.id}">💰 Rémunération</button>
-                      <button data-action="user-password" data-id="${user.id}">🔑 Mot de passe</button>
-                      <button class="danger" data-action="user-delete" data-id="${user.id}">🗑️ Supprimer</button>
+                ? `<div class="user-row-actions">
+                    <button class="user-remu-btn" type="button" data-action="user-commission" data-id="${user.id}">💰 Régler</button>
+                    <div class="menu-wrap">
+                      <button class="menu-btn" data-action="toggle-menu" data-menu-id="userActMenu_${user.id}">⋯</button>
+                      <div class="menu" id="userActMenu_${user.id}">
+                        <button data-action="user-role" data-id="${user.id}" data-role="${user.role || 'employee'}">✏️ Rôle</button>
+                        <button data-action="user-password" data-id="${user.id}">🔑 Mot de passe</button>
+                        <button class="danger" data-action="user-delete" data-id="${user.id}">🗑️ Supprimer</button>
+                      </div>
                     </div>
                   </div>`
                 : ''
