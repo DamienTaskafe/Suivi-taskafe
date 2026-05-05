@@ -378,21 +378,33 @@
 
     .header-menu-wrap { position: absolute; right: var(--spacing-lg); top: var(--spacing-lg); z-index: 3000; display: flex; align-items: center; gap: 8px; }
 
-    .notification-bell-btn {
+    .notification-bell-btn,
+    .header-menu-btn {
       background: rgba(0, 0, 0, 0.52);
       border: 1px solid rgba(255, 255, 255, 0.16);
       color: white;
-      font-size: 20px;
-      width: auto;
+      width: 42px;
+      height: 38px;
+      min-width: 42px;
       margin: 0;
-      padding: 6px 10px;
+      padding: 0;
       border-radius: var(--radius-sm);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       line-height: 1;
+      position: relative;
+    }
+
+    .notification-bell-btn {
+      font-size: 18px;
     }
 
     .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -400,12 +412,20 @@
       color: white;
       font-size: 10px;
       font-weight: 700;
-      min-width: 16px;
-      height: 16px;
-      border-radius: 8px;
-      padding: 0 3px;
-      margin-left: 2px;
-      vertical-align: top;
+      min-width: 17px;
+      height: 17px;
+      border-radius: 999px;
+      padding: 0 4px;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+    }
+
+    @media (max-width: 480px) {
+      .header-menu-wrap { right: 10px; top: 12px; gap: 6px; }
+      .notification-bell-btn,
+      .header-menu-btn { width: 36px; height: 34px; min-width: 36px; }
+      .notification-bell-btn { font-size: 16px; }
+      .header-menu-btn { font-size: 22px; }
     }
 
     /* Transfer product line rows */
@@ -442,17 +462,6 @@
     .notif-item-date { font-size: 11px; color: var(--color-text-muted); }
     body.dark .notif-item { background: rgba(30,26,22,0.95); }
 
-
-      background: rgba(0, 0, 0, 0.52);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      color: white;
-      font-size: 24px;
-      width: auto;
-      margin: 0;
-      padding: 6px 12px;
-      border-radius: var(--radius-sm);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-    }
 
     .header-menu {
       display: none;
