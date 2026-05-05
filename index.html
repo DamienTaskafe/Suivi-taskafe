@@ -261,6 +261,17 @@
               <input id="clientICE" type="text" placeholder="Numéro ICE (facturation)" />
             </div>
 
+            <div class="ncp-field">
+              <label for="clientPhone">📞 Téléphone</label>
+              <input id="clientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" />
+            </div>
+
+            <div class="ncp-field">
+              <label>📍 Position GPS</label>
+              <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()">📍 Utiliser ma position actuelle</button>
+              <div id="gpsStatus" class="gps-status gps-none">📍 Aucun point GPS enregistré</div>
+            </div>
+
             <h4>💰 Prix personnalisés par gamme</h4>
             <div class="price-scroll-row"></div>
             <div class="muted">Laisse vide pour utiliser les prix standard.</div>
@@ -509,6 +520,15 @@
       <div class="ncp-field">
         <label for="editClientICE">💳 ICE</label>
         <input id="editClientICE" placeholder="Numéro ICE (facturation)" />
+      </div>
+      <div class="ncp-field">
+        <label for="editClientPhone">📞 Téléphone</label>
+        <input id="editClientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" />
+      </div>
+      <div class="ncp-field">
+        <label>📍 Position GPS</label>
+        <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()">📍 Mettre à jour avec ma position actuelle</button>
+        <div id="editGpsStatus" class="gps-status gps-none">📍 Aucun point GPS enregistré</div>
       </div>
       <div class="ncp-field">
         <label for="editClientStatus">📊 Statut client</label>
@@ -1224,6 +1244,31 @@
       return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
+    // Normalize a phone number to a tel: href format (e.g. +212612345678)
+    const MOROCCO_COUNTRY_CODE = '212';
+    const GPS_TIMEOUT_MS = 15000;
+
+    function normalizePhoneForTel(phone) {
+      let p = phone.replace(/[\s\-().]/g, '');
+      if (!p.startsWith('+') && !p.startsWith('00')) {
+        // Moroccan local format: 06/07/05 -> +2126/7/5
+        if (/^0[5-9]/.test(p)) p = '+' + MOROCCO_COUNTRY_CODE + p.slice(1);
+        else p = '+' + p;
+      } else if (p.startsWith('00')) {
+        p = '+' + p.slice(2);
+      }
+      return p;
+    }
+
+    // Normalize a phone number for WhatsApp wa.me links (digits only, no +)
+    function normalizePhoneForWhatsApp(phone) {
+      let p = phone.replace(/[\s\-().+]/g, '');
+      if (p.startsWith('00')) p = p.slice(2);
+      // Moroccan local format: 06/07/05 -> 2126/7/5
+      if (/^0[5-9]/.test(p)) p = MOROCCO_COUNTRY_CODE + p.slice(1);
+      return p;
+    }
+
     function isAdmin() {
       return String(state.profile?.role || '').toLowerCase() === 'admin';
     }
@@ -1526,9 +1571,18 @@
             <div class="client-card-info">
               ${c.address ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(c.address)}</span></div>` : ''}
               ${c.ice ? `<div class="client-info-row"><span class="client-info-icon">💳</span><span>ICE: ${escHtml(c.ice)}</span></div>` : ''}
+              ${c.phone ? `<div class="client-info-row"><span class="client-info-icon">📞</span><span>${escHtml(c.phone)}</span></div>` : ''}
               ${assignedChip}
-              ${!c.address && !c.ice && !assignedChip ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
+              ${!c.address && !c.ice && !c.phone && !assignedChip ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
             </div>
+
+            ${(c.phone || c.address || (c.latitude && c.longitude)) ? `
+            <div class="client-contact-actions">
+              ${c.phone ? `<a href="tel:${escHtml(normalizePhoneForTel(c.phone))}" class="client-action-btn">📞 Appeler</a>` : ''}
+              ${c.phone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+              ${(c.latitude && c.longitude) ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">📍 Google Maps</a>` : (c.address ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}" class="client-action-btn" target="_blank" rel="noopener">📍 Google Maps</a>` : '')}
+              ${(c.latitude && c.longitude) ? `<a href="https://waze.com/ul?ll=${encodeURIComponent(c.latitude + ',' + c.longitude)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">🧭 Waze</a>` : (c.address ? `<a href="https://waze.com/ul?q=${encodeURIComponent(c.address)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">🧭 Waze</a>` : '')}
+            </div>` : ''}
 
             <div class="client-stat-row">
               <div class="client-stat">
@@ -2986,10 +3040,14 @@
             if (idx >= 0) Object.assign(state.clients[idx], updates);
           }
         }
-        ['clientName','clientAddrNum','clientAddrDetail','clientAddrCity','clientICE'].forEach(id => {
+        ['clientName','clientAddrNum','clientAddrDetail','clientAddrCity','clientICE','clientPhone'].forEach(id => {
           document.getElementById(id).value = '';
         });
         document.getElementById('clientAddrType').value = 'Rue';
+        _newClientLat = null;
+        _newClientLng = null;
+        const _gpsStatusEl = document.getElementById('gpsStatus');
+        if (_gpsStatusEl) { _gpsStatusEl.textContent = '📍 Aucun point GPS enregistré'; _gpsStatusEl.className = 'gps-status gps-none'; }
         renderClients(); loadClientSelectors();
         showSessionStatus('✅ Fusionné avec la fiche existante', 'success');
 
@@ -3078,6 +3136,72 @@
 
     // Lock to prevent double-submission on the add-client form
     let _isCreatingClient = false;
+    // GPS state for new-client form
+    let _newClientLat = null;
+    let _newClientLng = null;
+    // GPS state for edit-client modal
+    let _editClientLat = null;
+    let _editClientLng = null;
+
+    window.captureClientGps = function() {
+      if (!navigator.geolocation) {
+        document.getElementById('gpsStatus').textContent = '📍 Géolocalisation non disponible sur cet appareil';
+        document.getElementById('gpsStatus').className = 'gps-status gps-error';
+        return;
+      }
+      const btn = document.getElementById('captureGpsBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Récupération GPS…'; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          _newClientLat = pos.coords.latitude;
+          _newClientLng = pos.coords.longitude;
+          document.getElementById('gpsStatus').textContent = `📍 Position GPS enregistrée (${_newClientLat.toFixed(5)}, ${_newClientLng.toFixed(5)})`;
+          document.getElementById('gpsStatus').className = 'gps-status gps-ok';
+          if (btn) { btn.disabled = false; btn.textContent = '📍 Utiliser ma position actuelle'; }
+        },
+        (err) => {
+          const msgs = {
+            1: '📍 Permission refusée — activez la localisation dans les paramètres',
+            2: '📍 Position GPS indisponible — réessayez en plein air',
+            3: '📍 Délai dépassé — réessayez'
+          };
+          document.getElementById('gpsStatus').textContent = msgs[err.code] || '📍 Erreur GPS — réessayez';
+          document.getElementById('gpsStatus').className = 'gps-status gps-error';
+          if (btn) { btn.disabled = false; btn.textContent = '📍 Utiliser ma position actuelle'; }
+        },
+        { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
+      );
+    };
+
+    window.captureEditClientGps = function() {
+      if (!navigator.geolocation) {
+        document.getElementById('editGpsStatus').textContent = '📍 Géolocalisation non disponible sur cet appareil';
+        document.getElementById('editGpsStatus').className = 'gps-status gps-error';
+        return;
+      }
+      const btn = document.getElementById('editCaptureGpsBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Récupération GPS…'; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          _editClientLat = pos.coords.latitude;
+          _editClientLng = pos.coords.longitude;
+          document.getElementById('editGpsStatus').textContent = `📍 Position GPS mise à jour (${_editClientLat.toFixed(5)}, ${_editClientLng.toFixed(5)})`;
+          document.getElementById('editGpsStatus').className = 'gps-status gps-ok';
+          if (btn) { btn.disabled = false; btn.textContent = '📍 Mettre à jour avec ma position actuelle'; }
+        },
+        (err) => {
+          const msgs = {
+            1: '📍 Permission refusée — activez la localisation dans les paramètres',
+            2: '📍 Position GPS indisponible — réessayez en plein air',
+            3: '📍 Délai dépassé — réessayez'
+          };
+          document.getElementById('editGpsStatus').textContent = msgs[err.code] || '📍 Erreur GPS — réessayez';
+          document.getElementById('editGpsStatus').className = 'gps-status gps-error';
+          if (btn) { btn.disabled = false; btn.textContent = '📍 Mettre à jour avec ma position actuelle'; }
+        },
+        { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
+      );
+    };
 
     window.addClient = async function () {
       if (!hasPermission('clients.create')) return showSessionStatus('❌ Permission refusée : ajouter un client', 'error');
@@ -3091,6 +3215,7 @@
       const addrDetail = document.getElementById('clientAddrDetail').value.trim();
       const addrCity = document.getElementById('clientAddrCity').value.trim();
       const ice = document.getElementById('clientICE').value.trim();
+      const phone = document.getElementById('clientPhone').value.trim();
       if (!name) return showSessionStatus('❌ Nom client obligatoire', 'error');
 
       // Build a clean formatted address string (backward-compatible plain string)
@@ -3104,6 +3229,9 @@
         name,
         address,
         ice,
+        phone: phone || null,
+        latitude: _newClientLat,
+        longitude: _newClientLng,
         prices: {
           ORO: readCustomPrice('priceORO'),
           RIO: readCustomPrice('priceRIO'),
@@ -3134,10 +3262,14 @@
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Création du client…'; }
 
       function _resetClientForm() {
-        ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE'].forEach(id => {
+        ['clientName', 'clientAddrNum', 'clientAddrDetail', 'clientAddrCity', 'clientICE', 'clientPhone'].forEach(id => {
           document.getElementById(id).value = '';
         });
         document.getElementById('clientAddrType').value = 'Rue';
+        _newClientLat = null;
+        _newClientLng = null;
+        const gpsStatus = document.getElementById('gpsStatus');
+        if (gpsStatus) { gpsStatus.textContent = '📍 Aucun point GPS enregistré'; gpsStatus.className = 'gps-status gps-none'; }
         const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 150, priceSANTOS: 180, priceSUCRE: 100 };
         Object.entries(defaults).forEach(([id, val]) => { document.getElementById(id).value = val; });
       }
@@ -3636,6 +3768,24 @@
       const statusEl = document.getElementById('editClientStatus');
       if (statusEl) statusEl.value = client.client_status || 'active';
 
+      // Phone field
+      const phoneEl = document.getElementById('editClientPhone');
+      if (phoneEl) phoneEl.value = client.phone || '';
+
+      // GPS state for the edit form
+      _editClientLat = (client.latitude != null) ? Number(client.latitude) : null;
+      _editClientLng = (client.longitude != null) ? Number(client.longitude) : null;
+      const editGpsStatus = document.getElementById('editGpsStatus');
+      if (editGpsStatus) {
+        if (_editClientLat != null && _editClientLng != null) {
+          editGpsStatus.textContent = `📍 Position GPS enregistrée (${_editClientLat.toFixed(5)}, ${_editClientLng.toFixed(5)})`;
+          editGpsStatus.className = 'gps-status gps-ok';
+        } else {
+          editGpsStatus.textContent = '📍 Aucun point GPS enregistré';
+          editGpsStatus.className = 'gps-status gps-none';
+        }
+      }
+
       openModal('editClientModal');
     };
 
@@ -3651,6 +3801,7 @@
       const addrType = document.getElementById('editClientAddrType').value;
       const addrDetail = document.getElementById('editClientAddrDetail').value.trim();
       const addrCity = document.getElementById('editClientAddrCity').value.trim();
+      const phone = (document.getElementById('editClientPhone')?.value || '').trim();
 
       if (!name) return showSessionStatus('❌ Nom client obligatoire', 'error');
 
@@ -3693,7 +3844,7 @@
       try {
         if (!navigator.onLine) {
           const idx = state.clients.findIndex(c => c.id === clientId);
-          if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, prices, client_status });
+          if (idx >= 0) Object.assign(state.clients[idx], { name, address, ice, phone: phone || null, latitude: _editClientLat, longitude: _editClientLng, prices, client_status });
           // Propagate rename to in-memory sales so renderSales() shows the new name
           if (nameChanged) {
             const orphaned = state.sales.filter(s => s.client_id === null && s.client_name === oldName);
@@ -3715,14 +3866,14 @@
             await saveRecords('sales', state.sales).catch(() => {});
           }
           await saveRecords('clients', state.clients).catch(() => {});
-          await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, prices, client_status } }).catch(() => {});
+          await addPendingOp({ type: 'updateClient', payload: { clientId, name, address, ice, phone: phone || null, latitude: _editClientLat, longitude: _editClientLng, prices, client_status } }).catch(() => {});
           closeModal('editClientModal');
           renderClients(); loadClientSelectors(); renderSales();
           showSessionStatus('📶 Client modifié localement — synchronisation automatique au retour réseau', 'info', 5000);
           updateOfflineBanner();
           return;
         }
-        const { error } = await supabase.from('clients').update({ name, address, ice, prices, client_status }).eq('id', clientId);
+        const { error } = await supabase.from('clients').update({ name, address, ice, phone: phone || null, latitude: _editClientLat, longitude: _editClientLng, prices, client_status }).eq('id', clientId);
         if (error) {
           showSessionStatus(`❌ Client non modifié : ${getFriendlyErrorMessage(error)}`, 'error', 6000);
           return;
