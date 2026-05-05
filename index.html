@@ -1129,7 +1129,7 @@
 
       const statusEl = document.getElementById('langSaveStatus');
       if (!state.session?.user?.id) {
-        if (statusEl) { statusEl.textContent = t('lang_' + lang) + t('lang_saved_local'); }
+        if (statusEl) { statusEl.textContent = t('lang_' + lang) + ' ' + t('lang_saved_local'); }
         return;
       }
       try {
