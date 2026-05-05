@@ -3293,6 +3293,7 @@
       const pool = context.pool || null; // 'commercial' | 'central'
 
       // ── Fonction RPC introuvable (migration non appliquée) ───────────────────
+      // PGRST202 is the PostgREST error code for "function not found in schema cache".
       if (err?.code === 'PGRST202' || raw.toLowerCase().includes('could not find the function')) {
         return '❌ Fonction de transfert stock absente. Appliquez les migrations Supabase puis rechargez le schéma (Settings → API → Reload schema cache).';
       }
@@ -4828,13 +4829,13 @@
               ? '<span style="font-size:11px;">TOI</span>'
               : isAdmin()
                 ? `<div class="user-row-actions">
-                    <button class="user-remu-btn" type="button" onclick="openRemunerationSettingsModal('${user.id}')">💰 Régler</button>
+                    <button class="user-remu-btn" type="button" onclick="openRemunerationSettingsModal('${escHtml(user.id)}')">💰 Régler</button>
                     <div class="menu-wrap">
-                      <button class="menu-btn" onclick="toggleMenu(event, 'userActMenu_${user.id}')">⋯</button>
-                      <div class="menu" id="userActMenu_${user.id}">
-                        <button onclick="openRoleModal('${user.id}', '${user.role || 'employee'}')">✏️ Rôle</button>
-                        <button onclick="openAdminPasswordModal('${user.id}')">🔑 Mot de passe</button>
-                        <button class="danger" onclick="deleteUser('${user.id}', this)">🗑️ Supprimer</button>
+                      <button class="menu-btn" onclick="toggleMenu(event, 'userActMenu_${escHtml(user.id)}')">⋯</button>
+                      <div class="menu" id="userActMenu_${escHtml(user.id)}">
+                        <button onclick="openRoleModal('${escHtml(user.id)}', '${escHtml(user.role || 'employee')}')">✏️ Rôle</button>
+                        <button onclick="openAdminPasswordModal('${escHtml(user.id)}')">🔑 Mot de passe</button>
+                        <button class="danger" onclick="deleteUser('${escHtml(user.id)}', this)">🗑️ Supprimer</button>
                       </div>
                     </div>
                   </div>`
@@ -6140,7 +6141,10 @@
 
       if (statusEl) { statusEl.textContent = '⏳ Vérification…'; statusEl.style.color = ''; }
 
-      // Verify old password before changing
+      // Verify old password via a sign-in attempt.  Supabase Auth does not expose
+      // a dedicated "verify password" endpoint on the client SDK, so signInWithPassword
+      // is the standard approach.  On success it also refreshes the current session,
+      // which is harmless and expected when the user is changing their own password.
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: oldPassword });
       if (signInError) {
         const msg = t('msg_pwd_ancien_incorrect');
