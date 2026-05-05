@@ -383,7 +383,24 @@
       <div class="modal-head"><h3>🔐 Changer mot de passe</h3><button class="close-x" onclick="closeModal('passwordModal')">✕</button></div>
       <label for="newPassword">Nouveau mot de passe</label>
       <input id="newPassword" type="password" placeholder="Min 6 caractères" />
+      <label for="confirmPassword">Confirmer nouveau mot de passe</label>
+      <input id="confirmPassword" type="password" placeholder="Répéter le mot de passe" />
       <button onclick="changeMyPassword()">✅ Mettre à jour</button>
+    </div>
+  </div>
+
+  <div id="adminPasswordModal" class="modal-backdrop" onclick="backdropClose(event, 'adminPasswordModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔑 Changer mot de passe</h3><button class="close-x" onclick="closeModal('adminPasswordModal')">✕</button></div>
+      <div class="settings-option">
+        <div id="adminPasswordUserLabel" class="title">—</div>
+        <label for="adminNewPassword">Nouveau mot de passe</label>
+        <input id="adminNewPassword" type="password" placeholder="Min 6 caractères" />
+        <label for="adminConfirmPassword">Confirmer nouveau mot de passe</label>
+        <input id="adminConfirmPassword" type="password" placeholder="Répéter le mot de passe" />
+        <button id="adminPasswordSaveBtn" onclick="saveAdminPassword()">✅ Mettre à jour</button>
+        <div id="adminPasswordStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
     </div>
   </div>
 
@@ -3563,7 +3580,7 @@
         closeModal('confirmSaleModal');
         resetSaleForm();
         renderSales(); renderStock(); renderBalance();
-        showSessionStatus(`✅ Commande enregistrée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 5000);
+        showSessionStatus(`✅ Commande enregistrée : ${clientName} · ${category} · ${quantity} ${unitLabel(category, quantity !== 1)} · ${formatDh(totalPrice)}`, 'success', 9000);
         loadCloudData().then(() => { renderSales(); renderStock(); renderClients(); renderBalance(); }).catch(e => console.warn('[refresh] addSale:', e?.message));
       } catch (err) {
         const errCategory = form?.category || '';
@@ -3720,7 +3737,7 @@
       if (error) {
         state.clients = clientsSnapshot;
         renderClients(); loadClientSelectors(); renderSales();
-        return showSessionStatus('❌ ' + error.message, 'error');
+        return showSessionStatus('❌ ' + getFriendlyErrorMessage(error), 'error');
       }
       showSessionStatus('✅ Client supprimé', 'success');
       loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] deleteClient:', e?.message));
@@ -4081,6 +4098,7 @@
                     <div class="menu" id="userActMenu_${user.id}">
                       <button data-action="user-role" data-id="${user.id}" data-role="${user.role || 'employee'}">✏️ Rôle</button>
                       <button data-action="user-commission" data-id="${user.id}">💰 Rémunération</button>
+                      <button data-action="user-password" data-id="${user.id}">🔑 Mot de passe</button>
                       <button class="danger" data-action="user-delete" data-id="${user.id}">🗑️ Supprimer</button>
                     </div>
                   </div>`
@@ -4896,6 +4914,7 @@
         case 'stock-return':  openReturnStockModal(el.dataset.uid, el.dataset.cat); break;
         case 'user-role':     openRoleModal(id, el.dataset.role); break;
         case 'user-commission': openRemunerationSettingsModal(id); break;
+        case 'user-password': openAdminPasswordModal(id); break;
         case 'user-delete':   deleteUser(id, el); break;
         case 'open-client-sales': openClientSales(el.dataset.client); break;
       }
@@ -5328,17 +5347,116 @@
 
     window.openPasswordModal = function () {
       closeAllMenus();
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
       openModal('passwordModal');
     };
 
     window.changeMyPassword = async function () {
       const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
       if (!newPassword || newPassword.length < 6) return showSessionStatus('❌ Mot de passe minimum 6 caractères', 'error');
+      if (newPassword !== confirmPassword) return showSessionStatus('❌ Les mots de passe ne correspondent pas', 'error');
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) return showSessionStatus('❌ ' + error.message, 'error');
       document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
       closeModal('passwordModal');
       showSessionStatus('✅ Mot de passe mis à jour', 'success');
+    };
+
+    // ── Admin: change password for another user ──────────────────────────────
+    let _pendingAdminPasswordUserId = null;
+
+    function openAdminPasswordModal(userId) {
+      if (!isAdmin()) return;
+      closeAllMenus();
+      const user = state.allUsers.find(u => u.id === userId);
+      if (!user) return;
+      _pendingAdminPasswordUserId = userId;
+      document.getElementById('adminPasswordUserLabel').textContent =
+        `👤 ${user.full_name || user.email || '—'}`;
+      document.getElementById('adminNewPassword').value = '';
+      document.getElementById('adminConfirmPassword').value = '';
+      document.getElementById('adminPasswordStatus').textContent = '';
+      document.getElementById('adminPasswordStatus').style.color = '';
+      openModal('adminPasswordModal');
+    }
+    window.openAdminPasswordModal = openAdminPasswordModal;
+
+    window.saveAdminPassword = async function () {
+      if (!isAdmin()) return;
+      const userId = _pendingAdminPasswordUserId;
+      if (!userId) return;
+
+      const newPassword = document.getElementById('adminNewPassword').value;
+      const confirmPassword = document.getElementById('adminConfirmPassword').value;
+      const statusEl = document.getElementById('adminPasswordStatus');
+      const btn = document.getElementById('adminPasswordSaveBtn');
+
+      statusEl.textContent = '';
+      statusEl.style.color = '';
+
+      if (!newPassword || newPassword.length < 6) {
+        statusEl.textContent = '❌ Mot de passe minimum 6 caractères';
+        statusEl.style.color = '#e53935';
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        statusEl.textContent = '❌ Les mots de passe ne correspondent pas';
+        statusEl.style.color = '#e53935';
+        return;
+      }
+
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Mise à jour…'; }
+
+      try {
+        const accessToken = await getFreshToken();
+        if (!accessToken) {
+          statusEl.textContent = '❌ Session expirée. Déconnectez-vous puis reconnectez-vous.';
+          statusEl.style.color = '#e53935';
+          return;
+        }
+
+        const resp = await fetch('/api/update-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ userId, password: newPassword })
+        });
+
+        const ct = resp.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          const rawText = await resp.text().catch(() => '');
+          console.error('[saveAdminPassword] Réponse non-JSON (statut', resp.status, ') :', rawText.substring(0, 300));
+          statusEl.textContent = `❌ L'API n'a pas répondu en JSON (statut ${resp.status}). Vérifiez le déploiement Vercel.`;
+          statusEl.style.color = '#e53935';
+          return;
+        }
+
+        const result = await resp.json();
+        if (!resp.ok) {
+          statusEl.textContent = '❌ ' + (result?.error || 'Erreur lors de la mise à jour');
+          statusEl.style.color = '#e53935';
+          return;
+        }
+
+        document.getElementById('adminNewPassword').value = '';
+        document.getElementById('adminConfirmPassword').value = '';
+        closeModal('adminPasswordModal');
+        showSessionStatus('✅ Mot de passe mis à jour', 'success');
+        logAction('admin_password_update', { targetUserId: userId });
+      } catch (err) {
+        const msg = err?.name === 'AbortError'
+          ? 'Délai dépassé — réessayez dans quelques instants'
+          : (err instanceof Error ? err.message : 'Impossible de contacter le serveur');
+        statusEl.textContent = '❌ ' + msg;
+        statusEl.style.color = '#e53935';
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '✅ Mettre à jour'; }
+      }
     };
 
     function openClientAdvanced(clientId) {
