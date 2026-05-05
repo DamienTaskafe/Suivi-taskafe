@@ -120,35 +120,64 @@
             <strong id="menuUserName">—</strong>
             <span id="menuUserRole">—</span>
           </div>
-          <div class="header-menu-section-title" data-i18n="menu_compte">👤 Compte</div>
-          <div class="account-language-picker">
-            <label for="accountLangSelect" data-i18n="menu_langue">🌍 Langue</label>
-            <select id="accountLangSelect" onchange="saveLanguagePref(this.value)">
-              <option value="fr">Français</option>
-              <option value="ar">العربية</option>
-              <option value="darija">Darija</option>
-            </select>
+          <!-- ── Compte section ───────────────────────────────────────────── -->
+          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('account')">
+            <span data-i18n="menu_compte">👤 Compte</span><span class="chevron">⌄</span>
+          </button>
+          <div id="headerSectionAccount" class="header-menu-section-content hidden">
+            <button type="button" class="submenu-toggle" onclick="toggleAccountLanguageChoices()">
+              <span data-i18n="menu_langue">🌍 Langue</span><span class="chevron">›</span>
+            </button>
+            <div id="accountLanguageChoices" class="account-language-choices hidden">
+              <button type="button" data-lang="fr" onclick="chooseAccountLanguage('fr')">Français</button>
+              <button type="button" data-lang="ar" onclick="chooseAccountLanguage('ar')">العربية</button>
+              <button type="button" data-lang="darija" onclick="chooseAccountLanguage('darija')">Darija</button>
+            </div>
+            <button onclick="openProfileModal()" data-i18n="menu_monProfil">👤 Mon profil</button>
+            <button onclick="openPasswordModal()" data-i18n="menu_changerMdp">🔐 Changer mon mot de passe</button>
+            <button id="darkModeBtn" onclick="toggleDarkMode()" data-i18n="menu_modeSombre">🌙 Mode sombre</button>
+            <button onclick="logout()" data-i18n="menu_deconnexion">🚪 Déconnexion</button>
           </div>
-          <button onclick="openProfileModal()" data-i18n="menu_monProfil">👤 Mon profil</button>
-          <button onclick="openPasswordModal()" data-i18n="menu_changerMdp">🔐 Changer mon mot de passe</button>
-          <button id="darkModeBtn" onclick="toggleDarkMode()" data-i18n="menu_modeSombre">🌙 Mode sombre</button>
-          <button onclick="logout()" data-i18n="menu_deconnexion">🚪 Déconnexion</button>
-          <div class="header-menu-section-title" data-i18n="menu_travail">💼 Travail</div>
-          <button onclick="openResumeModal()" data-i18n="menu_resumeRapide">📊 Résumé rapide</button>
-          <button onclick="openMyCommissionsModal()" data-i18n="menu_mesCommissions">💸 Mes commissions</button>
-          <div class="header-menu-section-title hidden" id="sectionEquipe" data-i18n="menu_equipe">👥 Équipe</div>
-          <button id="usersBtn" onclick="openUsersModal()" class="hidden" data-i18n="menu_gererUtilisateurs">👥 Gérer utilisateurs</button>
-          <button id="permissionsBtn" class="hidden" onclick="openPermissionsModal()" data-i18n="menu_droitsAcces">🔐 Droits d'accès</button>
-          <div class="header-menu-section-title hidden" id="sectionFinance" data-i18n="menu_finance">💰 Finance</div>
-          <button id="commissionsBtn" onclick="openCommissionsModal()" class="hidden" data-i18n="menu_commissions">💰 Commissions</button>
-          <button id="remunerationsListBtn" type="button" data-action="open-remunerations-list" class="hidden" data-i18n="menu_remuEmployes">💰 Rémunérations employés</button>
-          <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden" data-i18n="menu_prixProduits">💲 Prix produits</button>
-          <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden" data-i18n="menu_analytiques">📈 Analytiques</button>
-          <div class="header-menu-section-title" data-i18n="menu_admin">⚙️ Admin</div>
-          <button onclick="openSettingsHubModal()" data-i18n="menu_parametres">⚙️ Paramètres</button>
-          <button onclick="exportData()" data-i18n="menu_exportDonnees">📥 Export données</button>
-          <button id="resetAppBtn" class="hidden" onclick="openResetModal()" data-i18n="menu_reinitFiltres">🔄 Réinitialiser filtres</button>
-          <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()" data-i18n="menu_logs">📋 Logs</button>
+          <!-- ── Travail section ──────────────────────────────────────────── -->
+          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('work')">
+            <span data-i18n="menu_travail">💼 Travail</span><span class="chevron">⌄</span>
+          </button>
+          <div id="headerSectionWork" class="header-menu-section-content hidden">
+            <button onclick="openResumeModal()" data-i18n="menu_resumeRapide">📊 Résumé rapide</button>
+            <button onclick="openMyCommissionsModal()" data-i18n="menu_mesCommissions">💸 Mes commissions</button>
+          </div>
+          <!-- ── Équipe section (hidden for non-manager/admin) ───────────── -->
+          <div id="sectionEquipe" class="hidden">
+            <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('team')">
+              <span data-i18n="menu_equipe">👥 Équipe</span><span class="chevron">⌄</span>
+            </button>
+            <div id="headerSectionTeam" class="header-menu-section-content hidden">
+              <button id="usersBtn" onclick="openUsersModal()" class="hidden" data-i18n="menu_gererUtilisateurs">👥 Gérer utilisateurs</button>
+              <button id="permissionsBtn" class="hidden" onclick="openPermissionsModal()" data-i18n="menu_droitsAcces">🔐 Droits d'accès</button>
+            </div>
+          </div>
+          <!-- ── Finance section (hidden for non-manager/admin) ─────────── -->
+          <div id="sectionFinance" class="hidden">
+            <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('finance')">
+              <span data-i18n="menu_finance">💰 Finance</span><span class="chevron">⌄</span>
+            </button>
+            <div id="headerSectionFinance" class="header-menu-section-content hidden">
+              <button id="commissionsBtn" onclick="openCommissionsModal()" class="hidden" data-i18n="menu_commissions">💰 Commissions</button>
+              <button id="remunerationsListBtn" type="button" data-action="open-remunerations-list" class="hidden" data-i18n="menu_remuEmployes">💰 Rémunérations employés</button>
+              <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden" data-i18n="menu_prixProduits">💲 Prix produits</button>
+            </div>
+          </div>
+          <!-- ── Administration section ──────────────────────────────────── -->
+          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('admin')">
+            <span data-i18n="menu_admin">⚙️ Admin</span><span class="chevron">⌄</span>
+          </button>
+          <div id="headerSectionAdmin" class="header-menu-section-content hidden">
+            <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden" data-i18n="menu_analytiques">📈 Analytiques</button>
+            <button onclick="openSettingsHubModal()" data-i18n="menu_parametres">⚙️ Paramètres</button>
+            <button onclick="exportData()" data-i18n="menu_exportDonnees">📥 Export données</button>
+            <button id="resetAppBtn" class="hidden" onclick="openResetModal()" data-i18n="menu_reinitFiltres">🔄 Réinitialiser filtres</button>
+            <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()" data-i18n="menu_logs">📋 Logs</button>
+          </div>
         </div>
       </div>
     </header>
@@ -1389,9 +1418,10 @@
         btnStock.innerHTML = t('tab_stock') + ' ' + badgeOuter;
       }
 
-      // Sync the account language select (in the Compte menu section)
-      const accountLangSelect = document.getElementById('accountLangSelect');
-      if (accountLangSelect && accountLangSelect.value !== lang) accountLangSelect.value = lang;
+      // Update active language indicator in account language choices
+      document.querySelectorAll('#accountLanguageChoices button[data-lang]').forEach(btn => {
+        btn.classList.toggle('active-lang', btn.getAttribute('data-lang') === lang);
+      });
 
       // Refresh category dropdowns so translated options (Toutes catégories, Sélectionner une gamme) update
       if (typeof initCategorySelects === 'function') {
@@ -1433,6 +1463,28 @@
       }
     }
     window.saveLanguagePref = saveLanguagePref;
+
+    // ── Header menu accordion section toggles ─────────────────────────────────
+    window.toggleHeaderSection = function (sectionKey) {
+      const key = sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1);
+      const content = document.getElementById('headerSection' + key);
+      if (!content) return;
+      const wasOpen = !content.classList.contains('hidden');
+      content.classList.toggle('hidden');
+      const toggle = content.previousElementSibling;
+      if (toggle?.classList.contains('header-menu-section-toggle')) {
+        toggle.classList.toggle('open', !wasOpen);
+      }
+    };
+
+    window.toggleAccountLanguageChoices = function () {
+      document.getElementById('accountLanguageChoices')?.classList.toggle('hidden');
+    };
+
+    window.chooseAccountLanguage = function (lang) {
+      saveLanguagePref(lang);
+      document.getElementById('accountLanguageChoices')?.classList.add('hidden');
+    };
 
     // Apply initial language immediately from localStorage
     applyLanguage(_currentLang);
@@ -2077,6 +2129,10 @@
         }
       });
       document.querySelectorAll('.header-menu').forEach(m => m.classList.remove('show'));
+      // Reset header section accordion state
+      document.querySelectorAll('.header-menu-section-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.header-menu-section-toggle').forEach(el => el.classList.remove('open'));
+      document.getElementById('accountLanguageChoices')?.classList.add('hidden');
     }
     // Expose to global scope so inline onclick handlers (in dynamically generated HTML)
     // can call it — the script is a module, so function declarations are not on window.
