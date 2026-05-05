@@ -114,7 +114,7 @@
         <div class="banner-shimmer" aria-hidden="true"></div>
       </div>
       <div class="header-menu-wrap">
-        <button class="header-menu-btn" onclick="toggleHeaderMenu(event)">⋯</button>
+        <button class="header-menu-btn" type="button" data-action="toggle-header-menu">⋯</button>
         <div class="header-menu" id="headerMenu">
           <div class="user-chip">
             <strong id="menuUserName">—</strong>
@@ -133,6 +133,7 @@
           <button id="permissionsBtn" class="hidden" onclick="openPermissionsModal()" data-i18n="menu_droitsAcces">🔐 Droits d'accès</button>
           <div class="header-menu-section-title hidden" id="sectionFinance" data-i18n="menu_finance">💰 Finance</div>
           <button id="commissionsBtn" onclick="openCommissionsModal()" class="hidden" data-i18n="menu_commissions">💰 Commissions</button>
+          <button id="remunerationsListBtn" type="button" data-action="open-remunerations-list" class="hidden">💰 Rémunérations employés</button>
           <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden" data-i18n="menu_prixProduits">💲 Prix produits</button>
           <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden" data-i18n="menu_analytiques">📈 Analytiques</button>
           <div class="header-menu-section-title" data-i18n="menu_admin">⚙️ Admin</div>
@@ -769,6 +770,15 @@
       <div id="myCommissionsContent">
         <div class="muted">Chargement…</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── Remuneration List Modal (admin only – direct access) ─────────────── -->
+  <div id="remunerationsListModal" class="modal-backdrop" onclick="backdropClose(event, 'remunerationsListModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>💰 Rémunérations employés</h3><button class="close-x" onclick="closeModal('remunerationsListModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;font-size:12px;">Cliquez sur <strong>Régler</strong> pour configurer la rémunération d'un employé.</div>
+      <div id="remunerationsList"><div class="muted" style="padding:12px">⏳ Chargement…</div></div>
     </div>
   </div>
 
@@ -2834,6 +2844,7 @@
       document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('analyticsBtn').classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('commissionsBtn').classList.toggle('hidden', !isAdmin());
+      document.getElementById('remunerationsListBtn')?.classList.toggle('hidden', !isAdmin());
       document.getElementById('sectionEquipe')?.classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('sectionFinance')?.classList.toggle('hidden', !isManagerOrAdmin());
 
@@ -4567,8 +4578,13 @@
     window.backdropClose = function (event, id) { if (event.target.id === id) closeModal(id); };
 
     window.toggleHeaderMenu = function (event) {
-      event.stopPropagation();
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+      }
       const menu = document.getElementById('headerMenu');
+      if (!menu) return;
       const open = menu.classList.contains('show');
       closeAllMenus();
       if (!open) menu.classList.add('show');
@@ -5262,6 +5278,7 @@
       const cat    = el.dataset.cat;
       const menuId = el.dataset.menuId;
       switch (action) {
+        case 'toggle-header-menu': toggleHeaderMenu(e); break;
         case 'toggle-menu':   toggleMenu(e, menuId); break;
         case 'client-advanced': openClientAdvanced(id); break;
         case 'client-pdf':    generateClientMonthlyPDF(id); break;
@@ -5278,6 +5295,8 @@
         case 'stock-return':  openReturnStockModal(el.dataset.uid, el.dataset.cat); break;
         case 'user-role':     openRoleModal(id, el.dataset.role); break;
         case 'user-commission': openRemunerationSettingsModal(id); break;
+        case 'open-remu-settings': closeModal('remunerationsListModal'); openRemunerationSettingsModal(id); break;
+        case 'open-remunerations-list': openRemunerationsListModal(); break;
         case 'user-password': openAdminPasswordModal(id); break;
         case 'user-delete':   deleteUser(id, el); break;
         case 'open-client-sales': openClientSales(el.dataset.client); break;
@@ -6218,6 +6237,45 @@
       openModal('remunerationSettingsModal');
     }
     window.openRemunerationSettingsModal = openRemunerationSettingsModal;
+
+    // ── Remunerations List Modal (admin direct access) ──────────────────────────
+    window.openRemunerationsListModal = async function () {
+      if (!isAdmin()) return;
+      closeAllMenus();
+      const list = document.getElementById('remunerationsList');
+      if (list) list.innerHTML = '<div class="muted" style="padding:12px">⏳ Chargement…</div>';
+      openModal('remunerationsListModal');
+      try {
+        await loadAllUsers();
+        const employees = state.allUsers.filter(u => u.id !== state.session?.user?.id); // Exclude self (consistent with user management modal)
+        if (!employees.length) {
+          if (list) list.innerHTML = '<div class="muted" style="padding:12px">Aucun utilisateur trouvé.</div>';
+          return;
+        }
+        if (list) {
+          list.innerHTML = employees.map(u => {
+            const name  = escHtml(u.full_name || u.email || '—');
+            const email = escHtml(u.email || '');
+            const role  = u.role === 'admin' ? '👑 Admin' : u.role === 'manager' ? '🔑 Manager' : '👤 Employé';
+            return `
+              <div class="user-row" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border);">
+                <div>
+                  <div style="font-weight:600;font-size:13px;">${name}</div>
+                  <div style="font-size:11px;color:var(--color-text-muted);">${email} · ${role}</div>
+                </div>
+                <button
+                  style="padding:6px 14px;font-size:12px;min-width:70px;white-space:nowrap;"
+                  data-action="open-remu-settings"
+                  data-id="${escHtml(u.id)}"
+                >Régler</button>
+              </div>`;
+          }).join('');
+        }
+      } catch (e) {
+        console.warn('[openRemunerationsListModal] erreur :', e?.message);
+        if (list) list.innerHTML = '<div class="muted" style="padding:12px">⚠️ Impossible de charger la liste.</div>';
+      }
+    };
 
     window.toggleRemuFixed = function () {
       const mode    = document.getElementById('remuMode')?.value;
