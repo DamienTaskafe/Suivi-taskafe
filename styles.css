@@ -1659,12 +1659,40 @@
     body.dark .client-action-btn:active,
     body.dark .client-action-btn:hover { background: rgba(255,255,255,0.17); }
 
+    /* ── Header language picker ──────────────────────────────────────────────── */
+    .header-language-picker {
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-bottom: 1px solid var(--color-border);
+      background: rgba(0,0,0,0.02);
+    }
+    .header-language-picker label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+    }
+    .header-language-picker select {
+      width: 100%;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: rgba(255,255,255,0.9);
+      font-size: 13px;
+      color: var(--color-text);
+    }
+
     /* ── RTL support for Arabic ──────────────────────────────────────────────── */
-    html[dir="rtl"] .header-menu { right: auto; left: 0; }
-    html[dir="rtl"] .header-menu-wrap { direction: rtl; }
+    /* Move the menu wrap to the left side so the dropdown stays in the viewport */
+    html[dir="rtl"] .header-menu-wrap { right: auto; left: var(--spacing-lg); direction: rtl; }
+    html[dir="rtl"] .header-menu { right: auto; left: 0; text-align: right; }
     html[dir="rtl"] .menu { right: auto; left: 0; }
     html[dir="rtl"] .menu button { text-align: right; }
     html[dir="rtl"] .header-menu button { text-align: right; }
+    html[dir="rtl"] .header-menu-section-title { text-align: right; }
+    html[dir="rtl"] .header-language-picker label { text-align: right; }
     html[dir="rtl"] .session-status { left: auto; right: var(--spacing-lg); }
     html[dir="rtl"] .banner-text { text-align: right; }
     html[dir="rtl"] .top-actions { direction: rtl; }
@@ -1673,7 +1701,9 @@
     html[dir="rtl"] .modal-head { direction: rtl; }
     html[dir="rtl"] .modal-head h3 { text-align: right; }
     html[dir="rtl"] label { text-align: right; display: block; }
-    html[dir="rtl"] input, html[dir="rtl"] select, html[dir="rtl"] textarea { text-align: right; direction: rtl; }
+    html[dir="rtl"] input[type="text"], html[dir="rtl"] input[type="email"],
+    html[dir="rtl"] input[type="password"], html[dir="rtl"] input[type="number"],
+    html[dir="rtl"] select, html[dir="rtl"] textarea { direction: rtl; text-align: right; }
     html[dir="rtl"] .ncp-header { text-align: right; }
     html[dir="rtl"] .settings-option { text-align: right; }
     html[dir="rtl"] .auth-card { direction: rtl; }
