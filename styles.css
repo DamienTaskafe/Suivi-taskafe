@@ -421,6 +421,20 @@
     }
     .header-menu button:last-child { border-bottom: none; }
 
+    .header-menu-section-title {
+      padding: 6px var(--spacing-lg) 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+      background: rgba(0, 0, 0, 0.03);
+      border-bottom: 1px solid var(--color-border);
+      border-top: 1px solid var(--color-border);
+      margin-top: 2px;
+    }
+    .header-menu-section-title:first-of-type { margin-top: 0; border-top: none; }
+
     .user-chip {
       padding: var(--spacing-lg);
       background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.01));
