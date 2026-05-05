@@ -871,8 +871,10 @@
     .empty-state { text-align: center; padding: var(--spacing-xl); border-radius: var(--radius-lg); background: rgba(255,255,255,0.72); color: var(--color-text-muted); border: 1px dashed var(--color-border); font-size: 13px; }
 
     .users-grid { display: grid; grid-template-columns: 1fr; gap: var(--spacing-md); margin: var(--spacing-lg) 0; }
-    .user-row { position: relative; background: rgba(255,255,255,0.88); border-radius: var(--radius-md); padding: var(--spacing-md) var(--spacing-lg); padding-right: 52px; border: 1px solid rgba(0,0,0,0.04); display: flex; align-items: center; gap: var(--spacing-lg); }
+    .user-row { position: relative; background: rgba(255,255,255,0.88); border-radius: var(--radius-md); padding: var(--spacing-md) var(--spacing-lg); border: 1px solid rgba(0,0,0,0.04); display: flex; align-items: center; gap: var(--spacing-sm); }
     .user-info { flex: 1; min-width: 0; }
+    .user-row-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .user-remu-btn { width: auto !important; padding: 5px 10px !important; font-size: 12px !important; white-space: nowrap; min-width: 0; margin: 0 !important; }
     .user-email { font-weight: 700; font-size: 13px; color: var(--color-text); }
     .user-role { font-size: 11px; color: var(--color-text-muted); margin-top: var(--spacing-xs); text-transform: uppercase; letter-spacing: 0.2px; }
 
@@ -1138,6 +1140,8 @@
     /* ── User-row overflow menu (reuses .menu-wrap pattern) ── */
     .user-row .menu-wrap { position: absolute; top: var(--spacing-md); right: var(--spacing-md); flex-shrink: 0; }
     .user-row .menu-btn { width: auto !important; }
+    /* Override: when .menu-wrap is inside .user-row-actions it must be static */
+    .user-row-actions .menu-wrap { position: relative; top: auto; right: auto; }
 
     /* ── Compact sale cards ── */
     .sale-card-compact { padding: 10px 12px 10px 12px; margin-bottom: 8px; }
