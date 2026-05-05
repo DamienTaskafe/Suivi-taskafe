@@ -2783,17 +2783,25 @@
     }
     window.renderTransferLines = renderTransferLines;
 
-    // Sync current DOM values back into _transferLines before any re-render.
-    function syncTransferLinesFromDOM() {
-      const rows = document.querySelectorAll('#transferLinesList .transfer-line-row');
+    // Sync current DOM values back into a lines array before any re-render.
+    function _syncLinesFromDOM(containerSelector, linesArray) {
+      const rows = document.querySelectorAll(containerSelector + ' .transfer-line-row');
       rows.forEach((row, idx) => {
         const category = row.querySelector('select')?.value || '';
         const rawQty   = row.querySelector('input')?.value || '';
-        if (_transferLines[idx]) {
-          _transferLines[idx].category = category;
-          _transferLines[idx].quantity = rawQty === '' ? '' : Number(rawQty);
+        if (linesArray[idx]) {
+          linesArray[idx].category = category;
+          linesArray[idx].quantity = rawQty === '' ? '' : Number(rawQty);
         }
       });
+    }
+
+    function syncTransferLinesFromDOM() {
+      _syncLinesFromDOM('#transferLinesList', _transferLines);
+    }
+
+    function syncStockReqLinesFromDOM() {
+      _syncLinesFromDOM('#stockReqLinesList', _stockReqLines);
     }
 
     window.addTransferLine = function() {
@@ -3202,17 +3210,6 @@
 
     let _stockReqLines = []; // [{ category, quantity }]
 
-    function syncStockReqLinesFromDOM() {
-      const rows = document.querySelectorAll('#stockReqLinesList .transfer-line-row');
-      rows.forEach((row, idx) => {
-        const category = row.querySelector('select')?.value || '';
-        const rawQty   = row.querySelector('input')?.value || '';
-        if (_stockReqLines[idx]) {
-          _stockReqLines[idx].category = category;
-          _stockReqLines[idx].quantity = rawQty === '' ? '' : Number(rawQty);
-        }
-      });
-    }
 
     function renderStockReqLines() {
       const container = document.getElementById('stockReqLinesList');

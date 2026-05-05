@@ -103,6 +103,16 @@ CREATE POLICY "stock_losses_insert_admin"
 GRANT SELECT, INSERT, UPDATE ON public.stock_requests TO authenticated;
 GRANT SELECT, INSERT ON public.stock_losses TO authenticated;
 
+-- ── 3b. Indexes ───────────────────────────────────────────────────────────────
+
+CREATE INDEX IF NOT EXISTS idx_stock_requests_employee_id ON public.stock_requests (employee_id);
+CREATE INDEX IF NOT EXISTS idx_stock_requests_status      ON public.stock_requests (status);
+CREATE INDEX IF NOT EXISTS idx_stock_requests_created_at  ON public.stock_requests (created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_stock_losses_employee_id ON public.stock_losses (employee_id);
+CREATE INDEX IF NOT EXISTS idx_stock_losses_category    ON public.stock_losses (category);
+CREATE INDEX IF NOT EXISTS idx_stock_losses_created_at  ON public.stock_losses (created_at DESC);
+
 -- ── 4. create_stock_request() ─────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION public.create_stock_request(
