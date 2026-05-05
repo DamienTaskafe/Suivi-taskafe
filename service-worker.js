@@ -63,6 +63,7 @@ self.addEventListener("push", (event) => {
 
   const title   = data.title   || "TASKAFÉ";
   const body    = data.body    || "";
+  // icon-512.png.PNG is the actual filename in this repository (see manifest.json)
   const iconUrl = data.icon    || "/icon-512.png.PNG";
   const badgeUrl= data.badge   || "/icon-512.png.PNG";
   const tag     = data.tag     || "taskafe-notif";
@@ -95,7 +96,7 @@ self.addEventListener("notificationclick", (event) => {
         // Focus an existing tab/window if one is already open
         for (const client of windowClients) {
           if ("focus" in client) {
-            client.navigate(targetUrl).catch(() => {});
+            client.navigate(targetUrl).catch(err => console.warn("[sw] navigate error:", err));
             return client.focus();
           }
         }

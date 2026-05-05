@@ -103,6 +103,7 @@ module.exports = async function handler(req, res) {
       title:   title   || 'TASKAFÉ',
       body:    message || '',
       url:     url     || '/',
+      // icon-512.png.PNG is the actual asset filename in this repository (see manifest.json)
       icon:    '/icon-512.png.PNG',
       badge:   '/icon-512.png.PNG',
       vibrate: [200, 100, 200],

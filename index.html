@@ -1177,6 +1177,10 @@
         push_status_update: 'Statut demande mis à jour',
         push_enabling: '⏳ Activation en cours…',
         push_enable_error: '❌ Impossible d\'activer les notifications',
+        push_request_sent_msg: 'a envoyé une demande de stock.',
+        push_fulfilled_title: '✅ Stock remis',
+        push_fulfilled_msg: 'Votre stock a été transféré dans votre stock voiture.',
+        push_vapid_not_configured: '⚠️ Clé VAPID non configurée (voir README).',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1365,6 +1369,10 @@
         push_status_update: 'تحديث حالة الطلب',
         push_enabling: '⏳ جارٍ التفعيل…',
         push_enable_error: '❌ تعذّر تفعيل الإشعارات',
+        push_request_sent_msg: 'أرسل طلب مخزون.',
+        push_fulfilled_title: '✅ تم تسليم المخزون',
+        push_fulfilled_msg: 'تم نقل مخزونك إلى مخزون السيارة.',
+        push_vapid_not_configured: '⚠️ مفتاح VAPID غير مضبوط (راجع README).',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1553,6 +1561,10 @@
         push_status_update: 'Talab tbddel hal',
         push_enabling: '⏳ Kaytferm…',
         push_enable_error: '❌ Mchekla f tfermi notifications',
+        push_request_sent_msg: 'daz talab stock.',
+        push_fulfilled_title: '✅ Stock tmessah',
+        push_fulfilled_msg: 'Stock dyalek thwwel l stock tomobil.',
+        push_vapid_not_configured: '⚠️ Clé VAPID mmazbitach (chof README).',
       },
     };
 
@@ -3262,6 +3274,8 @@
               user_id:      userId,
               endpoint:     subJson.endpoint,
               subscription: subJson,
+              // Truncate to fit the `user_agent text` column (no hard length in Postgres
+              // text, but 255 chars is a generous, human-readable cap for diagnostics)
               user_agent:   navigator.userAgent.slice(0, 255),
               updated_at:   new Date().toISOString()
             },
@@ -3333,7 +3347,7 @@
       }
 
       if (VAPID_PUBLIC_KEY === 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY') {
-        if (statusMsg) { statusMsg.textContent = '⚠️ VAPID_PUBLIC_KEY non configurée.'; statusMsg.style.color = '#e65100'; }
+        if (statusMsg) { statusMsg.textContent = t('push_vapid_not_configured'); statusMsg.style.color = '#e65100'; }
         return;
       }
 
@@ -3564,7 +3578,7 @@
         _triggerPush({
           type:    'new_stock_request',
           title:   '📦 ' + t('push_new_request'),
-          message: (state.profile?.full_name || state.session?.user?.email || '') + ' a envoyé une demande de stock.',
+          message: (state.profile?.full_name || state.session?.user?.email || '') + ' ' + t('push_request_sent_msg'),
           url:     '/'
         });
         setTimeout(() => closeModal('stockRequestModal'), 1800);
@@ -3816,8 +3830,8 @@
         if (reqData?.employee_id) {
           _triggerPush({
             type:        'stock_request_status',
-            title:       '✅ Stock remis',
-            message:     'Votre stock a été transféré dans votre stock voiture.',
+            title:       t('push_fulfilled_title'),
+            message:     t('push_fulfilled_msg'),
             url:         '/',
             employee_id: reqData.employee_id
           });
