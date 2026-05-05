@@ -193,7 +193,7 @@
     hr { border: none; border-top: 1px solid var(--color-border); margin: var(--spacing-xl) 0; }
     .muted { font-size: 12px; color: var(--color-text-muted); line-height: 1.6; }
 
-    .auth-screen { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: max(var(--spacing-2xl), 18vh) var(--spacing-2xl) var(--spacing-2xl); }
+    .auth-screen { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: max(var(--spacing-2xl), 6vh) var(--spacing-2xl) var(--spacing-2xl); overflow-y: auto; }
     .auth-card {
       width: 100%;
       max-width: 430px;
@@ -255,12 +255,26 @@
       margin-top: var(--spacing-md);
       padding: var(--spacing-md) var(--spacing-lg);
       border-radius: var(--radius-md);
-      background: rgba(213, 42, 42, 0.2);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      font-weight: 700;
-      font-size: 13px;
-      animation: slideIn 0.3s ease;
+      background: rgba(213, 42, 42, 0.85);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      text-align: center;
+      animation: authErrorFadeIn 0.25s ease;
+    }
+    @keyframes authErrorFadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Auth card: compact logo on small/short screens ── */
+    @media (max-height: 700px) {
+      .auth-screen .logo-wrap { width: 120px; height: 120px; }
+      .auth-screen { padding-top: var(--spacing-2xl); }
     }
 
     header.banner-header {
