@@ -2,6 +2,7 @@
 // - HTML/navigation: network-first (toujours la dernière version)
 // - assets (js/css/img/font): stale-while-revalidate
 // - ne cache jamais les requêtes Supabase
+// - gère les push notifications Android/PWA
 
 const CACHE_NAME = "taskafe-static-v4";
 
@@ -54,3 +55,54 @@ self.addEventListener("fetch", (event) => {
     })());
   }
 });
+
+// ── Push notification handler ─────────────────────────────────────────────────
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (_) {}
+
+  const title   = data.title   || "TASKAFÉ";
+  const body    = data.body    || "";
+  // icon-512.png.PNG is the actual filename in this repository (see manifest.json)
+  const iconUrl = data.icon    || "/icon-512.png.PNG";
+  const badgeUrl= data.badge   || "/icon-512.png.PNG";
+  const tag     = data.tag     || "taskafe-notif";
+  const urlPath = data.url     || "/";
+  const vibrate = data.vibrate || [200, 100, 200];
+
+  const options = {
+    body,
+    icon:               iconUrl,
+    badge:              badgeUrl,
+    vibrate,
+    tag,
+    renotify:           false,
+    requireInteraction: false,
+    data:               { url: urlPath }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ── Notification click handler ────────────────────────────────────────────────
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windowClients) => {
+        // Focus an existing tab/window if one is already open
+        for (const client of windowClients) {
+          if ("focus" in client) {
+            client.navigate(targetUrl).catch(err => console.warn("[sw] navigate error:", err));
+            return client.focus();
+          }
+        }
+        // Otherwise open a new window
+        if (clients.openWindow) return clients.openWindow(targetUrl);
+      })
+  );
+});
+

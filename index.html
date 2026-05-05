@@ -432,6 +432,12 @@
         <div class="muted" data-i18n="settings_export_desc">Télécharger une sauvegarde JSON complète.</div>
         <button onclick="exportData()" data-i18n="settings_exporter_btn">📥 Exporter données</button>
       </div>
+      <div class="settings-option" id="pushNotifSettingsRow">
+        <div class="title" data-i18n="push_notif_title">📱 Notifications téléphone</div>
+        <div class="muted" data-i18n="push_notif_desc">Recevoir une alerte sur le téléphone même appli fermée.</div>
+        <button id="pushEnableBtn" onclick="requestPushPermission()" data-i18n="push_enable_btn">🔔 Activer notifications téléphone</button>
+        <div id="pushStatusMsg" style="margin-top:6px;font-size:12px;min-height:16px;"></div>
+      </div>
     </div>
   </div>
 
@@ -973,6 +979,11 @@
     const SUPABASE_URL = 'https://ogjljdjphawcminawtlv.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9namxqZGpwaGF3Y21pbmF3dGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzQ5MjUsImV4cCI6MjA5MTk1MDkyNX0.WVgrgx8Q1c9j_1UyNX7e2ilvttMBSHY2vnrBw_Ga05A';
 
+    // VAPID public key for Web Push — replace with your own key (see README for setup).
+    // Generate with: npx web-push generate-vapid-keys
+    // Set the matching private key in VAPID_PRIVATE_KEY env var on the server.
+    const VAPID_PUBLIC_KEY = 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY';
+
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
     const CATEGORIES = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
@@ -1155,6 +1166,21 @@
         lang_saved_local: '— local',
         lang_local_only: '⚠️ Local uniquement',
         lang_save_warn: '⚠️ Langue enregistrée localement uniquement',
+        push_enable_btn: '🔔 Activer notifications téléphone',
+        push_enabled: 'Notifications téléphone activées',
+        push_blocked: 'Notifications bloquées dans les paramètres du navigateur',
+        push_unsupported: 'Notifications non supportées sur cet appareil',
+        push_not_installed: 'Installez l\'app sur l\'écran d\'accueil pour les notifications',
+        push_notif_title: '📱 Notifications téléphone',
+        push_notif_desc: 'Recevoir une alerte sur le téléphone même appli fermée.',
+        push_new_request: 'Nouvelle demande de stock',
+        push_status_update: 'Statut demande mis à jour',
+        push_enabling: '⏳ Activation en cours…',
+        push_enable_error: '❌ Impossible d\'activer les notifications',
+        push_request_sent_msg: 'a envoyé une demande de stock.',
+        push_fulfilled_title: '✅ Stock remis',
+        push_fulfilled_msg: 'Votre stock a été transféré dans votre stock voiture.',
+        push_vapid_not_configured: '⚠️ Clé VAPID non configurée (voir README).',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1332,6 +1358,21 @@
         lang_saved_local: '— محلي',
         lang_local_only: '⚠️ محلي فقط',
         lang_save_warn: '⚠️ تم حفظ اللغة محلياً فقط',
+        push_enable_btn: '🔔 تفعيل إشعارات الهاتف',
+        push_enabled: 'إشعارات الهاتف مفعّلة',
+        push_blocked: 'الإشعارات محظورة في إعدادات المتصفح',
+        push_unsupported: 'الإشعارات غير مدعومة على هذا الجهاز',
+        push_not_installed: 'ثبّت التطبيق على الشاشة الرئيسية لتلقي الإشعارات',
+        push_notif_title: '📱 إشعارات الهاتف',
+        push_notif_desc: 'استقبل تنبيهاً على الهاتف حتى لو التطبيق مغلق.',
+        push_new_request: 'طلب مخزون جديد',
+        push_status_update: 'تحديث حالة الطلب',
+        push_enabling: '⏳ جارٍ التفعيل…',
+        push_enable_error: '❌ تعذّر تفعيل الإشعارات',
+        push_request_sent_msg: 'أرسل طلب مخزون.',
+        push_fulfilled_title: '✅ تم تسليم المخزون',
+        push_fulfilled_msg: 'تم نقل مخزونك إلى مخزون السيارة.',
+        push_vapid_not_configured: '⚠️ مفتاح VAPID غير مضبوط (راجع README).',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1509,6 +1550,21 @@
         lang_saved_local: '— local',
         lang_local_only: '⚠️ Local ghir',
         lang_save_warn: '⚠️ Lgha tkhzznat ghir f local',
+        push_enable_btn: '🔔 Fermki notifications dyal telephone',
+        push_enabled: 'Notifications dyal telephone fermkin',
+        push_blocked: 'Notifications mbloquiin f settings dyal browser',
+        push_unsupported: 'Notifications ma msupportiinsh f had l\'appareil',
+        push_not_installed: 'Installé l\'app f l\'écran principal bach tjib notifications',
+        push_notif_title: '📱 Notifications telephone',
+        push_notif_desc: 'Jtib tenbih f telephone hatta wila l\'app msdaq.',
+        push_new_request: 'Talab stock jdid',
+        push_status_update: 'Talab tbddel hal',
+        push_enabling: '⏳ Kaytferm…',
+        push_enable_error: '❌ Mchekla f tfermi notifications',
+        push_request_sent_msg: 'daz talab stock.',
+        push_fulfilled_title: '✅ Stock tmessah',
+        push_fulfilled_msg: 'Stock dyalek thwwel l stock tomobil.',
+        push_vapid_not_configured: '⚠️ Clé VAPID mmazbitach (chof README).',
       },
     };
 
@@ -3036,7 +3092,10 @@
           .select('*')
           .order('created_at', { ascending: false })
           .limit(50);
-        if (!error) state.notifications = data || [];
+        if (!error) {
+          state.notifications = data || [];
+          _notifyInAppIfNew();
+        }
       } catch (e) {
         console.warn('[notifications] load error:', e?.message);
       }
@@ -3120,6 +3179,218 @@
         showSessionStatus('❌ Impossible de marquer comme lu', 'error', 3000);
       }
     };
+
+    // ── In-app sound / vibration / toast for new notifications ────────────────
+    // Tracks the timestamp of the most recently seen notification so we can
+    // detect genuinely new ones after each refresh without false positives.
+    let _lastNotifSeenAt = null;
+
+    // Plays a very short non-intrusive beep using the Web Audio API.
+    // Silently no-ops when autoplay is blocked or AudioContext is unavailable.
+    function _playNotifSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+        osc.onended = () => { try { ctx.close(); } catch (_) {} };
+      } catch (_) { /* autoplay blocked or unsupported — ignore */ }
+    }
+
+    // Called after loadNotifications() to notify the user in-app of new arrivals.
+    function _notifyInAppIfNew() {
+      const notifs = state.notifications || [];
+      if (notifs.length === 0) return;
+
+      const newest = notifs[0]; // already sorted by created_at DESC
+      const newestAt = newest?.created_at;
+      if (!newestAt) return;
+
+      // First load — initialise baseline without triggering alerts
+      if (_lastNotifSeenAt === null) {
+        _lastNotifSeenAt = newestAt;
+        return;
+      }
+
+      // No new notifications since last check
+      if (newestAt <= _lastNotifSeenAt) return;
+
+      // Count genuinely new unread notifications
+      const newUnread = notifs.filter(n => !n.read_at && n.created_at > _lastNotifSeenAt);
+      _lastNotifSeenAt = newestAt;
+
+      if (newUnread.length === 0) return;
+
+      // Sound
+      _playNotifSound();
+
+      // Vibration (Android/mobile)
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+      // Toast / banner
+      const first = newUnread[0];
+      showSessionStatus(`🔔 ${first.title}`, 'info', 4000);
+
+      // Refresh bell badge
+      renderNotificationBell();
+    }
+
+    // ── Web Push registration helpers ─────────────────────────────────────────
+
+    // Converts a VAPID base64url public key to Uint8Array for PushManager.subscribe().
+    function _urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+    }
+
+    // Returns true when Web Push is available in this browser/context.
+    function _isPushSupported() {
+      return (
+        'serviceWorker' in navigator &&
+        'PushManager' in window &&
+        'Notification' in window
+      );
+    }
+
+    // Saves a push subscription object to Supabase for the current user.
+    async function _savePushSubscription(subscription) {
+      const userId = state.session?.user?.id;
+      if (!userId || !subscription) return;
+      const subJson = subscription.toJSON ? subscription.toJSON() : subscription;
+      try {
+        await supabase
+          .from('push_subscriptions')
+          .upsert(
+            {
+              user_id:      userId,
+              endpoint:     subJson.endpoint,
+              subscription: subJson,
+              // Truncate to fit the `user_agent text` column (no hard length in Postgres
+              // text, but 255 chars is a generous, human-readable cap for diagnostics)
+              user_agent:   navigator.userAgent.slice(0, 255),
+              updated_at:   new Date().toISOString()
+            },
+            { onConflict: 'endpoint' }
+          );
+      } catch (e) {
+        console.warn('[push] save subscription error:', e?.message);
+      }
+    }
+
+    // Registers (or refreshes) the push subscription for the current user.
+    // Called asynchronously after login — must never block app startup.
+    async function _registerPushSubscription() {
+      if (!_isPushSupported()) return;
+      if (Notification.permission !== 'granted') return;
+      if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY === 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY') return;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly:      true,
+            applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          });
+        }
+        await _savePushSubscription(sub);
+      } catch (e) {
+        console.warn('[push] registration error:', e?.message);
+      }
+    }
+
+    // Updates the push settings button/status in the settings modal.
+    function _refreshPushSettingsUI() {
+      const btn       = document.getElementById('pushEnableBtn');
+      const statusMsg = document.getElementById('pushStatusMsg');
+      if (!btn) return;
+
+      if (!_isPushSupported()) {
+        btn.disabled = true;
+        btn.textContent = t('push_unsupported');
+        if (statusMsg) statusMsg.textContent = t('push_unsupported');
+        return;
+      }
+
+      const perm = Notification.permission;
+      if (perm === 'granted') {
+        btn.disabled = true;
+        btn.textContent = '✅ ' + t('push_enabled');
+        if (statusMsg) { statusMsg.textContent = t('push_enabled'); statusMsg.style.color = '#2e7d32'; }
+      } else if (perm === 'denied') {
+        btn.disabled = true;
+        btn.textContent = '🚫 ' + t('push_blocked');
+        if (statusMsg) { statusMsg.textContent = t('push_blocked'); statusMsg.style.color = '#c62828'; }
+      } else {
+        btn.disabled = false;
+        btn.textContent = t('push_enable_btn');
+        if (statusMsg) statusMsg.textContent = '';
+      }
+    }
+
+    // Called when user clicks "Activer notifications téléphone" in settings.
+    window.requestPushPermission = async function() {
+      const btn       = document.getElementById('pushEnableBtn');
+      const statusMsg = document.getElementById('pushStatusMsg');
+
+      if (!_isPushSupported()) {
+        if (statusMsg) statusMsg.textContent = t('push_unsupported');
+        return;
+      }
+
+      if (VAPID_PUBLIC_KEY === 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY') {
+        if (statusMsg) { statusMsg.textContent = t('push_vapid_not_configured'); statusMsg.style.color = '#e65100'; }
+        return;
+      }
+
+      if (btn) { btn.disabled = true; btn.textContent = t('push_enabling'); }
+
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          await _registerPushSubscription();
+          _refreshPushSettingsUI();
+          showSessionStatus('✅ ' + t('push_enabled'), 'success', 3000);
+        } else if (permission === 'denied') {
+          _refreshPushSettingsUI();
+          showSessionStatus('🚫 ' + t('push_blocked'), 'info', 5000);
+        } else {
+          // dismissed
+          _refreshPushSettingsUI();
+        }
+      } catch (e) {
+        console.warn('[push] requestPermission error:', e?.message);
+        if (btn) { btn.disabled = false; btn.textContent = t('push_enable_btn'); }
+        if (statusMsg) { statusMsg.textContent = t('push_enable_error'); statusMsg.style.color = '#c62828'; }
+      }
+    };
+
+    // Sends a push notification through the /api/send-push serverless function.
+    // Failures are soft — never blocks the UI or throws to callers.
+    async function _triggerPush({ type, title, message, url, employee_id }) {
+      const session = state.session;
+      if (!session?.access_token) return;
+      try {
+        await fetch('/api/send-push', {
+          method:  'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ type, title, message, url: url || '/', employee_id })
+        });
+      } catch (e) {
+        console.warn('[push] triggerPush error:', e?.message);
+      }
+    }
 
     let _returnTargetUserId = null;
     let _returnTargetCat    = null;
@@ -3303,6 +3574,13 @@
         statusEl.textContent = "✅ Demande envoyée à l'admin.";
         if (btn) { btn.textContent = '✅ Envoyé'; }
         renderNotificationBell();
+        // Trigger push to admins/managers (non-blocking)
+        _triggerPush({
+          type:    'new_stock_request',
+          title:   '📦 ' + t('push_new_request'),
+          message: (state.profile?.full_name || state.session?.user?.email || '') + ' ' + t('push_request_sent_msg'),
+          url:     '/'
+        });
         setTimeout(() => closeModal('stockRequestModal'), 1800);
       } catch (err) {
         statusEl.textContent = '❌ ' + getFriendlyErrorMessage(err);
@@ -3461,6 +3739,10 @@
       const origText = btn ? btn.textContent : null;
       if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
       try {
+        // Fetch request first so we have employee_id for the push notification
+        const { data: reqData } = await supabase
+          .from('stock_requests').select('employee_id').eq('id', reqId).single();
+
         const { error } = await supabase.rpc('update_stock_request_status', {
           p_request_id:  reqId,
           p_status:      newStatus,
@@ -3470,6 +3752,17 @@
 
         await refreshAdminStockRequests();
         showSessionStatus(`✅ Statut mis à jour : ${_stockReqStatusLabel(newStatus)}`, 'success', 3000);
+
+        // Trigger push to employee (non-blocking)
+        if (reqData?.employee_id) {
+          _triggerPush({
+            type:        'stock_request_status',
+            title:       '📦 ' + t('push_status_update'),
+            message:     _stockReqStatusLabel(newStatus),
+            url:         '/',
+            employee_id: reqData.employee_id
+          });
+        }
       } catch (err) {
         showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
         if (btn) { btn.disabled = false; btn.textContent = origText; }
@@ -3520,6 +3813,10 @@
       if (statusEl) statusEl.textContent = '⏳ Transfert en cours…';
 
       try {
+        // Fetch employee_id before fulfilling so we can send push after
+        const { data: reqData } = await supabase
+          .from('stock_requests').select('employee_id').eq('id', _pendingFulfillRequestId).single();
+
         const { error } = await supabase.rpc('fulfill_stock_request', {
           p_request_id: _pendingFulfillRequestId
         });
@@ -3528,6 +3825,18 @@
         closeModal('fulfillRequestModal');
         closeModal('adminStockRequestsModal');
         showSessionStatus("✅ Stock remis à l'employé et transféré.", 'success', 5000);
+
+        // Trigger push to employee (non-blocking)
+        if (reqData?.employee_id) {
+          _triggerPush({
+            type:        'stock_request_status',
+            title:       t('push_fulfilled_title'),
+            message:     t('push_fulfilled_msg'),
+            url:         '/',
+            employee_id: reqData.employee_id
+          });
+        }
+
         _pendingFulfillRequestId = null;
         refreshStockData().then(() => { renderStock(); loadNotifications().then(() => renderNotificationBell()).catch(() => {}); }).catch(e => console.warn('[fulfill] refresh:', e?.message));
       } catch (err) {
@@ -4479,6 +4788,8 @@
               setTimeout(() => syncPendingOps(), BOOT_SYNC_DELAY_MS);
             }
           }
+          // Register/refresh push subscription in background — never blocks startup
+          setTimeout(() => _registerPushSubscription().catch(() => {}), 2000);
         } catch (error) {
           console.error('[bootFromSession] Boot error:', error);
           const errorClass = classifyCloudError(error);
@@ -5839,6 +6150,8 @@
 
     window.openSettingsHubModal = function () {
       openModal('settingsHubModal');
+      // Refresh push notification status display each time the modal opens
+      _refreshPushSettingsUI();
     };
 
     // ── Per-item alert helpers ─────────────────────────────────────────────────
