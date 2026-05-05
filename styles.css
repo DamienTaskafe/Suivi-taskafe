@@ -1659,23 +1659,20 @@
     body.dark .client-action-btn:active,
     body.dark .client-action-btn:hover { background: rgba(255,255,255,0.17); }
 
-    /* ── Header language picker ──────────────────────────────────────────────── */
-    .header-language-picker {
-      padding: var(--spacing-md) var(--spacing-lg);
+    /* ── Account language picker (inside Compte menu section) ───────────────── */
+    .account-language-picker {
+      padding: 8px 10px;
       border-bottom: 1px solid var(--color-border);
-      background: rgba(0,0,0,0.02);
     }
-    .header-language-picker label {
+    .account-language-picker label {
       display: block;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
-    .header-language-picker select {
+    .account-language-picker select {
       width: 100%;
+      min-height: 38px;
       padding: 6px 10px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--color-border);
@@ -1692,7 +1689,8 @@
     html[dir="rtl"] .menu button { text-align: right; }
     html[dir="rtl"] .header-menu button { text-align: right; }
     html[dir="rtl"] .header-menu-section-title { text-align: right; }
-    html[dir="rtl"] .header-language-picker label { text-align: right; }
+    html[dir="rtl"] .account-language-picker,
+    html[dir="rtl"] .account-language-picker label { text-align: right; }
     html[dir="rtl"] .session-status { left: auto; right: var(--spacing-lg); }
     html[dir="rtl"] .banner-text { text-align: right; }
     html[dir="rtl"] .top-actions { direction: rtl; }
