@@ -1682,6 +1682,7 @@
       text-align: left;
       border-radius: 0;
       box-shadow: none;
+      min-height: 38px;
     }
     .header-menu-section-toggle .chevron {
       font-size: 14px;
@@ -1710,6 +1711,7 @@
     .account-language-choices button {
       width: 100%;
       text-align: left;
+      min-height: 38px;
     }
     .account-language-choices button.active-lang {
       font-weight: 700;

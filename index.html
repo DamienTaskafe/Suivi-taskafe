@@ -121,17 +121,17 @@
             <span id="menuUserRole">—</span>
           </div>
           <!-- ── Compte section ───────────────────────────────────────────── -->
-          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('account')">
+          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('account', event)">
             <span data-i18n="menu_compte">👤 Compte</span><span class="chevron">⌄</span>
           </button>
           <div id="headerSectionAccount" class="header-menu-section-content hidden">
-            <button type="button" class="submenu-toggle" onclick="toggleAccountLanguageChoices()">
+            <button type="button" class="submenu-toggle" onclick="toggleAccountLanguageChoices(event)">
               <span data-i18n="menu_langue">🌍 Langue</span><span class="chevron">›</span>
             </button>
             <div id="accountLanguageChoices" class="account-language-choices hidden">
-              <button type="button" data-lang="fr" onclick="chooseAccountLanguage('fr')">Français</button>
-              <button type="button" data-lang="ar" onclick="chooseAccountLanguage('ar')">العربية</button>
-              <button type="button" data-lang="darija" onclick="chooseAccountLanguage('darija')">Darija</button>
+              <button type="button" data-lang="fr" onclick="chooseAccountLanguage('fr', event)">Français</button>
+              <button type="button" data-lang="ar" onclick="chooseAccountLanguage('ar', event)">العربية</button>
+              <button type="button" data-lang="darija" onclick="chooseAccountLanguage('darija', event)">Darija</button>
             </div>
             <button onclick="openProfileModal()" data-i18n="menu_monProfil">👤 Mon profil</button>
             <button onclick="openPasswordModal()" data-i18n="menu_changerMdp">🔐 Changer mon mot de passe</button>
@@ -139,7 +139,7 @@
             <button onclick="logout()" data-i18n="menu_deconnexion">🚪 Déconnexion</button>
           </div>
           <!-- ── Travail section ──────────────────────────────────────────── -->
-          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('work')">
+          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('work', event)">
             <span data-i18n="menu_travail">💼 Travail</span><span class="chevron">⌄</span>
           </button>
           <div id="headerSectionWork" class="header-menu-section-content hidden">
@@ -148,7 +148,7 @@
           </div>
           <!-- ── Équipe section (hidden for non-manager/admin) ───────────── -->
           <div id="sectionEquipe" class="hidden">
-            <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('team')">
+            <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('team', event)">
               <span data-i18n="menu_equipe">👥 Équipe</span><span class="chevron">⌄</span>
             </button>
             <div id="headerSectionTeam" class="header-menu-section-content hidden">
@@ -158,7 +158,7 @@
           </div>
           <!-- ── Finance section (hidden for non-manager/admin) ─────────── -->
           <div id="sectionFinance" class="hidden">
-            <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('finance')">
+            <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('finance', event)">
               <span data-i18n="menu_finance">💰 Finance</span><span class="chevron">⌄</span>
             </button>
             <div id="headerSectionFinance" class="header-menu-section-content hidden">
@@ -168,7 +168,7 @@
             </div>
           </div>
           <!-- ── Administration section ──────────────────────────────────── -->
-          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('admin')">
+          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('admin', event)">
             <span data-i18n="menu_admin">⚙️ Admin</span><span class="chevron">⌄</span>
           </button>
           <div id="headerSectionAdmin" class="header-menu-section-content hidden">
@@ -1465,7 +1465,11 @@
     window.saveLanguagePref = saveLanguagePref;
 
     // ── Header menu accordion section toggles ─────────────────────────────────
-    window.toggleHeaderSection = function (sectionKey) {
+    window.toggleHeaderSection = function (sectionKey, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       const key = sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1);
       const content = document.getElementById('headerSection' + key);
       if (!content) return;
@@ -1477,11 +1481,19 @@
       }
     };
 
-    window.toggleAccountLanguageChoices = function () {
+    window.toggleAccountLanguageChoices = function (event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       document.getElementById('accountLanguageChoices')?.classList.toggle('hidden');
     };
 
-    window.chooseAccountLanguage = function (lang) {
+    window.chooseAccountLanguage = function (lang, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       saveLanguagePref(lang);
       document.getElementById('accountLanguageChoices')?.classList.add('hidden');
     };
@@ -5642,6 +5654,12 @@
     });
 
     document.addEventListener('click', closeAllMenus);
+
+    // Prevent clicks inside the header menu from bubbling to the document
+    // listener above, which would immediately close the menu after opening it.
+    document.getElementById('headerMenu')?.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
 
     window.show = function(section) {
       // Reset the Ventes récentes client detail when leaving the sales tab
