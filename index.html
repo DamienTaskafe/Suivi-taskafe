@@ -114,6 +114,7 @@
         <div class="banner-shimmer" aria-hidden="true"></div>
       </div>
       <div class="header-menu-wrap">
+        <button id="notificationBellBtn" type="button" class="notification-bell-btn" onclick="openNotificationsModal()" style="display:none;" aria-label="Notifications">🔔<span id="notificationBadge" class="notification-badge" style="display:none;">0</span></button>
         <button class="header-menu-btn" type="button" data-action="toggle-header-menu">⋯</button>
         <div class="header-menu" id="headerMenu">
           <div class="user-chip">
@@ -722,20 +723,42 @@
     </div>
   </div>
 
-  <!-- ── Stock transfer modal (admin / manager only) ────────────────────────── -->
+  <!-- ── Stock transfer modal (admin / manager only) — multi-product ─────── -->
   <div id="transferStockModal" class="modal-backdrop" onclick="backdropClose(event, 'transferStockModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>🔄 Transférer du stock</h3><button class="close-x" onclick="closeModal('transferStockModal')">✕</button></div>
-      <div class="muted" style="margin-bottom:12px;font-size:12px;">Déduire du stock central et ajouter au stock commercial d'un employé.</div>
+      <div class="muted" style="margin-bottom:12px;font-size:12px;">Sélectionnez un employé et ajoutez les produits à transférer.</div>
       <label for="transferUserSelect">👤 Commercial</label>
       <select id="transferUserSelect"></select>
-      <label for="transferCategorySelect" style="margin-top:12px;">📦 Gamme</label>
-      <select id="transferCategorySelect" onchange="updateTransferAvailable()"></select>
-      <label for="transferQuantityInput" style="margin-top:12px;">Quantité à transférer</label>
-      <input id="transferQuantityInput" type="number" step="0.01" min="0.01" placeholder="Quantité" />
-      <div id="transferStockAvailable" class="muted" style="margin-top:4px;font-size:12px;"></div>
-      <button id="confirmTransferBtn" style="margin-top:16px;" onclick="confirmTransferStock()">✅ Transférer</button>
+      <div style="margin-top:16px;">
+        <label>📦 Produits à transférer</label>
+        <div id="transferLinesList" style="margin-top:8px;"></div>
+        <button type="button" id="addTransferLineBtn" onclick="addTransferLine()" style="margin-top:8px;width:100%;background:rgba(0,0,0,0.07);color:var(--color-text);">➕ Ajouter un produit</button>
+      </div>
+      <button id="previewTransferBtn" style="margin-top:16px;" onclick="previewTransfer()">👁️ Prévisualiser le transfert</button>
       <div id="transferStockStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- ── Transfer preview / confirmation modal ──────────────────────────────── -->
+  <div id="transferPreviewModal" class="modal-backdrop" onclick="backdropClose(event, 'transferPreviewModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>📋 Récapitulatif transfert</h3><button class="close-x" onclick="closeModal('transferPreviewModal')">✕</button></div>
+      <div id="transferPreviewContent"></div>
+      <div id="transferPreviewStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button type="button" onclick="closeModal('transferPreviewModal'); closeModal('transferStockModal');" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);border:1px solid rgba(0,0,0,0.1);">❌ Annuler</button>
+        <button type="button" onclick="editTransfer();" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);border:1px solid rgba(0,0,0,0.1);">✏️ Modifier</button>
+        <button type="button" id="executeTransferBtn" onclick="executeTransfer();" style="flex:1;">✅ Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Notifications modal ─────────────────────────────────────────────────── -->
+  <div id="notificationsModal" class="modal-backdrop" onclick="backdropClose(event, 'notificationsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>🔔 Notifications</h3><button class="close-x" onclick="closeModal('notificationsModal')">✕</button></div>
+      <div id="notificationsContent"><div class="muted">Chargement…</div></div>
     </div>
   </div>
 
@@ -1672,7 +1695,8 @@
       allUsers: [],
       commercialStock: {},      // current user's commercial mini-stock; only populated for categories that have a DB row
       allCommercialStocks: [],  // all employees' rows [{ user_id, category, quantity }]
-      rolePermissions: { employee: {}, manager: {} }
+      rolePermissions: { employee: {}, manager: {} },
+      notifications: []         // current user's notifications
     };
 
     let _statusTimer = null;
@@ -2621,91 +2645,353 @@
       if (tabBadge) tabBadge.style.display = anyLow ? 'inline-block' : 'none';
     }
 
-    // ── Stock transfer helpers (admin / manager only) ──────────────────────────
+    // ── Stock transfer helpers (admin / manager only) — multi-product ─────────
+
+    // Module-level state for the multi-product transfer form
+    let _transferLines      = [];   // [{ category, quantity }]
+    let _transferEmployeeId = null;
+
+    function _buildCategoryOptions(selectedCat) {
+      return Object.keys(DEFAULT_STOCKS)
+        .map(cat => `<option value="${escHtml(cat)}" ${cat === selectedCat ? 'selected' : ''}>${escHtml(cat)}</option>`)
+        .join('');
+    }
+
+    function renderTransferLines() {
+      const container = document.getElementById('transferLinesList');
+      if (!container) return;
+      if (_transferLines.length === 0) {
+        container.innerHTML = '<div class="muted" style="font-size:12px;margin-bottom:4px;">Aucun produit ajouté.</div>';
+        return;
+      }
+      container.innerHTML = _transferLines.map((line, idx) => `
+        <div class="transfer-line-row">
+          <select onchange="_transferLines[${idx}].category = this.value" style="flex:1.5;">
+            <option value="">— Gamme —</option>
+            ${_buildCategoryOptions(line.category)}
+          </select>
+          <input type="number" step="0.01" min="0.01" placeholder="Qté"
+            value="${escHtml(String(line.quantity || ''))}"
+            onchange="_transferLines[${idx}].quantity = Number(this.value)"
+            oninput="_transferLines[${idx}].quantity = Number(this.value)"
+            style="flex:1;max-width:90px;" />
+          <button type="button" class="remove-line-btn" onclick="removeTransferLine(${idx})">🗑</button>
+        </div>
+      `).join('');
+    }
+    window.renderTransferLines = renderTransferLines;
+
+    window.addTransferLine = function() {
+      _transferLines.push({ category: '', quantity: '' });
+      renderTransferLines();
+    };
+
+    window.removeTransferLine = function(idx) {
+      _transferLines.splice(idx, 1);
+      renderTransferLines();
+    };
 
     function openTransferStockModal() {
       if (!isManagerOrAdmin()) return;
       closeAllMenus();
       const userSel = document.getElementById('transferUserSelect');
-      const catSel  = document.getElementById('transferCategorySelect');
-      if (!userSel || !catSel) return;
+      if (!userSel) return;
 
-      // Populate employee/manager dropdown
       userSel.innerHTML = `<option value="">— Choisir un commercial —</option>` +
         getAssignableUsers().map(u =>
           `<option value="${escHtml(u.id)}">${escHtml(u.full_name || u.email || u.id)}</option>`
         ).join('');
 
-      // Populate category dropdown
-      catSel.innerHTML = Object.keys(DEFAULT_STOCKS)
-        .map(cat => `<option value="${cat}">${cat}</option>`)
-        .join('');
+      // Restore previously selected employee if still valid, otherwise reset
+      if (_transferEmployeeId) userSel.value = _transferEmployeeId;
 
-      document.getElementById('transferQuantityInput').value = '';
-      document.getElementById('transferStockStatus').textContent = '';
-      updateTransferAvailable();
+      // Start with one empty line if none exist
+      if (_transferLines.length === 0) _transferLines.push({ category: '', quantity: '' });
+      renderTransferLines();
+
+      const statusEl = document.getElementById('transferStockStatus');
+      if (statusEl) statusEl.textContent = '';
       openModal('transferStockModal');
     }
     window.openTransferStockModal = openTransferStockModal;
 
-    window.updateTransferAvailable = function() {
-      const cat = document.getElementById('transferCategorySelect')?.value;
-      const el  = document.getElementById('transferStockAvailable');
-      if (!el || !cat) return;
-      el.textContent = `Stock central disponible : ${formatStockValue(cat, state.stocks[cat] || 0)}`;
+    window.previewTransfer = function() {
+      if (!isManagerOrAdmin()) return;
+      const statusEl = document.getElementById('transferStockStatus');
+
+      // Read current employee selection
+      const userSel = document.getElementById('transferUserSelect');
+      _transferEmployeeId = userSel?.value || null;
+      if (!_transferEmployeeId) {
+        if (statusEl) statusEl.textContent = '❌ Choisissez un commercial.';
+        return;
+      }
+
+      // Validate lines (read current DOM values)
+      const lineRows = document.querySelectorAll('#transferLinesList .transfer-line-row');
+      if (lineRows.length > 0) {
+        lineRows.forEach((row, idx) => {
+          const sel = row.querySelector('select');
+          const inp = row.querySelector('input');
+          if (sel) _transferLines[idx].category = sel.value;
+          if (inp) _transferLines[idx].quantity  = Number(inp.value);
+        });
+      }
+
+      if (_transferLines.length === 0) {
+        if (statusEl) statusEl.textContent = '❌ Ajoutez au moins un produit.';
+        return;
+      }
+
+      // Validate each line
+      const categories = new Set();
+      for (let i = 0; i < _transferLines.length; i++) {
+        const line = _transferLines[i];
+        if (!line.category) {
+          if (statusEl) statusEl.textContent = `❌ Ligne ${i + 1} : choisissez une gamme.`;
+          return;
+        }
+        if (!line.quantity || isNaN(line.quantity) || line.quantity <= 0) {
+          if (statusEl) statusEl.textContent = `❌ Ligne ${i + 1} : quantité invalide.`;
+          return;
+        }
+        if (categories.has(line.category)) {
+          if (statusEl) statusEl.textContent = `❌ Produit en doublon : ${line.category}. Fusionnez les lignes.`;
+          return;
+        }
+        categories.add(line.category);
+        // Check central stock
+        const available = Number(state.stocks[line.category] || 0);
+        if (line.quantity > available) {
+          if (statusEl) statusEl.textContent = `❌ Stock central insuffisant pour ${line.category} : demandé ${formatStockValue(line.category, line.quantity)}, disponible ${formatStockValue(line.category, available)}.`;
+          return;
+        }
+      }
+
+      if (statusEl) statusEl.textContent = '';
+
+      // Build summary HTML
+      const employee = state.allUsers.find(u => u.id === _transferEmployeeId);
+      const empName  = employee ? (employee.full_name || employee.email || '—') : '—';
+
+      let html = `<div style="margin-bottom:12px;"><strong>👤 Employé :</strong> ${escHtml(empName)}</div>`;
+      html += `<div style="margin-bottom:8px;"><strong>📦 Produits :</strong></div>`;
+      html += `<div style="margin-bottom:12px;">`;
+      _transferLines.forEach(line => {
+        const available = Number(state.stocks[line.category] || 0);
+        const after     = available - line.quantity;
+        html += `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px;">
+          <span class="badge ${escHtml(line.category)}" style="margin-right:4px;">${escHtml(line.category)}</span>
+          ${formatStockValue(line.category, line.quantity)}
+          <span class="muted" style="font-size:11px;margin-left:8px;">Stock central : ${formatStockValue(line.category, available)} → ${formatStockValue(line.category, after)}</span>
+        </div>`;
+      });
+      html += `</div>`;
+
+      const previewContent = document.getElementById('transferPreviewContent');
+      if (previewContent) previewContent.innerHTML = html;
+      const previewStatus = document.getElementById('transferPreviewStatus');
+      if (previewStatus) previewStatus.textContent = '';
+
+      const execBtn = document.getElementById('executeTransferBtn');
+      if (execBtn) { execBtn.disabled = false; execBtn.textContent = '✅ Confirmer'; }
+
+      openModal('transferPreviewModal');
     };
 
-    window.confirmTransferStock = async function() {
+    window.editTransfer = function() {
+      closeModal('transferPreviewModal');
+      // transferStockModal stays open; re-render lines so DOM is fresh
+      renderTransferLines();
+      const userSel = document.getElementById('transferUserSelect');
+      if (userSel && _transferEmployeeId) userSel.value = _transferEmployeeId;
+    };
+
+    window.executeTransfer = async function() {
       if (!isManagerOrAdmin()) return;
       if (!navigator.onLine) {
         showSessionStatus('❌ Transfert nécessite une connexion', 'error');
         return;
       }
-      const btn = document.getElementById('confirmTransferBtn');
-      if (btn && btn.disabled) return;  // prevent double submit
+      const execBtn  = document.getElementById('executeTransferBtn');
+      const statusEl = document.getElementById('transferPreviewStatus');
 
-      const employeeId = document.getElementById('transferUserSelect').value;
-      const category   = document.getElementById('transferCategorySelect').value;
-      const quantity   = Number(document.getElementById('transferQuantityInput').value);
-      const statusEl   = document.getElementById('transferStockStatus');
+      if (execBtn && execBtn.disabled) return;
+      if (execBtn) { execBtn.disabled = true; execBtn.textContent = '⏳ Transfert en cours…'; }
+      if (statusEl) statusEl.textContent = '⏳ Transfert en cours…';
 
-      if (!employeeId) { statusEl.textContent = '❌ Choisissez un commercial'; return; }
-      if (!quantity || quantity <= 0) { statusEl.textContent = '❌ Quantité invalide'; return; }
+      const employee = state.allUsers.find(u => u.id === _transferEmployeeId);
+      const empName  = employee ? (employee.full_name || employee.email || '—') : '—';
 
-      const employeeName = (() => {
-        const u = state.allUsers.find(u => u.id === employeeId);
-        return u ? (u.full_name || u.email || '—') : '—';
-      })();
-      const available = Number(state.stocks[category] || 0);
-      if (quantity > available) {
-        statusEl.textContent = `❌ Stock insuffisant : demandé ${formatStockValue(category, quantity)}, disponible ${formatStockValue(category, available)}`;
+      // Execute one RPC per product line
+      const failed = [];
+      for (const line of _transferLines) {
+        try {
+          const { error } = await supabase.rpc('transfer_stock_to_commercial', {
+            p_employee_id: _transferEmployeeId,
+            p_category:    line.category,
+            p_quantity:    line.quantity
+          });
+          if (error) {
+            failed.push({ line, error });
+          } else {
+            logAction('stock_transfer_to_commercial', {
+              employeeId: _transferEmployeeId, category: line.category, quantity: line.quantity
+            });
+          }
+        } catch (err) {
+          failed.push({ line, error: err });
+        }
+      }
+
+      if (failed.length > 0) {
+        const msgs = failed.map(f => `${f.line.category}: ${getFriendlyErrorMessage(f.error, { category: f.line.category, requested: f.line.quantity, available: Number(state.stocks[f.line.category] || 0), pool: 'central' })}`);
+        if (statusEl) statusEl.textContent = '❌ Erreur(s) : ' + msgs.join(' | ');
+        if (execBtn) { execBtn.disabled = false; execBtn.textContent = '✅ Confirmer'; }
         return;
       }
 
-      const origBtnText = btn ? btn.textContent : '✅ Transférer';
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ Transfert en cours…'; }
-      statusEl.textContent = '⏳ Transfert en cours…';
-
+      // All lines succeeded — send notification to employee
+      const creatorName = state.profile?.full_name || state.session?.user?.email || 'Admin';
+      let notifSent = false;
       try {
-        const { error } = await supabase.rpc('transfer_stock_to_commercial', {
-          p_employee_id: employeeId,
-          p_category:    category,
-          p_quantity:    quantity
-        });
+        await createStockTransferNotification(_transferEmployeeId, _transferLines, creatorName);
+        notifSent = true;
+      } catch (e) {
+        console.warn('[transfer] notification failed:', e?.message);
+      }
 
-        if (error) {
-          statusEl.textContent = '❌ ' + getFriendlyErrorMessage(error, { category, requested: quantity, available: Number(state.stocks[category] || 0), pool: 'central' });
-          return;
-        }
+      // Build success message
+      const linesSummary = _transferLines.map(l => `  - ${l.category} : ${formatStockValue(l.category, l.quantity)}`).join('\n');
+      let successMsg = `✅ Transfert confirmé pour ${empName} :\n${linesSummary}`;
+      if (notifSent) {
+        successMsg += '\n✅ Notification envoyée à l\'employé';
+      } else {
+        successMsg += '\n⚠️ Transfert effectué, mais la notification n\'a pas pu être envoyée.';
+      }
 
-        logAction('stock_transfer_to_commercial', { employeeId, category, quantity });
-        closeModal('transferStockModal');
-        showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} transférés à ${employeeName}`, 'success', 5000);
-        loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
-      } catch (err) {
-        statusEl.textContent = `❌ Erreur : ${getFriendlyErrorMessage(err)}`;
-      } finally {
-        if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
+      closeModal('transferPreviewModal');
+      closeModal('transferStockModal');
+
+      // Reset state for next transfer
+      _transferLines      = [];
+      _transferEmployeeId = null;
+
+      showSessionStatus(successMsg, 'success', 8000);
+
+      loadCloudData().then(() => { renderStock(); renderNotificationBell(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
+    };
+
+    // ── Notification helpers ───────────────────────────────────────────────────
+
+    // Creates a stock_transfer notification for the target employee in Supabase.
+    // items: [{ category, quantity }, …]
+    async function createStockTransferNotification(employeeId, items, creatorName) {
+      const msgLines = items.map(l => `- ${l.category} : ${formatStockValue(l.category, l.quantity)}`).join('\n');
+      const message  = `${creatorName} vous a transféré :\n${msgLines}`;
+      const { error } = await supabase.from('notifications').insert({
+        user_id:    employeeId,
+        type:       'stock_transfer',
+        title:      '📦 Stock reçu',
+        message,
+        payload:    { employee_id: employeeId, items, creator: creatorName },
+        created_by: state.session?.user?.id || null
+      });
+      if (error) throw error;
+    }
+    window.createStockTransferNotification = createStockTransferNotification;
+
+    // Loads the current user's notifications from Supabase.
+    async function loadNotifications() {
+      if (!navigator.onLine || !state.session?.user?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (!error) state.notifications = data || [];
+      } catch (e) {
+        console.warn('[notifications] load error:', e?.message);
+      }
+    }
+
+    // Updates the bell button visibility and unread count badge.
+    function renderNotificationBell() {
+      const bellBtn = document.getElementById('notificationBellBtn');
+      const badge   = document.getElementById('notificationBadge');
+      if (!bellBtn || !badge) return;
+      const unread = (state.notifications || []).filter(n => !n.read_at).length;
+      bellBtn.style.display = 'inline-flex';
+      if (unread > 0) {
+        badge.textContent = unread > 99 ? '99+' : String(unread);
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    window.renderNotificationBell = renderNotificationBell;
+
+    function _formatNotifDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMin = Math.floor(diffMs / 60000);
+      if (diffMin < 1)  return 'À l\'instant';
+      if (diffMin < 60) return `Il y a ${diffMin} min`;
+      const diffH = Math.floor(diffMin / 60);
+      if (diffH < 24)   return `Il y a ${diffH}h`;
+      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    window.openNotificationsModal = async function() {
+      closeAllMenus();
+      const content = document.getElementById('notificationsContent');
+      if (content) content.innerHTML = '<div class="muted">Chargement…</div>';
+      openModal('notificationsModal');
+      await loadNotifications();
+      renderNotificationsPanel();
+    };
+
+    function renderNotificationsPanel() {
+      const content = document.getElementById('notificationsContent');
+      if (!content) return;
+      const notifs = state.notifications || [];
+      if (notifs.length === 0) {
+        content.innerHTML = '<div class="empty-state">🔔 Aucune notification pour l\'instant.</div>';
+        return;
+      }
+      content.innerHTML = notifs.map(n => {
+        const isUnread = !n.read_at;
+        const readBtn  = isUnread
+          ? `<button type="button" onclick="markNotificationAsRead('${escHtml(n.id)}')" style="margin-top:8px;width:auto;padding:5px 12px;font-size:12px;background:rgba(0,0,0,0.07);color:var(--color-text);border:1px solid rgba(0,0,0,0.1);">✅ Marquer comme lu</button>`
+          : '';
+        return `<div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-${escHtml(n.id)}">
+          <div class="notif-item-title">${escHtml(n.title)}</div>
+          <div class="notif-item-msg">${escHtml(n.message)}</div>
+          <div class="notif-item-date">${_formatNotifDate(n.created_at)}</div>
+          ${readBtn}
+        </div>`;
+      }).join('');
+    }
+
+    window.markNotificationAsRead = async function(notifId) {
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read_at: new Date().toISOString() })
+          .eq('id', notifId)
+          .eq('user_id', state.session?.user?.id);
+        if (error) throw error;
+        // Update local state
+        const notif = (state.notifications || []).find(n => n.id === notifId);
+        if (notif) notif.read_at = new Date().toISOString();
+        renderNotificationsPanel();
+        renderNotificationBell();
+      } catch (e) {
+        console.warn('[notifications] markAsRead error:', e?.message);
+        showSessionStatus('❌ Impossible de marquer comme lu', 'error', 3000);
       }
     };
 
@@ -3155,6 +3441,8 @@
 
       await loadAllUsers();
       await loadRolePermissions();
+      // Load notifications for the current user (non-blocking)
+      loadNotifications().catch(e => console.warn('[loadCloudData] notifications:', e?.message));
 
       // Persist to local cache for offline use
       try {
@@ -3184,6 +3472,7 @@
       renderStock();
       renderBalance();
       renderLogs();
+      renderNotificationBell();
 
       document.getElementById('menuUserName').innerText =
         state.profile?.full_name || state.session?.user?.email || 'Utilisateur';
