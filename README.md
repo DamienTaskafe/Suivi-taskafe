@@ -2,6 +2,8 @@ redeploy
 
 trigger deploy
 
+redeploy after PR153 - 2026-05-05
+
 ## Environment Variables
 
 The following environment variables must be set in Vercel (or your hosting provider) for full functionality:
