@@ -51,6 +51,17 @@
       }, SPLASH_SAFETY_MS);
     })();
   </script>
+  <script>
+    // Apply preferred language as early as possible (before module loads)
+    // so that the initial render uses the correct direction and language.
+    (function() {
+      var lang = localStorage.getItem('preferred_language') || 'fr';
+      if (lang === 'ar') {
+        document.documentElement.dir = 'rtl';
+        document.documentElement.classList.add('lang-ar', 'lang-rtl');
+      }
+    })();
+  </script>
   <div id="offlineBanner" class="offline-banner" style="display:none;">
     <span id="offlineBannerText">📶 Hors ligne&ensp;</span><span id="offlinePendingCount"></span>
   </div>
@@ -70,21 +81,21 @@
           <div class="logo-shine"></div>
         </div>
         <h1>TASKAFÉ</h1>
-        <p>Gestion de ventes cloud sécurisée</p>
+        <p data-i18n="auth_subtitle">Gestion de ventes cloud sécurisée</p>
       </div>
 
       <input id="loginEmail" type="email" placeholder="Email" autocomplete="username"
              autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="email" />
 
       <input id="loginPassword" type="password" placeholder="Mot de passe" autocomplete="current-password"
-             autocapitalize="none" autocorrect="off" spellcheck="false" />
+             autocapitalize="none" autocorrect="off" spellcheck="false" data-i18n-placeholder="auth_password" />
 
       <div class="checkbox-line">
         <input id="rememberSession" type="checkbox" checked />
-        <label for="rememberSession" style="margin: 0; flex: 1;">Rester connecté</label>
+        <label for="rememberSession" style="margin: 0; flex: 1;" data-i18n="auth_remember">Rester connecté</label>
       </div>
 
-      <button id="loginBtn" type="button">Se connecter</button>
+      <button id="loginBtn" type="button" data-i18n="auth_login">Se connecter</button>
       <div id="authError" class="auth-error"></div>
     </div>
   </div>
@@ -109,70 +120,70 @@
             <strong id="menuUserName">—</strong>
             <span id="menuUserRole">—</span>
           </div>
-          <div class="header-menu-section-title">👤 Compte</div>
-          <button onclick="openProfileModal()">👤 Mon profil</button>
-          <button onclick="openPasswordModal()">🔐 Changer mon mot de passe</button>
-          <button id="darkModeBtn" onclick="toggleDarkMode()">🌙 Mode sombre</button>
-          <button onclick="logout()">🚪 Déconnexion</button>
-          <div class="header-menu-section-title">💼 Travail</div>
-          <button onclick="openResumeModal()">📊 Résumé rapide</button>
-          <button onclick="openMyCommissionsModal()">💸 Mes commissions</button>
-          <div class="header-menu-section-title hidden" id="sectionEquipe">👥 Équipe</div>
-          <button id="usersBtn" onclick="openUsersModal()" class="hidden">👥 Gérer utilisateurs</button>
-          <button id="permissionsBtn" class="hidden" onclick="openPermissionsModal()">🔐 Droits d'accès</button>
-          <div class="header-menu-section-title hidden" id="sectionFinance">💰 Finance</div>
-          <button id="commissionsBtn" onclick="openCommissionsModal()" class="hidden">💰 Commissions</button>
-          <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden">💲 Prix produits</button>
-          <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden">📈 Analytiques</button>
-          <div class="header-menu-section-title">⚙️ Admin</div>
-          <button onclick="openSettingsHubModal()">⚙️ Paramètres</button>
-          <button onclick="exportData()">📥 Export données</button>
-          <button id="resetAppBtn" class="hidden" onclick="openResetModal()">🔄 Réinitialiser filtres</button>
-          <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()">📋 Logs</button>
+          <div class="header-menu-section-title" data-i18n="menu_compte">👤 Compte</div>
+          <button onclick="openProfileModal()" data-i18n="menu_monProfil">👤 Mon profil</button>
+          <button onclick="openPasswordModal()" data-i18n="menu_changerMdp">🔐 Changer mon mot de passe</button>
+          <button id="darkModeBtn" onclick="toggleDarkMode()" data-i18n="menu_modeSombre">🌙 Mode sombre</button>
+          <button onclick="logout()" data-i18n="menu_deconnexion">🚪 Déconnexion</button>
+          <div class="header-menu-section-title" data-i18n="menu_travail">💼 Travail</div>
+          <button onclick="openResumeModal()" data-i18n="menu_resumeRapide">📊 Résumé rapide</button>
+          <button onclick="openMyCommissionsModal()" data-i18n="menu_mesCommissions">💸 Mes commissions</button>
+          <div class="header-menu-section-title hidden" id="sectionEquipe" data-i18n="menu_equipe">👥 Équipe</div>
+          <button id="usersBtn" onclick="openUsersModal()" class="hidden" data-i18n="menu_gererUtilisateurs">👥 Gérer utilisateurs</button>
+          <button id="permissionsBtn" class="hidden" onclick="openPermissionsModal()" data-i18n="menu_droitsAcces">🔐 Droits d'accès</button>
+          <div class="header-menu-section-title hidden" id="sectionFinance" data-i18n="menu_finance">💰 Finance</div>
+          <button id="commissionsBtn" onclick="openCommissionsModal()" class="hidden" data-i18n="menu_commissions">💰 Commissions</button>
+          <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden" data-i18n="menu_prixProduits">💲 Prix produits</button>
+          <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden" data-i18n="menu_analytiques">📈 Analytiques</button>
+          <div class="header-menu-section-title" data-i18n="menu_admin">⚙️ Admin</div>
+          <button onclick="openSettingsHubModal()" data-i18n="menu_parametres">⚙️ Paramètres</button>
+          <button onclick="exportData()" data-i18n="menu_exportDonnees">📥 Export données</button>
+          <button id="resetAppBtn" class="hidden" onclick="openResetModal()" data-i18n="menu_reinitFiltres">🔄 Réinitialiser filtres</button>
+          <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()" data-i18n="menu_logs">📋 Logs</button>
         </div>
       </div>
     </header>
 
     <div class="container">
       <div class="top-actions">
-        <button id="btnSales" class="tab-btn active" onclick="show('sales')">💰 Ventes</button>
-        <button id="btnClients" class="tab-btn" onclick="show('clients')">👥 Clients</button>
+        <button id="btnSales" class="tab-btn active" onclick="show('sales')" data-i18n="tab_sales">💰 Ventes</button>
+        <button id="btnClients" class="tab-btn" onclick="show('clients')" data-i18n="tab_clients">👥 Clients</button>
         <button id="btnStock" class="tab-btn" onclick="show('stock')">📦 Stock <span id="stockAlert" class="tab-badge"></span></button>
-        <button id="btnBalance" class="tab-btn" onclick="show('balance')">⚖️ Balance</button>
+        <button id="btnBalance" class="tab-btn" onclick="show('balance')" data-i18n="tab_balance">⚖️ Balance</button>
       </div>
 
       <div id="sales" class="section-shell">
-        <h3>💵 Nouvelle vente</h3>
+        <h3 data-i18n="sale_title">💵 Nouvelle vente</h3>
 
-        <label>Sélectionner un client</label>
+        <label data-i18n="sale_selectClient">Sélectionner un client</label>
         <div class="client-search-wrap" id="clientSelectWrap">
-          <input id="clientSelectSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onClientSelectInput()" onfocus="showClientSelectDrop()" />
+          <input id="clientSelectSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onClientSelectInput()" onfocus="showClientSelectDrop()" data-i18n-placeholder="sale_searchClient" />
           <input type="hidden" id="clientSelect" />
           <div class="client-search-drop" id="clientSelectDrop"></div>
         </div>
 
-        <label for="quantityInput">Quantité</label>
+        <label for="quantityInput" data-i18n="sale_quantite">Quantité</label>
         <input id="quantityInput" type="number" step="0.01" placeholder="Quantité" oninput="updatePreview()" />
 
-        <label for="category">Catégorie</label>
+        <label for="category" data-i18n="sale_categorie">Catégorie</label>
         <select id="category" onchange="updateCategoryStyle(); updatePreview(); updateQuantityPlaceholder();"></select>
 
         <div class="date-field">
-          <label for="datetime">📅 Date & Heure</label>
+          <label for="datetime" data-i18n="sale_dateHeure">📅 Date & Heure</label>
           <div class="date-actions">
             <input type="datetime-local" id="datetime" />
-            <button type="button" class="small-btn" onclick="setNow()">Maintenant</button>
+            <button type="button" class="small-btn" onclick="setNow()" data-i18n="sale_maintenant">Maintenant</button>
           </div>
         </div>
 
         <div class="payment-status-row">
           <label class="payment-toggle" id="labelPaid">
             <input type="radio" name="paymentStatus" id="paid" value="paid" onchange="updatePaymentToggle()" />
-            <span class="payment-toggle-inner">✅ Payé</span>
+            <span class="payment-toggle-inner" data-i18n="sale_paye">✅ Payé</span>
           </label>
           <label class="payment-toggle" id="labelNotPaid">
             <input type="radio" name="paymentStatus" id="notPaid" value="notpaid" onchange="updatePaymentToggle()" />
-            <span class="payment-toggle-inner">❌ Non payé</span>
+            <span class="payment-toggle-inner" data-i18n="sale_nonPaye">❌ Non payé</span>
           </label>
         </div>
 
@@ -183,7 +194,7 @@
         </div>
 
         <div style="display:flex;justify-content:center;">
-          <button class="add-sale-btn" onclick="addSale()">🛒 Valider la commande</button>
+          <button class="add-sale-btn" onclick="addSale()" data-i18n="sale_valider">🛒 Valider la commande</button>
         </div>
 
         <hr />
@@ -230,11 +241,11 @@
       <div id="clients" class="section-shell hidden">
 
         <div class="nouveau-client-panel">
-          <div class="ncp-header">➕ Nouveau client</div>
+          <div class="ncp-header" data-i18n="client_nouveau">➕ Nouveau client</div>
           <div class="ncp-body">
             <div class="ncp-field">
-              <label for="clientName">Nom du client</label>
-              <input id="clientName" type="text" placeholder="Nom du client" />
+              <label for="clientName" data-i18n="client_nom">Nom du client</label>
+              <input id="clientName" type="text" placeholder="Nom du client" data-i18n-placeholder="client_nom" />
             </div>
 
             <div class="ncp-num-type-row">
@@ -275,14 +286,14 @@
 
             <div class="ncp-field">
               <label>📍 Position GPS</label>
-              <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()">📍 Utiliser ma position actuelle</button>
-              <div id="gpsStatus" class="gps-status gps-none">📍 Aucun point GPS enregistré</div>
+              <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()" data-i18n="client_gpsActuel">📍 Utiliser ma position actuelle</button>
+              <div id="gpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS enregistré</div>
             </div>
 
             <h4>💰 Prix personnalisés par gamme</h4>
             <div class="price-scroll-row"></div>
             <div class="muted">Laisse vide pour utiliser les prix standard.</div>
-            <button id="addClientBtn" onclick="addClient()">✅ Créer client</button>
+            <button id="addClientBtn" onclick="addClient()" data-i18n="client_creer">✅ Créer client</button>
           </div>
         </div>
 
@@ -372,6 +383,15 @@
   <div id="settingsHubModal" class="modal-backdrop" onclick="backdropClose(event, 'settingsHubModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3>⚙️ Paramètres</h3><button class="close-x" onclick="closeModal('settingsHubModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="title" data-i18n="settings_langue">🌍 Langue</div>
+        <select id="langSelect" onchange="saveLanguagePref(this.value)" style="margin-top:8px;">
+          <option value="fr">Français</option>
+          <option value="ar">العربية</option>
+          <option value="darija">Darija</option>
+        </select>
+        <div id="langSaveStatus" style="margin-top:6px;font-size:12px;min-height:16px;"></div>
+      </div>
       <div class="settings-option">
         <div class="title">🔒 Sécurité</div>
         <div class="muted">Modifier ton mot de passe.</div>
@@ -499,13 +519,13 @@
   <div id="confirmSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'confirmSaleModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <!-- cancelConfirmSale is defined further in the same script tag and available globally at click time -->
-      <div class="modal-head"><h3>🛒 Confirmer la commande</h3><button class="close-x" onclick="cancelConfirmSale()">✕</button></div>
-      <p style="text-align:center;font-weight:600;margin-bottom:12px;color:var(--color-text);">Voulez-vous valider cette commande ?</p>
+      <div class="modal-head"><h3 data-i18n="sale_confirmerTitre">🛒 Confirmer la commande</h3><button class="close-x" onclick="cancelConfirmSale()">✕</button></div>
+      <p style="text-align:center;font-weight:600;margin-bottom:12px;color:var(--color-text);" data-i18n="sale_confirmerMsg">Voulez-vous valider cette commande ?</p>
       <div id="confirmSaleRecap" class="confirm-recap"></div>
       <div id="confirmSaleStatus" style="min-height:20px;margin-top:8px;font-size:13px;text-align:center;color:#e53935;"></div>
       <div style="display:flex;gap:10px;margin-top:16px;">
-        <button onclick="cancelConfirmSale()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);">Annuler</button>
-        <button id="confirmSaleBtn" onclick="confirmAndSave()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;">✅ Confirmer</button>
+        <button onclick="cancelConfirmSale()" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--color-text);" data-i18n="sale_annuler">Annuler</button>
+        <button id="confirmSaleBtn" onclick="confirmAndSave()" style="flex:1;background:linear-gradient(180deg,#27ae60 0%,#1e8449 100%);border:none;" data-i18n="sale_confirmer">✅ Confirmer</button>
       </div>
     </div>
   </div>
@@ -806,6 +826,332 @@
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
     const CATEGORIES = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
+
+    // ── i18n ──────────────────────────────────────────────────────────────────
+    const I18N = {
+      fr: {
+        auth_subtitle: 'Gestion de ventes cloud sécurisée',
+        auth_login: 'Se connecter',
+        auth_remember: 'Rester connecté',
+        auth_password: 'Mot de passe',
+        tab_sales: '💰 Ventes',
+        tab_clients: '👥 Clients',
+        tab_stock: '📦 Stock',
+        tab_balance: '⚖️ Balance',
+        menu_compte: '👤 Compte',
+        menu_travail: '💼 Travail',
+        menu_equipe: '👥 Équipe',
+        menu_finance: '💰 Finance',
+        menu_admin: '⚙️ Admin',
+        menu_monProfil: '👤 Mon profil',
+        menu_changerMdp: '🔐 Changer mon mot de passe',
+        menu_modeSombre: '🌙 Mode sombre',
+        menu_deconnexion: '🚪 Déconnexion',
+        menu_resumeRapide: '📊 Résumé rapide',
+        menu_mesCommissions: '💸 Mes commissions',
+        menu_gererUtilisateurs: '👥 Gérer utilisateurs',
+        menu_droitsAcces: '🔐 Droits d\'accès',
+        menu_commissions: '💰 Commissions',
+        menu_prixProduits: '💲 Prix produits',
+        menu_analytiques: '📈 Analytiques',
+        menu_parametres: '⚙️ Paramètres',
+        menu_exportDonnees: '📥 Export données',
+        menu_reinitFiltres: '🔄 Réinitialiser filtres',
+        menu_logs: '📋 Logs',
+        sale_title: '💵 Nouvelle vente',
+        sale_selectClient: 'Sélectionner un client',
+        sale_searchClient: '🔎 Rechercher un client...',
+        sale_quantite: 'Quantité',
+        sale_categorie: 'Catégorie',
+        sale_dateHeure: '📅 Date & Heure',
+        sale_maintenant: 'Maintenant',
+        sale_paye: '✅ Payé',
+        sale_nonPaye: '❌ Non payé',
+        sale_valider: '🛒 Valider la commande',
+        sale_confirmerTitre: '🛒 Confirmer la commande',
+        sale_confirmerMsg: 'Voulez-vous valider cette commande ?',
+        sale_annuler: 'Annuler',
+        sale_confirmer: '✅ Confirmer',
+        sale_success: 'Commande enregistrée avec succès',
+        sale_error: 'Commande non enregistrée',
+        sale_stockInsuf: 'Stock insuffisant',
+        client_nouveau: '➕ Nouveau client',
+        client_nom: 'Nom du client',
+        client_telephone: 'Téléphone',
+        client_adresse: 'Adresse',
+        client_ville: 'Ville',
+        client_creer: '✅ Créer client',
+        client_modifier: 'Modifier le client',
+        client_statut: 'Statut client',
+        client_prospect: 'Prospect',
+        client_actif: 'Actif',
+        client_inactif: 'Inactif',
+        client_perdu: 'Perdu',
+        client_appeler: '📞 Appeler',
+        client_whatsapp: '💬 WhatsApp',
+        client_gmaps: '🗺️ Google Maps',
+        client_waze: '🧭 Waze',
+        client_gpsActuel: '📍 Utiliser ma position actuelle',
+        client_gpsOk: '✅ Position GPS enregistrée',
+        client_gpsNone: '📍 Aucun point GPS enregistré',
+        stock_gestion: '📦 Gestion du stock',
+        stock_central: 'Stock central',
+        stock_voiture: 'Stock voiture',
+        stock_transferer: 'Transférer du stock',
+        stock_recuperer: 'Récupérer du stock',
+        remu_commissionSimple: 'Commission simple',
+        remu_fixeCommission: 'Fixe + commission réduite',
+        remu_salaireFixe: 'Salaire fixe mensuel',
+        remu_fraisGasoil: 'Frais gasoil mensuel',
+        remu_total: 'Total à payer',
+        settings_langue: '🌍 Langue',
+        lang_fr: 'Français',
+        lang_ar: 'العربية',
+        lang_darija: 'Darija',
+        lang_saved_local: '— local',
+        lang_local_only: '⚠️ Local uniquement',
+        lang_save_warn: '⚠️ Langue enregistrée localement uniquement',
+      },
+      ar: {
+        auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
+        auth_login: 'تسجيل الدخول',
+        auth_remember: 'تذكرني',
+        auth_password: 'كلمة المرور',
+        tab_sales: '💰 المبيعات',
+        tab_clients: '👥 العملاء',
+        tab_stock: '📦 المخزون',
+        tab_balance: '⚖️ الميزان',
+        menu_compte: '👤 الحساب',
+        menu_travail: '💼 العمل',
+        menu_equipe: '👥 الفريق',
+        menu_finance: '💰 المالية',
+        menu_admin: '⚙️ الإدارة',
+        menu_monProfil: '👤 ملفي الشخصي',
+        menu_changerMdp: '🔐 تغيير كلمة المرور',
+        menu_modeSombre: '🌙 الوضع الداكن',
+        menu_deconnexion: '🚪 تسجيل الخروج',
+        menu_resumeRapide: '📊 ملخص سريع',
+        menu_mesCommissions: '💸 عمولاتي',
+        menu_gererUtilisateurs: '👥 إدارة المستخدمين',
+        menu_droitsAcces: '🔐 صلاحيات الوصول',
+        menu_commissions: '💰 العمولات',
+        menu_prixProduits: '💲 أسعار المنتجات',
+        menu_analytiques: '📈 التحليلات',
+        menu_parametres: '⚙️ الإعدادات',
+        menu_exportDonnees: '📥 تصدير البيانات',
+        menu_reinitFiltres: '🔄 إعادة تعيين الفلاتر',
+        menu_logs: '📋 السجلات',
+        sale_title: '💵 بيع جديد',
+        sale_selectClient: 'اختر زبوناً',
+        sale_searchClient: '🔎 ابحث عن زبون...',
+        sale_quantite: 'الكمية',
+        sale_categorie: 'الصنف',
+        sale_dateHeure: '📅 التاريخ والوقت',
+        sale_maintenant: 'الآن',
+        sale_paye: '✅ مدفوع',
+        sale_nonPaye: '❌ غير مدفوع',
+        sale_valider: '🛒 تأكيد الطلب',
+        sale_confirmerTitre: '🛒 تأكيد الطلب',
+        sale_confirmerMsg: 'هل تريد تأكيد هذا الطلب؟',
+        sale_annuler: 'إلغاء',
+        sale_confirmer: '✅ تأكيد',
+        sale_success: 'تم تسجيل الطلب بنجاح',
+        sale_error: 'لم يتم تسجيل الطلب',
+        sale_stockInsuf: 'المخزون غير كافٍ',
+        client_nouveau: '➕ زبون جديد',
+        client_nom: 'اسم الزبون',
+        client_telephone: 'الهاتف',
+        client_adresse: 'العنوان',
+        client_ville: 'المدينة',
+        client_creer: '✅ إضافة زبون',
+        client_modifier: 'تعديل الزبون',
+        client_statut: 'حالة الزبون',
+        client_prospect: 'محتمل',
+        client_actif: 'نشط',
+        client_inactif: 'غير نشط',
+        client_perdu: 'مفقود',
+        client_appeler: '📞 اتصال',
+        client_whatsapp: '💬 واتساب',
+        client_gmaps: '🗺️ خرائط جوجل',
+        client_waze: '🧭 ويز',
+        client_gpsActuel: '📍 استخدام موقعي الحالي',
+        client_gpsOk: '✅ تم تسجيل الموقع',
+        client_gpsNone: '📍 لا يوجد موقع مسجل',
+        stock_gestion: '📦 إدارة المخزون',
+        stock_central: 'المخزون المركزي',
+        stock_voiture: 'مخزون السيارة',
+        stock_transferer: 'نقل المخزون',
+        stock_recuperer: 'استرجاع المخزون',
+        remu_commissionSimple: 'عمولة بسيطة',
+        remu_fixeCommission: 'ثابت + عمولة مخفضة',
+        remu_salaireFixe: 'الراتب الثابت الشهري',
+        remu_fraisGasoil: 'مصاريف الوقود الشهرية',
+        remu_total: 'المبلغ الإجمالي',
+        settings_langue: '🌍 اللغة',
+        lang_fr: 'Français',
+        lang_ar: 'العربية',
+        lang_darija: 'Darija',
+        lang_saved_local: '— محلي',
+        lang_local_only: '⚠️ محلي فقط',
+        lang_save_warn: '⚠️ تم حفظ اللغة محلياً فقط',
+      },
+      darija: {
+        auth_subtitle: 'Gestion dial ventes f cloud',
+        auth_login: 'Dkhol',
+        auth_remember: 'Tbqa mconnecté',
+        auth_password: 'Mot de passe',
+        tab_sales: '💰 Tbi3at',
+        tab_clients: '👥 Clients',
+        tab_stock: '📦 Stock',
+        tab_balance: '⚖️ Balance',
+        menu_compte: '👤 Compte',
+        menu_travail: '💼 Khidma',
+        menu_equipe: '👥 Ferqa',
+        menu_finance: '💰 Finance',
+        menu_admin: '⚙️ Admin',
+        menu_monProfil: '👤 Profil dyali',
+        menu_changerMdp: '🔐 Bdel password',
+        menu_modeSombre: '🌙 Mode sombre',
+        menu_deconnexion: '🚪 Khroj',
+        menu_resumeRapide: '📊 Résumé rapi3',
+        menu_mesCommissions: '💸 Commissions dyali',
+        menu_gererUtilisateurs: '👥 Dir utilisateurs',
+        menu_droitsAcces: '🔐 Droits d\'accès',
+        menu_commissions: '💰 Commissions',
+        menu_prixProduits: '💲 Prix produits',
+        menu_analytiques: '📈 Analytiques',
+        menu_parametres: '⚙️ Paramètres',
+        menu_exportDonnees: '📥 Exporti données',
+        menu_reinitFiltres: '🔄 Reset filtres',
+        menu_logs: '📋 Logs',
+        sale_title: '💵 Tbi3a jdida',
+        sale_selectClient: 'Khtar client',
+        sale_searchClient: '🔎 Qllib 3la client...',
+        sale_quantite: 'Kamiya',
+        sale_categorie: 'Gamme',
+        sale_dateHeure: '📅 Tarikh & We9t',
+        sale_maintenant: 'Daba',
+        sale_paye: '✅ Mkhllas',
+        sale_nonPaye: '❌ Ma mkhllasch',
+        sale_valider: '🛒 Sajjel commande',
+        sale_confirmerTitre: '🛒 Confirmer commande',
+        sale_confirmerMsg: 'Bghit tsajjel had lcommande?',
+        sale_annuler: 'Annuler',
+        sale_confirmer: '✅ Confirmer',
+        sale_success: 'Commande tsajlat b najah',
+        sale_error: 'Commande ma tsajlatsh',
+        sale_stockInsuf: 'Stock makafich',
+        client_nouveau: '➕ Zid client',
+        client_nom: 'Smiyat client',
+        client_telephone: 'Telephone',
+        client_adresse: 'Adresse',
+        client_ville: 'Mdina',
+        client_creer: '✅ Zid client',
+        client_modifier: 'Bdel client',
+        client_statut: 'Hal client',
+        client_prospect: 'Prospect',
+        client_actif: 'Actif',
+        client_inactif: 'Inactif',
+        client_perdu: 'Mfqoud',
+        client_appeler: '📞 Tlessn',
+        client_whatsapp: '💬 WhatsApp',
+        client_gmaps: '🗺️ Google Maps',
+        client_waze: '🧭 Waze',
+        client_gpsActuel: '📍 Khdem position dyal telephone',
+        client_gpsOk: '✅ Position GPS tsajlat',
+        client_gpsNone: '📍 Ma kayn ta GPS',
+        stock_gestion: '📦 Dir stock',
+        stock_central: 'Stock central',
+        stock_voiture: 'Stock tomobil',
+        stock_transferer: 'Hwwel stock',
+        stock_recuperer: 'Rje3 stock',
+        remu_commissionSimple: 'Commission simple',
+        remu_fixeCommission: 'Fixe + commission mkhffda',
+        remu_salaireFixe: 'Salary fixe f chhar',
+        remu_fraisGasoil: 'Frais gasoil f chhar',
+        remu_total: 'Total khas itkhllss',
+        settings_langue: '🌍 Lgha',
+        lang_fr: 'Français',
+        lang_ar: 'العربية',
+        lang_darija: 'Darija',
+        lang_saved_local: '— local',
+        lang_local_only: '⚠️ Local ghir',
+        lang_save_warn: '⚠️ Lgha tkhzznat ghir f local',
+      },
+    };
+
+    let _currentLang = localStorage.getItem('preferred_language') || 'fr';
+
+    function t(key) {
+      return I18N[_currentLang]?.[key] || I18N.fr[key] || key;
+    }
+
+    function applyLanguage(lang) {
+      if (!['fr', 'ar', 'darija'].includes(lang)) lang = 'fr';
+      _currentLang = lang;
+
+      // RTL direction only for Arabic
+      const isRTL = (lang === 'ar');
+      document.documentElement.lang = isRTL ? 'ar' : 'fr';
+      document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+      document.documentElement.classList.toggle('lang-ar', isRTL);
+      document.documentElement.classList.toggle('lang-rtl', isRTL);
+
+      // Update all data-i18n text content
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+      });
+
+      // Update all data-i18n-placeholder placeholder attributes
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+      });
+
+      // Stock tab button has an inner badge <span> that must be preserved
+      const btnStock = document.getElementById('btnStock');
+      if (btnStock) {
+        const badge = btnStock.querySelector('#stockAlert');
+        const badgeOuter = badge ? badge.outerHTML : '';
+        btnStock.innerHTML = t('tab_stock') + ' ' + badgeOuter;
+      }
+
+      // Sync the language select if it exists
+      const langSelect = document.getElementById('langSelect');
+      if (langSelect && langSelect.value !== lang) langSelect.value = lang;
+
+      localStorage.setItem('preferred_language', lang);
+    }
+
+    async function saveLanguagePref(lang) {
+      if (!['fr', 'ar', 'darija'].includes(lang)) lang = 'fr';
+      applyLanguage(lang);
+
+      const statusEl = document.getElementById('langSaveStatus');
+      if (!state.session?.user?.id) {
+        if (statusEl) { statusEl.textContent = t('lang_' + lang) + ' ' + t('lang_saved_local'); }
+        return;
+      }
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ preferred_language: lang })
+          .eq('id', state.session.user.id);
+        if (error) throw error;
+        if (state.profile) state.profile.preferred_language = lang;
+        if (statusEl) { statusEl.textContent = '✅'; statusEl.style.color = '#2e7d32'; }
+        setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2000);
+      } catch (e) {
+        console.warn('[i18n] saveLanguagePref error:', e?.message);
+        showSessionStatus(t('lang_save_warn'), 'info', 3000);
+        if (statusEl) { statusEl.textContent = t('lang_local_only'); statusEl.style.color = '#e65100'; }
+        setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 4000);
+      }
+    }
+    window.saveLanguagePref = saveLanguagePref;
+
+    // Apply initial language immediately from localStorage
+    applyLanguage(_currentLang);
 
     // Returns true when the current user's sales for this category should consume
     // commercial stock rather than central stock.  Mirrors the database trigger
@@ -2123,6 +2469,12 @@
 
         if (error) throw error;
         state.profile = data;
+
+        // Apply the user's preferred language
+        const profileLang = data.preferred_language;
+        if (profileLang && ['fr', 'ar', 'darija'].includes(profileLang)) {
+          applyLanguage(profileLang);
+        }
 
         const menuRole = document.getElementById('menuUserRole');
         if (menuRole) {
@@ -4142,6 +4494,9 @@
     };
 
     window.openSettingsHubModal = function () {
+      // Sync language selector to current language
+      const langSelect = document.getElementById('langSelect');
+      if (langSelect) langSelect.value = _currentLang;
       openModal('settingsHubModal');
     };
 
