@@ -3647,7 +3647,7 @@
             const isReady = req.status === 'ready_pickup';
             const isCancellable = req.status === 'pending' || req.status === 'preparing';
             const dateStr = req.created_at ? new Date(req.created_at).toLocaleDateString('fr-FR') : '';
-            return `<div style="border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:10px;">
+            return `<div data-stock-request-id="${escHtml(req.id)}" style="border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:10px;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                 <strong>${_stockReqStatusLabel(req.status)}</strong>
                 <span class="muted" style="font-size:11px;">${dateStr}</span>
@@ -3746,7 +3746,7 @@
                 <button onclick="adminSetReqStatus('${safeId}','rejected',null,this)" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
             }
 
-            return `<div style="border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:10px;${isActive ? '' : 'opacity:0.65;'}">
+            return `<div data-stock-request-id="${safeId}" style="border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:10px;${isActive ? '' : 'opacity:0.65;'}">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                 <strong>${empName}</strong>
                 <span class="muted" style="font-size:11px;">${dateStr}</span>
@@ -4794,6 +4794,21 @@
     // Format: /?view=stock&request_id=<uuid>
     // Navigates to the Stock section and opens the relevant request modal if present.
     // Called once per successful boot/login — clears the URL params afterwards.
+
+    function _highlightStockRequest(reqId) {
+      try {
+        const el = document.querySelector(`[data-stock-request-id="${CSS.escape(reqId)}"]`);
+        if (!el) return false;
+        if (el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('stock-request-deeplink-highlight');
+        setTimeout(() => el.classList.remove('stock-request-deeplink-highlight'), 3500);
+        return true;
+      } catch (e) {
+        console.warn('[deeplink] highlight error:', e?.message);
+        return false;
+      }
+    }
+
     function _handleDeepLink() {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -4804,12 +4819,22 @@
         if (view === 'stock') {
           show('stock');
           if (reqId) {
-            // Open the correct modal depending on user role
-            if (isManagerOrAdmin()) {
-              // Small delay to ensure stock section DOM is painted
-              setTimeout(() => openAdminStockRequestsModal && openAdminStockRequestsModal(), 300);
-            } else {
-              setTimeout(() => openMyStockRequestsModal && openMyStockRequestsModal(), 300);
+            // Open the correct modal depending on user role, then highlight the row
+            const openModal = isManagerOrAdmin()
+              ? openAdminStockRequestsModal
+              : openMyStockRequestsModal;
+            if (openModal) {
+              // Wait for modal open, then retry highlight as data may load asynchronously
+              openModal();
+              const delays = [300, 700, 1200, 2000];
+              let highlighted = false;
+              delays.forEach(delay => {
+                setTimeout(() => {
+                  if (!highlighted) {
+                    highlighted = _highlightStockRequest(reqId);
+                  }
+                }, delay);
+              });
             }
           }
         }
