@@ -93,6 +93,7 @@ AS $$
 DECLARE
   v_req      public.stock_requests%ROWTYPE;
   v_emp_name text;
+  v_adm_name text;
   v_admin    RECORD;
   v_is_admin boolean;
 BEGIN
@@ -124,6 +125,11 @@ BEGIN
   SELECT COALESCE(full_name, email, v_req.employee_id::text)
   INTO v_emp_name
   FROM public.profiles WHERE id = v_req.employee_id;
+
+  -- Build admin display name (for employee-cancel notification message)
+  SELECT COALESCE(full_name, email, auth.uid()::text)
+  INTO v_adm_name
+  FROM public.profiles WHERE id = auth.uid();
 
   IF v_req.employee_id = auth.uid() AND NOT v_is_admin THEN
     -- Employee cancelled: notify admins/managers + add employee history entry
@@ -163,7 +169,7 @@ BEGIN
       v_req.employee_id,
       'stock_request_cancelled',
       '🚫 Demande annulée',
-      'Votre demande de stock a été annulée par l''admin.',
+      'Votre demande de stock a été annulée par ' || v_adm_name || '.',
       jsonb_build_object('request_id', p_request_id),
       auth.uid()
     );

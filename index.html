@@ -3757,7 +3757,7 @@
         await refreshAdminStockRequests();
         showSessionStatus(`✅ Statut mis à jour : ${_stockReqStatusLabel(newStatus)}`, 'success', 3000);
         // Refresh bell in background so admin sees the notification count update
-        loadNotifications().then(() => renderNotificationBell()).catch(() => {});
+        loadNotifications().then(() => renderNotificationBell()).catch(e => console.warn('[adminSetReqStatus] notifications refresh:', e?.message));
 
         // Trigger push to employee (non-blocking)
         if (reqData?.employee_id) {
