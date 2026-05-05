@@ -259,11 +259,11 @@
 
             <div class="ncp-num-type-row">
               <div class="ncp-field">
-                <label for="clientAddrNum">Numéro</label>
+                <label for="clientAddrNum" data-i18n="client_numero">Numéro</label>
                 <input id="clientAddrNum" type="text" placeholder="N°" />
               </div>
               <div class="ncp-field">
-                <label for="clientAddrType">Type de voie</label>
+                <label for="clientAddrType" data-i18n="client_type_voie">Type de voie</label>
                 <select id="clientAddrType">
                   <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
                 </select>
@@ -502,26 +502,26 @@
 
   <div id="editSaleModal" class="modal-backdrop" onclick="backdropClose(event, 'editSaleModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>✏️ Modifier la vente</h3><button class="close-x" onclick="closeModal('editSaleModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="sale_modifier_titre">✏️ Modifier la vente</h3><button class="close-x" onclick="closeModal('editSaleModal')">✕</button></div>
       <div id="editSaleCreator" class="muted" style="margin-bottom:10px;font-size:12px;"></div>
-      <label>Client</label>
+      <label data-i18n="sale_client">Client</label>
       <div class="client-search-wrap" id="editSaleClientWrap">
-        <input id="editSaleClientSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onEditSaleClientInput()" onfocus="showEditSaleClientDrop()" />
+        <input id="editSaleClientSearch" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="onEditSaleClientInput()" onfocus="showEditSaleClientDrop()" data-i18n-placeholder="sale_searchClient" />
         <input type="hidden" id="editSaleClient" />
         <div class="client-search-drop" id="editSaleClientDrop"></div>
       </div>
-      <label for="editSaleCategory">Catégorie</label>
+      <label for="editSaleCategory" data-i18n="sale_categorie">Catégorie</label>
       <select id="editSaleCategory"></select>
-      <label for="editSaleQty">Quantité</label>
-      <input id="editSaleQty" type="number" step="0.01" placeholder="Quantité" />
-      <label for="editSaleDate">📅 Date & Heure</label>
+      <label for="editSaleQty" data-i18n="sale_quantite">Quantité</label>
+      <input id="editSaleQty" type="number" step="0.01" placeholder="Quantité" data-i18n-placeholder="sale_quantite" />
+      <label for="editSaleDate" data-i18n="sale_dateHeure">📅 Date & Heure</label>
       <input id="editSaleDate" type="datetime-local" />
       <div class="checkbox-line">
         <input type="checkbox" id="editSalePaid" />
-        <label for="editSalePaid" style="margin:0;flex:1;">✅ Payé</label>
+        <label for="editSalePaid" style="margin:0;flex:1;" data-i18n="sale_paye">✅ Payé</label>
       </div>
       <input type="hidden" id="editSaleId" />
-      <button id="saveEditSaleBtn" onclick="saveEditSale()">💾 Enregistrer</button>
+      <button id="saveEditSaleBtn" onclick="saveEditSale()" data-i18n="sale_enregistrer">💾 Enregistrer</button>
     </div>
   </div>
 
@@ -541,61 +541,61 @@
 
   <div id="editClientModal" class="modal-backdrop" onclick="backdropClose(event, 'editClientModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="client_modifier">✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
       <input type="hidden" id="editClientId" />
       <div class="ncp-field">
-        <label for="editClientName">Nom du client</label>
-        <input id="editClientName" placeholder="Nom du client" />
+        <label for="editClientName" data-i18n="client_nom">Nom du client</label>
+        <input id="editClientName" placeholder="Nom du client" data-i18n-placeholder="client_nom_placeholder" />
       </div>
       <div class="ncp-num-type-row">
         <div class="ncp-field">
-          <label for="editClientAddrNum">Numéro</label>
+          <label for="editClientAddrNum" data-i18n="client_numero">Numéro</label>
           <input id="editClientAddrNum" type="text" placeholder="N°" />
         </div>
         <div class="ncp-field">
-          <label for="editClientAddrType">Type de voie</label>
+          <label for="editClientAddrType" data-i18n="client_type_voie">Type de voie</label>
           <select id="editClientAddrType">
             <option value="Rue">Rue</option><option value="Avenue">Avenue</option><option value="Boulevard">Boulevard</option><option value="Impasse">Impasse</option><option value="Chemin">Chemin</option><option value="Résidence">Résidence</option><option value="Lotissement">Lotissement</option><option value="Passage">Passage</option><option value="Allée">Allée</option><option value="Square">Square</option>
           </select>
         </div>
       </div>
       <div class="ncp-field">
-        <label for="editClientAddrDetail">Adresse</label>
-        <input id="editClientAddrDetail" placeholder="Nom de voie" />
+        <label for="editClientAddrDetail" data-i18n="client_adresse">Adresse</label>
+        <input id="editClientAddrDetail" placeholder="Nom de voie" data-i18n-placeholder="client_nom_voie" />
       </div>
       <div class="ncp-field">
-        <label for="editClientAddrCity">Ville</label>
+        <label for="editClientAddrCity" data-i18n="client_ville">Ville</label>
         <div class="city-search-wrap" id="editCitySearchWrap">
-          <input id="editClientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onEditCityInput()" onfocus="showEditCityDrop()" />
+          <input id="editClientAddrCity" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onEditCityInput()" onfocus="showEditCityDrop()" data-i18n-placeholder="client_ville_placeholder" />
           <div class="client-search-drop" id="editCitySearchDrop"></div>
         </div>
       </div>
       <div class="ncp-field">
-        <label for="editClientICE">💳 ICE</label>
-        <input id="editClientICE" placeholder="Numéro ICE (facturation)" />
+        <label for="editClientICE" data-i18n="client_ice">💳 ICE</label>
+        <input id="editClientICE" placeholder="Numéro ICE (facturation)" data-i18n-placeholder="client_ice_placeholder" />
       </div>
       <div class="ncp-field">
-        <label for="editClientPhone">📞 Téléphone</label>
-        <input id="editClientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" />
+        <label for="editClientPhone" data-i18n="client_telephone">📞 Téléphone</label>
+        <input id="editClientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" data-i18n-placeholder="client_telephone_placeholder" />
       </div>
       <div class="ncp-field">
-        <label>📍 Position GPS</label>
-        <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()">📍 Mettre à jour avec ma position actuelle</button>
-        <div id="editGpsStatus" class="gps-status gps-none">📍 Aucun point GPS enregistré</div>
+        <label data-i18n="client_gps">📍 Position GPS</label>
+        <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()" data-i18n="client_gps_update">📍 Mettre à jour avec ma position actuelle</button>
+        <div id="editGpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS enregistré</div>
       </div>
       <div class="ncp-field">
-        <label for="editClientStatus">📊 Statut client</label>
+        <label for="editClientStatus" data-i18n="client_statut">📊 Statut client</label>
         <select id="editClientStatus">
-          <option value="prospect">Prospect</option>
-          <option value="active">Actif</option>
-          <option value="inactive">Inactif</option>
-          <option value="lost">Perdu</option>
+          <option value="prospect" data-i18n="client_prospect">Prospect</option>
+          <option value="active" data-i18n="client_actif">Actif</option>
+          <option value="inactive" data-i18n="client_inactif">Inactif</option>
+          <option value="lost" data-i18n="client_perdu">Perdu</option>
         </select>
       </div>
-      <h4>💰 Prix personnalisés par gamme</h4>
+      <h4 data-i18n="client_prix_custom">💰 Prix personnalisés par gamme</h4>
       <div class="price-scroll-row"></div>
-      <div class="muted">Laisse vide pour utiliser les prix standard.</div>
-      <button id="saveEditClientBtn" onclick="saveEditClient()">💾 Enregistrer</button>
+      <div class="muted" data-i18n="client_prix_hint">Laisse vide pour utiliser les prix standard.</div>
+      <button id="saveEditClientBtn" onclick="saveEditClient()" data-i18n="sale_enregistrer">💾 Enregistrer</button>
     </div>
   </div>
 
@@ -903,6 +903,8 @@
         sale_toutes_categories: 'Toutes catégories',
         sale_filtreCategorie: '▸ Filtre catégorie',
         sale_enregistrer: '✅ Enregistrer',
+        sale_modifier_titre: '✏️ Modifier la vente',
+        sale_selectRange: 'Sélectionner une gamme',
         client_nouveau: '➕ Nouveau client',
         client_nom: 'Nom du client',
         client_nom_placeholder: 'Nom du client',
@@ -1072,6 +1074,8 @@
         sale_toutes_categories: 'جميع الأصناف',
         sale_filtreCategorie: '▸ فلتر الصنف',
         sale_enregistrer: '✅ حفظ',
+        sale_modifier_titre: '✏️ تعديل البيع',
+        sale_selectRange: 'اختر صنفاً',
         client_nouveau: '➕ زبون جديد',
         client_nom: 'اسم الزبون',
         client_nom_placeholder: 'اسم الزبون',
@@ -1241,6 +1245,8 @@
         sale_toutes_categories: 'Kull gamme',
         sale_filtreCategorie: '▸ Filtre gamme',
         sale_enregistrer: '✅ Sjjel',
+        sale_modifier_titre: '✏️ Bdel tbi3a',
+        sale_selectRange: 'Khtar gamme',
         client_nouveau: '➕ Zid client',
         client_nom: 'Smiyat client',
         client_nom_placeholder: 'Smiyat client',
@@ -1400,6 +1406,17 @@
       const headerLangSelect = document.getElementById('headerLangSelect');
       if (headerLangSelect && headerLangSelect.value !== lang) headerLangSelect.value = lang;
 
+      // Refresh category dropdowns so translated options (Toutes catégories, Sélectionner une gamme) update
+      if (typeof initCategorySelects === 'function') {
+        const prevMain = document.getElementById('category')?.value;
+        const prevEdit = document.getElementById('editSaleCategory')?.value;
+        const prevFilter = document.getElementById('filterCategory')?.value;
+        initCategorySelects();
+        if (prevMain && document.getElementById('category')) document.getElementById('category').value = prevMain;
+        if (prevEdit && document.getElementById('editSaleCategory')) document.getElementById('editSaleCategory').value = prevEdit;
+        if (prevFilter && document.getElementById('filterCategory')) document.getElementById('filterCategory').value = prevFilter;
+      }
+
       localStorage.setItem('preferred_language', lang);
     }
 
@@ -1540,8 +1557,8 @@
 
     function initCategorySelects() {
       const opts = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
-      const filterOpts = `<option value="">Toutes catégories</option>` + opts;
-      const mainOpts = `<option value="">Sélectionner une gamme</option>` + opts;
+      const filterOpts = `<option value="">${t('sale_toutes_categories')}</option>` + opts;
+      const mainOpts = `<option value="">${t('sale_selectRange') || 'Sélectionner une gamme'}</option>` + opts;
       const mainCat = document.getElementById('category');
       if (mainCat) mainCat.innerHTML = mainOpts;
       const editCat = document.getElementById('editSaleCategory');

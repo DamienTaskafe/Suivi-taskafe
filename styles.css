@@ -1703,7 +1703,7 @@
     html[dir="rtl"] label { text-align: right; display: block; }
     html[dir="rtl"] input[type="text"], html[dir="rtl"] input[type="email"],
     html[dir="rtl"] input[type="password"], html[dir="rtl"] input[type="number"],
-    html[dir="rtl"] select, html[dir="rtl"] textarea { direction: rtl; }
+    html[dir="rtl"] select, html[dir="rtl"] textarea { direction: rtl; text-align: right; }
     html[dir="rtl"] .ncp-header { text-align: right; }
     html[dir="rtl"] .settings-option { text-align: right; }
     html[dir="rtl"] .auth-card { direction: rtl; }
