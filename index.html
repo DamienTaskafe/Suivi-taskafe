@@ -3335,7 +3335,7 @@
         if (content) {
           content.innerHTML = data.map(req => {
             const items = Array.isArray(req.items) ? req.items : [];
-            const itemsHtml = items.map(it => `<div style="font-size:12px;">- ${escHtml(it.category)} : ${formatStockValue(it.category, it.quantity)}</div>`).join('');
+            const itemsHtml = items.map(it => `<div style="font-size:12px;">- ${escHtml(it.category)} : ${formatStockValue(it.category, it.quantity ?? 0)}</div>`).join('');
             const isReady = req.status === 'ready_pickup';
             const isCancellable = req.status === 'pending' || req.status === 'preparing';
             const dateStr = req.created_at ? new Date(req.created_at).toLocaleDateString('fr-FR') : '';
@@ -3404,7 +3404,7 @@
             const employee = state.allUsers.find(u => u.id === req.employee_id);
             const empName  = escHtml(employee ? (employee.full_name || employee.email || '—') : '—');
             const items    = Array.isArray(req.items) ? req.items : [];
-            const itemsHtml = items.map(it => `<div style="font-size:12px;">- ${escHtml(it.category)} : ${formatStockValue(it.category, it.quantity)}</div>`).join('');
+            const itemsHtml = items.map(it => `<div style="font-size:12px;">- ${escHtml(it.category)} : ${formatStockValue(it.category, it.quantity ?? 0)}</div>`).join('');
             const dateStr  = req.created_at ? new Date(req.created_at).toLocaleDateString('fr-FR') : '';
             const isActive = ['pending','preparing','ready_pickup'].includes(req.status);
             const safeId   = escHtml(req.id);
@@ -3483,7 +3483,7 @@
         html += `<div style="margin-bottom:8px;"><strong>📦 Produits :</strong></div>`;
         items.forEach(it => {
           const available = Number(state.stocks[it.category] || 0);
-          const after     = available - Number(it.quantity);
+          const after     = available - Number(it.quantity || 0);
           html += `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px;">
             <span class="badge ${escHtml(it.category)}" style="margin-right:4px;">${escHtml(it.category)}</span>
             ${formatStockValue(it.category, it.quantity)}
@@ -3584,7 +3584,7 @@
         if (error) throw error;
 
         const items  = Array.isArray(returned) ? returned : [];
-        const msgLines = items.map(it => `- ${it.category} : ${formatStockValue(it.category, it.quantity)}`).join('\n');
+        const msgLines = items.map(it => `- ${it.category} : ${formatStockValue(it.category, it.quantity ?? 0)}`).join('\n');
         closeModal('returnAllStockModal');
         showSessionStatus(`✅ Stock voiture de ${name} récupéré vers le stock central :\n${msgLines}`, 'success', 6000);
         _returnAllTargetUserId = null;

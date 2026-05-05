@@ -25,6 +25,8 @@ ALTER TABLE public.stock_requests ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE IF NOT EXISTS public.stock_losses (
   id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  -- employee_id is nullable: ON DELETE SET NULL preserves the loss record when an employee is deleted.
+  -- This is intentional for audit purposes so historical losses are not orphaned.
   employee_id uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
   category    text        NOT NULL,
   quantity    numeric     NOT NULL CHECK (quantity > 0),
