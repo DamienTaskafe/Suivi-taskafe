@@ -979,10 +979,10 @@
     const SUPABASE_URL = 'https://ogjljdjphawcminawtlv.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9namxqZGpwaGF3Y21pbmF3dGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzQ5MjUsImV4cCI6MjA5MTk1MDkyNX0.WVgrgx8Q1c9j_1UyNX7e2ilvttMBSHY2vnrBw_Ga05A';
 
-    // VAPID public key for Web Push — replace with your own key (see README for setup).
-    // Generate with: npx web-push generate-vapid-keys
-    // Set the matching private key in VAPID_PRIVATE_KEY env var on the server.
-    const VAPID_PUBLIC_KEY = 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY';
+    // VAPID public key for Web Push — fetched at runtime from /api/vapid-public-key.
+    // The private key stays server-side only; only the public key is served here.
+    // Falls back to '' (push disabled) if the server env is not configured.
+    let VAPID_PUBLIC_KEY = '';
 
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
@@ -3248,6 +3248,21 @@
 
     // ── Web Push registration helpers ─────────────────────────────────────────
 
+    // Fetches the VAPID public key from the server so we never hardcode it.
+    // Sets the module-level VAPID_PUBLIC_KEY variable.
+    // Fails silently — push simply stays disabled if the server is unconfigured.
+    async function _loadVapidKey() {
+      if (VAPID_PUBLIC_KEY) return; // already loaded
+      try {
+        const res = await fetch('/api/vapid-public-key');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.vapidPublicKey) VAPID_PUBLIC_KEY = json.vapidPublicKey;
+      } catch (e) {
+        console.warn('[push] could not load VAPID public key:', e?.message);
+      }
+    }
+
     // Converts a VAPID base64url public key to Uint8Array for PushManager.subscribe().
     function _urlBase64ToUint8Array(base64String) {
       const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -3295,7 +3310,8 @@
     async function _registerPushSubscription() {
       if (!_isPushSupported()) return;
       if (Notification.permission !== 'granted') return;
-      if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY === 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY') return;
+      await _loadVapidKey();
+      if (!VAPID_PUBLIC_KEY) return;
       try {
         const reg = await navigator.serviceWorker.ready;
         let sub = await reg.pushManager.getSubscription();
@@ -3350,12 +3366,16 @@
         return;
       }
 
-      if (VAPID_PUBLIC_KEY === 'REPLACE_WITH_YOUR_VAPID_PUBLIC_KEY') {
+      if (btn) { btn.disabled = true; btn.textContent = t('push_enabling'); }
+
+      // Load key from server before attempting subscription
+      await _loadVapidKey();
+
+      if (!VAPID_PUBLIC_KEY) {
         if (statusMsg) { statusMsg.textContent = t('push_vapid_not_configured'); statusMsg.style.color = '#e65100'; }
+        if (btn) { btn.disabled = false; btn.textContent = t('push_enable_btn'); }
         return;
       }
-
-      if (btn) { btn.disabled = true; btn.textContent = t('push_enabling'); }
 
       try {
         const permission = await Notification.requestPermission();
@@ -3583,7 +3603,7 @@
           type:    'new_stock_request',
           title:   '📦 ' + t('push_new_request'),
           message: (state.profile?.full_name || state.session?.user?.email || '') + ' ' + t('push_request_sent_msg'),
-          url:     '/'
+          url:     reqId ? `/?view=stock&request_id=${reqId}` : '/?view=stock'
         });
         setTimeout(() => closeModal('stockRequestModal'), 1800);
       } catch (err) {
@@ -3655,6 +3675,13 @@
         if (error) throw error;
         showSessionStatus('🚫 Demande annulée.', 'success', 3000);
         openMyStockRequestsModal();
+        // Notify admins/managers about cancellation (non-blocking)
+        _triggerPush({
+          type:    'stock_request_cancelled',
+          title:   '🚫 Demande annulée',
+          message: (state.profile?.full_name || state.session?.user?.email || '') + ' a annulé sa demande de stock.',
+          url:     reqId ? `/?view=stock&request_id=${reqId}` : '/?view=stock'
+        });
       } catch (err) {
         showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
         if (btn) { btn.disabled = false; btn.textContent = origText; }
@@ -3765,7 +3792,7 @@
             type:        'stock_request_status',
             title:       '📦 ' + t('push_status_update'),
             message:     _stockReqStatusLabel(newStatus),
-            url:         '/',
+            url:         reqId ? `/?view=stock&request_id=${reqId}` : '/?view=stock',
             employee_id: reqData.employee_id
           });
         }
@@ -3838,7 +3865,7 @@
             type:        'stock_request_status',
             title:       t('push_fulfilled_title'),
             message:     t('push_fulfilled_msg'),
-            url:         '/',
+            url:         _pendingFulfillRequestId ? `/?view=stock&request_id=${_pendingFulfillRequestId}` : '/?view=stock',
             employee_id: reqData.employee_id
           });
         }
@@ -4761,6 +4788,40 @@
 
     let _bootInProgress = false;
     let _loggedOut = false;
+
+    // ── Deep-link handler ─────────────────────────────────────────────────────
+    // Reads URL query params set by push notification clicks (via service worker).
+    // Format: /?view=stock&request_id=<uuid>
+    // Navigates to the Stock section and opens the relevant request modal if present.
+    // Called once per successful boot/login — clears the URL params afterwards.
+    function _handleDeepLink() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const view   = params.get('view');
+        const reqId  = params.get('request_id');
+        if (!view) return;
+
+        if (view === 'stock') {
+          show('stock');
+          if (reqId) {
+            // Open the correct modal depending on user role
+            if (isManagerOrAdmin()) {
+              // Small delay to ensure stock section DOM is painted
+              setTimeout(() => openAdminStockRequestsModal && openAdminStockRequestsModal(), 300);
+            } else {
+              setTimeout(() => openMyStockRequestsModal && openMyStockRequestsModal(), 300);
+            }
+          }
+        }
+
+        // Remove deep-link params from URL without triggering a reload
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, '', cleanUrl);
+      } catch (e) {
+        console.warn('[deeplink] handler error:', e?.message);
+      }
+    }
+
     async function bootFromSession(session) {
       if (_bootInProgress) return;
       if (_loggedOut) return; // explicit logout in progress — do not re-enter
@@ -4800,6 +4861,8 @@
           // touchstart guard (window.scrollY > 2) passes on the first attempt.
           // Without this, browser scroll-restoration can leave scrollY > 0.
           window.scrollTo(0, 0);
+          // Handle deep-links from push notification clicks: /?view=stock&request_id=<uuid>
+          _handleDeepLink();
           if (!navigator.onLine) {
             showSessionStatus(t('msg_offline'), 'info', 4000);
           }
