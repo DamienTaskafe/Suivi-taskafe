@@ -165,5 +165,11 @@ module.exports = {
   handleOptions,
   parseBody,
   requireAdmin,
-  sendError
+  sendError,
+  // lower-level helpers consumed by send-push and other functions
+  getBearerToken,
+  getConfig,
+  createAdminClient,
+  getCaller,
+  resolveCallerRole
 };
