@@ -3317,7 +3317,8 @@
     // Used to prevent infinite "Activation en cours…" on iOS.
     function _withTimeout(promise, ms, errMsg) {
       return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error(errMsg)), ms);
+        const msg = errMsg || 'Operation timed out';
+        const timer = setTimeout(() => reject(new Error(msg)), ms);
         promise.then(
           v => { clearTimeout(timer); resolve(v); },
           e => { clearTimeout(timer); reject(e); }
@@ -3457,7 +3458,7 @@
         // ── Step 1: Load VAPID key (with timeout) ──────────────────────────
         if (!VAPID_PUBLIC_KEY) {
           try {
-            await _withTimeout(_loadVapidKey(), 8000, t('push_vapid_missing'));
+            await _withTimeout(_loadVapidKey(), 8000, 'VAPID key fetch timed out');
           } catch (e) {
             console.warn('[push] VAPID key fetch failed:', e?.message);
           }
@@ -5041,7 +5042,9 @@
           }
           // Register/refresh push subscription in background — never blocks startup.
           // On success, _pushSavedThisSession is set and the settings UI is refreshed.
-          setTimeout(() => _registerPushSubscription().then(ok => { if (ok) _refreshPushSettingsUI(); }).catch(() => {}), 2000);
+          setTimeout(() => _registerPushSubscription()
+            .then(ok => { if (ok) _refreshPushSettingsUI(); })
+            .catch(e => console.debug('[boot] push registration failed:', e?.message)), 2000);
         } catch (error) {
           console.error('[bootFromSession] Boot error:', error);
           const errorClass = classifyCloudError(error);
