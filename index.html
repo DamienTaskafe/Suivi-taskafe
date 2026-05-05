@@ -780,6 +780,92 @@
     </div>
   </div>
 
+  
+  <!-- ── Stock request modal (employee) ────────────────────────────────────── -->
+  <div id="stockRequestModal" class="modal-backdrop" onclick="backdropClose(event, 'stockRequestModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>📦 Demander du stock</h3><button class="close-x" onclick="closeModal('stockRequestModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;font-size:12px;">Ajoutez les produits dont vous avez besoin. L'admin sera notifié.</div>
+      <label>📦 Produits</label>
+      <div id="stockReqLinesList" style="margin-top:8px;"></div>
+      <button type="button" onclick="addStockReqLine()" style="margin-top:8px;width:100%;background:rgba(0,0,0,0.07);color:var(--color-text);">➕ Ajouter un produit</button>
+      <label for="stockReqNotes" style="margin-top:14px;">💬 Commentaire (optionnel)</label>
+      <input id="stockReqNotes" type="text" placeholder="Ex: besoin pour la tournée de demain" style="margin-top:4px;" />
+      <button id="submitStockReqBtn" style="margin-top:16px;" onclick="submitStockRequest()">📤 Envoyer la demande</button>
+      <div id="stockReqStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- ── My stock requests modal (employee) ────────────────────────────────── -->
+  <div id="myStockRequestsModal" class="modal-backdrop" onclick="backdropClose(event, 'myStockRequestsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>📋 Mes demandes de stock</h3><button class="close-x" onclick="closeModal('myStockRequestsModal')">✕</button></div>
+      <div id="myStockRequestsContent"><div class="muted">Chargement…</div></div>
+    </div>
+  </div>
+
+  <!-- ── Admin stock requests modal ────────────────────────────────────────── -->
+  <div id="adminStockRequestsModal" class="modal-backdrop" onclick="backdropClose(event, 'adminStockRequestsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>📦 Demandes de stock</h3><button class="close-x" onclick="closeModal('adminStockRequestsModal')">✕</button></div>
+      <div id="adminStockRequestsContent"><div class="muted">Chargement…</div></div>
+    </div>
+  </div>
+
+  <!-- ── Fulfill request confirm modal (admin) ─────────────────────────────── -->
+  <div id="fulfillRequestModal" class="modal-backdrop" onclick="backdropClose(event, 'fulfillRequestModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>✅ Confirmer remise à l'employé</h3><button class="close-x" onclick="closeModal('fulfillRequestModal')">✕</button></div>
+      <div id="fulfillRequestContent"></div>
+      <div id="fulfillRequestStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button type="button" onclick="closeModal('fulfillRequestModal')" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);border:1px solid rgba(0,0,0,0.1);">❌ Annuler</button>
+        <button type="button" id="confirmFulfillBtn" onclick="confirmFulfillRequest()" style="flex:1;">✅ Confirmer remise</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Return all commercial stock modal (admin) ─────────────────────────── -->
+  <div id="returnAllStockModal" class="modal-backdrop" onclick="backdropClose(event, 'returnAllStockModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>↩️ Tout récupérer vers stock central</h3><button class="close-x" onclick="closeModal('returnAllStockModal')">✕</button></div>
+      <div id="returnAllStockContent"></div>
+      <div id="returnAllStockStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button type="button" onclick="closeModal('returnAllStockModal')" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);border:1px solid rgba(0,0,0,0.1);">❌ Annuler</button>
+        <button type="button" id="confirmReturnAllBtn" onclick="confirmReturnAllStock()" style="flex:1;">✅ Confirmer récupération</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Declare stock loss modal (admin) ──────────────────────────────────── -->
+  <div id="declareLossModal" class="modal-backdrop" onclick="backdropClose(event, 'declareLossModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3>⚠️ Déclarer une perte</h3><button class="close-x" onclick="closeModal('declareLossModal')">✕</button></div>
+      <div class="muted" style="margin-bottom:12px;font-size:12px;">⚠️ Le stock voiture diminuera. Le stock central ne sera <strong>pas</strong> augmenté.</div>
+      <div id="declareLossUserLabel" style="margin-bottom:10px;font-weight:600;"></div>
+      <label for="lossCategory">📦 Produit</label>
+      <select id="lossCategory" onchange="updateLossAvailable()" style="margin-top:4px;"></select>
+      <label for="lossQuantity" style="margin-top:12px;">Quantité perdue</label>
+      <input id="lossQuantity" type="number" step="0.01" min="0.01" placeholder="Quantité" style="margin-top:4px;" />
+      <div id="lossAvailableInfo" class="muted" style="margin-top:4px;font-size:12px;"></div>
+      <label for="lossReason" style="margin-top:12px;">Motif</label>
+      <select id="lossReason" style="margin-top:4px;">
+        <option value="">— Sélectionner un motif —</option>
+        <option value="Casse">Casse</option>
+        <option value="Perte">Perte</option>
+        <option value="Vol">Vol</option>
+        <option value="Écart inventaire">Écart inventaire</option>
+        <option value="Produit abîmé">Produit abîmé</option>
+        <option value="Autre">Autre</option>
+      </select>
+      <label for="lossNotes" style="margin-top:12px;">Commentaire (optionnel)</label>
+      <input id="lossNotes" type="text" placeholder="Détails supplémentaires" style="margin-top:4px;" />
+      <button id="confirmLossBtn" style="margin-top:16px;" onclick="confirmDeclareLoss()">⚠️ Confirmer perte</button>
+      <div id="declareLossStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+    </div>
+  </div>
+
   <!-- ── Admin Commissions Dashboard Modal ─────────────────────────────────── -->
   <div id="commissionsModal" class="modal-backdrop" onclick="backdropClose(event, 'commissionsModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
@@ -2565,6 +2651,13 @@
             </div>`;
         });
         html += `</div>`;
+
+        // Buttons: request stock and view my requests
+        html += `<div style="margin-top:14px;display:flex;gap:8px;">
+          <button onclick="openStockRequestModal()" style="flex:1;">📦 Demander du stock</button>
+          <button onclick="openMyStockRequestsModal()" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);">📋 Mes demandes</button>
+        </div>`;
+
         list.innerHTML = html;
       } else {
         // ── Admin / manager view: central stock + employee stocks + transfer UI ──
@@ -2595,11 +2688,13 @@
         html += `</div>`;
 
         // Transfer button
-        html += `<div style="margin-top:14px;">
-          <button data-action="stock-transfer" style="width:100%;">🔄 Transférer stock → commercial</button>
+        html += `<div style="margin-top:14px;display:flex;gap:8px;">
+          <button data-action="stock-transfer" style="flex:1;">🔄 Transférer stock → commercial</button>
+          <button onclick="openAdminStockRequestsModal()" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);">📦 Demandes de stock</button>
         </div>`;
 
         // Per-employee commercial stocks
+        html += `<div class="stock-section-label" style="margin-top:20px;">🚚 Stocks commerciaux</div>`;
         if (state.allCommercialStocks.length > 0) {
           // Group rows by user_id
           const userMap = {};
@@ -2609,12 +2704,19 @@
           });
           const userIds = Object.keys(userMap);
           if (userIds.length > 0) {
-            html += `<div class="stock-section-label" style="margin-top:20px;">👥 Stocks commerciaux</div>`;
             userIds.forEach(uid => {
               const user = state.allUsers.find(u => u.id === uid);
               const name = escHtml(user ? (user.full_name || user.email || '—') : '—');
               const safeUid = escHtml(uid);
-              html += `<div class="stock-section-sublabel">👤 ${name}</div><div class="stock-grid">`;
+              // Check if this employee has any non-zero stock
+              const hasStock = Object.values(userMap[uid]).some(q => q > 0);
+              html += `<div class="stock-section-sublabel" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                <span>👤 ${name}</span>
+                ${hasStock ? `<div style="display:flex;gap:6px;">
+                  <button onclick="openReturnAllStockModal('${safeUid}')" style="font-size:12px;padding:4px 8px;">↩️ Tout récupérer</button>
+                  <button onclick="openDeclareLossModal('${safeUid}')" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">⚠️ Déclarer perte</button>
+                </div>` : ''}
+              </div><div class="stock-grid">`;
               Object.keys(DEFAULT_STOCKS).forEach(cat => {
                 const qty = userMap[uid][cat] !== undefined ? userMap[uid][cat] : 0;
                 const menuId = `stockMenuC${uid.slice(0, 6)}_${cat}`;
@@ -2634,7 +2736,7 @@
             });
           }
         } else {
-          html += `<p class="muted" style="margin-top:12px;font-size:12px;">Aucun stock commercial attribué pour l'instant.</p>`;
+          html += `<p class="muted" style="margin-top:8px;font-size:12px;">Aucun stock commercial attribué pour l'instant.</p>`;
         }
 
         list.innerHTML = html;
@@ -2681,12 +2783,27 @@
     }
     window.renderTransferLines = renderTransferLines;
 
+    // Sync current DOM values back into _transferLines before any re-render.
+    function syncTransferLinesFromDOM() {
+      const rows = document.querySelectorAll('#transferLinesList .transfer-line-row');
+      rows.forEach((row, idx) => {
+        const category = row.querySelector('select')?.value || '';
+        const rawQty   = row.querySelector('input')?.value || '';
+        if (_transferLines[idx]) {
+          _transferLines[idx].category = category;
+          _transferLines[idx].quantity = rawQty === '' ? '' : Number(rawQty);
+        }
+      });
+    }
+
     window.addTransferLine = function() {
+      syncTransferLinesFromDOM();
       _transferLines.push({ category: '', quantity: '' });
       renderTransferLines();
     };
 
     window.removeTransferLine = function(idx) {
+      syncTransferLinesFromDOM();
       _transferLines.splice(idx, 1);
       renderTransferLines();
     };
@@ -2727,16 +2844,8 @@
         return;
       }
 
-      // Validate lines (read current DOM values)
-      const lineRows = document.querySelectorAll('#transferLinesList .transfer-line-row');
-      if (lineRows.length > 0) {
-        lineRows.forEach((row, idx) => {
-          const sel = row.querySelector('select');
-          const inp = row.querySelector('input');
-          if (sel) _transferLines[idx].category = sel.value;
-          if (inp) _transferLines[idx].quantity  = Number(inp.value);
-        });
-      }
+      // Sync DOM values into _transferLines before validation
+      syncTransferLinesFromDOM();
 
       if (_transferLines.length === 0) {
         if (statusEl) statusEl.textContent = '❌ Ajoutez au moins un produit.';
@@ -3085,6 +3194,500 @@
         statusEl.textContent = `❌ Erreur : ${getFriendlyErrorMessage(err)}`;
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = origBtnText; }
+      }
+    };
+
+
+    // ── Stock Requests (employee) ─────────────────────────────────────────────
+
+    let _stockReqLines = []; // [{ category, quantity }]
+
+    function syncStockReqLinesFromDOM() {
+      const rows = document.querySelectorAll('#stockReqLinesList .transfer-line-row');
+      rows.forEach((row, idx) => {
+        const category = row.querySelector('select')?.value || '';
+        const rawQty   = row.querySelector('input')?.value || '';
+        if (_stockReqLines[idx]) {
+          _stockReqLines[idx].category = category;
+          _stockReqLines[idx].quantity = rawQty === '' ? '' : Number(rawQty);
+        }
+      });
+    }
+
+    function renderStockReqLines() {
+      const container = document.getElementById('stockReqLinesList');
+      if (!container) return;
+      if (_stockReqLines.length === 0) {
+        container.innerHTML = '<div class="muted" style="font-size:12px;margin-bottom:4px;">Aucun produit ajouté.</div>';
+        return;
+      }
+      container.innerHTML = _stockReqLines.map((line, idx) => `
+        <div class="transfer-line-row">
+          <select onchange="_stockReqLines[${idx}].category = this.value" style="flex:1.5;">
+            <option value="">— Gamme —</option>
+            ${_buildCategoryOptions(line.category)}
+          </select>
+          <input type="number" step="0.01" min="0.01" placeholder="Qté"
+            value="${escHtml(String(line.quantity || ''))}"
+            onchange="_stockReqLines[${idx}].quantity = Number(this.value)"
+            oninput="_stockReqLines[${idx}].quantity = Number(this.value)"
+            style="flex:1;max-width:90px;" />
+          <button type="button" class="remove-line-btn" onclick="removeStockReqLine(${idx})">🗑</button>
+        </div>
+      `).join('');
+    }
+
+    window.addStockReqLine = function() {
+      syncStockReqLinesFromDOM();
+      _stockReqLines.push({ category: '', quantity: '' });
+      renderStockReqLines();
+    };
+
+    window.removeStockReqLine = function(idx) {
+      syncStockReqLinesFromDOM();
+      _stockReqLines.splice(idx, 1);
+      renderStockReqLines();
+    };
+
+    window.openStockRequestModal = function() {
+      _stockReqLines = [{ category: '', quantity: '' }];
+      renderStockReqLines();
+      const notesEl = document.getElementById('stockReqNotes');
+      if (notesEl) notesEl.value = '';
+      const statusEl = document.getElementById('stockReqStatus');
+      if (statusEl) statusEl.textContent = '';
+      const btn = document.getElementById('submitStockReqBtn');
+      if (btn) { btn.disabled = false; btn.textContent = '📤 Envoyer la demande'; }
+      openModal('stockRequestModal');
+    };
+
+    window.submitStockRequest = async function() {
+      if (!navigator.onLine) {
+        document.getElementById('stockReqStatus').textContent = '❌ Connexion requise.';
+        return;
+      }
+      syncStockReqLinesFromDOM();
+      const statusEl = document.getElementById('stockReqStatus');
+      const btn = document.getElementById('submitStockReqBtn');
+
+      // Validate
+      if (_stockReqLines.length === 0) {
+        statusEl.textContent = '❌ Ajoutez au moins un produit.';
+        return;
+      }
+      const cats = new Set();
+      for (let i = 0; i < _stockReqLines.length; i++) {
+        const line = _stockReqLines[i];
+        if (!line.category) { statusEl.textContent = `❌ Ligne ${i+1} : gamme manquante.`; return; }
+        if (!line.quantity || Number(line.quantity) <= 0) { statusEl.textContent = `❌ Ligne ${i+1} : quantité invalide.`; return; }
+        if (cats.has(line.category)) { statusEl.textContent = `❌ Produit dupliqué : ${line.category}.`; return; }
+        cats.add(line.category);
+      }
+
+      const notes = document.getElementById('stockReqNotes')?.value?.trim() || null;
+      const items = _stockReqLines.map(l => ({ category: l.category, quantity: Number(l.quantity) }));
+
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi en cours…'; }
+      statusEl.textContent = '⏳ Envoi en cours…';
+
+      try {
+        const { data: reqId, error } = await supabase.rpc('create_stock_request', {
+          p_items: items,
+          p_notes: notes
+        });
+        if (error) throw error;
+
+        statusEl.textContent = '✅ Demande envoyée à l'admin.';
+        if (btn) { btn.textContent = '✅ Envoyé'; }
+        renderNotificationBell();
+        setTimeout(() => closeModal('stockRequestModal'), 1800);
+      } catch (err) {
+        statusEl.textContent = '❌ ' + getFriendlyErrorMessage(err);
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Envoyer la demande'; }
+      }
+    };
+
+    function _stockReqStatusLabel(status) {
+      const map = {
+        pending:      '⏳ Envoyée',
+        preparing:    '📦 En préparation',
+        ready_pickup: '✅ Prêt à récupérer',
+        fulfilled:    '✅ Remis / transféré',
+        rejected:     '❌ Refusée',
+        cancelled:    '🚫 Annulée'
+      };
+      return map[status] || status;
+    }
+
+    window.openMyStockRequestsModal = async function() {
+      const content = document.getElementById('myStockRequestsContent');
+      if (content) content.innerHTML = '<div class="muted">Chargement…</div>';
+      openModal('myStockRequestsModal');
+      try {
+        const { data, error } = await supabase
+          .from('stock_requests')
+          .select('*')
+          .eq('employee_id', state.session?.user?.id)
+          .order('created_at', { ascending: false })
+          .limit(30);
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          if (content) content.innerHTML = '<div class="empty-state">📋 Aucune demande pour l'instant.</div>';
+          return;
+        }
+        if (content) {
+          content.innerHTML = data.map(req => {
+            const items = Array.isArray(req.items) ? req.items : [];
+            const itemsHtml = items.map(it => `<div style="font-size:12px;">- ${escHtml(it.category)} : ${formatStockValue(it.category, it.quantity)}</div>`).join('');
+            const isReady = req.status === 'ready_pickup';
+            const isCancellable = req.status === 'pending' || req.status === 'preparing';
+            const dateStr = req.created_at ? new Date(req.created_at).toLocaleDateString('fr-FR') : '';
+            return `<div style="border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <strong>${_stockReqStatusLabel(req.status)}</strong>
+                <span class="muted" style="font-size:11px;">${dateStr}</span>
+              </div>
+              ${itemsHtml}
+              ${req.notes ? `<div class="muted" style="font-size:12px;margin-top:4px;">💬 ${escHtml(req.notes)}</div>` : ''}
+              ${isReady ? `<div style="margin-top:8px;padding:8px;background:rgba(39,174,96,0.1);border-radius:6px;font-size:13px;color:#1a7a40;">📍 Votre stock est prêt, passez le récupérer.</div>` : ''}
+              ${req.admin_notes ? `<div class="muted" style="font-size:12px;margin-top:4px;">📝 ${escHtml(req.admin_notes)}</div>` : ''}
+              ${isCancellable ? `<button onclick="cancelMyStockRequest('${escHtml(req.id)}')" style="margin-top:8px;font-size:12px;background:rgba(0,0,0,0.07);color:var(--color-text);">🚫 Annuler</button>` : ''}
+            </div>`;
+          }).join('');
+        }
+      } catch (err) {
+        if (content) content.innerHTML = `<div class="muted">❌ ${getFriendlyErrorMessage(err)}</div>`;
+      }
+    };
+
+    window.cancelMyStockRequest = async function(reqId) {
+      if (!navigator.onLine) { showSessionStatus('❌ Connexion requise', 'error'); return; }
+      try {
+        const { error } = await supabase.rpc('cancel_stock_request', { p_request_id: reqId });
+        if (error) throw error;
+        showSessionStatus('🚫 Demande annulée.', 'success', 3000);
+        openMyStockRequestsModal();
+      } catch (err) {
+        showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
+      }
+    };
+
+    // ── Admin: manage stock requests ──────────────────────────────────────────
+
+    let _pendingFulfillRequestId = null;
+
+    window.openAdminStockRequestsModal = async function() {
+      if (!isManagerOrAdmin()) return;
+      const content = document.getElementById('adminStockRequestsContent');
+      if (content) content.innerHTML = '<div class="muted">Chargement…</div>';
+      openModal('adminStockRequestsModal');
+      await refreshAdminStockRequests();
+    };
+
+    async function refreshAdminStockRequests() {
+      const content = document.getElementById('adminStockRequestsContent');
+      try {
+        const { data, error } = await supabase
+          .from('stock_requests')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          if (content) content.innerHTML = '<div class="empty-state">📦 Aucune demande pour l'instant.</div>';
+          return;
+        }
+
+        // Sort: active statuses first
+        const priority = { pending: 0, preparing: 1, ready_pickup: 2, fulfilled: 3, rejected: 4, cancelled: 5 };
+        data.sort((a, b) => (priority[a.status] ?? 9) - (priority[b.status] ?? 9));
+
+        if (content) {
+          content.innerHTML = `<div style="max-height:65vh;overflow-y:auto;">` + data.map(req => {
+            const employee = state.allUsers.find(u => u.id === req.employee_id);
+            const empName  = escHtml(employee ? (employee.full_name || employee.email || '—') : '—');
+            const items    = Array.isArray(req.items) ? req.items : [];
+            const itemsHtml = items.map(it => `<div style="font-size:12px;">- ${escHtml(it.category)} : ${formatStockValue(it.category, it.quantity)}</div>`).join('');
+            const dateStr  = req.created_at ? new Date(req.created_at).toLocaleDateString('fr-FR') : '';
+            const isActive = ['pending','preparing','ready_pickup'].includes(req.status);
+            const safeId   = escHtml(req.id);
+
+            let buttons = '';
+            if (req.status === 'pending') {
+              buttons = `
+                <button onclick="adminSetReqStatus('${safeId}','preparing')" style="font-size:12px;padding:4px 8px;">📦 Préparer</button>
+                <button onclick="adminSetReqStatus('${safeId}','ready_pickup')" style="font-size:12px;padding:4px 8px;">✅ Prêt à récupérer</button>
+                <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
+                <button onclick="adminSetReqStatus('${safeId}','rejected')" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
+            } else if (req.status === 'preparing') {
+              buttons = `
+                <button onclick="adminSetReqStatus('${safeId}','ready_pickup')" style="font-size:12px;padding:4px 8px;">✅ Prêt à récupérer</button>
+                <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
+                <button onclick="adminSetReqStatus('${safeId}','rejected')" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
+            } else if (req.status === 'ready_pickup') {
+              buttons = `
+                <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
+                <button onclick="adminSetReqStatus('${safeId}','rejected')" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
+            }
+
+            return `<div style="border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:10px;${isActive ? '' : 'opacity:0.65;'}">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <strong>${empName}</strong>
+                <span class="muted" style="font-size:11px;">${dateStr}</span>
+              </div>
+              <div style="margin-bottom:4px;font-size:13px;">${_stockReqStatusLabel(req.status)}</div>
+              ${itemsHtml}
+              ${req.notes ? `<div class="muted" style="font-size:12px;margin-top:4px;">💬 ${escHtml(req.notes)}</div>` : ''}
+              ${req.admin_notes ? `<div class="muted" style="font-size:12px;margin-top:2px;">📝 ${escHtml(req.admin_notes)}</div>` : ''}
+              ${buttons ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">${buttons}</div>` : ''}
+            </div>`;
+          }).join('') + `</div>`;
+        }
+      } catch (err) {
+        if (content) content.innerHTML = `<div class="muted">❌ ${getFriendlyErrorMessage(err)}</div>`;
+      }
+    }
+
+    window.adminSetReqStatus = async function(reqId, newStatus, adminNotes) {
+      if (!isManagerOrAdmin() || !navigator.onLine) return;
+      try {
+        const { error } = await supabase.rpc('update_stock_request_status', {
+          p_request_id:  reqId,
+          p_status:      newStatus,
+          p_admin_notes: adminNotes || null
+        });
+        if (error) throw error;
+
+        await refreshAdminStockRequests();
+        showSessionStatus(`✅ Statut mis à jour : ${_stockReqStatusLabel(newStatus)}`, 'success', 3000);
+      } catch (err) {
+        showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
+      }
+    };
+
+    window.openFulfillRequestModal = async function(reqId) {
+      if (!isManagerOrAdmin()) return;
+      _pendingFulfillRequestId = reqId;
+      const contentEl = document.getElementById('fulfillRequestContent');
+      const statusEl  = document.getElementById('fulfillRequestStatus');
+      const btn       = document.getElementById('confirmFulfillBtn');
+      if (statusEl) statusEl.textContent = '';
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmer remise'; }
+
+      try {
+        const { data: req, error } = await supabase.from('stock_requests').select('*').eq('id', reqId).single();
+        if (error || !req) throw error || new Error('Demande introuvable');
+
+        const employee = state.allUsers.find(u => u.id === req.employee_id);
+        const empName  = escHtml(employee ? (employee.full_name || employee.email || '—') : '—');
+        const items    = Array.isArray(req.items) ? req.items : [];
+
+        let html = `<div style="margin-bottom:12px;"><strong>👤 Employé :</strong> ${empName}</div>`;
+        html += `<div style="margin-bottom:8px;"><strong>📦 Produits :</strong></div>`;
+        items.forEach(it => {
+          const available = Number(state.stocks[it.category] || 0);
+          const after     = available - Number(it.quantity);
+          html += `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px;">
+            <span class="badge ${escHtml(it.category)}" style="margin-right:4px;">${escHtml(it.category)}</span>
+            ${formatStockValue(it.category, it.quantity)}
+            <span class="muted" style="font-size:11px;margin-left:8px;">Central : ${formatStockValue(it.category, available)} → ${formatStockValue(it.category, after)}</span>
+          </div>`;
+        });
+        if (contentEl) contentEl.innerHTML = html;
+        openModal('fulfillRequestModal');
+      } catch (err) {
+        showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
+      }
+    };
+
+    window.confirmFulfillRequest = async function() {
+      if (!isManagerOrAdmin() || !navigator.onLine || !_pendingFulfillRequestId) return;
+      const btn      = document.getElementById('confirmFulfillBtn');
+      const statusEl = document.getElementById('fulfillRequestStatus');
+      if (btn && btn.disabled) return;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Transfert en cours…'; }
+      if (statusEl) statusEl.textContent = '⏳ Transfert en cours…';
+
+      try {
+        const { error } = await supabase.rpc('fulfill_stock_request', {
+          p_request_id: _pendingFulfillRequestId
+        });
+        if (error) throw error;
+
+        closeModal('fulfillRequestModal');
+        closeModal('adminStockRequestsModal');
+        showSessionStatus('✅ Stock remis à l'employé et transféré.', 'success', 5000);
+        _pendingFulfillRequestId = null;
+        loadCloudData().then(() => { renderStock(); renderNotificationBell(); }).catch(e => console.warn('[fulfill] refresh:', e?.message));
+      } catch (err) {
+        if (statusEl) statusEl.textContent = '❌ ' + getFriendlyErrorMessage(err);
+        if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmer remise'; }
+      }
+    };
+
+    // ── Return all commercial stock (admin) ───────────────────────────────────
+
+    let _returnAllTargetUserId = null;
+
+    window.openReturnAllStockModal = function(userId) {
+      if (!isManagerOrAdmin()) return;
+      closeAllMenus();
+      _returnAllTargetUserId = userId;
+
+      const user    = state.allUsers.find(u => u.id === userId);
+      const name    = user ? (user.full_name || user.email || '—') : '—';
+      const userMap = {};
+      state.allCommercialStocks.forEach(row => {
+        if (row.user_id === userId) userMap[row.category] = Number(row.quantity || 0);
+      });
+
+      const stockItems = Object.entries(userMap).filter(([, q]) => q > 0);
+      let html = `<div style="margin-bottom:12px;"><strong>👤 Commercial :</strong> ${escHtml(name)}</div>`;
+
+      if (stockItems.length === 0) {
+        html += `<p class="muted">Stock voiture déjà vide.</p>`;
+        const btn = document.getElementById('confirmReturnAllBtn');
+        if (btn) btn.disabled = true;
+      } else {
+        html += `<div style="margin-bottom:8px;"><strong>📦 Produits à récupérer :</strong></div>`;
+        stockItems.forEach(([cat, qty]) => {
+          const centralQty = Number(state.stocks[cat] || 0);
+          html += `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px;">
+            <span class="badge ${escHtml(cat)}" style="margin-right:4px;">${escHtml(cat)}</span>
+            ${formatStockValue(cat, qty)}
+            <span class="muted" style="font-size:11px;margin-left:8px;">Central : ${formatStockValue(cat, centralQty)} → ${formatStockValue(cat, centralQty + qty)}</span>
+          </div>`;
+        });
+        const btn = document.getElementById('confirmReturnAllBtn');
+        if (btn) btn.disabled = false;
+      }
+
+      const contentEl = document.getElementById('returnAllStockContent');
+      if (contentEl) contentEl.innerHTML = html;
+      const statusEl = document.getElementById('returnAllStockStatus');
+      if (statusEl) statusEl.textContent = '';
+      openModal('returnAllStockModal');
+    };
+
+    window.confirmReturnAllStock = async function() {
+      if (!isManagerOrAdmin() || !navigator.onLine || !_returnAllTargetUserId) return;
+      const btn      = document.getElementById('confirmReturnAllBtn');
+      const statusEl = document.getElementById('returnAllStockStatus');
+      if (btn && btn.disabled) return;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Récupération en cours…'; }
+      if (statusEl) statusEl.textContent = '⏳ Récupération en cours…';
+
+      const user = state.allUsers.find(u => u.id === _returnAllTargetUserId);
+      const name = user ? (user.full_name || user.email || '—') : '—';
+
+      try {
+        const { data: returned, error } = await supabase.rpc('return_all_commercial_stock', {
+          p_employee_id: _returnAllTargetUserId
+        });
+        if (error) throw error;
+
+        const items  = Array.isArray(returned) ? returned : [];
+        const msgLines = items.map(it => `- ${it.category} : ${formatStockValue(it.category, it.quantity)}`).join('\n');
+        closeModal('returnAllStockModal');
+        showSessionStatus(`✅ Stock voiture de ${name} récupéré vers le stock central :\n${msgLines}`, 'success', 6000);
+        _returnAllTargetUserId = null;
+        loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[returnAll] refresh:', e?.message));
+      } catch (err) {
+        if (statusEl) statusEl.textContent = '❌ ' + getFriendlyErrorMessage(err);
+        if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmer récupération'; }
+      }
+    };
+
+    // ── Declare stock loss (admin) ─────────────────────────────────────────────
+
+    let _lossTargetUserId = null;
+
+    window.openDeclareLossModal = function(userId) {
+      if (!isManagerOrAdmin()) return;
+      closeAllMenus();
+      _lossTargetUserId = userId;
+
+      const user  = state.allUsers.find(u => u.id === userId);
+      const name  = user ? (user.full_name || user.email || '—') : '—';
+
+      const labelEl = document.getElementById('declareLossUserLabel');
+      if (labelEl) labelEl.textContent = `👤 Commercial : ${name}`;
+
+      const catSel = document.getElementById('lossCategory');
+      if (catSel) {
+        catSel.innerHTML = Object.keys(DEFAULT_STOCKS)
+          .map(cat => `<option value="${cat}">${cat}</option>`)
+          .join('');
+      }
+
+      const qtyEl = document.getElementById('lossQuantity');
+      if (qtyEl) qtyEl.value = '';
+      const reasonEl = document.getElementById('lossReason');
+      if (reasonEl) reasonEl.value = '';
+      const notesEl = document.getElementById('lossNotes');
+      if (notesEl) notesEl.value = '';
+      const statusEl = document.getElementById('declareLossStatus');
+      if (statusEl) statusEl.textContent = '';
+      const btn = document.getElementById('confirmLossBtn');
+      if (btn) { btn.disabled = false; btn.textContent = '⚠️ Confirmer perte'; }
+
+      updateLossAvailable();
+      openModal('declareLossModal');
+    };
+
+    window.updateLossAvailable = function() {
+      const cat  = document.getElementById('lossCategory')?.value;
+      const el   = document.getElementById('lossAvailableInfo');
+      if (!el || !cat || !_lossTargetUserId) return;
+      const row  = state.allCommercialStocks.find(s => s.user_id === _lossTargetUserId && s.category === cat);
+      el.textContent = `Stock voiture disponible : ${formatStockValue(cat, row?.quantity || 0)}`;
+    };
+
+    window.confirmDeclareLoss = async function() {
+      if (!isManagerOrAdmin() || !navigator.onLine) return;
+      const btn      = document.getElementById('confirmLossBtn');
+      const statusEl = document.getElementById('declareLossStatus');
+      if (btn && btn.disabled) return;
+
+      const category = document.getElementById('lossCategory')?.value;
+      const quantity = Number(document.getElementById('lossQuantity')?.value || 0);
+      const reason   = document.getElementById('lossReason')?.value;
+      const notes    = document.getElementById('lossNotes')?.value?.trim() || null;
+
+      if (!category) { statusEl.textContent = '❌ Choisissez un produit.'; return; }
+      if (!quantity || quantity <= 0) { statusEl.textContent = '❌ Quantité invalide.'; return; }
+      if (!reason) { statusEl.textContent = '❌ Choisissez un motif.'; return; }
+
+      const row = state.allCommercialStocks.find(s => s.user_id === _lossTargetUserId && s.category === category);
+      const available = Number(row?.quantity || 0);
+      if (quantity > available) {
+        statusEl.textContent = `❌ Stock insuffisant : demandé ${formatStockValue(category, quantity)}, disponible ${formatStockValue(category, available)}`;
+        return;
+      }
+
+      const user = state.allUsers.find(u => u.id === _lossTargetUserId);
+      const name = user ? (user.full_name || user.email || '—') : '—';
+
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Enregistrement…'; }
+      if (statusEl) statusEl.textContent = '⏳ Enregistrement…';
+
+      try {
+        const { error } = await supabase.rpc('declare_commercial_stock_loss', {
+          p_employee_id: _lossTargetUserId,
+          p_category:    category,
+          p_quantity:    quantity,
+          p_reason:      reason,
+          p_notes:       notes
+        });
+        if (error) throw error;
+
+        closeModal('declareLossModal');
+        showSessionStatus(`⚠️ Perte enregistrée pour ${name} : ${formatStockValue(category, quantity)} ${category}. Stock central inchangé.`, 'success', 6000);
+        _lossTargetUserId = null;
+        loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[loss] refresh:', e?.message));
+      } catch (err) {
+        if (statusEl) statusEl.textContent = '❌ ' + getFriendlyErrorMessage(err);
+        if (btn) { btn.disabled = false; btn.textContent = '⚠️ Confirmer perte'; }
       }
     };
 
