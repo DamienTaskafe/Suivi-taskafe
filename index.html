@@ -1469,11 +1469,11 @@
       const key = sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1);
       const content = document.getElementById('headerSection' + key);
       if (!content) return;
-      const isNowOpen = !content.classList.contains('hidden');
+      const wasOpen = !content.classList.contains('hidden');
       content.classList.toggle('hidden');
       const toggle = content.previousElementSibling;
       if (toggle?.classList.contains('header-menu-section-toggle')) {
-        toggle.classList.toggle('open', !isNowOpen);
+        toggle.classList.toggle('open', !wasOpen);
       }
     };
 
