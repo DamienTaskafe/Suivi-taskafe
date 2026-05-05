@@ -908,6 +908,9 @@
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
+        lang_saved_local: '— local',
+        lang_local_only: '⚠️ Local uniquement',
+        lang_save_warn: '⚠️ Langue enregistrée localement uniquement',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -988,6 +991,9 @@
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
+        lang_saved_local: '— محلي',
+        lang_local_only: '⚠️ محلي فقط',
+        lang_save_warn: '⚠️ تم حفظ اللغة محلياً فقط',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1068,13 +1074,16 @@
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
+        lang_saved_local: '— local',
+        lang_local_only: '⚠️ Local ghir',
+        lang_save_warn: '⚠️ Lgha tkhzznat ghir f local',
       },
     };
 
     let _currentLang = localStorage.getItem('preferred_language') || 'fr';
 
     function t(key) {
-      return (I18N[_currentLang] && I18N[_currentLang][key]) || (I18N.fr[key]) || key;
+      return I18N[_currentLang]?.[key] || I18N.fr[key] || key;
     }
 
     function applyLanguage(lang) {
@@ -1120,7 +1129,7 @@
 
       const statusEl = document.getElementById('langSaveStatus');
       if (!state.session?.user?.id) {
-        if (statusEl) { statusEl.textContent = t('lang_' + lang) + ' — local'; }
+        if (statusEl) { statusEl.textContent = t('lang_' + lang) + t('lang_saved_local'); }
         return;
       }
       try {
@@ -1134,8 +1143,8 @@
         setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2000);
       } catch (e) {
         console.warn('[i18n] saveLanguagePref error:', e?.message);
-        showSessionStatus('⚠️ Langue enregistrée localement uniquement', 'info', 3000);
-        if (statusEl) { statusEl.textContent = '⚠️ Local uniquement'; statusEl.style.color = '#e65100'; }
+        showSessionStatus(t('lang_save_warn'), 'info', 3000);
+        if (statusEl) { statusEl.textContent = t('lang_local_only'); statusEl.style.color = '#e65100'; }
         setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 4000);
       }
     }
