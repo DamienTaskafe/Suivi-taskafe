@@ -976,6 +976,13 @@
       }, 3500); // start fade after shrink animation completes (~3.3s)
     })();
 
+    // Register service worker early so it is ready before push activation is needed.
+    // Non-blocking — failures are only logged and never affect login or app startup.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .catch(e => console.warn('[sw] startup registration failed:', e?.message));
+    }
+
     const SUPABASE_URL = 'https://ogjljdjphawcminawtlv.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9namxqZGpwaGF3Y21pbmF3dGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzQ5MjUsImV4cCI6MjA5MTk1MDkyNX0.WVgrgx8Q1c9j_1UyNX7e2ilvttMBSHY2vnrBw_Ga05A';
 
@@ -3326,6 +3333,45 @@
       });
     }
 
+    // Ensures a ServiceWorkerRegistration is available for push use.
+    // 1. Tries getRegistration('/') first — reuses an already-registered SW.
+    // 2. Registers /service-worker.js if none found.
+    // 3. Calls update() best-effort so the latest SW version is active sooner.
+    // 4. Waits for navigator.serviceWorker.ready with a 12-second timeout.
+    //    If ready times out but a registration with an active/installing/waiting
+    //    worker exists, returns that registration (common on first load in iOS PWA).
+    // Throws with a French message if service workers are unsupported or unavailable.
+    async function _ensureServiceWorkerRegistration() {
+      if (!('serviceWorker' in navigator)) {
+        throw new Error(t('push_unsupported'));
+      }
+      // Prefer an existing registration to avoid double-registering.
+      let reg = await navigator.serviceWorker.getRegistration('/');
+      if (!reg) {
+        try {
+          reg = await navigator.serviceWorker.register('/service-worker.js');
+        } catch (e) {
+          throw new Error(t('push_sw_timeout'));
+        }
+      }
+      // Trigger a background update so any new SW version is fetched promptly.
+      reg.update().catch(() => {});
+      // Wait for the SW to reach the active+controlling state.
+      // On iPhone PWA the SW may already be registered but "ready" can resolve
+      // slowly — fall back to the registration itself if it has any worker present.
+      // Uses 15 s to match the timeout used in the push subscribe step.
+      const SW_READY_TIMEOUT_MS = 15000;
+      try {
+        return await _withTimeout(navigator.serviceWorker.ready, SW_READY_TIMEOUT_MS, t('push_sw_timeout'));
+      } catch (e) {
+        if (reg && (reg.active || reg.installing || reg.waiting)) {
+          console.warn('[push] serviceWorker.ready timed out; using existing registration');
+          return reg;
+        }
+        throw e;
+      }
+    }
+
     // Saves a push subscription to Supabase via the server endpoint (service-role
     // key bypasses RLS, making the write reliable regardless of JWT permissions).
     // Returns true on success, false on failure.
@@ -3370,7 +3416,7 @@
       await _loadVapidKey();
       if (!VAPID_PUBLIC_KEY) return false;
       try {
-        const reg = await _withTimeout(navigator.serviceWorker.ready, 15000, t('push_sw_timeout'));
+        const reg = await _ensureServiceWorkerRegistration();
         let sub = await reg.pushManager.getSubscription();
         if (!sub) {
           sub = await _withTimeout(
@@ -3478,7 +3524,7 @@
           // ── Step 3: Get service worker registration (with timeout) ────────
           let reg;
           try {
-            reg = await _withTimeout(navigator.serviceWorker.ready, 15000, t('push_sw_timeout'));
+            reg = await _ensureServiceWorkerRegistration();
           } catch (e) {
             if (statusMsg) { statusMsg.textContent = t('push_sw_timeout'); statusMsg.style.color = '#c62828'; }
             return;
