@@ -1074,6 +1074,7 @@
     body.dark .accordion { background: rgba(255,255,255,0.04); }
     body.dark .menu, body.dark .header-menu { background: rgba(25,22,18,0.98); border-color: rgba(255,255,255,0.08); }
     body.dark .menu button, body.dark .header-menu button { color: var(--color-text); }
+    body.dark .header-menu-section-toggle { background: rgba(255,255,255,0.04); color: var(--color-text-muted); }
     body.dark .modal-card { background: rgba(22,19,16,0.99); color: var(--color-text); }
     body.dark .settings-option { background: rgba(30,26,22,0.96); }
     body.dark .user-row { background: rgba(25,22,18,0.88); }
@@ -1659,26 +1660,60 @@
     body.dark .client-action-btn:active,
     body.dark .client-action-btn:hover { background: rgba(255,255,255,0.17); }
 
-    /* ── Account language picker (inside Compte menu section) ───────────────── */
-    .account-language-picker {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--color-border);
-    }
-    .account-language-picker label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    .account-language-picker select {
+    /* ── Header menu collapsible sections ───────────────────────────────────── */
+    .header-menu-section-toggle {
       width: 100%;
-      min-height: 38px;
-      padding: 6px 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--color-border);
-      background: rgba(255,255,255,0.9);
-      font-size: 13px;
-      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px var(--spacing-lg) 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--color-text-muted);
+      background: rgba(0, 0, 0, 0.03);
+      border: none;
+      border-bottom: 1px solid var(--color-border);
+      border-top: 1px solid var(--color-border);
+      margin: 2px 0 0;
+      cursor: pointer;
+      text-align: left;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .header-menu-section-toggle .chevron {
+      font-size: 14px;
+      transition: transform 0.2s;
+      font-style: normal;
+    }
+    .header-menu-section-toggle.open .chevron {
+      transform: rotate(180deg);
+    }
+    .header-menu-section-content {
+      padding-left: 8px;
+    }
+    /* Language submenu toggle row */
+    .submenu-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .submenu-toggle .chevron {
+      font-size: 14px;
+    }
+    .account-language-choices {
+      padding-left: 12px;
+    }
+    .account-language-choices button {
+      width: 100%;
+      text-align: left;
+    }
+    .account-language-choices button.active-lang {
+      font-weight: 700;
+      color: var(--color-primary, #1a6b3c);
     }
 
     /* ── RTL support for Arabic ──────────────────────────────────────────────── */
@@ -1688,9 +1723,10 @@
     html[dir="rtl"] .menu { right: auto; left: 0; }
     html[dir="rtl"] .menu button { text-align: right; }
     html[dir="rtl"] .header-menu button { text-align: right; }
-    html[dir="rtl"] .header-menu-section-title { text-align: right; }
-    html[dir="rtl"] .account-language-picker,
-    html[dir="rtl"] .account-language-picker label { text-align: right; }
+    html[dir="rtl"] .header-menu-section-toggle { text-align: right; }
+    html[dir="rtl"] .header-menu-section-content { padding-left: 0; padding-right: 8px; }
+    html[dir="rtl"] .account-language-choices { padding-left: 0; padding-right: 12px; }
+    html[dir="rtl"] .account-language-choices button { text-align: right; }
     html[dir="rtl"] .session-status { left: auto; right: var(--spacing-lg); }
     html[dir="rtl"] .banner-text { text-align: right; }
     html[dir="rtl"] .top-actions { direction: rtl; }
