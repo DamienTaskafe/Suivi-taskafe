@@ -1245,11 +1245,14 @@
     }
 
     // Normalize a phone number to a tel: href format (e.g. +212612345678)
+    const MOROCCO_COUNTRY_CODE = '212';
+    const GPS_TIMEOUT_MS = 15000;
+
     function normalizePhoneForTel(phone) {
       let p = phone.replace(/[\s\-().]/g, '');
       if (!p.startsWith('+') && !p.startsWith('00')) {
         // Moroccan local format: 06/07/05 -> +2126/7/5
-        if (/^0[5-9]/.test(p)) p = '+212' + p.slice(1);
+        if (/^0[5-9]/.test(p)) p = '+' + MOROCCO_COUNTRY_CODE + p.slice(1);
         else p = '+' + p;
       } else if (p.startsWith('00')) {
         p = '+' + p.slice(2);
@@ -1262,7 +1265,7 @@
       let p = phone.replace(/[\s\-().+]/g, '');
       if (p.startsWith('00')) p = p.slice(2);
       // Moroccan local format: 06/07/05 -> 2126/7/5
-      if (/^0[5-9]/.test(p)) p = '212' + p.slice(1);
+      if (/^0[5-9]/.test(p)) p = MOROCCO_COUNTRY_CODE + p.slice(1);
       return p;
     }
 
@@ -3166,7 +3169,7 @@
           document.getElementById('gpsStatus').className = 'gps-status gps-error';
           if (btn) { btn.disabled = false; btn.textContent = '📍 Utiliser ma position actuelle'; }
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
       );
     };
 
@@ -3196,7 +3199,7 @@
           document.getElementById('editGpsStatus').className = 'gps-status gps-error';
           if (btn) { btn.disabled = false; btn.textContent = '📍 Mettre à jour avec ma position actuelle'; }
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
       );
     };
 
