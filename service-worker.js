@@ -4,7 +4,7 @@
 // - ne cache jamais les requêtes Supabase
 // - gère les push notifications Android/PWA
 
-const CACHE_NAME = "taskafe-static-v4";
+const CACHE_NAME = "taskafe-static-v5";
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -76,7 +76,7 @@ self.addEventListener("push", (event) => {
     badge:              badgeUrl,
     vibrate,
     tag,
-    renotify:           false,
+    renotify:           true,
     requireInteraction: false,
     data:               { url: urlPath }
   };

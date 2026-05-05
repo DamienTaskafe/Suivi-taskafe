@@ -79,8 +79,23 @@ module.exports = async function handler(req, res) {
       } else {
         return res.status(400).json({ error: 'employee_id ou user_ids requis pour ce type' });
       }
+    } else if (type === 'stock_request_cancelled') {
+      // Employee cancelling their own request → notify admins/managers
+      // Admin/manager cancelling → notify the employee (passed as employee_id)
+      if (employee_id) {
+        // Admin cancelled: notify the requesting employee
+        targetUserIds = [employee_id];
+      } else {
+        // Employee cancelled: notify all admins/managers
+        const { data: admins, error: adminsErr } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .in('role', ['admin', 'manager']);
+        if (adminsErr) throw adminsErr;
+        targetUserIds = (admins || []).map(p => p.id);
+      }
     } else {
-      return res.status(400).json({ error: 'Type inconnu. Utilisez new_stock_request ou stock_request_status' });
+      return res.status(400).json({ error: 'Type inconnu. Utilisez new_stock_request, stock_request_status ou stock_request_cancelled' });
     }
 
     if (targetUserIds.length === 0) {
