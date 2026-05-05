@@ -86,6 +86,7 @@
       animation: slideIn 0.3s ease;
       max-width: 300px;
       word-break: break-word;
+      white-space: pre-line;
       backdrop-filter: blur(8px);
       box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     }
@@ -375,9 +376,73 @@
       100% { transform: translateX(370%); opacity: 0; }
     }
 
-    .header-menu-wrap { position: absolute; right: var(--spacing-lg); top: var(--spacing-lg); z-index: 3000; }
+    .header-menu-wrap { position: absolute; right: var(--spacing-lg); top: var(--spacing-lg); z-index: 3000; display: flex; align-items: center; gap: 8px; }
 
-    .header-menu-btn {
+    .notification-bell-btn {
+      background: rgba(0, 0, 0, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: white;
+      font-size: 20px;
+      width: auto;
+      margin: 0;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+      position: relative;
+      line-height: 1;
+    }
+
+    .notification-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #d52a2a;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      padding: 0 3px;
+      margin-left: 2px;
+      vertical-align: top;
+    }
+
+    /* Transfer product line rows */
+    .transfer-line-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .transfer-line-row select,
+    .transfer-line-row input { flex: 1; margin: 0; min-width: 0; }
+    .transfer-line-row .remove-line-btn {
+      width: auto;
+      flex-shrink: 0;
+      padding: 6px 10px;
+      margin: 0;
+      background: rgba(213, 42, 42, 0.1);
+      color: #d52a2a;
+      border: 1px solid rgba(213, 42, 42, 0.25);
+      font-size: 14px;
+    }
+
+    /* Notification items */
+    .notif-item {
+      background: rgba(248, 243, 236, 0.96);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .notif-item.unread { border-left: 3px solid var(--color-primary); }
+    .notif-item-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+    .notif-item-msg { font-size: 13px; color: var(--color-text); white-space: pre-line; margin-bottom: 4px; }
+    .notif-item-date { font-size: 11px; color: var(--color-text-muted); }
+    body.dark .notif-item { background: rgba(30,26,22,0.95); }
+
+
       background: rgba(0, 0, 0, 0.52);
       border: 1px solid rgba(255, 255, 255, 0.16);
       color: white;
