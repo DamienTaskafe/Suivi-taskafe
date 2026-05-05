@@ -1155,6 +1155,7 @@
         lang_saved_local: '— local',
         lang_local_only: '⚠️ Local uniquement',
         lang_save_warn: '⚠️ Langue enregistrée localement uniquement',
+        notif_aucune: '🔔 Aucune notification pour l\'instant.',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1332,6 +1333,7 @@
         lang_saved_local: '— محلي',
         lang_local_only: '⚠️ محلي فقط',
         lang_save_warn: '⚠️ تم حفظ اللغة محلياً فقط',
+        notif_aucune: '🔔 لا توجد إشعارات في الوقت الحالي.',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1509,6 +1511,7 @@
         lang_saved_local: '— local',
         lang_local_only: '⚠️ Local ghir',
         lang_save_warn: '⚠️ Lgha tkhzznat ghir f local',
+        notif_aucune: '🔔 Ma kayn ta ishaar daba.',
       },
     };
 
@@ -3040,6 +3043,7 @@
       } catch (e) {
         console.warn('[notifications] load error:', e?.message);
       }
+      renderNotificationBell();
     }
 
     // Updates the bell button visibility and unread count badge.
@@ -3085,7 +3089,7 @@
       if (!content) return;
       const notifs = state.notifications || [];
       if (notifs.length === 0) {
-        content.innerHTML = '<div class="empty-state">🔔 Aucune notification pour l\'instant.</div>';
+        content.innerHTML = `<div class="empty-state">${t('notif_aucune')}</div>`;
         return;
       }
       content.innerHTML = notifs.map(n => {
@@ -4056,8 +4060,7 @@
         commercialRows.forEach(r => { state.commercialStock[r.category] = Number(r.quantity || 0); });
       }
 
-      await loadAllUsers();
-      await loadRolePermissions();
+      await Promise.all([loadAllUsers(), loadRolePermissions()]);
       // Load notifications for the current user (non-blocking)
       loadNotifications().catch(e => console.warn('[loadCloudData] notifications:', e?.message));
 
