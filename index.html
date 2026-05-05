@@ -120,15 +120,15 @@
             <strong id="menuUserName">—</strong>
             <span id="menuUserRole">—</span>
           </div>
-          <div class="header-language-picker">
-            <label for="headerLangSelect" data-i18n="menu_langue">🌍 Langue</label>
-            <select id="headerLangSelect" onchange="saveLanguagePref(this.value)">
+          <div class="header-menu-section-title" data-i18n="menu_compte">👤 Compte</div>
+          <div class="account-language-picker">
+            <label for="accountLangSelect" data-i18n="menu_langue">🌍 Langue</label>
+            <select id="accountLangSelect" onchange="saveLanguagePref(this.value)">
               <option value="fr">Français</option>
               <option value="ar">العربية</option>
               <option value="darija">Darija</option>
             </select>
           </div>
-          <div class="header-menu-section-title" data-i18n="menu_compte">👤 Compte</div>
           <button onclick="openProfileModal()" data-i18n="menu_monProfil">👤 Mon profil</button>
           <button onclick="openPasswordModal()" data-i18n="menu_changerMdp">🔐 Changer mon mot de passe</button>
           <button id="darkModeBtn" onclick="toggleDarkMode()" data-i18n="menu_modeSombre">🌙 Mode sombre</button>
@@ -392,15 +392,6 @@
   <div id="settingsHubModal" class="modal-backdrop" onclick="backdropClose(event, 'settingsHubModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3 data-i18n="menu_parametres">⚙️ Paramètres</h3><button class="close-x" onclick="closeModal('settingsHubModal')">✕</button></div>
-      <div class="settings-option">
-        <div class="title" data-i18n="settings_langue">🌍 Langue</div>
-        <select id="langSelect" onchange="saveLanguagePref(this.value)" style="margin-top:8px;">
-          <option value="fr">Français</option>
-          <option value="ar">العربية</option>
-          <option value="darija">Darija</option>
-        </select>
-        <div id="langSaveStatus" style="margin-top:6px;font-size:12px;min-height:16px;"></div>
-      </div>
       <div class="settings-option">
         <div class="title" data-i18n="settings_securite">🔒 Sécurité</div>
         <div class="muted" data-i18n="settings_modifier_mdp">Modifier ton mot de passe.</div>
@@ -1398,13 +1389,9 @@
         btnStock.innerHTML = t('tab_stock') + ' ' + badgeOuter;
       }
 
-      // Sync the language select if it exists
-      const langSelect = document.getElementById('langSelect');
-      if (langSelect && langSelect.value !== lang) langSelect.value = lang;
-
-      // Sync the header language select
-      const headerLangSelect = document.getElementById('headerLangSelect');
-      if (headerLangSelect && headerLangSelect.value !== lang) headerLangSelect.value = lang;
+      // Sync the account language select (in the Compte menu section)
+      const accountLangSelect = document.getElementById('accountLangSelect');
+      if (accountLangSelect && accountLangSelect.value !== lang) accountLangSelect.value = lang;
 
       // Refresh category dropdowns so translated options (Toutes catégories, Sélectionner une gamme) update
       if (typeof initCategorySelects === 'function') {
@@ -4794,9 +4781,6 @@
     };
 
     window.openSettingsHubModal = function () {
-      // Sync language selector to current language
-      const langSelect = document.getElementById('langSelect');
-      if (langSelect) langSelect.value = _currentLang;
       openModal('settingsHubModal');
     };
 
