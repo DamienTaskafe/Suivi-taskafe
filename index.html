@@ -1181,6 +1181,7 @@
         push_fulfilled_title: '✅ Stock remis',
         push_fulfilled_msg: 'Votre stock a été transféré dans votre stock voiture.',
         push_vapid_not_configured: '⚠️ Clé VAPID non configurée (voir README).',
+        push_save_error: '❌ Abonnement non enregistré. Réessayez ou vérifiez la connexion.',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1373,6 +1374,7 @@
         push_fulfilled_title: '✅ تم تسليم المخزون',
         push_fulfilled_msg: 'تم نقل مخزونك إلى مخزون السيارة.',
         push_vapid_not_configured: '⚠️ مفتاح VAPID غير مضبوط (راجع README).',
+        push_save_error: '❌ لم يُحفظ الاشتراك. أعد المحاولة أو تحقق من الاتصال.',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1565,6 +1567,7 @@
         push_fulfilled_title: '✅ Stock tmessah',
         push_fulfilled_msg: 'Stock dyalek thwwel l stock tomobil.',
         push_vapid_not_configured: '⚠️ Clé VAPID mmazbitach (chof README).',
+        push_save_error: '❌ L\'abonnement ma tkhzzanch. A3wed tjreb wla chof connexion.',
       },
     };
 
@@ -3280,38 +3283,47 @@
       );
     }
 
-    // Saves a push subscription object to Supabase for the current user.
+    // Saves a push subscription to Supabase via the server endpoint (service-role
+    // key bypasses RLS, making the write reliable regardless of JWT permissions).
+    // Returns true on success, false on failure.
     async function _savePushSubscription(subscription) {
-      const userId = state.session?.user?.id;
-      if (!userId || !subscription) return;
+      const session = state.session;
+      if (!session?.user?.id || !session?.access_token || !subscription) return false;
       const subJson = subscription.toJSON ? subscription.toJSON() : subscription;
       try {
-        await supabase
-          .from('push_subscriptions')
-          .upsert(
-            {
-              user_id:      userId,
-              endpoint:     subJson.endpoint,
-              subscription: subJson,
-              // Truncate to fit the `user_agent text` column (no hard length in Postgres
-              // text, but 255 chars is a generous, human-readable cap for diagnostics)
-              user_agent:   navigator.userAgent.slice(0, 255),
-              updated_at:   new Date().toISOString()
-            },
-            { onConflict: 'endpoint' }
-          );
+        const res = await fetch('/api/save-push-subscription', {
+          method:  'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            endpoint:     subJson.endpoint,
+            subscription: subJson,
+            // 512 chars is a generous cap that accommodates all modern UA strings
+            user_agent:   navigator.userAgent.slice(0, 512)
+          })
+        });
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          console.error('[push] save subscription failed:', errBody?.error || `HTTP ${res.status}`);
+          return false;
+        }
+        return true;
       } catch (e) {
-        console.warn('[push] save subscription error:', e?.message);
+        console.error('[push] save subscription error:', e?.message);
+        return false;
       }
     }
 
     // Registers (or refreshes) the push subscription for the current user.
     // Called asynchronously after login — must never block app startup.
+    // Returns true if subscription was saved to DB, false otherwise.
     async function _registerPushSubscription() {
-      if (!_isPushSupported()) return;
-      if (Notification.permission !== 'granted') return;
+      if (!_isPushSupported()) return false;
+      if (Notification.permission !== 'granted') return false;
       await _loadVapidKey();
-      if (!VAPID_PUBLIC_KEY) return;
+      if (!VAPID_PUBLIC_KEY) return false;
       try {
         const reg = await navigator.serviceWorker.ready;
         let sub = await reg.pushManager.getSubscription();
@@ -3321,9 +3333,10 @@
             applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
         }
-        await _savePushSubscription(sub);
+        return await _savePushSubscription(sub);
       } catch (e) {
         console.warn('[push] registration error:', e?.message);
+        return false;
       }
     }
 
@@ -3362,11 +3375,12 @@
       const statusMsg = document.getElementById('pushStatusMsg');
 
       if (!_isPushSupported()) {
-        if (statusMsg) statusMsg.textContent = t('push_unsupported');
+        if (statusMsg) { statusMsg.textContent = t('push_unsupported'); statusMsg.style.color = '#e65100'; }
         return;
       }
 
       if (btn) { btn.disabled = true; btn.textContent = t('push_enabling'); }
+      if (statusMsg) { statusMsg.textContent = ''; statusMsg.style.color = ''; }
 
       // Load key from server before attempting subscription
       await _loadVapidKey();
@@ -3380,20 +3394,35 @@
       try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          await _registerPushSubscription();
-          _refreshPushSettingsUI();
-          showSessionStatus('✅ ' + t('push_enabled'), 'success', 3000);
+          const saved = await _registerPushSubscription();
+          if (saved) {
+            _refreshPushSettingsUI();
+            if (statusMsg) { statusMsg.textContent = '✅ ' + t('push_enabled'); statusMsg.style.color = '#2e7d32'; }
+            showSessionStatus('✅ ' + t('push_enabled'), 'success', 3000);
+          } else {
+            // Permission granted but DB save failed — re-enable so user can retry
+            if (btn) { btn.disabled = false; btn.textContent = t('push_enable_btn'); }
+            if (statusMsg) { statusMsg.textContent = t('push_save_error'); statusMsg.style.color = '#c62828'; }
+            console.warn('[push] subscription not saved to database');
+          }
         } else if (permission === 'denied') {
           _refreshPushSettingsUI();
+          if (statusMsg) { statusMsg.textContent = t('push_blocked'); statusMsg.style.color = '#c62828'; }
           showSessionStatus('🚫 ' + t('push_blocked'), 'info', 5000);
         } else {
-          // dismissed
-          _refreshPushSettingsUI();
+          // dismissed — reset so user can try again
+          if (btn) { btn.disabled = false; btn.textContent = t('push_enable_btn'); }
+          if (statusMsg) { statusMsg.textContent = ''; }
         }
       } catch (e) {
-        console.warn('[push] requestPermission error:', e?.message);
-        if (btn) { btn.disabled = false; btn.textContent = t('push_enable_btn'); }
+        console.error('[push] requestPermission error:', e?.message);
         if (statusMsg) { statusMsg.textContent = t('push_enable_error'); statusMsg.style.color = '#c62828'; }
+      } finally {
+        // Safety net: if an unexpected path left the button stuck on "Activation en cours", reset it
+        if (btn && btn.textContent === t('push_enabling')) {
+          btn.disabled = false;
+          btn.textContent = t('push_enable_btn');
+        }
       }
     };
 
