@@ -437,11 +437,14 @@
   <div id="passwordModal" class="modal-backdrop" onclick="backdropClose(event, 'passwordModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3 data-i18n="pwd_modal_titre">🔐 Changer mot de passe</h3><button class="close-x" onclick="closeModal('passwordModal')">✕</button></div>
+      <label for="oldPassword" data-i18n="pwd_ancien">Ancien mot de passe</label>
+      <input id="oldPassword" type="password" placeholder="Ancien mot de passe" data-i18n-placeholder="pwd_ancien_placeholder" />
       <label for="newPassword" data-i18n="pwd_nouveau">Nouveau mot de passe</label>
       <input id="newPassword" type="password" placeholder="Min 6 caractères" data-i18n-placeholder="pwd_min6" />
       <label for="confirmPassword" data-i18n="pwd_confirmer">Confirmer nouveau mot de passe</label>
       <input id="confirmPassword" type="password" placeholder="Répéter le mot de passe" data-i18n-placeholder="pwd_repeter" />
       <button onclick="changeMyPassword()" data-i18n="pwd_mettre_a_jour">✅ Mettre à jour</button>
+      <div id="passwordStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
   </div>
 
@@ -999,6 +1002,8 @@
         user_supprimer: 'Supprimer',
         pwd_modal_titre: '🔐 Changer mot de passe',
         pwd_modal_admin_titre: '🔑 Changer mot de passe',
+        pwd_ancien: 'Ancien mot de passe',
+        pwd_ancien_placeholder: 'Votre mot de passe actuel',
         pwd_nouveau: 'Nouveau mot de passe',
         pwd_confirmer: 'Confirmer nouveau mot de passe',
         pwd_repeter: 'Répéter le mot de passe',
@@ -1009,6 +1014,8 @@
         msg_pwd_updated: '✅ Mot de passe mis à jour',
         msg_pwd_min6: '❌ Mot de passe minimum 6 caractères',
         msg_pwd_mismatch: '❌ Les mots de passe ne correspondent pas',
+        msg_pwd_ancien_requis: '❌ Ancien mot de passe requis',
+        msg_pwd_ancien_incorrect: '❌ Ancien mot de passe incorrect',
         msg_data_refreshed: '✅ Données actualisées',
         msg_refresh_error: '❌ Erreur actualisation',
         msg_session_expired: '⚠️ Session expirée — reconnectez-vous',
@@ -1170,6 +1177,8 @@
         user_supprimer: 'حذف',
         pwd_modal_titre: '🔐 تغيير كلمة المرور',
         pwd_modal_admin_titre: '🔑 تغيير كلمة المرور',
+        pwd_ancien: 'كلمة المرور القديمة',
+        pwd_ancien_placeholder: 'كلمة مرورك الحالية',
         pwd_nouveau: 'كلمة المرور الجديدة',
         pwd_confirmer: 'تأكيد كلمة المرور الجديدة',
         pwd_repeter: 'إعادة كلمة المرور',
@@ -1180,6 +1189,8 @@
         msg_pwd_updated: '✅ تم تحديث كلمة المرور',
         msg_pwd_min6: '❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل',
         msg_pwd_mismatch: '❌ كلمتا المرور غير متطابقتين',
+        msg_pwd_ancien_requis: '❌ كلمة المرور القديمة مطلوبة',
+        msg_pwd_ancien_incorrect: '❌ كلمة المرور القديمة غير صحيحة',
         msg_data_refreshed: '✅ تم تحديث البيانات',
         msg_refresh_error: '❌ خطأ في التحديث',
         msg_session_expired: '⚠️ انتهت الجلسة — أعد الاتصال',
@@ -1341,6 +1352,8 @@
         user_supprimer: 'Mse7',
         pwd_modal_titre: '🔐 Bdel password',
         pwd_modal_admin_titre: '🔑 Bdel password',
+        pwd_ancien: 'Password qadim',
+        pwd_ancien_placeholder: 'Password dial daba',
         pwd_nouveau: 'Password jdid',
         pwd_confirmer: 'Confirmi password jdid',
         pwd_repeter: 'Awed password',
@@ -1351,6 +1364,8 @@
         msg_pwd_updated: '✅ Password tbddel',
         msg_pwd_min6: '❌ Mot de passe khaso 6 caractères minimum',
         msg_pwd_mismatch: '❌ Mots de passe machi bhal bhal',
+        msg_pwd_ancien_requis: '❌ Password qadim matlob',
+        msg_pwd_ancien_incorrect: '❌ Password qadim ghalt',
         msg_data_refreshed: '✅ Data tjannat',
         msg_refresh_error: '❌ Mcheklat f ltajdid',
         msg_session_expired: '⚠️ Session salaet — connecti men jdid',
@@ -3277,6 +3292,12 @@
       const avail = context.available !== undefined ? context.available : null;
       const pool = context.pool || null; // 'commercial' | 'central'
 
+      // ── Fonction RPC introuvable (migration non appliquée) ───────────────────
+      // PGRST202 is the PostgREST error code for "function not found in schema cache".
+      if (err?.code === 'PGRST202' || raw.toLowerCase().includes('could not find the function')) {
+        return '❌ Fonction de transfert stock absente. Appliquez les migrations Supabase puis rechargez le schéma (Settings → API → Reload schema cache).';
+      }
+
       const fmtQty = (qty) => {
         if (qty === null || qty === undefined) return '?';
         if (cat === 'SUCRE') return `${qty} paquet${qty !== 1 ? 's' : ''}`;
@@ -4808,13 +4829,13 @@
               ? '<span style="font-size:11px;">TOI</span>'
               : isAdmin()
                 ? `<div class="user-row-actions">
-                    <button class="user-remu-btn" type="button" data-id="${user.id}" onclick="openRemunerationSettingsModal(this.dataset.id)">💰 Régler</button>
+                    <button class="user-remu-btn" type="button" onclick="openRemunerationSettingsModal('${escHtml(user.id)}')">💰 Régler</button>
                     <div class="menu-wrap">
-                      <button class="menu-btn" data-action="toggle-menu" data-menu-id="userActMenu_${user.id}">⋯</button>
-                      <div class="menu" id="userActMenu_${user.id}">
-                        <button data-action="user-role" data-id="${user.id}" data-role="${user.role || 'employee'}">✏️ Rôle</button>
-                        <button data-action="user-password" data-id="${user.id}">🔑 Mot de passe</button>
-                        <button class="danger" data-action="user-delete" data-id="${user.id}">🗑️ Supprimer</button>
+                      <button class="menu-btn" onclick="toggleMenu(event, 'userActMenu_${escHtml(user.id)}')">⋯</button>
+                      <div class="menu" id="userActMenu_${escHtml(user.id)}">
+                        <button onclick="openRoleModal('${escHtml(user.id)}', '${escHtml(user.role || 'employee')}')">✏️ Rôle</button>
+                        <button onclick="openAdminPasswordModal('${escHtml(user.id)}')">🔑 Mot de passe</button>
+                        <button class="danger" onclick="deleteUser('${escHtml(user.id)}', this)">🗑️ Supprimer</button>
                       </div>
                     </div>
                   </div>`
@@ -5939,6 +5960,7 @@
         if (btn) { btn.disabled = false; btn.textContent = '🗑️'; }
       }
     };
+    window.deleteUser = deleteUser;
 
     // ── Role change ──────────────────────────────────────────────────────────
     let _pendingRoleChangeUserId = null;
@@ -5958,6 +5980,7 @@
       _pendingRoleChangeUserId = userId;
       openModal('roleModal');
     };
+    window.openRoleModal = openRoleModal;
 
     window.confirmRoleChange = async function () {
       const userId = _pendingRoleChangeUserId;
@@ -6077,20 +6100,68 @@
 
     window.openPasswordModal = function () {
       closeAllMenus();
+      document.getElementById('oldPassword').value = '';
       document.getElementById('newPassword').value = '';
       document.getElementById('confirmPassword').value = '';
+      const statusEl = document.getElementById('passwordStatus');
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
       openModal('passwordModal');
     };
 
     window.changeMyPassword = async function () {
-      const newPassword = document.getElementById('newPassword').value;
+      const oldPassword     = document.getElementById('oldPassword').value;
+      const newPassword     = document.getElementById('newPassword').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
-      if (!newPassword || newPassword.length < 6) return showSessionStatus(t('msg_pwd_min6'), 'error');
-      if (newPassword !== confirmPassword) return showSessionStatus(t('msg_pwd_mismatch'), 'error');
+      const statusEl        = document.getElementById('passwordStatus');
+
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+
+      if (!oldPassword) {
+        const msg = t('msg_pwd_ancien_requis');
+        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
+        return showSessionStatus(msg, 'error');
+      }
+      if (!newPassword || newPassword.length < 6) {
+        const msg = t('msg_pwd_min6');
+        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
+        return showSessionStatus(msg, 'error');
+      }
+      if (newPassword !== confirmPassword) {
+        const msg = t('msg_pwd_mismatch');
+        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
+        return showSessionStatus(msg, 'error');
+      }
+
+      const email = state.profile?.email || state.session?.user?.email;
+      if (!email) {
+        const msg = '❌ Session invalide. Reconnectez-vous.';
+        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
+        return showSessionStatus(msg, 'error');
+      }
+
+      if (statusEl) { statusEl.textContent = '⏳ Vérification…'; statusEl.style.color = ''; }
+
+      // Verify old password via a sign-in attempt.  Supabase Auth does not expose
+      // a dedicated "verify password" endpoint on the client SDK, so signInWithPassword
+      // is the standard approach.  On success it also refreshes the current session,
+      // which is harmless and expected when the user is changing their own password.
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: oldPassword });
+      if (signInError) {
+        const msg = t('msg_pwd_ancien_incorrect');
+        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
+        return showSessionStatus(msg, 'error');
+      }
+
       const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) return showSessionStatus('❌ ' + error.message, 'error');
+      if (error) {
+        const msg = '❌ ' + error.message;
+        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
+        return showSessionStatus(msg, 'error');
+      }
+      document.getElementById('oldPassword').value = '';
       document.getElementById('newPassword').value = '';
       document.getElementById('confirmPassword').value = '';
+      if (statusEl) { statusEl.textContent = ''; }
       closeModal('passwordModal');
       showSessionStatus(t('msg_pwd_updated'), 'success');
     };
@@ -6687,6 +6758,9 @@
             fixed_monthly_salary: fixedSalary, fuel_allowance: fuel
           });
         }
+
+        // Reload all users from Supabase to ensure commission calculations use fresh data
+        try { await loadAllUsers(); } catch (_) {}
 
         if (statusEl) { statusEl.textContent = '✅ Paramètres enregistrés'; statusEl.style.color = '#2e7d32'; }
         showSessionStatus(t('msg_remu_saved'), 'success');
