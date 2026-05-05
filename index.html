@@ -807,7 +807,7 @@
   <!-- ── Admin stock requests modal ────────────────────────────────────────── -->
   <div id="adminStockRequestsModal" class="modal-backdrop" onclick="backdropClose(event, 'adminStockRequestsModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>📦 Demandes de stock</h3><button class="close-x" onclick="closeModal('adminStockRequestsModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="stock_demandes_employes">📦 Demandes stock employés</h3><button class="close-x" onclick="closeModal('adminStockRequestsModal')">✕</button></div>
       <div id="adminStockRequestsContent"><div class="muted">Chargement…</div></div>
     </div>
   </div>
@@ -1083,6 +1083,8 @@
         stock_alerte: 'Alerte stock',
         stock_alerte_activer: 'Activer l\'alerte pour cet article',
         stock_seuil: 'Seuil',
+        stock_demandes_employes: '📦 Demandes stock employés',
+        stock_aucune_demande_employe: '📦 Aucune demande employé pour l\'instant.',
         remu_commissionSimple: 'Commission simple',
         remu_fixeCommission: 'Fixe + commission réduite',
         remu_salaireFixe: 'Salaire fixe mensuel',
@@ -1258,6 +1260,8 @@
         stock_alerte: 'تنبيه المخزون',
         stock_alerte_activer: 'تفعيل التنبيه لهذا العنصر',
         stock_seuil: 'العتبة',
+        stock_demandes_employes: '📦 طلبات مخزون الموظفين',
+        stock_aucune_demande_employe: '📦 لا توجد طلبات موظفين حاليًا.',
         remu_commissionSimple: 'عمولة بسيطة',
         remu_fixeCommission: 'ثابت + عمولة مخفضة',
         remu_salaireFixe: 'الراتب الثابت الشهري',
@@ -1433,6 +1437,8 @@
         stock_alerte: 'Tenbih stock',
         stock_alerte_activer: 'Fermki tenbih l had l3nsor',
         stock_seuil: 'Seuil',
+        stock_demandes_employes: '📦 Talabat stock dyal lkhddama',
+        stock_aucune_demande_employe: '📦 Ma kayn ta talb dyal khddam daba.',
         remu_commissionSimple: 'Commission simple',
         remu_fixeCommission: 'Fixe + commission mkhffda',
         remu_salaireFixe: 'Salary fixe f chhar',
@@ -2690,7 +2696,7 @@
         // Transfer button
         html += `<div style="margin-top:14px;display:flex;gap:8px;">
           <button data-action="stock-transfer" style="flex:1;">🔄 Transférer stock → commercial</button>
-          <button onclick="openAdminStockRequestsModal()" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);">📦 Demandes de stock</button>
+          <button onclick="openAdminStockRequestsModal()" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);">${t('stock_demandes_employes')}</button>
         </div>`;
 
         // Per-employee commercial stocks
@@ -2999,7 +3005,7 @@
 
       showSessionStatus(successMsg, 'success', 8000);
 
-      loadCloudData().then(() => { renderStock(); renderNotificationBell(); }).catch(e => console.warn('[transfer] refresh:', e?.message));
+      refreshStockData().then(() => { renderStock(); loadNotifications().then(() => renderNotificationBell()).catch(() => {}); }).catch(e => console.warn('[transfer] refresh:', e?.message));
     };
 
     // ── Notification helpers ───────────────────────────────────────────────────
@@ -3197,7 +3203,7 @@
         _returnTargetCat    = null;
         closeModal('returnStockModal');
         showSessionStatus(`✅ ${formatStockValue(category, quantity)} ${category} récupérés vers stock central`, 'success', 5000);
-        loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[return] refresh:', e?.message));
+        refreshStockData().then(() => { renderStock(); }).catch(e => console.warn('[return] refresh:', e?.message));
       } catch (err) {
         statusEl.textContent = `❌ Erreur : ${getFriendlyErrorMessage(err)}`;
       } finally {
@@ -3348,7 +3354,7 @@
               ${req.notes ? `<div class="muted" style="font-size:12px;margin-top:4px;">💬 ${escHtml(req.notes)}</div>` : ''}
               ${isReady ? `<div style="margin-top:8px;padding:8px;background:rgba(39,174,96,0.1);border-radius:6px;font-size:13px;color:#1a7a40;">📍 Votre stock est prêt, passez le récupérer.</div>` : ''}
               ${req.admin_notes ? `<div class="muted" style="font-size:12px;margin-top:4px;">📝 ${escHtml(req.admin_notes)}</div>` : ''}
-              ${isCancellable ? `<button onclick="cancelMyStockRequest('${escHtml(req.id)}')" style="margin-top:8px;font-size:12px;background:rgba(0,0,0,0.07);color:var(--color-text);">🚫 Annuler</button>` : ''}
+              ${isCancellable ? `<button onclick="cancelMyStockRequest('${escHtml(req.id)}', this)" style="margin-top:8px;font-size:12px;background:rgba(0,0,0,0.07);color:var(--color-text);">🚫 Annuler</button>` : ''}
             </div>`;
           }).join('');
         }
@@ -3357,8 +3363,11 @@
       }
     };
 
-    window.cancelMyStockRequest = async function(reqId) {
+    window.cancelMyStockRequest = async function(reqId, btn) {
+      if (btn && btn.disabled) return;
       if (!navigator.onLine) { showSessionStatus('❌ Connexion requise', 'error'); return; }
+      const origText = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
       try {
         const { error } = await supabase.rpc('cancel_stock_request', { p_request_id: reqId });
         if (error) throw error;
@@ -3366,6 +3375,7 @@
         openMyStockRequestsModal();
       } catch (err) {
         showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
+        if (btn) { btn.disabled = false; btn.textContent = origText; }
       }
     };
 
@@ -3391,7 +3401,7 @@
           .limit(50);
         if (error) throw error;
         if (!data || data.length === 0) {
-          if (content) content.innerHTML = "<div class=\"empty-state\">📦 Aucune demande pour l'instant.</div>";
+          if (content) content.innerHTML = `<div class="empty-state">${t('stock_aucune_demande_employe')}</div>`;
           return;
         }
 
@@ -3412,19 +3422,19 @@
             let buttons = '';
             if (req.status === 'pending') {
               buttons = `
-                <button onclick="adminSetReqStatus('${safeId}','preparing')" style="font-size:12px;padding:4px 8px;">📦 Préparer</button>
-                <button onclick="adminSetReqStatus('${safeId}','ready_pickup')" style="font-size:12px;padding:4px 8px;">✅ Prêt à récupérer</button>
+                <button onclick="adminSetReqStatus('${safeId}','preparing',null,this)" style="font-size:12px;padding:4px 8px;">📦 Préparer</button>
+                <button onclick="adminSetReqStatus('${safeId}','ready_pickup',null,this)" style="font-size:12px;padding:4px 8px;">✅ Prêt à récupérer</button>
                 <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
-                <button onclick="adminSetReqStatus('${safeId}','rejected')" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
+                <button onclick="adminSetReqStatus('${safeId}','rejected',null,this)" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
             } else if (req.status === 'preparing') {
               buttons = `
-                <button onclick="adminSetReqStatus('${safeId}','ready_pickup')" style="font-size:12px;padding:4px 8px;">✅ Prêt à récupérer</button>
+                <button onclick="adminSetReqStatus('${safeId}','ready_pickup',null,this)" style="font-size:12px;padding:4px 8px;">✅ Prêt à récupérer</button>
                 <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
-                <button onclick="adminSetReqStatus('${safeId}','rejected')" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
+                <button onclick="adminSetReqStatus('${safeId}','rejected',null,this)" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
             } else if (req.status === 'ready_pickup') {
               buttons = `
                 <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
-                <button onclick="adminSetReqStatus('${safeId}','rejected')" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
+                <button onclick="adminSetReqStatus('${safeId}','rejected',null,this)" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
             }
 
             return `<div style="border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:10px;${isActive ? '' : 'opacity:0.65;'}">
@@ -3445,8 +3455,11 @@
       }
     }
 
-    window.adminSetReqStatus = async function(reqId, newStatus, adminNotes) {
+    window.adminSetReqStatus = async function(reqId, newStatus, adminNotes, btn) {
+      if (btn && btn.disabled) return;
       if (!isManagerOrAdmin() || !navigator.onLine) return;
+      const origText = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
       try {
         const { error } = await supabase.rpc('update_stock_request_status', {
           p_request_id:  reqId,
@@ -3459,6 +3472,7 @@
         showSessionStatus(`✅ Statut mis à jour : ${_stockReqStatusLabel(newStatus)}`, 'success', 3000);
       } catch (err) {
         showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
+        if (btn) { btn.disabled = false; btn.textContent = origText; }
       }
     };
 
@@ -3515,7 +3529,7 @@
         closeModal('adminStockRequestsModal');
         showSessionStatus("✅ Stock remis à l'employé et transféré.", 'success', 5000);
         _pendingFulfillRequestId = null;
-        loadCloudData().then(() => { renderStock(); renderNotificationBell(); }).catch(e => console.warn('[fulfill] refresh:', e?.message));
+        refreshStockData().then(() => { renderStock(); loadNotifications().then(() => renderNotificationBell()).catch(() => {}); }).catch(e => console.warn('[fulfill] refresh:', e?.message));
       } catch (err) {
         if (statusEl) statusEl.textContent = '❌ ' + getFriendlyErrorMessage(err);
         if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmer remise'; }
@@ -3588,7 +3602,7 @@
         closeModal('returnAllStockModal');
         showSessionStatus(`✅ Stock voiture de ${name} récupéré vers le stock central :\n${msgLines}`, 'success', 6000);
         _returnAllTargetUserId = null;
-        loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[returnAll] refresh:', e?.message));
+        refreshStockData().then(() => { renderStock(); }).catch(e => console.warn('[returnAll] refresh:', e?.message));
       } catch (err) {
         if (statusEl) statusEl.textContent = '❌ ' + getFriendlyErrorMessage(err);
         if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmer récupération'; }
@@ -3681,7 +3695,7 @@
         closeModal('declareLossModal');
         showSessionStatus(`⚠️ Perte enregistrée pour ${name} : ${formatStockValue(category, quantity)} ${category}. Stock central inchangé.`, 'success', 6000);
         _lossTargetUserId = null;
-        loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[loss] refresh:', e?.message));
+        refreshStockData().then(() => { renderStock(); }).catch(e => console.warn('[loss] refresh:', e?.message));
       } catch (err) {
         if (statusEl) statusEl.textContent = '❌ ' + getFriendlyErrorMessage(err);
         if (btn) { btn.disabled = false; btn.textContent = '⚠️ Confirmer perte'; }
@@ -4065,6 +4079,52 @@
       updateOfflineBanner();
     }
 
+    // Lightweight stock-only refresh — fetches stocks + commercial stocks without
+    // reloading clients, sales, logs or other data.  Used after stock actions to
+    // avoid blocking the full interface during a targeted update.
+    async function refreshStockData() {
+      if (!navigator.onLine) return;
+      const userId = state.session?.user?.id;
+      try {
+        const [stocksRes, commercialRes] = await Promise.all([
+          supabase.from('stocks').select('*'),
+          (() => {
+            if (!userId) return Promise.resolve({ data: [], error: null });
+            if (isManagerOrAdmin()) return supabase.from('stock_commercial').select('*');
+            return supabase.from('stock_commercial').select('*').eq('user_id', userId);
+          })()
+        ]);
+
+        if (!stocksRes.error) {
+          state.stocks = { ...DEFAULT_STOCKS };
+          (stocksRes.data || []).forEach(row => { state.stocks[row.category] = Number(row.quantity || 0); });
+        } else {
+          console.warn('[refreshStockData] stocks error:', stocksRes.error?.message);
+        }
+
+        if (!commercialRes.error) {
+          const commercialRows = commercialRes.data || [];
+          if (isManagerOrAdmin()) {
+            state.allCommercialStocks = commercialRows;
+            const myUserId = state.session?.user?.id;
+            state.commercialStock = {};
+            if (myUserId) {
+              commercialRows.filter(r => r.user_id === myUserId)
+                .forEach(r => { state.commercialStock[r.category] = Number(r.quantity || 0); });
+            }
+          } else {
+            state.allCommercialStocks = [];
+            state.commercialStock = {};
+            commercialRows.forEach(r => { state.commercialStock[r.category] = Number(r.quantity || 0); });
+          }
+        } else {
+          console.warn('[refreshStockData] commercial error:', commercialRes.error?.message);
+        }
+      } catch (e) {
+        console.warn('[refreshStockData] error:', e?.message);
+      }
+    }
+
     function paintApp() {
       loadClientSelectors();
       updateCategoryStyle();
@@ -4282,6 +4342,16 @@
       // ── Réseau / serveur indisponible ────────────────────────────────────────
       if (raw.includes('Failed to fetch') || raw.includes('NetworkError')) {
         return 'Connexion ou serveur indisponible — réessayez.';
+      }
+
+      // ── Délai dépassé / serveur lent ─────────────────────────────────────────
+      if (
+        raw.includes('AbortError') ||
+        rawLower.includes('timed out') ||
+        rawLower.includes('timeout') ||
+        rawLower.includes('request timed')
+      ) {
+        return 'Délai dépassé — le serveur Supabase met trop de temps à répondre. Réessayez dans quelques instants.';
       }
 
       return raw || 'Erreur inconnue';
@@ -5658,7 +5728,7 @@
       if (error) return showSessionStatus(`❌ ${getFriendlyErrorMessage(error)}`, 'error');
 
       showSessionStatus(`✅ Stock ${category} mis à jour : +${amount} ${unitLabel(category, amount !== 1)} (total : ${formatStockValue(category, newQty)})`, 'success', 5000);
-      loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] addToStock:', e?.message));
+      refreshStockData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] addToStock:', e?.message));
     };
 
     async function setStock(category) {
@@ -5685,7 +5755,7 @@
       if (error) return showSessionStatus(`❌ ${getFriendlyErrorMessage(error)}`, 'error');
 
       showSessionStatus(`✅ Stock ${category} défini à ${formatStockValue(category, quantity)}`, 'success', 5000);
-      loadCloudData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] setStock:', e?.message));
+      refreshStockData().then(() => { renderStock(); }).catch(e => console.warn('[refresh] setStock:', e?.message));
     };
 
     function getActivityStatus(lastSeen) {
