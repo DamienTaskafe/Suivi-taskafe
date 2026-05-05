@@ -984,6 +984,11 @@
     // Falls back to '' (push disabled) if the server env is not configured.
     let VAPID_PUBLIC_KEY = '';
 
+    // Tracks whether a push subscription was successfully saved to Supabase
+    // during the current session. Used to distinguish "permission granted" from
+    // "truly active" — avoids false-positive "Notifications actives" on iOS/PWA.
+    let _pushSavedThisSession = false;
+
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
     const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
     const CATEGORIES = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
@@ -1182,6 +1187,14 @@
         push_fulfilled_msg: 'Votre stock a été transféré dans votre stock voiture.',
         push_vapid_not_configured: '⚠️ Clé VAPID non configurée (voir README).',
         push_save_error: '❌ Abonnement non enregistré. Réessayez ou vérifiez la connexion.',
+        push_vapid_missing: 'Clé notifications manquante côté serveur.',
+        push_sw_timeout: 'Impossible de préparer le service worker. Fermez puis rouvrez l\'app.',
+        push_save_fail: 'Abonnement créé mais sauvegarde impossible. Réessayez.',
+        push_repaired: 'Notifications réparées et activées ✅',
+        push_repair_btn: '🔧 Réparer notifications',
+        push_repair_hint: 'Permission accordée mais non confirmée en base. Cliquez pour réparer.',
+        push_repairing: '⏳ Réparation en cours…',
+        push_subscribe_timeout: 'Délai dépassé lors de la création de l\'abonnement. Réessayez.',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1375,6 +1388,14 @@
         push_fulfilled_msg: 'تم نقل مخزونك إلى مخزون السيارة.',
         push_vapid_not_configured: '⚠️ مفتاح VAPID غير مضبوط (راجع README).',
         push_save_error: '❌ لم يُحفظ الاشتراك. أعد المحاولة أو تحقق من الاتصال.',
+        push_vapid_missing: 'مفتاح الإشعارات غير موجود على الخادم.',
+        push_sw_timeout: 'تعذّر تجهيز الخدمة. أغلق التطبيق وأعد فتحه.',
+        push_save_fail: 'تم إنشاء الاشتراك لكن تعذّر حفظه. أعد المحاولة.',
+        push_repaired: 'تم إصلاح الإشعارات وتفعيلها ✅',
+        push_repair_btn: '🔧 إصلاح الإشعارات',
+        push_repair_hint: 'تم منح الإذن لكن لم يُؤكَّد. اضغط للإصلاح.',
+        push_repairing: '⏳ جارٍ الإصلاح…',
+        push_subscribe_timeout: 'انتهت مهلة إنشاء الاشتراك. أعد المحاولة.',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1568,6 +1589,14 @@
         push_fulfilled_msg: 'Stock dyalek thwwel l stock tomobil.',
         push_vapid_not_configured: '⚠️ Clé VAPID mmazbitach (chof README).',
         push_save_error: '❌ L\'abonnement ma tkhzzanch. A3wed tjreb wla chof connexion.',
+        push_vapid_missing: 'Clé notifications manqaba f serveur.',
+        push_sw_timeout: 'Impossible d\'préparer service worker. Skhd w 3wed dir l\'app.',
+        push_save_fail: 'Abonnement nt3mel walakin ma tkhzzanch. 3wed tjreb.',
+        push_repaired: 'Notifications tslahw w fermkin ✅',
+        push_repair_btn: '🔧 Slah notifications',
+        push_repair_hint: 'Permission m3tiya walakin ma mkkedach. Dir clic bach tslah.',
+        push_repairing: '⏳ Kaytslah…',
+        push_subscribe_timeout: 'Wqt dial création abonnement fwwt. 3wed tjreb.',
       },
     };
 
@@ -3283,6 +3312,20 @@
       );
     }
 
+    // Races a promise against a timeout. Rejects with Error(errMsg) if the
+    // timeout fires first. The timer is always cleared to avoid leaking memory.
+    // Used to prevent infinite "Activation en cours…" on iOS.
+    function _withTimeout(promise, ms, errMsg) {
+      return new Promise((resolve, reject) => {
+        const msg = errMsg || 'Operation timed out';
+        const timer = setTimeout(() => reject(new Error(msg)), ms);
+        promise.then(
+          v => { clearTimeout(timer); resolve(v); },
+          e => { clearTimeout(timer); reject(e); }
+        );
+      });
+    }
+
     // Saves a push subscription to Supabase via the server endpoint (service-role
     // key bypasses RLS, making the write reliable regardless of JWT permissions).
     // Returns true on success, false on failure.
@@ -3319,6 +3362,7 @@
     // Registers (or refreshes) the push subscription for the current user.
     // Called asynchronously after login — must never block app startup.
     // Returns true if subscription was saved to DB, false otherwise.
+    // Uses timeouts so it never hangs indefinitely on iOS/Safari PWA.
     async function _registerPushSubscription() {
       if (!state.session?.user?.id) return false; // no session — abort silently
       if (!_isPushSupported()) return false;
@@ -3326,15 +3370,21 @@
       await _loadVapidKey();
       if (!VAPID_PUBLIC_KEY) return false;
       try {
-        const reg = await navigator.serviceWorker.ready;
+        const reg = await _withTimeout(navigator.serviceWorker.ready, 15000, t('push_sw_timeout'));
         let sub = await reg.pushManager.getSubscription();
         if (!sub) {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly:      true,
-            applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-          });
+          sub = await _withTimeout(
+            reg.pushManager.subscribe({
+              userVisibleOnly:      true,
+              applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            }),
+            15000,
+            t('push_subscribe_timeout')
+          );
         }
-        return await _savePushSubscription(sub);
+        const saved = await _savePushSubscription(sub);
+        if (saved) _pushSavedThisSession = true;
+        return saved;
       } catch (e) {
         console.warn('[push] registration error:', e?.message);
         return false;
@@ -3342,6 +3392,10 @@
     }
 
     // Updates the push settings button/status in the settings modal.
+    // "Notifications actives" is shown ONLY when a subscription was confirmed
+    // saved to Supabase this session (_pushSavedThisSession).  If the OS
+    // permission is granted but the DB save is unconfirmed, a "Réparer" button
+    // is shown instead — fixing the false-positive on iPhone PWA.
     function _refreshPushSettingsUI() {
       const btn       = document.getElementById('pushEnableBtn');
       const statusMsg = document.getElementById('pushStatusMsg');
@@ -3356,9 +3410,17 @@
 
       const perm = Notification.permission;
       if (perm === 'granted') {
-        btn.disabled = true;
-        btn.textContent = '✅ ' + t('push_enabled');
-        if (statusMsg) { statusMsg.textContent = t('push_enabled'); statusMsg.style.color = '#2e7d32'; }
+        if (_pushSavedThisSession) {
+          // Confirmed saved to DB this session → truly active
+          btn.disabled = true;
+          btn.textContent = '✅ ' + t('push_enabled');
+          if (statusMsg) { statusMsg.textContent = t('push_enabled'); statusMsg.style.color = '#2e7d32'; }
+        } else {
+          // Permission exists but DB save unconfirmed → offer repair
+          btn.disabled = false;
+          btn.textContent = t('push_repair_btn');
+          if (statusMsg) { statusMsg.textContent = t('push_repair_hint'); statusMsg.style.color = '#e65100'; }
+        }
       } else if (perm === 'denied') {
         btn.disabled = true;
         btn.textContent = '🚫 ' + t('push_blocked');
@@ -3370,7 +3432,10 @@
       }
     }
 
-    // Called when user clicks "Activer notifications téléphone" in settings.
+    // Called when user clicks "Activer" or "Réparer notifications" in settings.
+    // Handles both first-time activation (permission not yet granted) and repair
+    // (permission already granted on iOS/PWA but subscription not saved to DB).
+    // Each async step has an explicit timeout so the button is never stuck.
     window.requestPushPermission = async function() {
       const btn       = document.getElementById('pushEnableBtn');
       const statusMsg = document.getElementById('pushStatusMsg');
@@ -3380,49 +3445,95 @@
         return;
       }
 
-      if (btn) { btn.disabled = true; btn.textContent = t('push_enabling'); }
+      // Determine if we're repairing an already-granted permission (iOS PWA case)
+      const alreadyGranted = Notification.permission === 'granted';
+
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = alreadyGranted ? t('push_repairing') : t('push_enabling');
+      }
       if (statusMsg) { statusMsg.textContent = ''; statusMsg.style.color = ''; }
 
-      // Load key from server before attempting subscription
-      await _loadVapidKey();
-
-      if (!VAPID_PUBLIC_KEY) {
-        if (statusMsg) { statusMsg.textContent = t('push_vapid_not_configured'); statusMsg.style.color = '#e65100'; }
-        if (btn) { btn.disabled = false; btn.textContent = t('push_enable_btn'); }
-        return;
-      }
-
       try {
-        const permission = await Notification.requestPermission();
+        // ── Step 1: Load VAPID key (with timeout) ──────────────────────────
+        if (!VAPID_PUBLIC_KEY) {
+          try {
+            await _withTimeout(_loadVapidKey(), 8000, 'VAPID key fetch timed out');
+          } catch (e) {
+            console.warn('[push] VAPID key fetch failed:', e?.message);
+          }
+        }
+        if (!VAPID_PUBLIC_KEY) {
+          if (statusMsg) { statusMsg.textContent = t('push_vapid_missing'); statusMsg.style.color = '#e65100'; }
+          return;
+        }
+
+        // ── Step 2: Request (or confirm) permission ─────────────────────────
+        let permission = Notification.permission;
+        if (permission !== 'granted') {
+          permission = await Notification.requestPermission();
+        }
+
         if (permission === 'granted') {
-          const saved = await _registerPushSubscription();
+          // ── Step 3: Get service worker registration (with timeout) ────────
+          let reg;
+          try {
+            reg = await _withTimeout(navigator.serviceWorker.ready, 15000, t('push_sw_timeout'));
+          } catch (e) {
+            if (statusMsg) { statusMsg.textContent = t('push_sw_timeout'); statusMsg.style.color = '#c62828'; }
+            return;
+          }
+
+          // ── Step 4: Get existing or create new push subscription ──────────
+          let sub;
+          try {
+            sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+              sub = await _withTimeout(
+                reg.pushManager.subscribe({
+                  userVisibleOnly:      true,
+                  applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                }),
+                15000,
+                t('push_subscribe_timeout')
+              );
+            }
+          } catch (e) {
+            console.error('[push] subscribe error:', e?.message);
+            if (statusMsg) { statusMsg.textContent = t('push_enable_error') + (e?.message ? ' : ' + e.message : ''); statusMsg.style.color = '#c62828'; }
+            return;
+          }
+
+          // ── Step 5: Save subscription to Supabase ─────────────────────────
+          const saved = await _savePushSubscription(sub);
           if (saved) {
+            _pushSavedThisSession = true;
             _refreshPushSettingsUI();
-            if (statusMsg) { statusMsg.textContent = '✅ ' + t('push_enabled'); statusMsg.style.color = '#2e7d32'; }
-            showSessionStatus('✅ ' + t('push_enabled'), 'success', 3000);
+            const successMsg = alreadyGranted ? t('push_repaired') : '✅ ' + t('push_enabled');
+            if (statusMsg) { statusMsg.textContent = successMsg; statusMsg.style.color = '#2e7d32'; }
+            showSessionStatus(successMsg, 'success', 3000);
           } else {
-            // Permission granted but DB save failed — re-enable so user can retry
-            if (btn) { btn.disabled = false; btn.textContent = t('push_enable_btn'); }
-            if (statusMsg) { statusMsg.textContent = t('push_save_error'); statusMsg.style.color = '#c62828'; }
+            if (statusMsg) { statusMsg.textContent = t('push_save_fail'); statusMsg.style.color = '#c62828'; }
             console.warn('[push] subscription not saved to database');
           }
+
         } else if (permission === 'denied') {
           _refreshPushSettingsUI();
           if (statusMsg) { statusMsg.textContent = t('push_blocked'); statusMsg.style.color = '#c62828'; }
           showSessionStatus('🚫 ' + t('push_blocked'), 'info', 5000);
         } else {
           // dismissed — reset so user can try again
-          if (btn) { btn.disabled = false; btn.textContent = t('push_enable_btn'); }
           if (statusMsg) { statusMsg.textContent = ''; }
         }
+
       } catch (e) {
-        console.error('[push] requestPermission error:', e?.message);
+        console.error('[push] requestPushPermission error:', e?.message);
         if (statusMsg) { statusMsg.textContent = t('push_enable_error'); statusMsg.style.color = '#c62828'; }
       } finally {
-        // Safety net: if an unexpected path left the button stuck on "Activation en cours", reset it
-        if (btn && btn.textContent === t('push_enabling')) {
+        // Always re-enable if button is still in a loading state
+        if (btn && (btn.textContent === t('push_enabling') || btn.textContent === t('push_repairing'))) {
           btn.disabled = false;
-          btn.textContent = t('push_enable_btn');
+          btn.textContent = alreadyGranted ? t('push_repair_btn') : t('push_enable_btn');
         }
       }
     };
@@ -4929,8 +5040,11 @@
               setTimeout(() => syncPendingOps(), BOOT_SYNC_DELAY_MS);
             }
           }
-          // Register/refresh push subscription in background — never blocks startup
-          setTimeout(() => _registerPushSubscription().catch(() => {}), 2000);
+          // Register/refresh push subscription in background — never blocks startup.
+          // On success, _pushSavedThisSession is set and the settings UI is refreshed.
+          setTimeout(() => _registerPushSubscription()
+            .then(ok => { if (ok) _refreshPushSettingsUI(); })
+            .catch(e => console.debug('[boot] push registration failed:', e?.message)), 2000);
         } catch (error) {
           console.error('[bootFromSession] Boot error:', error);
           const errorClass = classifyCloudError(error);
