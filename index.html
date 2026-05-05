@@ -3292,10 +3292,16 @@
       const avail = context.available !== undefined ? context.available : null;
       const pool = context.pool || null; // 'commercial' | 'central'
 
-      // ── Fonction RPC introuvable (migration non appliquée) ───────────────────
+      // ── Fonction RPC introuvable (migration non appliquée / schema cache périmé) ──
       // PGRST202 is the PostgREST error code for "function not found in schema cache".
-      if (err?.code === 'PGRST202' || raw.toLowerCase().includes('could not find the function')) {
-        return '❌ Fonction de transfert stock absente. Appliquez les migrations Supabase puis rechargez le schéma (Settings → API → Reload schema cache).';
+      const rawLower = raw.toLowerCase();
+      if (
+        err?.code === 'PGRST202' ||
+        rawLower.includes('could not find the function') ||
+        rawLower.includes('schema cache') ||
+        (rawLower.includes('function') && rawLower.includes('does not exist'))
+      ) {
+        return 'Fonction transfert stock absente côté Supabase. Appliquez les migrations Supabase puis rechargez le schéma/API.';
       }
 
       const fmtQty = (qty) => {
