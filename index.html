@@ -2845,7 +2845,10 @@
       }
 
       if (failed.length > 0) {
-        const msgs = failed.map(f => `${f.line.category}: ${getFriendlyErrorMessage(f.error, { category: f.line.category, requested: f.line.quantity, available: Number(state.stocks[f.line.category] || 0), pool: 'central' })}`);
+        const msgs = failed.map(f => {
+          const ctx = { category: f.line.category, requested: f.line.quantity, available: Number(state.stocks[f.line.category] || 0), pool: 'central' };
+          return `${f.line.category}: ${getFriendlyErrorMessage(f.error, ctx)}`;
+        });
         if (statusEl) statusEl.textContent = '❌ Erreur(s) : ' + msgs.join(' | ');
         if (execBtn) { execBtn.disabled = false; execBtn.textContent = '✅ Confirmer'; }
         return;
