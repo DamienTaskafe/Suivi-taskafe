@@ -871,7 +871,7 @@
     .empty-state { text-align: center; padding: var(--spacing-xl); border-radius: var(--radius-lg); background: rgba(255,255,255,0.72); color: var(--color-text-muted); border: 1px dashed var(--color-border); font-size: 13px; }
 
     .users-grid { display: grid; grid-template-columns: 1fr; gap: var(--spacing-md); margin: var(--spacing-lg) 0; }
-    .user-row { position: relative; background: rgba(255,255,255,0.88); border-radius: var(--radius-md); padding: var(--spacing-md) var(--spacing-lg); border: 1px solid rgba(0,0,0,0.04); display: flex; align-items: center; gap: var(--spacing-sm); }
+    .user-row { position: relative; background: rgba(255,255,255,0.88); border-radius: var(--radius-md); padding: var(--spacing-md) var(--spacing-lg); border: 1px solid rgba(0,0,0,0.04); display: flex; align-items: center; gap: var(--spacing-lg); }
     .user-info { flex: 1; min-width: 0; }
     .user-row-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .user-remu-btn { width: auto !important; padding: 5px 10px !important; font-size: 12px !important; white-space: nowrap; min-width: 0; margin: 0 !important; }
