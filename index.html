@@ -120,6 +120,14 @@
             <strong id="menuUserName">—</strong>
             <span id="menuUserRole">—</span>
           </div>
+          <div class="header-language-picker">
+            <label for="headerLangSelect" data-i18n="menu_langue">🌍 Langue</label>
+            <select id="headerLangSelect" onchange="saveLanguagePref(this.value)">
+              <option value="fr">Français</option>
+              <option value="ar">العربية</option>
+              <option value="darija">Darija</option>
+            </select>
+          </div>
           <div class="header-menu-section-title" data-i18n="menu_compte">👤 Compte</div>
           <button onclick="openProfileModal()" data-i18n="menu_monProfil">👤 Mon profil</button>
           <button onclick="openPasswordModal()" data-i18n="menu_changerMdp">🔐 Changer mon mot de passe</button>
@@ -133,7 +141,7 @@
           <button id="permissionsBtn" class="hidden" onclick="openPermissionsModal()" data-i18n="menu_droitsAcces">🔐 Droits d'accès</button>
           <div class="header-menu-section-title hidden" id="sectionFinance" data-i18n="menu_finance">💰 Finance</div>
           <button id="commissionsBtn" onclick="openCommissionsModal()" class="hidden" data-i18n="menu_commissions">💰 Commissions</button>
-          <button id="remunerationsListBtn" type="button" data-action="open-remunerations-list" class="hidden">💰 Rémunérations employés</button>
+          <button id="remunerationsListBtn" type="button" data-action="open-remunerations-list" class="hidden" data-i18n="menu_remuEmployes">💰 Rémunérations employés</button>
           <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden" data-i18n="menu_prixProduits">💲 Prix produits</button>
           <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden" data-i18n="menu_analytiques">📈 Analytiques</button>
           <div class="header-menu-section-title" data-i18n="menu_admin">⚙️ Admin</div>
@@ -164,7 +172,7 @@
         </div>
 
         <label for="quantityInput" data-i18n="sale_quantite">Quantité</label>
-        <input id="quantityInput" type="number" step="0.01" placeholder="Quantité" oninput="updatePreview()" />
+        <input id="quantityInput" type="number" step="0.01" placeholder="Quantité" oninput="updatePreview()" data-i18n-placeholder="sale_quantite" />
 
         <label for="category" data-i18n="sale_categorie">Catégorie</label>
         <select id="category" onchange="updateCategoryStyle(); updatePreview(); updateQuantityPlaceholder();"></select>
@@ -189,9 +197,9 @@
         </div>
 
         <div class="preview-bar">
-          <div class="preview-chip"><span class="pchip-label">Prix unit.</span><span class="pchip-val" id="previewUnitPrice">0 DHS</span></div>
-          <div class="preview-chip preview-chip--total"><span class="pchip-label">Total</span><span class="pchip-val" id="previewTotalPrice">0 DHS</span></div>
-          <div class="preview-chip"><span class="pchip-label">Client</span><span class="pchip-val" id="previewClientName">—</span></div>
+          <div class="preview-chip"><span class="pchip-label" data-i18n="sale_prixUnit">Prix unit.</span><span class="pchip-val" id="previewUnitPrice">0 DHS</span></div>
+          <div class="preview-chip preview-chip--total"><span class="pchip-label" data-i18n="sale_total">Total</span><span class="pchip-val" id="previewTotalPrice">0 DHS</span></div>
+          <div class="preview-chip"><span class="pchip-label" data-i18n="sale_client">Client</span><span class="pchip-val" id="previewClientName">—</span></div>
         </div>
 
         <div style="display:flex;justify-content:center;">
@@ -202,7 +210,7 @@
 
         <div class="accordion vr-acc open" id="ventesRecentesAcc">
           <div class="accordion-header" onclick="toggleAccordion(this)">
-            <span>📊 Ventes récentes</span>
+            <span data-i18n="sale_ventes_recentes">📊 Ventes récentes</span>
             <span class="arrow">▼</span>
           </div>
           <div class="accordion-inner">
@@ -219,11 +227,11 @@
           </div>
         </div>
         <div class="accordion">
-          <div class="accordion-header" onclick="toggleAccordion(this)"><span>🔍 Filtres</span><span class="arrow">▼</span></div>
+          <div class="accordion-header" onclick="toggleAccordion(this)"><span data-i18n="sale_filtres">🔍 Filtres</span><span class="arrow">▼</span></div>
           <div class="accordion-inner">
-            <label>Client</label>
+            <label data-i18n="sale_client">Client</label>
             <div class="client-search-wrap" id="clientSearchWrap">
-              <input id="filterClientSearch" type="text" placeholder="Rechercher un client…" autocomplete="off" oninput="onFilterClientInput()" onfocus="showClientDropdown()" />
+              <input id="filterClientSearch" type="text" placeholder="Rechercher un client…" autocomplete="off" oninput="onFilterClientInput()" onfocus="showClientDropdown()" data-i18n-placeholder="sale_searchClient" />
               <input type="hidden" id="filterClient" />
               <div class="client-search-drop" id="clientSearchDrop"></div>
             </div>
@@ -232,8 +240,8 @@
             <input type="date" id="filterDate" onchange="renderSales()" />
 
             <details style="margin-top:10px;">
-              <summary style="font-size:12px;font-weight:700;color:var(--color-text-muted);cursor:pointer;text-transform:uppercase;letter-spacing:0.3px;">▸ Filtre catégorie</summary>
-              <select id="filterCategory" onchange="renderSales()" style="margin-top:8px;"><option value="">Toutes catégories</option></select>
+              <summary style="font-size:12px;font-weight:700;color:var(--color-text-muted);cursor:pointer;text-transform:uppercase;letter-spacing:0.3px;" data-i18n="sale_filtreCategorie">▸ Filtre catégorie</summary>
+              <select id="filterCategory" onchange="renderSales()" style="margin-top:8px;"><option value="" data-i18n="sale_toutes_categories">Toutes catégories</option></select>
             </details>
           </div>
         </div>
@@ -263,46 +271,46 @@
             </div>
 
             <div class="ncp-field">
-              <label for="clientAddrDetail">Adresse</label>
-              <input id="clientAddrDetail" type="text" placeholder="Nom de voie" />
+              <label for="clientAddrDetail" data-i18n="client_adresse">Adresse</label>
+              <input id="clientAddrDetail" type="text" placeholder="Nom de voie" data-i18n-placeholder="client_nom_voie" />
             </div>
 
             <div class="ncp-field">
-              <label for="clientAddrCity">Ville</label>
+              <label for="clientAddrCity" data-i18n="client_ville">Ville</label>
               <div class="city-search-wrap" id="citySearchWrap">
-                <input id="clientAddrCity" type="text" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" />
+                <input id="clientAddrCity" type="text" placeholder="Ville (rechercher…)" autocomplete="off" oninput="onCityInput()" onfocus="showCityDrop()" data-i18n-placeholder="client_ville_placeholder" />
                 <div class="client-search-drop" id="citySearchDrop"></div>
               </div>
             </div>
 
             <div class="ncp-field">
-              <label for="clientICE">💳 ICE</label>
-              <input id="clientICE" type="text" placeholder="Numéro ICE (facturation)" />
+              <label for="clientICE" data-i18n="client_ice">💳 ICE</label>
+              <input id="clientICE" type="text" placeholder="Numéro ICE (facturation)" data-i18n-placeholder="client_ice_placeholder" />
             </div>
 
             <div class="ncp-field">
-              <label for="clientPhone">📞 Téléphone</label>
-              <input id="clientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" />
+              <label for="clientPhone" data-i18n="client_telephone">📞 Téléphone</label>
+              <input id="clientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" data-i18n-placeholder="client_telephone_placeholder" />
             </div>
 
             <div class="ncp-field">
-              <label>📍 Position GPS</label>
+              <label data-i18n="client_gps">📍 Position GPS</label>
               <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()" data-i18n="client_gpsActuel">📍 Utiliser ma position actuelle</button>
               <div id="gpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS enregistré</div>
             </div>
 
-            <h4>💰 Prix personnalisés par gamme</h4>
+            <h4 data-i18n="client_prix_custom">💰 Prix personnalisés par gamme</h4>
             <div class="price-scroll-row"></div>
-            <div class="muted">Laisse vide pour utiliser les prix standard.</div>
+            <div class="muted" data-i18n="client_prix_hint">Laisse vide pour utiliser les prix standard.</div>
             <button id="addClientBtn" onclick="addClient()" data-i18n="client_creer">✅ Créer client</button>
           </div>
         </div>
 
         <div class="clients-list-header">
-          <h3>👥 Fiches clients</h3>
+          <h3 data-i18n="client_fiches">👥 Fiches clients</h3>
         </div>
         <div class="clients-search-bar">
-          <input id="clientSearchInput" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="filterClients()" />
+          <input id="clientSearchInput" type="text" placeholder="🔎 Rechercher un client..." autocomplete="off" oninput="filterClients()" data-i18n-placeholder="sale_searchClient" />
         </div>
         <div class="client-list-scroll">
           <div id="clientList"></div>
@@ -310,7 +318,7 @@
       </div>
 
       <div id="stock" class="section-shell hidden">
-        <h3 style="margin-bottom:var(--spacing-lg);">📦 Gestion du stock</h3>
+        <h3 style="margin-bottom:var(--spacing-lg);" data-i18n="stock_gestion">📦 Gestion du stock</h3>
         <div id="stockList"></div>
       </div>
 
@@ -340,42 +348,42 @@
 
   <div id="usersModal" class="modal-backdrop" onclick="backdropClose(event, 'usersModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>👥 Gérer utilisateurs</h3><button class="close-x" onclick="closeModal('usersModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="menu_gererUtilisateurs">👥 Gérer utilisateurs</h3><button class="close-x" onclick="closeModal('usersModal')">✕</button></div>
       <div class="settings-option">
-        <div class="title">Créer nouvel utilisateur</div>
-        <label for="newUserEmail">📧 Email</label>
-        <input id="newUserEmail" type="email" placeholder="Email" />
-        <label for="newUserPassword">🔐 Mot de passe</label>
-        <input id="newUserPassword" type="password" placeholder="Min 6 caractères" />
-        <label for="newUserName">👤 Nom complet</label>
-        <input id="newUserName" type="text" placeholder="Nom complet" />
-        <label for="newUserRole">🎖️ Rôle</label>
+        <div class="title" data-i18n="user_creer">Créer nouvel utilisateur</div>
+        <label for="newUserEmail" data-i18n="auth_email">📧 Email</label>
+        <input id="newUserEmail" type="email" placeholder="Email" data-i18n-placeholder="auth_email_placeholder" />
+        <label for="newUserPassword" data-i18n="auth_password">🔐 Mot de passe</label>
+        <input id="newUserPassword" type="password" placeholder="Min 6 caractères" data-i18n-placeholder="pwd_min6" />
+        <label for="newUserName" data-i18n="user_nom">👤 Nom complet</label>
+        <input id="newUserName" type="text" placeholder="Nom complet" data-i18n-placeholder="user_nom_placeholder" />
+        <label for="newUserRole" data-i18n="user_role">🎖️ Rôle</label>
         <select id="newUserRole">
-          <option value="employee">Employé</option>
+          <option value="employee" data-i18n="user_employe">Employé</option>
           <option value="manager">Manager (sous-admin)</option>
-          <option value="admin">Admin</option>
+          <option value="admin" data-i18n="user_admin">Admin</option>
         </select>
-        <button id="createUserBtn" onclick="createNewUser()">✅ Créer</button>
+        <button id="createUserBtn" onclick="createNewUser()" data-i18n="user_creer_btn">✅ Créer</button>
         <div id="createUserStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
       </div>
       <hr />
-      <h4>Utilisateurs actuels</h4>
+      <h4 data-i18n="user_actuels">Utilisateurs actuels</h4>
       <div id="usersList" class="users-grid"></div>
     </div>
   </div>
 
   <div id="roleModal" class="modal-backdrop" onclick="backdropClose(event, 'roleModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>✏️ Modifier le rôle</h3><button class="close-x" onclick="closeModal('roleModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="user_modifier_role">✏️ Modifier le rôle</h3><button class="close-x" onclick="closeModal('roleModal')">✕</button></div>
       <div class="settings-option">
         <div id="roleModalUserLabel" class="title">—</div>
-        <label for="roleModalSelect">🎖️ Nouveau rôle</label>
+        <label for="roleModalSelect" data-i18n="user_nouveau_role">🎖️ Nouveau rôle</label>
         <select id="roleModalSelect">
-          <option value="employee">Employé</option>
-          <option value="manager">Manager</option>
-          <option value="admin">Admin</option>
+          <option value="employee" data-i18n="user_employe">Employé</option>
+          <option value="manager" data-i18n="user_manager">Manager</option>
+          <option value="admin" data-i18n="user_admin">Admin</option>
         </select>
-        <button id="roleModalSaveBtn" onclick="confirmRoleChange()">✅ Enregistrer</button>
+        <button id="roleModalSaveBtn" onclick="confirmRoleChange()" data-i18n="sale_enregistrer">✅ Enregistrer</button>
         <div id="roleModalStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
       </div>
     </div>
@@ -383,7 +391,7 @@
 
   <div id="settingsHubModal" class="modal-backdrop" onclick="backdropClose(event, 'settingsHubModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>⚙️ Paramètres</h3><button class="close-x" onclick="closeModal('settingsHubModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="menu_parametres">⚙️ Paramètres</h3><button class="close-x" onclick="closeModal('settingsHubModal')">✕</button></div>
       <div class="settings-option">
         <div class="title" data-i18n="settings_langue">🌍 Langue</div>
         <select id="langSelect" onchange="saveLanguagePref(this.value)" style="margin-top:8px;">
@@ -394,39 +402,39 @@
         <div id="langSaveStatus" style="margin-top:6px;font-size:12px;min-height:16px;"></div>
       </div>
       <div class="settings-option">
-        <div class="title">🔒 Sécurité</div>
-        <div class="muted">Modifier ton mot de passe.</div>
-        <button onclick="closeModal('settingsHubModal'); openPasswordModal();">Changer mot de passe</button>
+        <div class="title" data-i18n="settings_securite">🔒 Sécurité</div>
+        <div class="muted" data-i18n="settings_modifier_mdp">Modifier ton mot de passe.</div>
+        <button onclick="closeModal('settingsHubModal'); openPasswordModal();" data-i18n="settings_changer_mdp">Changer mot de passe</button>
       </div>
       <div class="settings-option">
-        <div class="title">☁️ Export cloud</div>
-        <div class="muted">Télécharger une sauvegarde JSON complète.</div>
-        <button onclick="exportData()">📥 Exporter données</button>
+        <div class="title" data-i18n="settings_export_cloud">☁️ Export cloud</div>
+        <div class="muted" data-i18n="settings_export_desc">Télécharger une sauvegarde JSON complète.</div>
+        <button onclick="exportData()" data-i18n="settings_exporter_btn">📥 Exporter données</button>
       </div>
     </div>
   </div>
 
   <div id="passwordModal" class="modal-backdrop" onclick="backdropClose(event, 'passwordModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>🔐 Changer mot de passe</h3><button class="close-x" onclick="closeModal('passwordModal')">✕</button></div>
-      <label for="newPassword">Nouveau mot de passe</label>
-      <input id="newPassword" type="password" placeholder="Min 6 caractères" />
-      <label for="confirmPassword">Confirmer nouveau mot de passe</label>
-      <input id="confirmPassword" type="password" placeholder="Répéter le mot de passe" />
-      <button onclick="changeMyPassword()">✅ Mettre à jour</button>
+      <div class="modal-head"><h3 data-i18n="pwd_modal_titre">🔐 Changer mot de passe</h3><button class="close-x" onclick="closeModal('passwordModal')">✕</button></div>
+      <label for="newPassword" data-i18n="pwd_nouveau">Nouveau mot de passe</label>
+      <input id="newPassword" type="password" placeholder="Min 6 caractères" data-i18n-placeholder="pwd_min6" />
+      <label for="confirmPassword" data-i18n="pwd_confirmer">Confirmer nouveau mot de passe</label>
+      <input id="confirmPassword" type="password" placeholder="Répéter le mot de passe" data-i18n-placeholder="pwd_repeter" />
+      <button onclick="changeMyPassword()" data-i18n="pwd_mettre_a_jour">✅ Mettre à jour</button>
     </div>
   </div>
 
   <div id="adminPasswordModal" class="modal-backdrop" onclick="backdropClose(event, 'adminPasswordModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>🔑 Changer mot de passe</h3><button class="close-x" onclick="closeModal('adminPasswordModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="pwd_modal_admin_titre">🔑 Changer mot de passe</h3><button class="close-x" onclick="closeModal('adminPasswordModal')">✕</button></div>
       <div class="settings-option">
         <div id="adminPasswordUserLabel" class="title">—</div>
-        <label for="adminNewPassword">Nouveau mot de passe</label>
-        <input id="adminNewPassword" type="password" placeholder="Min 6 caractères" />
-        <label for="adminConfirmPassword">Confirmer nouveau mot de passe</label>
-        <input id="adminConfirmPassword" type="password" placeholder="Répéter le mot de passe" />
-        <button id="adminPasswordSaveBtn" onclick="saveAdminPassword()">✅ Mettre à jour</button>
+        <label for="adminNewPassword" data-i18n="pwd_nouveau">Nouveau mot de passe</label>
+        <input id="adminNewPassword" type="password" placeholder="Min 6 caractères" data-i18n-placeholder="pwd_min6" />
+        <label for="adminConfirmPassword" data-i18n="pwd_confirmer">Confirmer nouveau mot de passe</label>
+        <input id="adminConfirmPassword" type="password" placeholder="Répéter le mot de passe" data-i18n-placeholder="pwd_repeter" />
+        <button id="adminPasswordSaveBtn" onclick="saveAdminPassword()" data-i18n="pwd_mettre_a_jour">✅ Mettre à jour</button>
         <div id="adminPasswordStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
       </div>
     </div>
@@ -867,7 +875,9 @@
         menu_parametres: '⚙️ Paramètres',
         menu_exportDonnees: '📥 Export données',
         menu_reinitFiltres: '🔄 Réinitialiser filtres',
+        menu_remuEmployes: '💰 Rémunérations employés',
         menu_logs: '📋 Logs',
+        menu_langue: '🌍 Langue',
         sale_title: '💵 Nouvelle vente',
         sale_selectClient: 'Sélectionner un client',
         sale_searchClient: '🔎 Rechercher un client...',
@@ -877,6 +887,9 @@
         sale_maintenant: 'Maintenant',
         sale_paye: '✅ Payé',
         sale_nonPaye: '❌ Non payé',
+        sale_prixUnit: 'Prix unit.',
+        sale_total: 'Total',
+        sale_client: 'Client',
         sale_valider: '🛒 Valider la commande',
         sale_confirmerTitre: '🛒 Confirmer la commande',
         sale_confirmerMsg: 'Voulez-vous valider cette commande ?',
@@ -885,11 +898,26 @@
         sale_success: 'Commande enregistrée avec succès',
         sale_error: 'Commande non enregistrée',
         sale_stockInsuf: 'Stock insuffisant',
+        sale_ventes_recentes: '📊 Ventes récentes',
+        sale_filtres: '🔍 Filtres',
+        sale_toutes_categories: 'Toutes catégories',
+        sale_filtreCategorie: '▸ Filtre catégorie',
+        sale_enregistrer: '✅ Enregistrer',
         client_nouveau: '➕ Nouveau client',
         client_nom: 'Nom du client',
-        client_telephone: 'Téléphone',
+        client_nom_placeholder: 'Nom du client',
+        client_telephone: '📞 Téléphone',
+        client_telephone_placeholder: 'Ex : 06 12 34 56 78',
         client_adresse: 'Adresse',
+        client_nom_voie: 'Nom de voie',
         client_ville: 'Ville',
+        client_ville_placeholder: 'Ville (rechercher…)',
+        client_ice: '💳 ICE',
+        client_ice_placeholder: 'Numéro ICE (facturation)',
+        client_gps: '📍 Position GPS',
+        client_gps_update: '📍 Mettre à jour avec ma position actuelle',
+        client_numero: 'Numéro',
+        client_type_voie: 'Type de voie',
         client_creer: '✅ Créer client',
         client_modifier: 'Modifier le client',
         client_statut: 'Statut client',
@@ -904,17 +932,83 @@
         client_gpsActuel: '📍 Utiliser ma position actuelle',
         client_gpsOk: '✅ Position GPS enregistrée',
         client_gpsNone: '📍 Aucun point GPS enregistré',
+        client_prix_custom: '💰 Prix personnalisés par gamme',
+        client_prix_hint: 'Laisse vide pour utiliser les prix standard.',
+        client_fiches: '👥 Fiches clients',
+        client_facture: 'Facture mensuelle',
+        client_facture_pdf: 'Générer facture PDF du mois',
+        client_reaffecter: 'Réaffecter le client',
+        client_actions_avancees: '⚙️ Actions avancées',
         stock_gestion: '📦 Gestion du stock',
         stock_central: 'Stock central',
         stock_voiture: 'Stock voiture',
         stock_transferer: 'Transférer du stock',
         stock_recuperer: 'Récupérer du stock',
+        stock_qte_transferer: 'Quantité à transférer',
+        stock_qte_recuperer: 'Quantité à récupérer',
+        stock_alerte: 'Alerte stock',
+        stock_alerte_activer: 'Activer l\'alerte pour cet article',
+        stock_seuil: 'Seuil',
         remu_commissionSimple: 'Commission simple',
         remu_fixeCommission: 'Fixe + commission réduite',
         remu_salaireFixe: 'Salaire fixe mensuel',
         remu_fraisGasoil: 'Frais gasoil mensuel',
         remu_total: 'Total à payer',
+        remu_regler: 'Régler',
+        remu_mode: 'Mode de rémunération',
+        remu_dhsParUnite: 'DHS par unité vendue',
+        remu_calculer: 'Calculer',
+        remu_exporter_csv: 'Exporter CSV',
+        remu_snapshot: 'Snapshot',
+        remu_calcul_dabord: '⚠️ Calculez d\'abord les commissions',
+        remu_enregistrement: '⏳ Enregistrement…',
+        remu_saved: '✅ Rémunération configurée',
+        user_creer: 'Créer nouvel utilisateur',
+        user_nom: '👤 Nom complet',
+        user_nom_placeholder: 'Nom complet',
+        user_role: '🎖️ Rôle',
+        user_employe: 'Employé',
+        user_manager: 'Manager',
+        user_admin: 'Admin',
+        user_creer_btn: '✅ Créer',
+        user_actuels: 'Utilisateurs actuels',
+        user_modifier_role: '✏️ Modifier le rôle',
+        user_nouveau_role: '🎖️ Nouveau rôle',
+        user_supprimer: 'Supprimer',
+        pwd_modal_titre: '🔐 Changer mot de passe',
+        pwd_modal_admin_titre: '🔑 Changer mot de passe',
+        pwd_nouveau: 'Nouveau mot de passe',
+        pwd_confirmer: 'Confirmer nouveau mot de passe',
+        pwd_repeter: 'Répéter le mot de passe',
+        pwd_min6: 'Min 6 caractères',
+        pwd_mettre_a_jour: '✅ Mettre à jour',
+        auth_email: '📧 Email',
+        auth_email_placeholder: 'Email',
+        msg_pwd_updated: '✅ Mot de passe mis à jour',
+        msg_pwd_min6: '❌ Mot de passe minimum 6 caractères',
+        msg_pwd_mismatch: '❌ Les mots de passe ne correspondent pas',
+        msg_data_refreshed: '✅ Données actualisées',
+        msg_refresh_error: '❌ Erreur actualisation',
+        msg_session_expired: '⚠️ Session expirée — reconnectez-vous',
+        msg_offline: '📶 Hors ligne — données locales chargées',
+        msg_online: '✅ Connexion rétablie — synchronisation…',
+        msg_sale_saved: '✅ Commande enregistrée',
+        msg_sale_error: '❌ Commande non enregistrée',
+        msg_sale_deleted: '✅ Commande supprimée',
+        msg_sale_modified: '✅ Vente modifiée',
+        msg_client_created: '✅ Client créé',
+        msg_client_deleted: '✅ Client supprimé',
+        msg_remu_saved: '✅ Rémunération configurée',
+        msg_remu_calcul_dabord: '⚠️ Calculez d\'abord les commissions',
+        msg_export_ok: '✅ Export téléchargé',
+        msg_stock_insuf: '❌ Stock insuffisant',
         settings_langue: '🌍 Langue',
+        settings_securite: '🔒 Sécurité',
+        settings_modifier_mdp: 'Modifier ton mot de passe.',
+        settings_changer_mdp: 'Changer mot de passe',
+        settings_export_cloud: '☁️ Export cloud',
+        settings_export_desc: 'Télécharger une sauvegarde JSON complète.',
+        settings_exporter_btn: '📥 Exporter données',
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
@@ -950,7 +1044,9 @@
         menu_parametres: '⚙️ الإعدادات',
         menu_exportDonnees: '📥 تصدير البيانات',
         menu_reinitFiltres: '🔄 إعادة تعيين الفلاتر',
+        menu_remuEmployes: '💰 أجور الموظفين',
         menu_logs: '📋 السجلات',
+        menu_langue: '🌍 اللغة',
         sale_title: '💵 بيع جديد',
         sale_selectClient: 'اختر زبوناً',
         sale_searchClient: '🔎 ابحث عن زبون...',
@@ -960,7 +1056,10 @@
         sale_maintenant: 'الآن',
         sale_paye: '✅ مدفوع',
         sale_nonPaye: '❌ غير مدفوع',
-        sale_valider: '🛒 تأكيد الطلب',
+        sale_prixUnit: 'سعر الوحدة',
+        sale_total: 'المجموع',
+        sale_client: 'الزبون',
+        sale_valider: '🛒 تسجيل الطلب',
         sale_confirmerTitre: '🛒 تأكيد الطلب',
         sale_confirmerMsg: 'هل تريد تأكيد هذا الطلب؟',
         sale_annuler: 'إلغاء',
@@ -968,11 +1067,26 @@
         sale_success: 'تم تسجيل الطلب بنجاح',
         sale_error: 'لم يتم تسجيل الطلب',
         sale_stockInsuf: 'المخزون غير كافٍ',
+        sale_ventes_recentes: '📊 المبيعات الأخيرة',
+        sale_filtres: '🔍 الفلاتر',
+        sale_toutes_categories: 'جميع الأصناف',
+        sale_filtreCategorie: '▸ فلتر الصنف',
+        sale_enregistrer: '✅ حفظ',
         client_nouveau: '➕ زبون جديد',
         client_nom: 'اسم الزبون',
-        client_telephone: 'الهاتف',
+        client_nom_placeholder: 'اسم الزبون',
+        client_telephone: '📞 الهاتف',
+        client_telephone_placeholder: '06 xx xx xx xx',
         client_adresse: 'العنوان',
+        client_nom_voie: 'اسم الشارع',
         client_ville: 'المدينة',
+        client_ville_placeholder: 'المدينة (بحث…)',
+        client_ice: '💳 ICE',
+        client_ice_placeholder: 'رقم ICE (للفاتورة)',
+        client_gps: '📍 الموقع GPS',
+        client_gps_update: '📍 تحديث بموقعي الحالي',
+        client_numero: 'الرقم',
+        client_type_voie: 'نوع الطريق',
         client_creer: '✅ إضافة زبون',
         client_modifier: 'تعديل الزبون',
         client_statut: 'حالة الزبون',
@@ -987,17 +1101,83 @@
         client_gpsActuel: '📍 استخدام موقعي الحالي',
         client_gpsOk: '✅ تم تسجيل الموقع',
         client_gpsNone: '📍 لا يوجد موقع مسجل',
+        client_prix_custom: '💰 أسعار مخصصة حسب الصنف',
+        client_prix_hint: 'اتركه فارغاً لاستخدام الأسعار القياسية.',
+        client_fiches: '👥 ملفات الزبائن',
+        client_facture: 'فاتورة شهرية',
+        client_facture_pdf: 'إنشاء فاتورة PDF للشهر',
+        client_reaffecter: 'إعادة تعيين الزبون',
+        client_actions_avancees: '⚙️ إجراءات متقدمة',
         stock_gestion: '📦 إدارة المخزون',
         stock_central: 'المخزون المركزي',
         stock_voiture: 'مخزون السيارة',
         stock_transferer: 'نقل المخزون',
         stock_recuperer: 'استرجاع المخزون',
+        stock_qte_transferer: 'الكمية المراد نقلها',
+        stock_qte_recuperer: 'الكمية المراد استرجاعها',
+        stock_alerte: 'تنبيه المخزون',
+        stock_alerte_activer: 'تفعيل التنبيه لهذا العنصر',
+        stock_seuil: 'العتبة',
         remu_commissionSimple: 'عمولة بسيطة',
         remu_fixeCommission: 'ثابت + عمولة مخفضة',
         remu_salaireFixe: 'الراتب الثابت الشهري',
         remu_fraisGasoil: 'مصاريف الوقود الشهرية',
         remu_total: 'المبلغ الإجمالي',
+        remu_regler: 'إعداد',
+        remu_mode: 'نمط الأجر',
+        remu_dhsParUnite: 'درهم لكل وحدة مباعة',
+        remu_calculer: 'حساب',
+        remu_exporter_csv: 'تصدير CSV',
+        remu_snapshot: 'لقطة',
+        remu_calcul_dabord: '⚠️ احسب العمولات أولاً',
+        remu_enregistrement: '⏳ جارٍ الحفظ…',
+        remu_saved: '✅ تم ضبط الأجر',
+        user_creer: 'إنشاء مستخدم جديد',
+        user_nom: '👤 الاسم الكامل',
+        user_nom_placeholder: 'الاسم الكامل',
+        user_role: '🎖️ الدور',
+        user_employe: 'موظف',
+        user_manager: 'مدير',
+        user_admin: 'مسؤول',
+        user_creer_btn: '✅ إنشاء',
+        user_actuels: 'المستخدمون الحاليون',
+        user_modifier_role: '✏️ تعديل الدور',
+        user_nouveau_role: '🎖️ الدور الجديد',
+        user_supprimer: 'حذف',
+        pwd_modal_titre: '🔐 تغيير كلمة المرور',
+        pwd_modal_admin_titre: '🔑 تغيير كلمة المرور',
+        pwd_nouveau: 'كلمة المرور الجديدة',
+        pwd_confirmer: 'تأكيد كلمة المرور الجديدة',
+        pwd_repeter: 'إعادة كلمة المرور',
+        pwd_min6: '6 أحرف على الأقل',
+        pwd_mettre_a_jour: '✅ تحديث',
+        auth_email: '📧 البريد الإلكتروني',
+        auth_email_placeholder: 'البريد الإلكتروني',
+        msg_pwd_updated: '✅ تم تحديث كلمة المرور',
+        msg_pwd_min6: '❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+        msg_pwd_mismatch: '❌ كلمتا المرور غير متطابقتين',
+        msg_data_refreshed: '✅ تم تحديث البيانات',
+        msg_refresh_error: '❌ خطأ في التحديث',
+        msg_session_expired: '⚠️ انتهت الجلسة — أعد الاتصال',
+        msg_offline: '📶 غير متصل — تم تحميل البيانات المحلية',
+        msg_online: '✅ تم استعادة الاتصال — جارٍ المزامنة…',
+        msg_sale_saved: '✅ تم تسجيل الطلب',
+        msg_sale_error: '❌ لم يتم تسجيل الطلب',
+        msg_sale_deleted: '✅ تم حذف الطلب',
+        msg_sale_modified: '✅ تم تعديل البيع',
+        msg_client_created: '✅ تم إضافة الزبون',
+        msg_client_deleted: '✅ تم حذف الزبون',
+        msg_remu_saved: '✅ تم ضبط الأجر',
+        msg_remu_calcul_dabord: '⚠️ احسب العمولات أولاً',
+        msg_export_ok: '✅ تم تنزيل الملف',
+        msg_stock_insuf: '❌ المخزون غير كافٍ',
         settings_langue: '🌍 اللغة',
+        settings_securite: '🔒 الأمان',
+        settings_modifier_mdp: 'تغيير كلمة المرور.',
+        settings_changer_mdp: 'تغيير كلمة المرور',
+        settings_export_cloud: '☁️ تصدير السحابة',
+        settings_export_desc: 'تنزيل نسخة احتياطية JSON كاملة.',
+        settings_exporter_btn: '📥 تصدير البيانات',
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
@@ -1033,29 +1213,49 @@
         menu_parametres: '⚙️ Paramètres',
         menu_exportDonnees: '📥 Exporti données',
         menu_reinitFiltres: '🔄 Reset filtres',
+        menu_remuEmployes: '💰 Khlass dyal lkhdama',
         menu_logs: '📋 Logs',
+        menu_langue: '🌍 Lgha',
         sale_title: '💵 Tbi3a jdida',
         sale_selectClient: 'Khtar client',
-        sale_searchClient: '🔎 Qllib 3la client...',
+        sale_searchClient: '🔎 Qelleb 3la client...',
         sale_quantite: 'Kamiya',
         sale_categorie: 'Gamme',
         sale_dateHeure: '📅 Tarikh & We9t',
         sale_maintenant: 'Daba',
         sale_paye: '✅ Mkhllas',
         sale_nonPaye: '❌ Ma mkhllasch',
+        sale_prixUnit: 'Prix unité',
+        sale_total: 'Total',
+        sale_client: 'Client',
         sale_valider: '🛒 Sajjel commande',
-        sale_confirmerTitre: '🛒 Confirmer commande',
+        sale_confirmerTitre: '🛒 Confirmi commande',
         sale_confirmerMsg: 'Bghit tsajjel had lcommande?',
         sale_annuler: 'Annuler',
         sale_confirmer: '✅ Confirmer',
         sale_success: 'Commande tsajlat b najah',
         sale_error: 'Commande ma tsajlatsh',
         sale_stockInsuf: 'Stock makafich',
+        sale_ventes_recentes: '📊 Tbi3at l9dima',
+        sale_filtres: '🔍 Filtres',
+        sale_toutes_categories: 'Kull gamme',
+        sale_filtreCategorie: '▸ Filtre gamme',
+        sale_enregistrer: '✅ Sjjel',
         client_nouveau: '➕ Zid client',
         client_nom: 'Smiyat client',
-        client_telephone: 'Telephone',
+        client_nom_placeholder: 'Smiyat client',
+        client_telephone: '📞 Telephone',
+        client_telephone_placeholder: '06 xx xx xx xx',
         client_adresse: 'Adresse',
+        client_nom_voie: 'Smiyat zzanka',
         client_ville: 'Mdina',
+        client_ville_placeholder: 'Mdina (qelleb…)',
+        client_ice: '💳 ICE',
+        client_ice_placeholder: 'Raqm ICE (lfacture)',
+        client_gps: '📍 GPS',
+        client_gps_update: '📍 Update b position dyal telephone',
+        client_numero: 'Raqm',
+        client_type_voie: 'Naw3 triq',
         client_creer: '✅ Zid client',
         client_modifier: 'Bdel client',
         client_statut: 'Hal client',
@@ -1070,17 +1270,83 @@
         client_gpsActuel: '📍 Khdem position dyal telephone',
         client_gpsOk: '✅ Position GPS tsajlat',
         client_gpsNone: '📍 Ma kayn ta GPS',
+        client_prix_custom: '💰 Prix khassin b gamme',
+        client_prix_hint: 'Khalliha khawya bash tstemmel les prix standard.',
+        client_fiches: '👥 Fiches clients',
+        client_facture: 'Facture dial chhar',
+        client_facture_pdf: 'Dir facture PDF dial chhar',
+        client_reaffecter: 'Bdel commercial dyal client',
+        client_actions_avancees: '⚙️ Actions avancées',
         stock_gestion: '📦 Dir stock',
         stock_central: 'Stock central',
         stock_voiture: 'Stock tomobil',
         stock_transferer: 'Hwwel stock',
         stock_recuperer: 'Rje3 stock',
+        stock_qte_transferer: 'Kamiya dial lhwwala',
+        stock_qte_recuperer: 'Kamiya dial lrje3',
+        stock_alerte: 'Tenbih stock',
+        stock_alerte_activer: 'Fermki tenbih l had l3nsor',
+        stock_seuil: 'Seuil',
         remu_commissionSimple: 'Commission simple',
         remu_fixeCommission: 'Fixe + commission mkhffda',
         remu_salaireFixe: 'Salary fixe f chhar',
         remu_fraisGasoil: 'Frais gasoil f chhar',
         remu_total: 'Total khas itkhllss',
+        remu_regler: 'Regler',
+        remu_mode: 'Naw3 khlass',
+        remu_dhsParUnite: 'DHS 3la kull wahda',
+        remu_calculer: 'Hseb',
+        remu_exporter_csv: 'Exporter CSV',
+        remu_snapshot: 'Snapshot',
+        remu_calcul_dabord: '⚠️ Hseb commissions lwwel',
+        remu_enregistrement: '⏳ Tsajjel…',
+        remu_saved: '✅ Khlass tsajjel',
+        user_creer: 'Dir utilisateur jdid',
+        user_nom: '👤 Smiya kamel',
+        user_nom_placeholder: 'Smiya kamel',
+        user_role: '🎖️ Dour',
+        user_employe: 'Khddam',
+        user_manager: 'Manager',
+        user_admin: 'Admin',
+        user_creer_btn: '✅ Dir',
+        user_actuels: 'Utilisateurs daba',
+        user_modifier_role: '✏️ Bdel dour',
+        user_nouveau_role: '🎖️ Dour jdid',
+        user_supprimer: 'Mse7',
+        pwd_modal_titre: '🔐 Bdel password',
+        pwd_modal_admin_titre: '🔑 Bdel password',
+        pwd_nouveau: 'Password jdid',
+        pwd_confirmer: 'Confirmi password jdid',
+        pwd_repeter: 'Awed password',
+        pwd_min6: '6 caractères 3la l9el',
+        pwd_mettre_a_jour: '✅ Update',
+        auth_email: '📧 Email',
+        auth_email_placeholder: 'Email',
+        msg_pwd_updated: '✅ Password tbddel',
+        msg_pwd_min6: '❌ Mot de passe khaso 6 caractères minimum',
+        msg_pwd_mismatch: '❌ Mots de passe machi bhal bhal',
+        msg_data_refreshed: '✅ Data tjannat',
+        msg_refresh_error: '❌ Mcheklat f ltajdid',
+        msg_session_expired: '⚠️ Session salaet — connecti men jdid',
+        msg_offline: '📶 Mafich internet — data local tchammlat',
+        msg_online: '✅ Connexion rja3at — tsajjel…',
+        msg_sale_saved: '✅ Commande tsajlat',
+        msg_sale_error: '❌ Commande ma tsajlatsh',
+        msg_sale_deleted: '✅ Commande tmshat',
+        msg_sale_modified: '✅ Tbi3a tbddlat',
+        msg_client_created: '✅ Client tzad',
+        msg_client_deleted: '✅ Client tmsah',
+        msg_remu_saved: '✅ Khlass tsajjel',
+        msg_remu_calcul_dabord: '⚠️ Hseb commissions lwwel',
+        msg_export_ok: '✅ Export tnazel',
+        msg_stock_insuf: '❌ Stock makafich',
         settings_langue: '🌍 Lgha',
+        settings_securite: '🔒 Securité',
+        settings_modifier_mdp: 'Bdel password dyalek.',
+        settings_changer_mdp: 'Bdel password',
+        settings_export_cloud: '☁️ Export cloud',
+        settings_export_desc: 'Nazel nuskha JSON kaml.',
+        settings_exporter_btn: '📥 Exporter données',
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
@@ -1129,6 +1395,10 @@
       // Sync the language select if it exists
       const langSelect = document.getElementById('langSelect');
       if (langSelect && langSelect.value !== lang) langSelect.value = lang;
+
+      // Sync the header language select
+      const headerLangSelect = document.getElementById('headerLangSelect');
+      if (headerLangSelect && headerLangSelect.value !== lang) headerLangSelect.value = lang;
 
       localStorage.setItem('preferred_language', lang);
     }
@@ -1428,7 +1698,7 @@
             _syncState = 'error';
             _syncErrorCount = -1; // session error flag
             _isSyncing = false;
-            showSessionStatus('⚠️ Session expirée — reconnectez-vous pour synchroniser', 'error', 8000);
+            showSessionStatus(t('msg_session_expired'), 'error', 8000);
             await updateOfflineBanner();
             return;
           }
@@ -3138,7 +3408,7 @@
           // Without this, browser scroll-restoration can leave scrollY > 0.
           window.scrollTo(0, 0);
           if (!navigator.onLine) {
-            showSessionStatus('📶 Hors ligne — données locales chargées', 'info', 4000);
+            showSessionStatus(t('msg_offline'), 'info', 4000);
           }
           // If back online at boot and pending ops exist, replay the queue
           await updateOfflineBanner();
@@ -4085,7 +4355,7 @@
         return showSessionStatus('❌ ' + getFriendlyErrorMessage(error), 'error');
       }
 
-      showSessionStatus('✅ Commande supprimée', 'success', 5000);
+      showSessionStatus(t('msg_sale_deleted'), 'success', 5000);
       loadCloudData().then(() => { renderSales(); renderStock(); }).catch(e => console.warn('[refresh] deleteSale:', e?.message));
     };
 
@@ -4111,7 +4381,7 @@
         renderClients(); loadClientSelectors(); renderSales();
         return showSessionStatus('❌ ' + getFriendlyErrorMessage(error), 'error');
       }
-      showSessionStatus('✅ Client supprimé', 'success');
+      showSessionStatus(t('msg_client_deleted'), 'success');
       loadCloudData().then(() => { renderClients(); loadClientSelectors(); renderSales(); }).catch(e => console.warn('[refresh] deleteClient:', e?.message));
     };
 
@@ -5263,9 +5533,9 @@
       try {
         await loadCloudData();
         paintApp();
-        showSessionStatus('✅ Données actualisées', 'success', 2000);
+        showSessionStatus(t('msg_data_refreshed'), 'success', 2000);
       } catch(err) {
-        showSessionStatus('❌ Erreur actualisation', 'error');
+        showSessionStatus(t('msg_refresh_error'), 'error');
       }
     });
 
@@ -5727,7 +5997,7 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showSessionStatus('✅ Export téléchargé', 'success');
+      showSessionStatus(t('msg_export_ok'), 'success');
     };
 
     window.openPasswordModal = function () {
@@ -5740,14 +6010,14 @@
     window.changeMyPassword = async function () {
       const newPassword = document.getElementById('newPassword').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
-      if (!newPassword || newPassword.length < 6) return showSessionStatus('❌ Mot de passe minimum 6 caractères', 'error');
-      if (newPassword !== confirmPassword) return showSessionStatus('❌ Les mots de passe ne correspondent pas', 'error');
+      if (!newPassword || newPassword.length < 6) return showSessionStatus(t('msg_pwd_min6'), 'error');
+      if (newPassword !== confirmPassword) return showSessionStatus(t('msg_pwd_mismatch'), 'error');
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) return showSessionStatus('❌ ' + error.message, 'error');
       document.getElementById('newPassword').value = '';
       document.getElementById('confirmPassword').value = '';
       closeModal('passwordModal');
-      showSessionStatus('✅ Mot de passe mis à jour', 'success');
+      showSessionStatus(t('msg_pwd_updated'), 'success');
     };
 
     // ── Admin: change password for another user ──────────────────────────────
@@ -5783,12 +6053,12 @@
       statusEl.style.color = '';
 
       if (!newPassword || newPassword.length < 6) {
-        statusEl.textContent = '❌ Mot de passe minimum 6 caractères';
+        statusEl.textContent = t('msg_pwd_min6');
         statusEl.style.color = '#e53935';
         return;
       }
       if (newPassword !== confirmPassword) {
-        statusEl.textContent = '❌ Les mots de passe ne correspondent pas';
+        statusEl.textContent = t('msg_pwd_mismatch');
         statusEl.style.color = '#e53935';
         return;
       }
@@ -5831,7 +6101,7 @@
         document.getElementById('adminNewPassword').value = '';
         document.getElementById('adminConfirmPassword').value = '';
         closeModal('adminPasswordModal');
-        showSessionStatus('✅ Mot de passe mis à jour', 'success');
+        showSessionStatus(t('msg_pwd_updated'), 'success');
         logAction('admin_password_update', { targetUserId: userId });
       } catch (err) {
         const msg = err?.name === 'AbortError'
@@ -5840,7 +6110,7 @@
         statusEl.textContent = '❌ ' + msg;
         statusEl.style.color = '#e53935';
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '✅ Mettre à jour'; }
+        if (btn) { btn.disabled = false; btn.textContent = t('pwd_mettre_a_jour'); }
       }
     };
 
@@ -6051,7 +6321,7 @@
 
     window.exportCommissionsCSV = function () {
       if (!_lastCommissionData.length) {
-        showSessionStatus('⚠️ Calculez d\'abord les commissions', 'error');
+        showSessionStatus(t('msg_remu_calcul_dabord'), 'error');
         return;
       }
 
@@ -6092,17 +6362,17 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showSessionStatus('✅ Export CSV téléchargé', 'success');
+      showSessionStatus(t('msg_export_ok'), 'success');
     };
 
     window.saveRemunerationSnapshot = async function () {
       if (!isAdmin()) return;
       if (!_lastCommissionData.length) {
-        showSessionStatus('⚠️ Calculez d\'abord les commissions', 'error');
+        showSessionStatus(t('msg_remu_calcul_dabord'), 'error');
         return;
       }
       const statusEl = document.getElementById('commissionsStatus');
-      if (statusEl) { statusEl.textContent = '⏳ Enregistrement…'; statusEl.style.color = ''; }
+      if (statusEl) { statusEl.textContent = t('remu_enregistrement'); statusEl.style.color = ''; }
 
       try {
         const inserts = _lastCommissionData.map(({ user, result, periodStart, periodEnd }) => ({
@@ -6118,7 +6388,7 @@
         const { error } = await supabase.from('remuneration_history').insert(inserts);
         if (error) throw error;
         if (statusEl) { statusEl.textContent = '✅ Snapshot enregistré'; statusEl.style.color = '#2e7d32'; }
-        showSessionStatus('✅ Snapshot de rémunération enregistré', 'success');
+        showSessionStatus(t('msg_remu_saved'), 'success');
         logAction('remuneration_snapshot', {
           period: `${_lastCommissionData[0]?.periodStart} → ${_lastCommissionData[0]?.periodEnd}`,
           count:  inserts.length
@@ -6301,7 +6571,7 @@
       });
 
       const statusEl = document.getElementById('remuSettingsStatus');
-      if (statusEl) { statusEl.textContent = '⏳ Enregistrement…'; statusEl.style.color = ''; }
+      if (statusEl) { statusEl.textContent = t('remu_enregistrement'); statusEl.style.color = ''; }
 
       try {
         const { error } = await supabase.from('profiles').update({
@@ -6329,7 +6599,7 @@
         }
 
         if (statusEl) { statusEl.textContent = '✅ Paramètres enregistrés'; statusEl.style.color = '#2e7d32'; }
-        showSessionStatus('✅ Rémunération configurée', 'success');
+        showSessionStatus(t('msg_remu_saved'), 'success');
         logAction('remuneration_settings_updated', { targetUserId: userId, mode });
       } catch (e) {
         if (statusEl) { statusEl.textContent = '❌ ' + (e?.message || e); statusEl.style.color = '#e53935'; }
@@ -6358,11 +6628,11 @@
     window.addEventListener('offline', () => {
       _syncState = 'idle';
       updateOfflineBanner();
-      showSessionStatus('📶 Hors ligne — les modifications sont enregistrées localement', 'info', 5000);
+      showSessionStatus(t('msg_offline'), 'info', 5000);
     });
 
     window.addEventListener('online', () => {
-      showSessionStatus('✅ Connexion rétablie — synchronisation…', 'success', 4000);
+      showSessionStatus(t('msg_online'), 'success', 4000);
       // Small delay: let navigator.onLine stabilize and let network actually become usable
       setTimeout(() => syncPendingOps(), 800);
       // Re-establish the Realtime channel which was dropped while offline
