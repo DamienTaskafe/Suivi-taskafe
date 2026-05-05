@@ -50,6 +50,8 @@ BEGIN
   v_msg := v_emp_name || E' demande :\n' || v_lines;
 
   -- Notify all admins and managers
+  -- Note: notification messages are in French because RPCs run server-side
+  -- and have no access to the client i18n layer.
   FOR v_admin IN
     SELECT id FROM public.profiles WHERE role IN ('admin', 'manager')
   LOOP
@@ -124,8 +126,16 @@ BEGIN
   WHERE id = p_request_id;
 
   -- Notifications
+  -- Note: notification messages are hardcoded in French here because RPC
+  -- functions run on the server and have no access to the client i18n layer.
+  -- The frontend renders these messages verbatim in the notification panel.
+
   IF NOT v_is_admin THEN
-    -- Employee cancelled their own request: notify all admins/managers
+    -- Employee cancelled their own request (employee ≠ admin/manager in this branch):
+    --   • The FOR loop sends to each admin/manager (v_admin.id).
+    --   • The second INSERT sends to the employee themselves (v_req.employee_id).
+    -- These two user-sets are disjoint — no duplicate is produced.
+
     SELECT COALESCE(full_name, email, auth.uid()::text)
     INTO v_emp_name
     FROM public.profiles WHERE id = auth.uid();
@@ -144,7 +154,7 @@ BEGIN
       );
     END LOOP;
 
-    -- Also inform the employee (confirmation of their own cancellation)
+    -- Confirmation for the employee (their own history/archive entry)
     INSERT INTO public.notifications (user_id, type, title, message, payload, created_by)
     VALUES (
       v_req.employee_id,
