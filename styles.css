@@ -1576,3 +1576,64 @@
     }
     .perm-table td:first-child { text-align: left; font-size: 13px; font-weight: 600; padding-right: 8px; }
     .perm-table tr:last-child td { border-bottom: none; }
+
+    /* ── GPS capture button & status ────────────────────────────────────────── */
+    .gps-btn {
+      width: 100%;
+      margin-bottom: 6px;
+      background: rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.14);
+      color: var(--color-text);
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s;
+    }
+    .gps-btn:active { background: rgba(0,0,0,0.12); }
+    body.dark .gps-btn { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.13); }
+    body.dark .gps-btn:active { background: rgba(255,255,255,0.13); }
+
+    .gps-status {
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      line-height: 1.4;
+    }
+    .gps-status.gps-none { color: var(--color-text-muted); background: rgba(0,0,0,0.04); }
+    .gps-status.gps-ok   { color: #166534; background: #dcfce7; }
+    .gps-status.gps-error { color: #7f1d1d; background: #fee2e2; }
+    body.dark .gps-status.gps-none  { background: rgba(255,255,255,0.05); }
+    body.dark .gps-status.gps-ok    { color: #86efac; background: rgba(22,163,74,0.18); }
+    body.dark .gps-status.gps-error { color: #fca5a5; background: rgba(239,68,68,0.18); }
+
+    /* ── Client contact action buttons ──────────────────────────────────────── */
+    .client-contact-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    body.dark .client-contact-actions { border-bottom-color: rgba(255,255,255,0.07); }
+    .client-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      background: rgba(0,0,0,0.06);
+      color: var(--color-text);
+      border: 1px solid rgba(0,0,0,0.10);
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .client-action-btn:active,
+    .client-action-btn:hover { background: rgba(0,0,0,0.13); }
+    body.dark .client-action-btn { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.12); color: var(--color-text); }
+    body.dark .client-action-btn:active,
+    body.dark .client-action-btn:hover { background: rgba(255,255,255,0.17); }
