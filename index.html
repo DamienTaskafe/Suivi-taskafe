@@ -3094,6 +3094,10 @@
           .limit(50);
         if (!error) {
           state.notifications = data || [];
+          // Always refresh the badge immediately after loading — _notifyInAppIfNew()
+          // skips renderNotificationBell() on the first call (baseline init), so we
+          // call it unconditionally here so the badge is always up-to-date.
+          renderNotificationBell();
           _notifyInAppIfNew();
         }
       } catch (e) {
@@ -3752,6 +3756,8 @@
 
         await refreshAdminStockRequests();
         showSessionStatus(`✅ Statut mis à jour : ${_stockReqStatusLabel(newStatus)}`, 'success', 3000);
+        // Refresh bell in background so admin sees the notification count update
+        loadNotifications().then(() => renderNotificationBell()).catch(() => {});
 
         // Trigger push to employee (non-blocking)
         if (reqData?.employee_id) {
@@ -4226,6 +4232,23 @@
         // ── Permission configuration ─────────────────────────────────────────
         .on('postgres_changes', { event: '*', schema: 'public', table: 'role_permissions' },
           () => _scheduleRealtimeRefresh('role_permissions'))
+        // ── Notifications (bell live updates) ────────────────────────────────
+        // Reload and re-render the bell whenever a notification row is inserted
+        // or updated for the current user, without triggering a full app refresh.
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' },
+          (payload) => {
+            const selfId = state.session?.user?.id;
+            if (selfId && payload.new?.user_id === selfId) {
+              loadNotifications().catch(e => console.warn('[realtime] notifications INSERT:', e?.message));
+            }
+          })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications' },
+          (payload) => {
+            const selfId = state.session?.user?.id;
+            if (selfId && payload.new?.user_id === selfId) {
+              loadNotifications().catch(e => console.warn('[realtime] notifications UPDATE:', e?.message));
+            }
+          })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             console.log('[realtime] Connected to app-realtime-sync channel');
