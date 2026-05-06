@@ -8805,6 +8805,14 @@
                 <span style="flex:0 0 58px;color:var(--color-text-muted);">${dateStr}</span>
                 <span style="flex:1;line-height:1.4;">${typeLabel}${noteStr}</span>
                 <span style="font-weight:600;color:${valColor};white-space:nowrap;">${signStr}${formatDh(Number(e.amount || 0))}</span>
+                ${isAdmin()
+                  ? `<button
+                      type="button"
+                      onclick="deleteBalanceEntry('${e.id}', '${uid}', '${e.entry_type}', ${Number(e.amount || 0)})"
+                      style="margin-left:4px;padding:3px 6px;font-size:11px;line-height:1;border:1px solid var(--color-border);background:transparent;color:var(--color-text-muted);border-radius:6px;min-height:28px;">
+                      🗑
+                    </button>`
+                  : ''}
               </div>`;
             });
             balanceHtml += `</div>`;
@@ -8920,6 +8928,29 @@
         }, 600);
       } catch (e) {
         if (statusEl) { statusEl.textContent = '❌ ' + (e?.message || 'Erreur inconnue'); statusEl.style.color = '#e53935'; }
+      }
+    };
+
+    window.deleteBalanceEntry = async function (entryId, employeeId, entryType, amount) {
+      if (!isAdmin()) return;
+      if (!entryId || !employeeId) return;
+
+      const typeLabel = entryType === 'advance' ? 'Avance'
+        : entryType === 'payment' ? 'Paiement' : 'Correction';
+      const confirmed = confirm(`Supprimer cette entrée ${typeLabel} de ${formatDh(Number(amount || 0))} ?`);
+      if (!confirmed) return;
+
+      try {
+        const { error } = await supabase
+          .from('employee_balance_entries')
+          .delete()
+          .eq('id', entryId);
+        if (error) throw error;
+
+        showSessionStatus('✅ Entrée de balance supprimée', 'success');
+        openEmployeeProfileModal(employeeId, 'balance');
+      } catch (e) {
+        showSessionStatus('❌ Erreur suppression balance : ' + (e?.message || 'Erreur inconnue'), 'error', 8000);
       }
     };
 
