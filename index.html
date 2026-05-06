@@ -960,6 +960,42 @@
     </div>
   </div>
 
+  <!-- ── Add Balance Entry Modal (admin only) ───────────────────────────────── -->
+  <div id="addBalanceEntryModal" class="modal-backdrop" onclick="backdropClose(event, 'addBalanceEntryModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3>➕ Ajouter avance / paiement</h3>
+        <button class="close-x" onclick="closeModal('addBalanceEntryModal')">✕</button>
+      </div>
+      <div style="margin-bottom:10px;">
+        <span class="muted" style="font-size:12px;">Employé : </span>
+        <strong id="balanceEntryEmployeeName">—</strong>
+      </div>
+      <label for="balanceEntryType">Type</label>
+      <select id="balanceEntryType" onchange="toggleBalanceEntryDirection()">
+        <option value="advance">📉 Avance</option>
+        <option value="payment">✅ Paiement</option>
+        <option value="adjustment">🔧 Correction</option>
+      </select>
+      <div id="balanceEntryDirectionRow" style="display:none;margin-top:10px;">
+        <label for="balanceEntryDirection">Direction de la correction</label>
+        <select id="balanceEntryDirection">
+          <option value="add">➕ Ajouter au dû</option>
+          <option value="deduct">➖ Déduire du dû</option>
+        </select>
+      </div>
+      <label for="balanceEntryAmount" style="margin-top:10px;">Montant (DHS)</label>
+      <input id="balanceEntryAmount" type="number" min="0" step="0.01" placeholder="0.00" />
+      <label for="balanceEntryNote" style="margin-top:10px;">Note (optionnelle)</label>
+      <input id="balanceEntryNote" type="text" placeholder="ex : avance semaine 1" />
+      <button type="button" onclick="saveBalanceEntry()" style="margin-top:14px;width:100%;">💾 Enregistrer</button>
+      <div id="balanceEntryStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      <input type="hidden" id="balanceEntryEmployeeId" />
+      <input type="hidden" id="balanceEntryPeriodStart" />
+      <input type="hidden" id="balanceEntryPeriodEnd" />
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script type="module">
@@ -8522,6 +8558,7 @@
           <div style="display:grid;gap:8px;margin-top:4px;">
             <button type="button" onclick="openEmployeeProfileModal('${uid}', 'resume'); closeModal('employeeActionsModal');">👁 Fiche employé</button>
             <button type="button" onclick="openRemunerationSettingsFromList('${uid}'); closeModal('employeeActionsModal');">💰 Rémunération</button>
+            <button type="button" onclick="openEmployeeProfileModal('${uid}', 'balance'); closeModal('employeeActionsModal');">💵 Balance</button>
             <button type="button" onclick="openEmployeeProfileModal('${uid}', 'stock'); closeModal('employeeActionsModal');">📦 Stock voiture</button>
             <button type="button" onclick="openEmployeeProfileModal('${uid}', 'clients'); closeModal('employeeActionsModal');">👥 Clients</button>
             <button type="button" onclick="openEmployeeProfileModal('${uid}', 'ventes'); closeModal('employeeActionsModal');">💰 Ventes</button>
@@ -8668,6 +8705,121 @@
         }
         html += `</div>`;
 
+        // ── 6. Balance employé ──
+        let balanceHtml = '';
+        try {
+          const { data: balanceEntries, error: balErr } = await supabase
+            .from('employee_balance_entries')
+            .select('*')
+            .eq('employee_id', userId)
+            .gte('created_at', start + 'T00:00:00Z')
+            .lte('created_at', end + 'T23:59:59Z')
+            .order('created_at', { ascending: false });
+
+          if (balErr) throw balErr;
+
+          const entries = balanceEntries || [];
+
+          const totalAdvances = entries
+            .filter(e => e.entry_type === 'advance')
+            .reduce((s, e) => s + Number(e.amount || 0), 0);
+          const totalPayments = entries
+            .filter(e => e.entry_type === 'payment')
+            .reduce((s, e) => s + Number(e.amount || 0), 0);
+          const totalAdjustments = entries
+            .filter(e => e.entry_type === 'adjustment')
+            .reduce((s, e) => {
+              const dir = e.direction || 'add';
+              return s + (dir === 'deduct' ? -Number(e.amount || 0) : Number(e.amount || 0));
+            }, 0);
+
+          // Balance formula
+          let baseDue = result.totalCommission;
+          const isFixedModeBalance = user.remuneration_mode === 'fixed_plus_commission';
+          if (isFixedModeBalance) {
+            baseDue += Number(user.fixed_monthly_salary || 0);
+            baseDue += Number(user.fuel_allowance || 0);
+          }
+          const remainingDue = baseDue - totalAdvances - totalPayments + totalAdjustments;
+
+          balanceHtml = `<div class="settings-option" style="margin-bottom:12px;" id="empProfile-balance">
+            <div class="title">💵 Balance employé</div>
+            <div class="muted" style="font-size:11px;margin-bottom:8px;">Période : mois en cours</div>
+            <div class="adv-stat-row">
+              <span class="adv-stat-label">☕ Commissions café</span>
+              <span class="adv-stat-val">${formatDh(result.totalCommission)}</span>
+            </div>`;
+          if (isFixedModeBalance) {
+            balanceHtml += `<div class="adv-stat-row">
+              <span class="adv-stat-label">💼 Salaire fixe</span>
+              <span class="adv-stat-val">${formatDh(Number(user.fixed_monthly_salary || 0))}</span>
+            </div>
+            <div class="adv-stat-row">
+              <span class="adv-stat-label">⛽ Carburant variable</span>
+              <span class="adv-stat-val">${formatDh(Number(user.fuel_allowance || 0))}</span>
+            </div>`;
+          } else {
+            balanceHtml += `<div class="muted" style="font-size:11px;margin-top:2px;margin-bottom:4px;">⛽ Commission simple : l'employé paie lui-même son carburant.</div>`;
+          }
+          if (totalAdvances > 0) {
+            balanceHtml += `<div class="adv-stat-row">
+              <span class="adv-stat-label">📉 Avances</span>
+              <span class="adv-stat-val" style="color:var(--color-error);">-${formatDh(totalAdvances)}</span>
+            </div>`;
+          }
+          if (totalPayments > 0) {
+            balanceHtml += `<div class="adv-stat-row">
+              <span class="adv-stat-label">✅ Paiements faits</span>
+              <span class="adv-stat-val" style="color:var(--color-error);">-${formatDh(totalPayments)}</span>
+            </div>`;
+          }
+          if (totalAdjustments !== 0) {
+            const adjColor = totalAdjustments >= 0 ? 'var(--color-success)' : 'var(--color-error)';
+            balanceHtml += `<div class="adv-stat-row">
+              <span class="adv-stat-label">🔧 Corrections</span>
+              <span class="adv-stat-val" style="color:${adjColor};">${totalAdjustments >= 0 ? '+' : ''}${formatDh(totalAdjustments)}</span>
+            </div>`;
+          }
+          balanceHtml += `<div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:4px;margin-top:4px;">
+              <span class="adv-stat-label" style="font-weight:700;">💳 Reste à régler</span>
+              <span class="adv-stat-val" style="font-weight:700;color:var(--color-success);">${formatDh(remainingDue)}</span>
+            </div>
+            <button type="button" style="width:100%;margin-top:10px;font-size:13px;" onclick="openAddBalanceEntryModal('${uid}')">➕ Ajouter avance / paiement</button>`;
+
+          // History list
+          if (entries.length > 0) {
+            balanceHtml += `<div style="margin-top:10px;">
+              <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);margin-bottom:6px;">📋 Historique du mois</div>`;
+            entries.forEach(e => {
+              const typeLabel = e.entry_type === 'advance' ? '📉 Avance'
+                : e.entry_type === 'payment' ? '✅ Paiement' : '🔧 Correction';
+              const isPositive = e.entry_type === 'adjustment' && e.direction === 'add';
+              const signStr = isPositive ? '+' : '-';
+              const valColor = isPositive ? 'var(--color-success)' : 'var(--color-error)';
+              const dateStr = new Date(e.created_at).toLocaleDateString('fr-FR');
+              const noteStr = e.note ? ` — ${escHtml(e.note)}` : '';
+              balanceHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
+                <span style="flex:0 0 58px;color:var(--color-text-muted);">${dateStr}</span>
+                <span style="flex:1;line-height:1.4;">${typeLabel}${noteStr}</span>
+                <span style="font-weight:600;color:${valColor};white-space:nowrap;">${signStr}${formatDh(Number(e.amount || 0))}</span>
+              </div>`;
+            });
+            balanceHtml += `</div>`;
+          } else {
+            balanceHtml += `<div class="muted" style="font-size:12px;margin-top:8px;">Aucune entrée ce mois.</div>`;
+          }
+
+          balanceHtml += `</div>`;
+        } catch (balanceErr) {
+          console.warn('[openEmployeeProfileModal] balance error:', balanceErr?.message);
+          balanceHtml = `<div id="empProfile-balance" class="settings-option" style="margin-bottom:12px;">
+            <div class="title">💵 Balance employé</div>
+            <div class="muted" style="font-size:12px;">⚠️ Non disponible.</div>
+            <button type="button" style="width:100%;margin-top:10px;font-size:13px;" onclick="openAddBalanceEntryModal('${uid}')">➕ Ajouter avance / paiement</button>
+          </div>`;
+        }
+        html += balanceHtml;
+
         // ── Footer ──
         html += `<button type="button" onclick="closeModal('employeeProfileModal'); openRemunerationSettingsFromList('${uid}');">⚙️ Réglages rémunération</button>`;
 
@@ -8682,6 +8834,89 @@
       } catch (e) {
         console.warn('[openEmployeeProfileModal] erreur :', e?.message);
         if (contEl) contEl.innerHTML = '<div class="muted" style="padding:12px">⚠️ Impossible de charger la fiche. Non disponible.</div>';
+      }
+    };
+
+    // ── Balance Entry Modal ─────────────────────────────────────────────────────
+    window.openAddBalanceEntryModal = function (userId) {
+      if (!isAdmin()) return;
+      const user = state.allUsers.find(u => u.id === userId);
+      if (!user) return;
+      const { start, end } = getDefaultPeriod();
+      const nameEl    = document.getElementById('balanceEntryEmployeeName');
+      const empIdEl   = document.getElementById('balanceEntryEmployeeId');
+      const pStartEl  = document.getElementById('balanceEntryPeriodStart');
+      const pEndEl    = document.getElementById('balanceEntryPeriodEnd');
+      const typeEl    = document.getElementById('balanceEntryType');
+      const amountEl  = document.getElementById('balanceEntryAmount');
+      const noteEl    = document.getElementById('balanceEntryNote');
+      const statusEl  = document.getElementById('balanceEntryStatus');
+
+      if (nameEl)   nameEl.textContent = user.full_name || user.email || '—';
+      if (empIdEl)  empIdEl.value      = userId;
+      if (pStartEl) pStartEl.value     = start;
+      if (pEndEl)   pEndEl.value       = end;
+      if (typeEl)   typeEl.value       = 'advance';
+      if (amountEl) amountEl.value     = '';
+      if (noteEl)   noteEl.value       = '';
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+      toggleBalanceEntryDirection();
+      openModal('addBalanceEntryModal');
+    };
+
+    window.toggleBalanceEntryDirection = function () {
+      const typeEl  = document.getElementById('balanceEntryType');
+      const dirRow  = document.getElementById('balanceEntryDirectionRow');
+      if (dirRow) dirRow.style.display = (typeEl?.value === 'adjustment') ? '' : 'none';
+    };
+
+    window.saveBalanceEntry = async function () {
+      const empIdEl   = document.getElementById('balanceEntryEmployeeId');
+      const typeEl    = document.getElementById('balanceEntryType');
+      const amountEl  = document.getElementById('balanceEntryAmount');
+      const noteEl    = document.getElementById('balanceEntryNote');
+      const dirEl     = document.getElementById('balanceEntryDirection');
+      const pStartEl  = document.getElementById('balanceEntryPeriodStart');
+      const pEndEl    = document.getElementById('balanceEntryPeriodEnd');
+      const statusEl  = document.getElementById('balanceEntryStatus');
+
+      const userId    = empIdEl?.value || '';
+      const entryType = typeEl?.value  || '';
+      const amount    = parseFloat(amountEl?.value || '0');
+      const note      = noteEl?.value?.trim() || null;
+      const direction = entryType === 'adjustment' ? (dirEl?.value || 'add') : null;
+      const periodStart = pStartEl?.value || null;
+      const periodEnd   = pEndEl?.value   || null;
+
+      if (!userId || !entryType) return;
+      if (!amount || amount <= 0) {
+        if (statusEl) { statusEl.textContent = '❌ Montant invalide (doit être > 0)'; statusEl.style.color = '#e53935'; }
+        return;
+      }
+
+      if (statusEl) { statusEl.textContent = '⏳ Enregistrement…'; statusEl.style.color = ''; }
+
+      try {
+        const { error } = await supabase.from('employee_balance_entries').insert({
+          employee_id:  userId,
+          entry_type:   entryType,
+          amount:       amount,
+          direction:    direction,
+          note:         note,
+          period_start: periodStart,
+          period_end:   periodEnd,
+          created_by:   state.session?.user?.id || null
+        });
+        if (error) throw error;
+
+        if (statusEl) { statusEl.textContent = '✅ Enregistré'; statusEl.style.color = '#2e7d32'; }
+        showSessionStatus('✅ Entrée de balance ajoutée', 'success');
+        setTimeout(() => {
+          closeModal('addBalanceEntryModal');
+          openEmployeeProfileModal(userId, 'balance');
+        }, 600);
+      } catch (e) {
+        if (statusEl) { statusEl.textContent = '❌ ' + (e?.message || 'Erreur inconnue'); statusEl.style.color = '#e53935'; }
       }
     };
 
