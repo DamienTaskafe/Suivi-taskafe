@@ -8889,7 +8889,7 @@
       const periodEnd   = pEndEl?.value   || null;
 
       if (!userId || !entryType) return;
-      if (!amount || amount <= 0) {
+      if (isNaN(amount) || amount <= 0) {
         if (statusEl) { statusEl.textContent = '❌ Montant invalide (doit être > 0)'; statusEl.style.color = '#e53935'; }
         return;
       }
