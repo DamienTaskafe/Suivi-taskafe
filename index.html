@@ -114,71 +114,27 @@
         <div class="banner-shimmer" aria-hidden="true"></div>
       </div>
       <div class="header-menu-wrap">
-        <button id="notificationBellBtn" type="button" class="notification-bell-btn" onclick="openNotificationsModal()" style="display:none;" aria-label="Notifications">🔔<span id="notificationBadge" class="notification-badge" style="display:none;">0</span></button>
+        <button id="notificationBellBtn" type="button" class="notification-bell-btn" onclick="openNotificationsModal()" aria-label="Notifications">🔔<span id="notificationBadge" class="notification-badge" style="display:none;">0</span></button>
         <button class="header-menu-btn" type="button" data-action="toggle-header-menu">⋯</button>
         <div class="header-menu" id="headerMenu">
           <div class="user-chip">
             <strong id="menuUserName">—</strong>
             <span id="menuUserRole">—</span>
           </div>
-          <!-- ── Compte section ───────────────────────────────────────────── -->
-          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('account', event)">
-            <span data-i18n="menu_compte">👤 Compte</span><span class="chevron">⌄</span>
-          </button>
-          <div id="headerSectionAccount" class="header-menu-section-content hidden">
-            <button type="button" class="submenu-toggle" onclick="toggleAccountLanguageChoices(event)">
-              <span data-i18n="menu_langue">🌍 Langue</span><span class="chevron">›</span>
-            </button>
-            <div id="accountLanguageChoices" class="account-language-choices hidden">
-              <button type="button" data-lang="fr" onclick="chooseAccountLanguage('fr', event)">Français</button>
-              <button type="button" data-lang="ar" onclick="chooseAccountLanguage('ar', event)">العربية</button>
-              <button type="button" data-lang="darija" onclick="chooseAccountLanguage('darija', event)">Darija</button>
-            </div>
-            <button onclick="openProfileModal()" data-i18n="menu_monProfil">👤 Mon profil</button>
-            <button onclick="openPasswordModal()" data-i18n="menu_changerMdp">🔐 Changer mon mot de passe</button>
-            <button id="darkModeBtn" onclick="toggleDarkMode()" data-i18n="menu_modeSombre">🌙 Mode sombre</button>
-            <button onclick="logout()" data-i18n="menu_deconnexion">🚪 Déconnexion</button>
-          </div>
-          <!-- ── Travail section ──────────────────────────────────────────── -->
-          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('work', event)">
-            <span data-i18n="menu_travail">💼 Travail</span><span class="chevron">⌄</span>
-          </button>
-          <div id="headerSectionWork" class="header-menu-section-content hidden">
-            <button onclick="openResumeModal()" data-i18n="menu_resumeRapide">📊 Résumé rapide</button>
-            <button onclick="openMyCommissionsModal()" data-i18n="menu_mesCommissions">💸 Mes commissions</button>
-          </div>
-          <!-- ── Équipe section (hidden for non-manager/admin) ───────────── -->
-          <div id="sectionEquipe" class="hidden">
-            <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('team', event)">
-              <span data-i18n="menu_equipe">👥 Équipe</span><span class="chevron">⌄</span>
-            </button>
-            <div id="headerSectionTeam" class="header-menu-section-content hidden">
-              <button id="usersBtn" onclick="openUsersModal()" class="hidden" data-i18n="menu_gererUtilisateurs">👥 Gérer utilisateurs</button>
-              <button id="permissionsBtn" class="hidden" onclick="openPermissionsModal()" data-i18n="menu_droitsAcces">🔐 Droits d'accès</button>
-            </div>
-          </div>
-          <!-- ── Finance section (hidden for non-manager/admin) ─────────── -->
-          <div id="sectionFinance" class="hidden">
-            <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('finance', event)">
-              <span data-i18n="menu_finance">💰 Finance</span><span class="chevron">⌄</span>
-            </button>
-            <div id="headerSectionFinance" class="header-menu-section-content hidden">
-              <button id="commissionsBtn" onclick="openCommissionsModal()" class="hidden" data-i18n="menu_commissions">💰 Commissions</button>
-              <button id="remunerationsListBtn" type="button" data-action="open-remunerations-list" class="hidden" data-i18n="menu_remuEmployes">💰 Rémunérations employés</button>
-              <button id="productPricesBtn" onclick="openProductPricesModal()" class="hidden" data-i18n="menu_prixProduits">💲 Prix produits</button>
-            </div>
-          </div>
-          <!-- ── Administration section ──────────────────────────────────── -->
-          <button type="button" class="header-menu-section-toggle" onclick="toggleHeaderSection('admin', event)">
-            <span data-i18n="menu_admin">⚙️ Admin</span><span class="chevron">⌄</span>
-          </button>
-          <div id="headerSectionAdmin" class="header-menu-section-content hidden">
-            <button id="analyticsBtn" onclick="openAnalyticsModal()" class="hidden" data-i18n="menu_analytiques">📈 Analytiques</button>
-            <button onclick="openSettingsHubModal()" data-i18n="menu_parametres">⚙️ Paramètres</button>
-            <button onclick="exportData()" data-i18n="menu_exportDonnees">📥 Export données</button>
-            <button id="resetAppBtn" class="hidden" onclick="openResetModal()" data-i18n="menu_reinitFiltres">🔄 Réinitialiser filtres</button>
-            <button id="logsBtnMenu" class="hidden" onclick="showLogsSection()" data-i18n="menu_logs">📋 Logs</button>
-          </div>
+          <!-- ── Stats & Balance ──────────────────────────────────────────── -->
+          <button type="button" onclick="openStatsBalanceModal()" data-i18n="menu_statsBalance">📊 Stats &amp; Balance</button>
+          <!-- ── Dépenses ─────────────────────────────────────────────────── -->
+          <button type="button" onclick="openDepensesModal()" data-i18n="menu_depenses">💸 Dépenses</button>
+          <!-- ── Employés (manager/admin only) ───────────────────────────── -->
+          <button type="button" id="employesMenuBtn" onclick="openEmployesModal()" class="hidden" data-i18n="menu_employes">👥 Employés</button>
+          <!-- ── Notifications settings ──────────────────────────────────── -->
+          <button type="button" onclick="openNotifSettingsModal()" data-i18n="menu_notificationsReglages">🔔 Notifications</button>
+          <!-- ── Paramètres ──────────────────────────────────────────────── -->
+          <button type="button" onclick="openSettingsHubModal()" data-i18n="menu_parametres">⚙️ Paramètres</button>
+          <!-- ── Mode clair/sombre ───────────────────────────────────────── -->
+          <button type="button" id="darkModeBtn" onclick="toggleDarkMode()" data-i18n="menu_modeSombre">🌙 Mode sombre</button>
+          <!-- ── Déconnexion ─────────────────────────────────────────────── -->
+          <button type="button" onclick="logout()" data-i18n="menu_deconnexion">🚪 Déconnexion</button>
         </div>
       </div>
     </header>
@@ -188,7 +144,6 @@
         <button id="btnSales" class="tab-btn active" onclick="show('sales')" data-i18n="tab_sales">💰 Ventes</button>
         <button id="btnClients" class="tab-btn" onclick="show('clients')" data-i18n="tab_clients">👥 Clients</button>
         <button id="btnStock" class="tab-btn" onclick="show('stock')">📦 Stock <span id="stockAlert" class="tab-badge"></span></button>
-        <button id="btnBalance" class="tab-btn" onclick="show('balance')" data-i18n="tab_balance">⚖️ Balance</button>
       </div>
 
       <div id="sales" class="section-shell">
@@ -423,6 +378,18 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3 data-i18n="menu_parametres">⚙️ Paramètres</h3><button class="close-x" onclick="closeModal('settingsHubModal')">✕</button></div>
       <div class="settings-option">
+        <div class="title" data-i18n="menu_langue">🌍 Langue</div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button type="button" data-lang="fr" onclick="chooseAccountLanguage('fr', event)" style="flex:1;min-width:80px;" data-i18n="lang_fr">Français</button>
+          <button type="button" data-lang="ar" onclick="chooseAccountLanguage('ar', event)" style="flex:1;min-width:80px;" data-i18n="lang_ar">العربية</button>
+          <button type="button" data-lang="darija" onclick="chooseAccountLanguage('darija', event)" style="flex:1;min-width:80px;" data-i18n="lang_darija">Darija</button>
+        </div>
+      </div>
+      <div class="settings-option">
+        <div class="title">👤 Compte</div>
+        <button onclick="closeModal('settingsHubModal'); openProfileModal();" data-i18n="menu_monProfil">👤 Mon profil</button>
+      </div>
+      <div class="settings-option">
         <div class="title" data-i18n="settings_securite">🔒 Sécurité</div>
         <div class="muted" data-i18n="settings_modifier_mdp">Modifier ton mot de passe.</div>
         <button onclick="closeModal('settingsHubModal'); openPasswordModal();" data-i18n="settings_changer_mdp">Changer mot de passe</button>
@@ -431,13 +398,6 @@
         <div class="title" data-i18n="settings_export_cloud">☁️ Export cloud</div>
         <div class="muted" data-i18n="settings_export_desc">Télécharger une sauvegarde JSON complète.</div>
         <button onclick="exportData()" data-i18n="settings_exporter_btn">📥 Exporter données</button>
-      </div>
-      <div class="settings-option" id="pushNotifSettingsRow">
-        <div class="title" data-i18n="push_notif_title">📱 Notifications téléphone</div>
-        <div class="muted" data-i18n="push_notif_desc">Recevoir une alerte sur le téléphone même appli fermée.</div>
-        <button id="pushEnableBtn" onclick="requestPushPermission()" data-i18n="push_enable_btn">🔔 Activer notifications téléphone</button>
-        <button id="pushDisableBtn" onclick="disablePushNotifications()" data-i18n="push_disable_btn" style="display:none;margin-top:6px;">🔕 Désactiver notifications téléphone</button>
-        <div id="pushStatusMsg" style="margin-top:6px;font-size:12px;min-height:16px;"></div>
       </div>
     </div>
   </div>
@@ -769,6 +729,19 @@
     </div>
   </div>
 
+  <!-- ── Notification settings modal (push enable/disable/repair) ────────────── -->
+  <div id="notifSettingsModal" class="modal-backdrop" onclick="backdropClose(event, 'notifSettingsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3 data-i18n="push_notif_title">📱 Notifications téléphone</h3><button class="close-x" onclick="closeModal('notifSettingsModal')">✕</button></div>
+      <div class="settings-option">
+        <div class="muted" data-i18n="push_notif_desc">Recevoir une alerte sur le téléphone même appli fermée.</div>
+        <button id="pushEnableBtn" onclick="requestPushPermission()" data-i18n="push_enable_btn">🔔 Activer notifications téléphone</button>
+        <button id="pushDisableBtn" onclick="disablePushNotifications()" data-i18n="push_disable_btn" style="display:none;margin-top:6px;">🔕 Désactiver notifications téléphone</button>
+        <div id="pushStatusMsg" style="margin-top:6px;font-size:12px;min-height:16px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Stock return modal (admin / manager only) ──────────────────────────── -->
   <div id="returnStockModal" class="modal-backdrop" onclick="backdropClose(event, 'returnStockModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
@@ -1034,6 +1007,10 @@
         menu_remuEmployes: '💰 Rémunérations employés',
         menu_logs: '📋 Logs',
         menu_langue: '🌍 Langue',
+        menu_statsBalance: '📊 Stats & Balance',
+        menu_depenses: '💸 Dépenses',
+        menu_employes: '👥 Employés',
+        menu_notificationsReglages: '🔔 Notifications',
         sale_title: '💵 Nouvelle vente',
         sale_selectClient: 'Sélectionner un client',
         sale_searchClient: '🔎 Rechercher un client...',
@@ -1240,6 +1217,10 @@
         menu_remuEmployes: '💰 أجور الموظفين',
         menu_logs: '📋 السجلات',
         menu_langue: '🌍 اللغة',
+        menu_statsBalance: '📊 إحصائيات وميزان',
+        menu_depenses: '💸 المصاريف',
+        menu_employes: '👥 الموظفون',
+        menu_notificationsReglages: '🔔 الإشعارات',
         sale_title: '💵 بيع جديد',
         sale_selectClient: 'اختر زبوناً',
         sale_searchClient: '🔎 ابحث عن زبون...',
@@ -1446,6 +1427,10 @@
         menu_remuEmployes: '💰 Khlass dyal lkhdama',
         menu_logs: '📋 Logs',
         menu_langue: '🌍 Lgha',
+        menu_statsBalance: '📊 Stats & Balance',
+        menu_depenses: '💸 Masaref',
+        menu_employes: '👥 Khdama',
+        menu_notificationsReglages: '🔔 Notifications',
         sale_title: '💵 Tbi3a jdida',
         sale_selectClient: 'Khtar client',
         sale_searchClient: '🔎 Qelleb 3la client...',
@@ -4797,13 +4782,14 @@
         roleEl.innerText = isAdmin() ? '👑 Admin' : isManager() ? '🔑 Manager' : '👤 Employé';
       }
 
-      document.getElementById('usersBtn').classList.toggle('hidden', !isManagerOrAdmin());
-      document.getElementById('logsBtnMenu').classList.toggle('hidden', !isAdmin());
-      document.getElementById('resetAppBtn').classList.toggle('hidden', !isAdmin());
-      document.getElementById('permissionsBtn').classList.toggle('hidden', !isAdmin());
-      document.getElementById('productPricesBtn').classList.toggle('hidden', !isManagerOrAdmin());
-      document.getElementById('analyticsBtn').classList.toggle('hidden', !isManagerOrAdmin());
-      document.getElementById('commissionsBtn').classList.toggle('hidden', !isAdmin());
+      document.getElementById('employesMenuBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('usersBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('logsBtnMenu')?.classList.toggle('hidden', !isAdmin());
+      document.getElementById('resetAppBtn')?.classList.toggle('hidden', !isAdmin());
+      document.getElementById('permissionsBtn')?.classList.toggle('hidden', !isAdmin());
+      document.getElementById('productPricesBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('analyticsBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('commissionsBtn')?.classList.toggle('hidden', !isAdmin());
       document.getElementById('remunerationsListBtn')?.classList.toggle('hidden', !isAdmin());
       document.getElementById('sectionEquipe')?.classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('sectionFinance')?.classList.toggle('hidden', !isManagerOrAdmin());
@@ -6596,8 +6582,41 @@
 
     window.openSettingsHubModal = function () {
       openModal('settingsHubModal');
-      // Refresh push notification status display each time the modal opens
+    };
+
+    // ── Stats & Balance ────────────────────────────────────────────────────────
+    // Opens the appropriate stats view based on the user's role.
+    window.openStatsBalanceModal = function () {
+      if (isManagerOrAdmin()) {
+        openAnalyticsModal();
+      } else {
+        openResumeModal();
+      }
+    };
+
+    // ── Employés ───────────────────────────────────────────────────────────────
+    // Opens the appropriate employees/remuneration view based on the user's role.
+    window.openEmployesModal = function () {
+      if (isAdmin()) {
+        openRemunerationsListModal();
+      } else if (isManager()) {
+        openUsersModal();
+      } else {
+        openMyCommissionsModal();
+      }
+    };
+
+    // ── Notification settings ─────────────────────────────────────────────────
+    // Opens the push notification settings modal (enable / repair / disable).
+    window.openNotifSettingsModal = function () {
       _refreshPushSettingsUI();
+      openModal('notifSettingsModal');
+    };
+
+    // ── Dépenses (stub — no feature yet) ──────────────────────────────────────
+    window.openDepensesModal = function () {
+      closeAllMenus();
+      showSessionStatus('💸 Fonctionnalité dépenses à venir', 'info', 3000);
     };
 
     // ── Per-item alert helpers ─────────────────────────────────────────────────
