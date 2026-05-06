@@ -8794,8 +8794,9 @@
             balanceHtml += `<div style="margin-top:10px;">
               <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);margin-bottom:6px;">📋 Historique du mois</div>`;
             entries.forEach(e => {
-              const typeLabel = e.entry_type === 'advance' ? '📉 Avance'
-                : e.entry_type === 'payment' ? '✅ Paiement' : '🔧 Correction';
+              const baseTypeLabel = getBalanceEntryTypeLabel(e.entry_type);
+              const typeLabel = e.entry_type === 'advance' ? `📉 ${baseTypeLabel}`
+                : e.entry_type === 'payment' ? `✅ ${baseTypeLabel}` : `🔧 ${baseTypeLabel}`;
               const isPositive = e.entry_type === 'adjustment' && e.direction === 'add';
               const signStr = isPositive ? '+' : '-';
               const valColor = isPositive ? 'var(--color-success)' : 'var(--color-error)';
@@ -8808,7 +8809,7 @@
                 ${isAdmin()
                   ? `<button
                       type="button"
-                      onclick="deleteBalanceEntry('${e.id}', '${uid}', '${e.entry_type}', ${Number(e.amount || 0)})"
+                      onclick="deleteBalanceEntry(decodeURIComponent('${encodeURIComponent(String(e.id || ''))}'), decodeURIComponent('${encodeURIComponent(String(uid || ''))}'), decodeURIComponent('${encodeURIComponent(String(e.entry_type || ''))}'), ${Number(e.amount || 0)})"
                       style="margin-left:4px;padding:3px 6px;font-size:11px;line-height:1;border:1px solid var(--color-border);background:transparent;color:var(--color-text-muted);border-radius:6px;min-height:28px;">
                       🗑
                     </button>`
@@ -8881,6 +8882,11 @@
       if (dirRow) dirRow.style.display = (typeEl?.value === 'adjustment') ? '' : 'none';
     };
 
+    function getBalanceEntryTypeLabel(entryType) {
+      return entryType === 'advance' ? 'Avance'
+        : entryType === 'payment' ? 'Paiement' : 'Correction';
+    }
+
     window.saveBalanceEntry = async function () {
       const empIdEl   = document.getElementById('balanceEntryEmployeeId');
       const typeEl    = document.getElementById('balanceEntryType');
@@ -8935,8 +8941,7 @@
       if (!isAdmin()) return;
       if (!entryId || !employeeId) return;
 
-      const typeLabel = entryType === 'advance' ? 'Avance'
-        : entryType === 'payment' ? 'Paiement' : 'Correction';
+      const typeLabel = getBalanceEntryTypeLabel(entryType);
       const confirmed = confirm(`Supprimer cette entrée ${typeLabel} de ${formatDh(Number(amount || 0))} ?`);
       if (!confirmed) return;
 
