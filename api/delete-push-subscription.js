@@ -59,6 +59,6 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    return sendError(res, err, "Erreur lors de la suppression de l'abonnement push");
+    return sendError(res, err, "Erreur lors de la suppression de l'abonnement. Réessayez.");
   }
 };

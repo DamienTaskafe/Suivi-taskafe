@@ -3664,6 +3664,7 @@
             // Local unsubscribe may have succeeded but server cleanup failed
             _pushSavedThisSession = false;
             _refreshPushSettingsUI();
+            if (disableBtn) { disableBtn.disabled = false; disableBtn.textContent = t('push_disable_btn'); }
             if (statusMsg) { statusMsg.textContent = t('push_disable_local_ok'); statusMsg.style.color = '#e65100'; }
             return;
           }
