@@ -8893,7 +8893,7 @@
               const noteStr = e.note ? ` — ${escHtml(e.note)}` : '';
               balanceHtml += `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
                 <div style="flex:1;min-width:0;line-height:1.45;">${dateStr} — ${typeLabel} — <span style="font-weight:600;color:${valColor};white-space:nowrap;">${signedAmount}</span>${noteStr}</div>
-                ${canManageBalance ? `<button type="button" style="padding:4px 7px;font-size:12px;line-height:1;" onclick="deleteEmployeeBalanceEntry('${escHtml(e.id || '')}', '${uid}', '${escHtml(e.entry_type || '')}', ${Number(e.amount || 0)})">🗑</button>` : ''}
+                ${canManageBalance ? `<button type="button" aria-label="Supprimer l'entrée" style="padding:4px 7px;font-size:12px;line-height:1;" onclick="deleteEmployeeBalanceEntry('${escHtml(e.id || '')}', '${uid}', '${escHtml(e.entry_type || '')}', ${Number(e.amount || 0)})">🗑</button>` : ''}
               </div>`;
             });
             balanceHtml += `</div>`;
@@ -8939,7 +8939,7 @@
     window.copyEmployeeBalanceSummary = async function (userId) {
       const summary = employeeBalanceSummaryCache[userId];
       if (!summary) {
-        showSessionStatus('❌ Erreur copie: résumé indisponible', 'error', 7000);
+        showSessionStatus('❌ Erreur de copie: résumé indisponible', 'error', 7000);
         return;
       }
       const lines = [
@@ -8969,14 +8969,18 @@
         ta.style.position = 'fixed';
         ta.style.left = '-9999px';
         document.body.appendChild(ta);
-        ta.select();
-        const copied = document.execCommand('copy');
-        document.body.removeChild(ta);
-        if (!copied) throw new Error('Copie non supportée sur cet appareil.');
+        let copied = false;
+        try {
+          ta.select();
+          copied = document.execCommand('copy');
+        } finally {
+          document.body.removeChild(ta);
+        }
+        if (!copied) throw new Error('Fonctionnalité de copie non prise en charge par cet appareil.');
         showSessionStatus('✅ Résumé copié', 'success');
       } catch (e) {
         alert(text);
-        showSessionStatus('❌ Erreur copie: ' + (e?.message || 'Erreur inconnue'), 'error', 9000);
+        showSessionStatus('❌ Erreur de copie: ' + (e?.message || 'Erreur inconnue'), 'error', 9000);
       }
     };
 
@@ -9000,7 +9004,7 @@
         showSessionStatus('✅ Entrée supprimée', 'success');
         openEmployeeProfileModal(userId, 'balance');
       } catch (e) {
-        showSessionStatus('❌ Erreur suppression: ' + (e?.message || 'Erreur inconnue'), 'error', 9000);
+        showSessionStatus('❌ Erreur de suppression: ' + (e?.message || 'Erreur inconnue'), 'error', 9000);
       }
     };
 
