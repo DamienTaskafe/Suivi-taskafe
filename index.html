@@ -8145,6 +8145,60 @@
       return { start: `${yyyy}-${mm}-01`, end: `${yyyy}-${mm}-${dd}` };
     }
 
+    let employeeBalancePeriodOption = 'current';
+    const employeeBalanceSummaryCache = {};
+
+    function normalizeBalancePeriodOption(option) {
+      return option === 'previous' || option === 'all' ? option : 'current';
+    }
+
+    function toYMD(date) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function getBalancePeriod(option = 'current') {
+      const normalized = normalizeBalancePeriodOption(option);
+      const now = new Date();
+      const defaultPeriod = getDefaultPeriod();
+      if (normalized === 'previous') {
+        const prevStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        return {
+          option: normalized,
+          start: toYMD(prevStartDate),
+          end: toYMD(prevEndDate),
+          label: `Mois précédent (${prevStartDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })})`,
+          summaryLabel: prevStartDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+          warning: '',
+          applyEntriesRange: true
+        };
+      }
+      if (normalized === 'all') {
+        const currentLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        return {
+          option: normalized,
+          start: defaultPeriod.start,
+          end: defaultPeriod.end,
+          label: 'Tout (historique complet)',
+          summaryLabel: `Tout (base commission ${currentLabel})`,
+          warning: '⚠️ Mode "Tout" : historique complet des entrées. Les commissions/salaire affichés restent sur le mois courant pour éviter un calcul risqué.',
+          applyEntriesRange: false
+        };
+      }
+      return {
+        option: 'current',
+        start: defaultPeriod.start,
+        end: defaultPeriod.end,
+        label: `Mois courant (${now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })})`,
+        summaryLabel: now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+        warning: '',
+        applyEntriesRange: true
+      };
+    }
+
     /**
      * Escapes a single value for RFC-4180 CSV output (wraps in double-quotes,
      * escapes any embedded double-quote characters by doubling them).
@@ -8706,19 +8760,27 @@
         html += `</div>`;
 
         // ── 6. Balance employé ──
+        const balancePeriod = getBalancePeriod(employeeBalancePeriodOption);
         let balanceHtml = '';
         try {
-          const { data: balanceEntries, error: balErr } = await supabase
+          let entriesQuery = supabase
             .from('employee_balance_entries')
             .select('*')
             .eq('employee_id', userId)
-            .gte('created_at', start + 'T00:00:00Z')
-            .lte('created_at', end + 'T23:59:59Z')
             .order('created_at', { ascending: false });
+          if (balancePeriod.applyEntriesRange) {
+            entriesQuery = entriesQuery
+              .gte('created_at', balancePeriod.start + 'T00:00:00Z')
+              .lte('created_at', balancePeriod.end + 'T23:59:59Z');
+          }
+          const { data: balanceEntries, error: balErr } = await entriesQuery;
 
           if (balErr) throw balErr;
 
           const entries = balanceEntries || [];
+          const balanceCommission = balancePeriod.option === 'current'
+            ? result
+            : calcCommissionForUser(user, state.sales, balancePeriod.start, balancePeriod.end);
 
           const totalAdvances = entries
             .filter(e => e.entry_type === 'advance')
@@ -8734,20 +8796,43 @@
             }, 0);
 
           // Balance formula
-          let baseDue = result.totalCommission;
+          let baseDue = balanceCommission.totalCommission;
           const isFixedModeBalance = user.remuneration_mode === 'fixed_plus_commission';
           if (isFixedModeBalance) {
             baseDue += Number(user.fixed_monthly_salary || 0);
             baseDue += Number(user.fuel_allowance || 0);
           }
           const remainingDue = baseDue - totalAdvances - totalPayments + totalAdjustments;
+          const canManageBalance = isManagerOrAdmin();
+
+          employeeBalanceSummaryCache[userId] = {
+            employeeName: user.full_name || user.email || '—',
+            periodLabel: balancePeriod.summaryLabel,
+            commissions: Number(balanceCommission.totalCommission || 0),
+            fixedSalary: Number(user.fixed_monthly_salary || 0),
+            fuelAllowance: Number(user.fuel_allowance || 0),
+            advances: Number(totalAdvances || 0),
+            payments: Number(totalPayments || 0),
+            adjustments: Number(totalAdjustments || 0),
+            remainingDue: Number(remainingDue || 0),
+            isFixedMode: isFixedModeBalance
+          };
 
           balanceHtml = `<div class="settings-option" style="margin-bottom:12px;" id="empProfile-balance">
             <div class="title">💵 Balance employé</div>
-            <div class="muted" style="font-size:11px;margin-bottom:8px;">Période : mois en cours</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+              <label for="employeeBalancePeriodSelect" class="muted" style="font-size:11px;">Période :</label>
+              <select id="employeeBalancePeriodSelect" style="min-width:140px;flex:1;font-size:12px;padding:6px;" onchange="setEmployeeBalancePeriod('${uid}', this.value)">
+                <option value="current"${balancePeriod.option === 'current' ? ' selected' : ''}>Mois courant</option>
+                <option value="previous"${balancePeriod.option === 'previous' ? ' selected' : ''}>Mois précédent</option>
+                <option value="all"${balancePeriod.option === 'all' ? ' selected' : ''}>Tout</option>
+              </select>
+            </div>
+            <div class="muted" style="font-size:11px;margin-bottom:8px;">Période active : ${escHtml(balancePeriod.label)}</div>
+            ${balancePeriod.warning ? `<div class="muted" style="font-size:11px;margin-bottom:8px;color:#b26a00;">${escHtml(balancePeriod.warning)}</div>` : ''}
             <div class="adv-stat-row">
               <span class="adv-stat-label">☕ Commissions café</span>
-              <span class="adv-stat-val">${formatDh(result.totalCommission)}</span>
+              <span class="adv-stat-val">${formatDh(balanceCommission.totalCommission)}</span>
             </div>`;
           if (isFixedModeBalance) {
             balanceHtml += `<div class="adv-stat-row">
@@ -8785,31 +8870,35 @@
               <span class="adv-stat-val" style="font-weight:700;color:var(--color-success);">${formatDh(remainingDue)}</span>
             </div>
             ${remainingDue > 0
-              ? `<button type="button" style="width:100%;margin-top:10px;font-size:13px;background:var(--color-success);color:#fff;" onclick="settleEmployeeBalance('${uid}', ${remainingDue}, '${start}', '${end}')">✅ Régler ce mois</button>`
-              : `<div style="margin-top:10px;padding:8px;background:#e8f5e9;border-radius:6px;text-align:center;font-size:13px;color:var(--color-success);font-weight:600;">✅ Mois réglé</div>`}
-            <button type="button" style="width:100%;margin-top:8px;font-size:13px;" onclick="openAddBalanceEntryModal('${uid}')">➕ Ajouter avance / paiement</button>`;
+              ? `<button type="button" style="width:100%;margin-top:10px;font-size:13px;background:var(--color-success);color:#fff;" onclick="settleEmployeeBalance('${uid}', ${remainingDue}, '${balancePeriod.start}', '${balancePeriod.end}')">✅ Régler ce mois</button>`
+              : `<div style="margin-top:10px;padding:8px;background:#e8f5e9;border-radius:6px;text-align:center;font-size:13px;color:var(--color-success);font-weight:600;">✅ Période réglée</div>`}
+            <button type="button" style="width:100%;margin-top:8px;font-size:13px;" onclick="openAddBalanceEntryModal('${uid}')">➕ Ajouter avance / paiement</button>
+            <button type="button" style="width:100%;margin-top:8px;font-size:13px;" onclick="copyEmployeeBalanceSummary('${uid}')">📋 Copier résumé</button>`;
 
           // History list
           if (entries.length > 0) {
             balanceHtml += `<div style="margin-top:10px;">
-              <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);margin-bottom:6px;">📋 Historique du mois</div>`;
+              <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);margin-bottom:6px;">📋 Historique</div>`;
             entries.forEach(e => {
-              const typeLabel = e.entry_type === 'advance' ? '📉 Avance'
-                : e.entry_type === 'payment' ? '✅ Paiement' : '🔧 Correction';
-              const isPositive = e.entry_type === 'adjustment' && e.direction === 'add';
+              const typeLabel = e.entry_type === 'advance'
+                ? 'Avance'
+                : e.entry_type === 'payment'
+                  ? 'Paiement'
+                  : (e.direction === 'deduct' ? 'Correction -' : 'Correction +');
+              const isPositive = e.entry_type === 'adjustment' ? e.direction !== 'deduct' : false;
               const signStr = isPositive ? '+' : '-';
+              const signedAmount = `${signStr}${formatDh(Number(e.amount || 0))}`;
               const valColor = isPositive ? 'var(--color-success)' : 'var(--color-error)';
               const dateStr = new Date(e.created_at).toLocaleDateString('fr-FR');
               const noteStr = e.note ? ` — ${escHtml(e.note)}` : '';
-              balanceHtml += `<div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
-                <span style="flex:0 0 58px;color:var(--color-text-muted);">${dateStr}</span>
-                <span style="flex:1;line-height:1.4;">${typeLabel}${noteStr}</span>
-                <span style="font-weight:600;color:${valColor};white-space:nowrap;">${signStr}${formatDh(Number(e.amount || 0))}</span>
+              balanceHtml += `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
+                <div style="flex:1;min-width:0;line-height:1.45;">${dateStr} — ${typeLabel} — <span style="font-weight:600;color:${valColor};white-space:nowrap;">${signedAmount}</span>${noteStr}</div>
+                ${canManageBalance ? `<button type="button" style="padding:4px 7px;font-size:12px;line-height:1;" onclick="deleteEmployeeBalanceEntry('${escHtml(e.id || '')}', '${uid}', '${escHtml(e.entry_type || '')}', ${Number(e.amount || 0)})">🗑</button>` : ''}
               </div>`;
             });
             balanceHtml += `</div>`;
           } else {
-            balanceHtml += `<div class="muted" style="font-size:12px;margin-top:8px;">Aucune entrée ce mois.</div>`;
+            balanceHtml += `<div class="muted" style="font-size:12px;margin-top:8px;">Aucune entrée pour cette période.</div>`;
           }
 
           balanceHtml += `</div>`;
@@ -8817,7 +8906,8 @@
           console.warn('[openEmployeeProfileModal] balance error:', balanceErr?.message);
           balanceHtml = `<div id="empProfile-balance" class="settings-option" style="margin-bottom:12px;">
             <div class="title">💵 Balance employé</div>
-            <div class="muted" style="font-size:12px;">⚠️ Non disponible.</div>
+            <div class="muted" style="font-size:12px;">⚠️ Balance non disponible</div>
+            <div class="muted" style="font-size:11px;">${escHtml(String(balanceErr?.message || 'Erreur inconnue').slice(0, 180))}</div>
             <button type="button" style="width:100%;margin-top:10px;font-size:13px;" onclick="openAddBalanceEntryModal('${uid}')">➕ Ajouter avance / paiement</button>
           </div>`;
         }
@@ -8840,12 +8930,86 @@
       }
     };
 
+    window.setEmployeeBalancePeriod = function (userId, option) {
+      employeeBalancePeriodOption = normalizeBalancePeriodOption(option);
+      if (!userId) return;
+      openEmployeeProfileModal(userId, 'balance');
+    };
+
+    window.copyEmployeeBalanceSummary = async function (userId) {
+      const summary = employeeBalanceSummaryCache[userId];
+      if (!summary) {
+        showSessionStatus('❌ Erreur copie: résumé indisponible', 'error', 7000);
+        return;
+      }
+      const lines = [
+        'TASKAFÉ - Balance employé',
+        `Employé : ${summary.employeeName || '—'}`,
+        `Période : ${summary.periodLabel || '—'}`,
+        `Commissions café : ${formatDh(Number(summary.commissions || 0))}`,
+        `Salaire fixe : ${summary.isFixedMode ? formatDh(Number(summary.fixedSalary || 0)) : formatDh(0)}`,
+        `Carburant variable : ${summary.isFixedMode ? formatDh(Number(summary.fuelAllowance || 0)) : formatDh(0)}`,
+        `Avances : -${formatDh(Number(summary.advances || 0))}`,
+        `Paiements faits : -${formatDh(Number(summary.payments || 0))}`,
+        `Corrections : ${Number(summary.adjustments || 0) >= 0 ? '+' : ''}${formatDh(Number(summary.adjustments || 0))}`,
+        `Reste à régler : ${formatDh(Number(summary.remainingDue || 0))}`
+      ];
+      const text = lines.join('\n');
+
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          showSessionStatus('✅ Résumé copié', 'success');
+          return;
+        }
+
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', 'readonly');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const copied = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (!copied) throw new Error('Copie non supportée sur cet appareil.');
+        showSessionStatus('✅ Résumé copié', 'success');
+      } catch (e) {
+        alert(text);
+        showSessionStatus('❌ Erreur copie: ' + (e?.message || 'Erreur inconnue'), 'error', 9000);
+      }
+    };
+
+    window.deleteEmployeeBalanceEntry = async function (entryId, userId, entryType, amount) {
+      if (!isManagerOrAdmin()) return;
+      if (!entryId || !userId) return;
+      const typeLabel = entryType === 'advance'
+        ? 'Avance'
+        : entryType === 'payment'
+          ? 'Paiement'
+          : 'Correction';
+      const confirmed = confirm(`Supprimer cette entrée ${typeLabel} de ${formatDh(Number(amount || 0))} ?`);
+      if (!confirmed) return;
+
+      try {
+        const { error } = await supabase
+          .from('employee_balance_entries')
+          .delete()
+          .eq('id', entryId);
+        if (error) throw error;
+        showSessionStatus('✅ Entrée supprimée', 'success');
+        openEmployeeProfileModal(userId, 'balance');
+      } catch (e) {
+        showSessionStatus('❌ Erreur suppression: ' + (e?.message || 'Erreur inconnue'), 'error', 9000);
+      }
+    };
+
     // ── Balance Entry Modal ─────────────────────────────────────────────────────
     window.openAddBalanceEntryModal = function (userId) {
       if (!isAdmin()) return;
       const user = state.allUsers.find(u => u.id === userId);
       if (!user) return;
-      const { start, end } = getDefaultPeriod();
+      const balancePeriod = getBalancePeriod(employeeBalancePeriodOption);
       const nameEl    = document.getElementById('balanceEntryEmployeeName');
       const empIdEl   = document.getElementById('balanceEntryEmployeeId');
       const pStartEl  = document.getElementById('balanceEntryPeriodStart');
@@ -8857,8 +9021,8 @@
 
       if (nameEl)   nameEl.textContent = user.full_name || user.email || '—';
       if (empIdEl)  empIdEl.value      = userId;
-      if (pStartEl) pStartEl.value     = start;
-      if (pEndEl)   pEndEl.value       = end;
+      if (pStartEl) pStartEl.value     = balancePeriod.start;
+      if (pEndEl)   pEndEl.value       = balancePeriod.end;
       if (typeEl)   typeEl.value       = 'advance';
       if (amountEl) amountEl.value     = '';
       if (noteEl)   noteEl.value       = '';
