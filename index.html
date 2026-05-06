@@ -8519,11 +8519,11 @@
         const uid = escHtml(userId);
         contEl.innerHTML = `
           <div style="display:grid;gap:8px;margin-top:4px;">
-            <button type="button" onclick="openEmployeeProfileModal('${uid}'); closeModal('employeeActionsModal');">👁 Fiche employé</button>
+            <button type="button" onclick="openEmployeeProfileModal('${uid}', 'resume'); closeModal('employeeActionsModal');">👁 Fiche employé</button>
             <button type="button" onclick="openRemunerationSettingsFromList('${uid}'); closeModal('employeeActionsModal');">💰 Rémunération</button>
-            <button type="button" onclick="openEmployeeProfileModal('${uid}'); closeModal('employeeActionsModal');">📦 Stock voiture</button>
-            <button type="button" onclick="openEmployeeProfileModal('${uid}'); closeModal('employeeActionsModal');">👥 Clients</button>
-            <button type="button" onclick="openEmployeeProfileModal('${uid}'); closeModal('employeeActionsModal');">💰 Ventes</button>
+            <button type="button" onclick="openEmployeeProfileModal('${uid}', 'stock'); closeModal('employeeActionsModal');">📦 Stock voiture</button>
+            <button type="button" onclick="openEmployeeProfileModal('${uid}', 'clients'); closeModal('employeeActionsModal');">👥 Clients</button>
+            <button type="button" onclick="openEmployeeProfileModal('${uid}', 'ventes'); closeModal('employeeActionsModal');">💰 Ventes</button>
             <button type="button" onclick="openRemunerationSettingsFromList('${uid}'); closeModal('employeeActionsModal');">⚙️ Réglages</button>
           </div>`;
       }
@@ -8532,7 +8532,7 @@
     };
 
     // ── Employee Profile Modal ──────────────────────────────────────────────────
-    window.openEmployeeProfileModal = async function (userId) {
+    window.openEmployeeProfileModal = async function (userId, section) {
       if (!isAdmin()) return;
       closeAllMenus();
 
@@ -8551,29 +8551,32 @@
       openModal('employeeProfileModal');
 
       try {
-        const uid  = escHtml(userId);
-        const role = user.role === 'admin' ? '👑 Admin' : user.role === 'manager' ? '🔑 Manager' : '👤 Employé';
-        const mode = user.remuneration_mode === 'fixed_plus_commission' ? 'Fixe + Commission' : 'Commission simple';
+        const uid   = escHtml(userId);
+        const role  = user.role === 'admin' ? '👑 Admin' : user.role === 'manager' ? '🔑 Manager' : '👤 Employé';
+        const mode  = user.remuneration_mode === 'fixed_plus_commission' ? 'Fixe + Commission' : 'Commission simple';
         const email = escHtml(user.email || '—');
 
+        // ── Fuel/salary info rows for résumé ──
+        const isFixedMode = user.remuneration_mode === 'fixed_plus_commission';
+        const remuExtra = isFixedMode
+          ? `<div class="adv-stat-row"><span class="adv-stat-label">💼 Salaire fixe</span><span class="adv-stat-val">${formatDh(Number(user.fixed_monthly_salary || 0))}</span></div>
+             <div class="adv-stat-row"><span class="adv-stat-label">⛽ Carburant</span><span class="adv-stat-val">${formatDh(Number(user.fuel_allowance || 0))}</span></div>`
+          : `<div class="muted" style="font-size:11px;margin-top:4px;">⛽ Commission simple : l'employé paie lui-même son carburant.</div>`;
+
         // ── 1. Résumé ──
-        let html = `<div class="settings-option" style="margin-bottom:12px;">
+        let html = `<div id="empProfile-resume" class="settings-option" style="margin-bottom:12px;">
           <div class="title">📋 Résumé</div>
           <div class="adv-stat-row"><span class="adv-stat-label">Nom</span><span class="adv-stat-val">${name}</span></div>
           <div class="adv-stat-row"><span class="adv-stat-label">Email</span><span class="adv-stat-val" style="font-size:12px;">${email}</span></div>
           <div class="adv-stat-row"><span class="adv-stat-label">Rôle</span><span class="adv-stat-val">${role}</span></div>
           <div class="adv-stat-row"><span class="adv-stat-label">Rémunération</span><span class="adv-stat-val">${mode}</span></div>
-          ${user.remuneration_mode === 'fixed_plus_commission'
-            ? `<div class="adv-stat-row"><span class="adv-stat-label">💼 Salaire fixe</span><span class="adv-stat-val">${formatDh(Number(user.fixed_monthly_salary || 0))}</span></div>
-               <div class="adv-stat-row"><span class="adv-stat-label">⛽ Carburant</span><span class="adv-stat-val">${formatDh(Number(user.fuel_allowance || 0))}</span></div>`
-            : `<div class="muted" style="font-size:11px;margin-top:4px;">⛽ Commission simple : l'employé paie lui-même son carburant.</div>`
-          }
+          ${remuExtra}
         </div>`;
 
         // ── 2. Taux de commission ──
         const rates    = user.commission_rates || {};
         const hasRates = CATEGORIES.some(c => Number(rates[c] || 0) > 0);
-        html += `<div class="settings-option" style="margin-bottom:12px;">
+        html += `<div id="empProfile-remu" class="settings-option" style="margin-bottom:12px;">
           <div class="title">💲 Taux commission (DHS/unité)</div>`;
         CATEGORIES.forEach(cat => {
           const rate = Number(rates[cat] || 0);
@@ -8591,7 +8594,7 @@
           if (row.user_id === userId) userStock[row.category] = Number(row.quantity || 0);
         });
         const hasStock = CATEGORIES.some(cat => userStock[cat] !== undefined);
-        html += `<div class="settings-option" style="margin-bottom:12px;">
+        html += `<div id="empProfile-stock" class="settings-option" style="margin-bottom:12px;">
           <div class="title">📦 Stock voiture</div>`;
         if (hasStock) {
           CATEGORIES.forEach(cat => {
@@ -8614,7 +8617,7 @@
         const userClients = state.clients.filter(c =>
           c.created_by === userId || c.assigned_user_id === userId
         );
-        html += `<div class="settings-option" style="margin-bottom:12px;">
+        html += `<div id="empProfile-clients" class="settings-option" style="margin-bottom:12px;">
           <div class="title">👥 Clients (${userClients.length})</div>`;
         if (userClients.length > 0) {
           html += `<div style="max-height:120px;overflow-y:auto;">`;
@@ -8632,13 +8635,15 @@
 
         // ── 5. Ventes du mois ──
         const { start, end } = getDefaultPeriod();
+        const periodEnd = new Date(end);
+        periodEnd.setUTCHours(23, 59, 59, 999);
         const result = calcCommissionForUser(user, state.sales, start, end);
         const mthSales = state.sales.filter(s => {
           if (s.created_by !== userId) return false;
           const d = new Date(s.created_at);
-          return d >= new Date(start) && d <= (function(){ const e2 = new Date(end); e2.setUTCHours(23,59,59,999); return e2; })();
+          return d >= new Date(start) && d <= periodEnd;
         });
-        html += `<div class="settings-option" style="margin-bottom:12px;">
+        html += `<div id="empProfile-ventes" class="settings-option" style="margin-bottom:12px;">
           <div class="title">💰 Ventes ce mois (${mthSales.length})</div>`;
         let catRows = '';
         CATEGORIES.forEach(cat => {
@@ -8665,7 +8670,14 @@
         // ── Footer ──
         html += `<button type="button" onclick="closeModal('employeeProfileModal'); openRemunerationSettingsFromList('${uid}');">⚙️ Réglages rémunération</button>`;
 
-        if (contEl) contEl.innerHTML = html;
+        if (contEl) {
+          contEl.innerHTML = html;
+          // Scroll to requested section if provided
+          if (section) {
+            const sectionEl = document.getElementById('empProfile-' + section);
+            if (sectionEl) setTimeout(() => sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+          }
+        }
       } catch (e) {
         console.warn('[openEmployeeProfileModal] erreur :', e?.message);
         if (contEl) contEl.innerHTML = '<div class="muted" style="padding:12px">⚠️ Impossible de charger la fiche. Non disponible.</div>';
