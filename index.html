@@ -734,7 +734,6 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3 data-i18n="push_notif_title">📱 Notifications téléphone</h3><button class="close-x" onclick="closeModal('notifSettingsModal')">✕</button></div>
       <div class="settings-option">
-        <div class="title" data-i18n="push_notif_title">📱 Notifications téléphone</div>
         <div class="muted" data-i18n="push_notif_desc">Recevoir une alerte sur le téléphone même appli fermée.</div>
         <button id="pushEnableBtn" onclick="requestPushPermission()" data-i18n="push_enable_btn">🔔 Activer notifications téléphone</button>
         <button id="pushDisableBtn" onclick="disablePushNotifications()" data-i18n="push_disable_btn" style="display:none;margin-top:6px;">🔕 Désactiver notifications téléphone</button>
@@ -6600,7 +6599,7 @@
     window.openEmployesModal = function () {
       if (isAdmin()) {
         openRemunerationsListModal();
-      } else if (isManagerOrAdmin()) {
+      } else if (isManager()) {
         openUsersModal();
       } else {
         openMyCommissionsModal();
