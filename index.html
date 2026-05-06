@@ -436,6 +436,7 @@
         <div class="title" data-i18n="push_notif_title">📱 Notifications téléphone</div>
         <div class="muted" data-i18n="push_notif_desc">Recevoir une alerte sur le téléphone même appli fermée.</div>
         <button id="pushEnableBtn" onclick="requestPushPermission()" data-i18n="push_enable_btn">🔔 Activer notifications téléphone</button>
+        <button id="pushDisableBtn" onclick="disablePushNotifications()" data-i18n="push_disable_btn" style="display:none;margin-top:6px;">🔕 Désactiver notifications téléphone</button>
         <div id="pushStatusMsg" style="margin-top:6px;font-size:12px;min-height:16px;"></div>
       </div>
     </div>
@@ -1202,6 +1203,11 @@
         push_repair_hint: 'Permission accordée mais non confirmée en base. Cliquez pour réparer.',
         push_repairing: '⏳ Réparation en cours…',
         push_subscribe_timeout: 'Délai dépassé lors de la création de l\'abonnement. Réessayez.',
+        push_disable_btn: '🔕 Désactiver notifications téléphone',
+        push_disabling: '⏳ Désactivation en cours…',
+        push_disabled: 'Notifications désactivées ✅',
+        push_disable_error: 'Impossible de désactiver les notifications. Réessayez.',
+        push_disable_local_ok: 'Désactivation locale OK, mais nettoyage serveur impossible. Réessayez.',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1403,6 +1409,11 @@
         push_repair_hint: 'تم منح الإذن لكن لم يُؤكَّد. اضغط للإصلاح.',
         push_repairing: '⏳ جارٍ الإصلاح…',
         push_subscribe_timeout: 'انتهت مهلة إنشاء الاشتراك. أعد المحاولة.',
+        push_disable_btn: '🔕 إلغاء إشعارات الهاتف',
+        push_disabling: '⏳ جارٍ الإلغاء…',
+        push_disabled: 'تم إلغاء الإشعارات ✅',
+        push_disable_error: 'تعذّر إلغاء الإشعارات. أعد المحاولة.',
+        push_disable_local_ok: 'تم الإلغاء محلياً لكن تعذّر التنظيف على الخادم. أعد المحاولة.',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1604,6 +1615,11 @@
         push_repair_hint: 'Permission m3tiya walakin ma mkkedach. Dir clic bach tslah.',
         push_repairing: '⏳ Kaytslah…',
         push_subscribe_timeout: 'Wqt dial création abonnement fwwt. 3wed tjreb.',
+        push_disable_btn: '🔕 Wqqef notifications telephone',
+        push_disabling: '⏳ Kaytwaqqef…',
+        push_disabled: 'Notifications twaqqfu ✅',
+        push_disable_error: 'Impossible twqqef notifications. 3wed tjreb.',
+        push_disable_local_ok: 'Twqqef local OK, walakin nettoyage serveur mkan. 3wed tjreb.',
       },
     };
 
@@ -3443,13 +3459,15 @@
     // permission is granted but the DB save is unconfirmed, a "Réparer" button
     // is shown instead — fixing the false-positive on iPhone PWA.
     function _refreshPushSettingsUI() {
-      const btn       = document.getElementById('pushEnableBtn');
-      const statusMsg = document.getElementById('pushStatusMsg');
+      const btn        = document.getElementById('pushEnableBtn');
+      const disableBtn = document.getElementById('pushDisableBtn');
+      const statusMsg  = document.getElementById('pushStatusMsg');
       if (!btn) return;
 
       if (!_isPushSupported()) {
         btn.disabled = true;
         btn.textContent = t('push_unsupported');
+        if (disableBtn) disableBtn.style.display = 'none';
         if (statusMsg) statusMsg.textContent = t('push_unsupported');
         return;
       }
@@ -3460,20 +3478,24 @@
           // Confirmed saved to DB this session → truly active
           btn.disabled = true;
           btn.textContent = '✅ ' + t('push_enabled');
+          if (disableBtn) { disableBtn.style.display = ''; disableBtn.disabled = false; disableBtn.textContent = t('push_disable_btn'); }
           if (statusMsg) { statusMsg.textContent = t('push_enabled'); statusMsg.style.color = '#2e7d32'; }
         } else {
           // Permission exists but DB save unconfirmed → offer repair
           btn.disabled = false;
           btn.textContent = t('push_repair_btn');
+          if (disableBtn) disableBtn.style.display = 'none';
           if (statusMsg) { statusMsg.textContent = t('push_repair_hint'); statusMsg.style.color = '#e65100'; }
         }
       } else if (perm === 'denied') {
         btn.disabled = true;
         btn.textContent = '🚫 ' + t('push_blocked');
+        if (disableBtn) disableBtn.style.display = 'none';
         if (statusMsg) { statusMsg.textContent = t('push_blocked'); statusMsg.style.color = '#c62828'; }
       } else {
         btn.disabled = false;
         btn.textContent = t('push_enable_btn');
+        if (disableBtn) disableBtn.style.display = 'none';
         if (statusMsg) statusMsg.textContent = '';
       }
     }
@@ -3580,6 +3602,89 @@
         if (btn && (btn.textContent === t('push_enabling') || btn.textContent === t('push_repairing'))) {
           btn.disabled = false;
           btn.textContent = alreadyGranted ? t('push_repair_btn') : t('push_enable_btn');
+        }
+      }
+    };
+
+    // Unsubscribes from push notifications in the browser and deletes the
+    // Supabase row for the current user/endpoint.
+    // Called when the user clicks "Désactiver notifications téléphone".
+    window.disablePushNotifications = async function() {
+      const disableBtn = document.getElementById('pushDisableBtn');
+      const btn        = document.getElementById('pushEnableBtn');
+      const statusMsg  = document.getElementById('pushStatusMsg');
+
+      if (disableBtn) { disableBtn.disabled = true; disableBtn.textContent = t('push_disabling'); }
+      if (statusMsg) { statusMsg.textContent = ''; statusMsg.style.color = ''; }
+
+      let endpoint = null;
+      let localUnsubscribed = false;
+
+      try {
+        // ── Step 1: Unsubscribe locally in the browser/PWA ────────────────────
+        try {
+          const reg = await _ensureServiceWorkerRegistration();
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            endpoint = sub.endpoint;
+            await sub.unsubscribe();
+            localUnsubscribed = true;
+          } else {
+            localUnsubscribed = true; // nothing to unsubscribe locally
+          }
+        } catch (e) {
+          console.warn('[push] local unsubscribe error:', e?.message);
+          // Continue to try server cleanup even if local step failed
+        }
+
+        // ── Step 2: Delete the Supabase row ───────────────────────────────────
+        const session = state.session;
+        if (session?.access_token) {
+          const body = endpoint ? { endpoint } : {};
+          let serverOk = false;
+          try {
+            const res = await fetch('/api/delete-push-subscription', {
+              method:  'POST',
+              headers: {
+                'Content-Type':  'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify(body)
+            });
+            serverOk = res.ok;
+            if (!res.ok) {
+              const errBody = await res.json().catch(() => ({}));
+              console.error('[push] delete subscription failed:', errBody?.error || `HTTP ${res.status}`);
+            }
+          } catch (e) {
+            console.error('[push] delete subscription error:', e?.message);
+          }
+
+          if (!serverOk) {
+            // Local unsubscribe may have succeeded but server cleanup failed
+            _pushSavedThisSession = false;
+            _refreshPushSettingsUI();
+            if (disableBtn) { disableBtn.disabled = false; disableBtn.textContent = t('push_disable_btn'); }
+            if (statusMsg) { statusMsg.textContent = t('push_disable_local_ok'); statusMsg.style.color = '#e65100'; }
+            return;
+          }
+        }
+
+        // ── Step 3: Reset state and update UI ─────────────────────────────────
+        _pushSavedThisSession = false;
+        _refreshPushSettingsUI();
+        if (statusMsg) { statusMsg.textContent = t('push_disabled'); statusMsg.style.color = '#2e7d32'; }
+        showSessionStatus(t('push_disabled'), 'success', 3000);
+
+      } catch (e) {
+        console.error('[push] disablePushNotifications error:', e?.message);
+        _pushSavedThisSession = false;
+        _refreshPushSettingsUI();
+        if (statusMsg) { statusMsg.textContent = t('push_disable_error'); statusMsg.style.color = '#c62828'; }
+      } finally {
+        if (disableBtn && disableBtn.textContent === t('push_disabling')) {
+          disableBtn.disabled = false;
+          disableBtn.textContent = t('push_disable_btn');
         }
       }
     };
