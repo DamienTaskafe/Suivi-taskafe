@@ -3276,12 +3276,22 @@
       }
       content.innerHTML = notifs.map(n => {
         const isUnread = !n.read_at;
-        return `<div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-${escHtml(n.id)}" style="cursor:pointer;" onclick="navigateFromNotification('${escHtml(n.type || '')}')">
+        // Use data attribute to store the type — avoids inline string concatenation in onclick
+        return `<div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-${escHtml(n.id)}" style="cursor:pointer;" data-notif-type="${escHtml(n.type || '')}">
           <div class="notif-item-title">${escHtml(n.title)}</div>
           <div class="notif-item-msg">${escHtml(n.message)}</div>
           <div class="notif-item-date">${_formatNotifDate(n.created_at)}</div>
         </div>`;
       }).join('');
+      // Assign onclick to the container (replaces any previous handler — safe)
+      // to avoid multiple listeners since renderNotificationsPanel() can be called
+      // multiple times. Event delegation prevents the need to inline onclick in HTML.
+      content.onclick = function(e) {
+        const item = e.target.closest('[data-notif-type]');
+        if (!item) return;
+        const type = item.dataset.notifType || '';
+        navigateFromNotification(type);
+      };
     }
 
     // Navigate to the relevant section when a notification is clicked.
@@ -3307,6 +3317,10 @@
       if (unread.length === 0) return;
       const ids = unread.map(n => n.id);
       const now = new Date().toISOString();
+      // Snapshot original read_at values before optimistic update — although all
+      // values are currently falsy (filtered by !n.read_at), preserving the exact
+      // original value (null vs undefined) ensures a precise revert on failure.
+      const origReadAt = unread.map(n => n.read_at);
       // Update local state immediately for instant UI feedback
       unread.forEach(n => { n.read_at = now; });
       renderNotificationBell();
@@ -3320,13 +3334,13 @@
           .eq('user_id', userId);
         if (error) {
           console.warn('[notifications] markAllAsRead error:', error?.message);
-          // Revert local state on failure so badge count stays accurate
-          unread.forEach(n => { n.read_at = null; });
+          // Revert local state on failure — restore exact original values
+          unread.forEach((n, i) => { n.read_at = origReadAt[i]; });
           renderNotificationBell();
         }
       } catch (e) {
         console.warn('[notifications] markAllAsRead exception:', e?.message);
-        unread.forEach(n => { n.read_at = null; });
+        unread.forEach((n, i) => { n.read_at = origReadAt[i]; });
         renderNotificationBell();
       }
     }
@@ -4001,7 +4015,7 @@
         statusEl.textContent = "✅ Demande envoyée à l'admin.";
         if (btn) { btn.textContent = '✅ Envoyé'; }
         // Reload notifications so the badge reflects the server-side self-notification
-        loadNotifications().catch(() => {});
+        loadNotifications().catch(e => console.warn('[stock-req] loadNotifications:', e?.message));
         // Trigger push to admins/managers (non-blocking)
         _triggerPush({
           type:    'new_stock_request',
@@ -8599,7 +8613,7 @@
               <span class="badge ${cat}" style="margin:0;padding:1px 5px;font-size:9px;">${cat}</span>
               DHS/${unitLabel(cat)}
             </label>
-            <input id="remuRate${cat}" type="number" min="0" step="0.5" value="${rates[cat] ? Number(rates[cat]) : ''}" style="margin:4px 0 0;" placeholder="0"/>
+            <input id="remuRate${cat}" type="number" min="0" step="0.5" value="${rates[cat] != null ? Number(rates[cat]) : ''}" style="margin:4px 0 0;" placeholder="0"/>
           </div>`).join('');
       }
 
@@ -9230,6 +9244,8 @@
           printed = true;
           try { printWindow.focus(); printWindow.print(); } catch (_) {}
         };
+        // 600ms: enough time for the new window's DOM to be fully ready even on
+        // slow connections, yet short enough not to frustrate the user.
         setTimeout(() => {
           if (printed || printWindow.closed) return;
           printed = true;
