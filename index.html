@@ -8818,6 +8818,42 @@
             isFixedMode: isFixedModeBalance
           };
 
+          const bulletinTitle = balancePeriod.option === 'all'
+            ? '📄 Vue globale — Balance employé'
+            : `📄 Bulletin mensuel — ${balancePeriod.summaryLabel.charAt(0).toUpperCase() + balancePeriod.summaryLabel.slice(1)}`;
+          const periodFrom = new Date(balancePeriod.start + 'T12:00:00').toLocaleDateString('fr-FR');
+          const periodTo   = new Date(balancePeriod.end   + 'T12:00:00').toLocaleDateString('fr-FR');
+          const adjColor   = totalAdjustments >= 0 ? 'var(--color-success)' : 'var(--color-error)';
+
+          let historyHtml = '';
+          if (entries.length > 0) {
+            let entryRows = '';
+            entries.forEach(e => {
+              const typeLabel = e.entry_type === 'advance'
+                ? 'Avance'
+                : e.entry_type === 'payment'
+                  ? 'Paiement'
+                  : (e.direction === 'deduct' ? 'Correction −' : 'Correction +');
+              const isPositive = e.entry_type === 'adjustment' ? e.direction !== 'deduct' : false;
+              const signedAmount = `${isPositive ? '+' : '-'}${formatDh(Number(e.amount || 0))}`;
+              const valColor = isPositive ? 'var(--color-success)' : 'var(--color-error)';
+              const dateStr = new Date(e.created_at).toLocaleDateString('fr-FR');
+              entryRows += `<div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);min-width:0;">
+                <div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;line-height:1.45;font-size:12px;">
+                  <div>${dateStr} <span style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px;font-size:11px;">${typeLabel}</span> <span style="font-weight:600;color:${valColor};">${signedAmount}</span></div>
+                  ${e.note ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:1px;overflow-wrap:anywhere;">${escHtml(e.note)}</div>` : ''}
+                </div>
+                ${canManageBalance ? `<button type="button" aria-label="Supprimer l'entrée" style="padding:4px 7px;font-size:12px;line-height:1;flex-shrink:0;" onclick="deleteEmployeeBalanceEntry('${escHtml(e.id || '')}', '${uid}', '${escHtml(e.entry_type || '')}', ${Number(e.amount || 0)})">🗑</button>` : ''}
+              </div>`;
+            });
+            historyHtml = `<details style="margin-top:6px;">
+              <summary style="font-size:12px;font-weight:600;color:var(--color-text-muted);cursor:pointer;padding:4px 0;user-select:none;list-style:none;">🧾 Voir détails (${entries.length})</summary>
+              <div style="margin-top:6px;">${entryRows}</div>
+            </details>`;
+          } else {
+            historyHtml = `<div class="muted" style="font-size:12px;margin-top:6px;">Aucune entrée pour cette période.</div>`;
+          }
+
           balanceHtml = `<div class="settings-option" style="margin-bottom:12px;" id="empProfile-balance">
             <div class="title">💵 Balance employé</div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
@@ -8828,80 +8864,31 @@
                 <option value="all"${balancePeriod.option === 'all' ? ' selected' : ''}>Tout</option>
               </select>
             </div>
-            <div class="muted" style="font-size:11px;margin-bottom:8px;">Période active : ${escHtml(balancePeriod.label)}</div>
             ${balancePeriod.warning ? `<div class="muted" style="font-size:11px;margin-bottom:8px;color:#b26a00;">${escHtml(balancePeriod.warning)}</div>` : ''}
-            <div class="adv-stat-row">
-              <span class="adv-stat-label">☕ Commissions café</span>
-              <span class="adv-stat-val">${formatDh(balanceCommission.totalCommission)}</span>
-            </div>`;
-          if (isFixedModeBalance) {
-            balanceHtml += `<div class="adv-stat-row">
-              <span class="adv-stat-label">💼 Salaire fixe</span>
-              <span class="adv-stat-val">${formatDh(Number(user.fixed_monthly_salary || 0))}</span>
-            </div>
-            <div class="adv-stat-row">
-              <span class="adv-stat-label">⛽ Carburant variable</span>
-              <span class="adv-stat-val">${formatDh(Number(user.fuel_allowance || 0))}</span>
-            </div>`;
-          } else {
-            balanceHtml += `<div class="muted" style="font-size:11px;margin-top:2px;margin-bottom:4px;">⛽ Commission simple : l'employé paie lui-même son carburant.</div>`;
-          }
-          if (totalAdvances > 0) {
-            balanceHtml += `<div class="adv-stat-row">
-              <span class="adv-stat-label">📉 Avances</span>
-              <span class="adv-stat-val" style="color:var(--color-error);">-${formatDh(totalAdvances)}</span>
-            </div>`;
-          }
-          if (totalPayments > 0) {
-            balanceHtml += `<div class="adv-stat-row">
-              <span class="adv-stat-label">✅ Paiements faits</span>
-              <span class="adv-stat-val" style="color:var(--color-error);">-${formatDh(totalPayments)}</span>
-            </div>`;
-          }
-          if (totalAdjustments !== 0) {
-            const adjColor = totalAdjustments >= 0 ? 'var(--color-success)' : 'var(--color-error)';
-            balanceHtml += `<div class="adv-stat-row">
-              <span class="adv-stat-label">🔧 Corrections</span>
-              <span class="adv-stat-val" style="color:${adjColor};">${totalAdjustments >= 0 ? '+' : ''}${formatDh(totalAdjustments)}</span>
-            </div>`;
-          }
-          balanceHtml += `<div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:4px;margin-top:4px;">
-              <span class="adv-stat-label" style="font-weight:700;">💳 Reste à régler</span>
-              <span class="adv-stat-val" style="font-weight:700;color:var(--color-success);">${formatDh(remainingDue)}</span>
+            <div style="background:rgba(0,0,0,0.03);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid var(--color-border);min-width:0;">
+              <div style="font-weight:700;font-size:14px;margin-bottom:3px;overflow-wrap:anywhere;">${bulletinTitle}</div>
+              <div class="muted" style="font-size:11px;margin-bottom:10px;overflow-wrap:anywhere;">Employé : ${escHtml(user.full_name || user.email || '—')} · ${periodFrom} → ${periodTo}</div>
+              <div class="bal-row"><span class="bal-label">☕ Commissions café</span><span class="bal-val">${formatDh(balanceCommission.totalCommission)}</span></div>
+              ${isFixedModeBalance
+                ? `<div class="bal-row"><span class="bal-label">💼 Salaire fixe</span><span class="bal-val">${formatDh(Number(user.fixed_monthly_salary || 0))}</span></div>
+                   <div class="bal-row"><span class="bal-label">⛽ Carburant variable</span><span class="bal-val">${formatDh(Number(user.fuel_allowance || 0))}</span></div>`
+                : `<div class="muted" style="font-size:11px;padding:2px 0 6px;">⛽ Commission simple : l'employé paie lui-même son carburant.</div>`}
+              <div style="border-top:1px dashed var(--color-border);margin:6px 0;"></div>
+              <div class="bal-row"><span class="bal-label">📉 Avances</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(totalAdvances)}</span></div>
+              <div class="bal-row"><span class="bal-label">✅ Paiements faits</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(totalPayments)}</span></div>
+              <div class="bal-row"><span class="bal-label">🔧 Corrections</span><span class="bal-val" style="color:${adjColor};">${totalAdjustments >= 0 ? '+' : ''}${formatDh(totalAdjustments)}</span></div>
+              <div style="border-top:2px solid var(--color-border);margin-top:6px;padding-top:8px;" class="bal-row">
+                <span class="bal-label" style="font-weight:700;font-size:14px;color:var(--color-text);">💳 Reste à régler</span>
+                <span class="bal-val" style="font-size:15px;color:${remainingDue > 0 ? 'var(--color-success)' : 'var(--color-text-muted)'};">${formatDh(remainingDue)}</span>
+              </div>
             </div>
             ${remainingDue > 0
-              ? `<button type="button" style="width:100%;margin-top:10px;font-size:13px;background:var(--color-success);color:#fff;" onclick="settleEmployeeBalance('${uid}', ${remainingDue}, '${balancePeriod.start}', '${balancePeriod.end}')">✅ Régler ce mois</button>`
-              : `<div style="margin-top:10px;padding:8px;background:#e8f5e9;border-radius:6px;text-align:center;font-size:13px;color:var(--color-success);font-weight:600;">✅ Période réglée</div>`}
-            <button type="button" style="width:100%;margin-top:8px;font-size:13px;" onclick="openAddBalanceEntryModal('${uid}')">➕ Ajouter avance / paiement</button>
-            <button type="button" style="width:100%;margin-top:8px;font-size:13px;" onclick="copyEmployeeBalanceSummary('${uid}')">📋 Copier résumé</button>`;
-
-          // History list
-          if (entries.length > 0) {
-            balanceHtml += `<div style="margin-top:10px;">
-              <div style="font-size:11px;font-weight:600;color:var(--color-text-muted);margin-bottom:6px;">📋 Historique</div>`;
-            entries.forEach(e => {
-              const typeLabel = e.entry_type === 'advance'
-                ? 'Avance'
-                : e.entry_type === 'payment'
-                  ? 'Paiement'
-                  : (e.direction === 'deduct' ? 'Correction -' : 'Correction +');
-              const isPositive = e.entry_type === 'adjustment' ? e.direction !== 'deduct' : false;
-              const signStr = isPositive ? '+' : '-';
-              const signedAmount = `${signStr}${formatDh(Number(e.amount || 0))}`;
-              const valColor = isPositive ? 'var(--color-success)' : 'var(--color-error)';
-              const dateStr = new Date(e.created_at).toLocaleDateString('fr-FR');
-              const noteStr = e.note ? ` — ${escHtml(e.note)}` : '';
-              balanceHtml += `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
-                <div style="flex:1;min-width:0;line-height:1.45;">${dateStr} — ${typeLabel} — <span style="font-weight:600;color:${valColor};white-space:nowrap;">${signedAmount}</span>${noteStr}</div>
-                ${canManageBalance ? `<button type="button" aria-label="Supprimer l'entrée" style="padding:4px 7px;font-size:12px;line-height:1;" onclick="deleteEmployeeBalanceEntry('${escHtml(e.id || '')}', '${uid}', '${escHtml(e.entry_type || '')}', ${Number(e.amount || 0)})">🗑</button>` : ''}
-              </div>`;
-            });
-            balanceHtml += `</div>`;
-          } else {
-            balanceHtml += `<div class="muted" style="font-size:12px;margin-top:8px;">Aucune entrée pour cette période.</div>`;
-          }
-
-          balanceHtml += `</div>`;
+              ? `<button type="button" style="width:100%;margin-bottom:8px;font-size:13px;background:var(--color-success);color:#fff;" onclick="settleEmployeeBalance('${uid}', ${remainingDue}, '${balancePeriod.start}', '${balancePeriod.end}')">✅ Régler ce mois</button>`
+              : `<div style="margin-bottom:8px;padding:8px;background:#e8f5e9;border-radius:6px;text-align:center;font-size:13px;color:var(--color-success);font-weight:600;">✅ Période réglée</div>`}
+            <button type="button" style="width:100%;margin-bottom:8px;font-size:13px;" onclick="openAddBalanceEntryModal('${uid}')">➕ Ajouter avance / paiement</button>
+            <button type="button" style="width:100%;margin-bottom:8px;font-size:13px;" onclick="copyEmployeeBalanceSummary('${uid}')">📋 Copier bulletin</button>
+            ${historyHtml}
+          </div>`;
         } catch (balanceErr) {
           console.warn('[openEmployeeProfileModal] balance error:', balanceErr?.message);
           balanceHtml = `<div id="empProfile-balance" class="settings-option" style="margin-bottom:12px;">
@@ -8942,46 +8929,53 @@
         showSessionStatus('❌ Erreur de copie: résumé indisponible', 'error', 7000);
         return;
       }
+      const periodLabel = summary.periodLabel || '—';
       const lines = [
-        'TASKAFÉ - Balance employé',
+        'TASKAFÉ - Bulletin mensuel',
         `Employé : ${summary.employeeName || '—'}`,
-        `Période : ${summary.periodLabel || '—'}`,
+        `Période : ${periodLabel}`,
         `Commissions café : ${formatDh(Number(summary.commissions || 0))}`,
-        `Salaire fixe : ${summary.isFixedMode ? formatDh(Number(summary.fixedSalary || 0)) : formatDh(0)}`,
-        `Carburant variable : ${summary.isFixedMode ? formatDh(Number(summary.fuelAllowance || 0)) : formatDh(0)}`,
+        summary.isFixedMode ? `Salaire fixe : ${formatDh(Number(summary.fixedSalary || 0))}` : null,
+        summary.isFixedMode ? `Carburant variable : ${formatDh(Number(summary.fuelAllowance || 0))}` : null,
         `Avances : -${formatDh(Number(summary.advances || 0))}`,
         `Paiements faits : -${formatDh(Number(summary.payments || 0))}`,
         `Corrections : ${Number(summary.adjustments || 0) >= 0 ? '+' : ''}${formatDh(Number(summary.adjustments || 0))}`,
         `Reste à régler : ${formatDh(Number(summary.remainingDue || 0))}`
-      ];
+      ].filter(Boolean);
       const text = lines.join('\n');
 
-      try {
-        if (navigator?.clipboard?.writeText) {
+      // 1. Try navigator.clipboard (modern, requires HTTPS/secure context)
+      if (navigator?.clipboard?.writeText) {
+        try {
           await navigator.clipboard.writeText(text);
-          showSessionStatus('✅ Résumé copié', 'success');
+          showSessionStatus('✅ Bulletin copié', 'success');
           return;
+        } catch (_e) {
+          // fall through to execCommand fallback
         }
+      }
 
+      // 2. Fallback: textarea + execCommand
+      try {
         const ta = document.createElement('textarea');
         ta.value = text;
         ta.setAttribute('readonly', 'readonly');
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
+        ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;';
         document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
         let copied = false;
-        try {
-          ta.select();
-          copied = document.execCommand('copy');
-        } finally {
-          document.body.removeChild(ta);
+        try { copied = document.execCommand('copy'); } catch (_e) { /* ignore */ }
+        document.body.removeChild(ta);
+        if (copied) {
+          showSessionStatus('✅ Bulletin copié', 'success');
+          return;
         }
-        if (!copied) throw new Error('Fonctionnalité de copie non prise en charge par cet appareil.');
-        showSessionStatus('✅ Résumé copié', 'success');
-      } catch (e) {
-        alert(text);
-        showSessionStatus('❌ Erreur de copie: ' + (e?.message || 'Erreur inconnue'), 'error', 9000);
-      }
+      } catch (_e) { /* fall through */ }
+
+      // 3. Manual fallback: show text in prompt so user can copy manually
+      showSessionStatus('⚠️ Copie auto indisponible — texte affiché pour copie manuelle', 'error', 9000);
+      prompt('Copiez ce bulletin (Ctrl+A puis Ctrl+C) :', text);
     };
 
     window.deleteEmployeeBalanceEntry = async function (entryId, userId, entryType, amount) {

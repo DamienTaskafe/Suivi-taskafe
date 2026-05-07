@@ -1131,6 +1131,11 @@
     .adv-stat-label { color: var(--color-text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
     .adv-stat-val { font-weight: 700; color: var(--color-text); }
 
+    /* ── Bulletin balance rows (mobile-safe) ── */
+    .bal-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 4px 0; min-width: 0; }
+    .bal-label { flex: 1; min-width: 0; font-size: 13px; color: var(--color-text-muted); overflow-wrap: anywhere; word-break: break-word; }
+    .bal-val { flex-shrink: 0; font-weight: 700; font-size: 13px; color: var(--color-text); white-space: nowrap; }
+
     /* ── Compact preview bar ── */
     .preview-bar { display: flex; gap: 6px; margin: 10px 0; flex-wrap: nowrap; }
     .preview-chip { flex: 1; background: rgba(255,255,255,0.82); border: 1px solid rgba(0,0,0,0.07); border-radius: 10px; padding: 6px 8px; text-align: center; min-width: 0; }
