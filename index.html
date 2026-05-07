@@ -960,6 +960,38 @@
     </div>
   </div>
 
+  <!-- ── Edit Employee Modal (admin/manager only) ─────────────────────────────── -->
+  <div id="editEmployeeModal" class="modal-backdrop" onclick="backdropClose(event, 'editEmployeeModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3 id="editEmployeeTitle">✏️ Modifier employé</h3>
+        <button class="close-x" onclick="closeModal('editEmployeeModal')">✕</button>
+      </div>
+      <input type="hidden" id="editEmployeeUserId" />
+      <label for="editEmployeeFullName">Nom complet</label>
+      <input type="text" id="editEmployeeFullName" placeholder="Nom complet" />
+      <label for="editEmployeeRole">Rôle</label>
+      <select id="editEmployeeRole">
+        <option value="employee">👤 Employé</option>
+        <option value="manager">🔑 Manager</option>
+        <option value="admin">👑 Admin</option>
+      </select>
+      <label for="editEmployeeRemuMode">Mode de rémunération</label>
+      <select id="editEmployeeRemuMode" onchange="toggleEditEmployeeFixed()">
+        <option value="commission_simple">Commission simple</option>
+        <option value="fixed_plus_commission">Fixe + Commission</option>
+      </select>
+      <div id="editEmployeeFixedFields" style="display:none;">
+        <label for="editEmployeeFixedSalary">Salaire fixe mensuel (DHS)</label>
+        <input type="number" id="editEmployeeFixedSalary" min="0" step="0.01" placeholder="0" />
+        <label for="editEmployeeFuel">Indemnité carburant (DHS)</label>
+        <input type="number" id="editEmployeeFuel" min="0" step="0.01" placeholder="0" />
+      </div>
+      <div id="editEmployeeStatus" style="font-size:13px;min-height:18px;margin:8px 0;"></div>
+      <button type="button" onclick="saveEditEmployee()">💾 Enregistrer</button>
+    </div>
+  </div>
+
   <!-- ── Add Balance Entry Modal (admin only) ───────────────────────────────── -->
   <div id="addBalanceEntryModal" class="modal-backdrop" onclick="backdropClose(event, 'addBalanceEntryModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
@@ -9057,7 +9089,10 @@
         html += balanceHtml;
 
         // ── Footer ──
-        html += `<button type="button" onclick="closeModal('employeeProfileModal'); openRemunerationSettingsFromList('${uid}');">⚙️ Réglages rémunération</button>`;
+        html += `<div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+          <button type="button" style="flex:1;" onclick="closeModal('employeeProfileModal'); openRemunerationSettingsFromList('${uid}');">⚙️ Réglages rémunération</button>
+          <button type="button" style="flex:1;" onclick="openEditEmployeeModal('${uid}');">✏️ Modifier employé</button>
+        </div>`;
 
         if (contEl) {
           contEl.innerHTML = html;
@@ -9077,6 +9112,84 @@
       employeeBalancePeriodOption = normalizeBalancePeriodOption(option);
       if (!userId) return;
       openEmployeeProfileModal(userId, 'balance');
+    };
+
+    // ── Edit Employee Modal ────────────────────────────────────────────────────
+    window.toggleEditEmployeeFixed = function () {
+      const mode = document.getElementById('editEmployeeRemuMode')?.value;
+      const fieldsEl = document.getElementById('editEmployeeFixedFields');
+      if (fieldsEl) fieldsEl.style.display = mode === 'fixed_plus_commission' ? '' : 'none';
+    };
+
+    window.openEditEmployeeModal = function (userId) {
+      if (!isManagerOrAdmin()) return;
+      const user = state.allUsers.find(u => u.id === userId);
+      if (!user) return;
+      const titleEl  = document.getElementById('editEmployeeTitle');
+      const idEl     = document.getElementById('editEmployeeUserId');
+      const nameEl   = document.getElementById('editEmployeeFullName');
+      const roleEl   = document.getElementById('editEmployeeRole');
+      const remuEl   = document.getElementById('editEmployeeRemuMode');
+      const salaryEl = document.getElementById('editEmployeeFixedSalary');
+      const fuelEl   = document.getElementById('editEmployeeFuel');
+      const statusEl = document.getElementById('editEmployeeStatus');
+      if (titleEl)  titleEl.textContent = `✏️ Modifier : ${user.full_name || user.email || '—'}`;
+      if (idEl)     idEl.value         = userId;
+      if (nameEl)   nameEl.value       = user.full_name || '';
+      if (roleEl)   roleEl.value       = user.role || 'employee';
+      if (remuEl)   remuEl.value       = user.remuneration_mode || 'commission_simple';
+      if (salaryEl) salaryEl.value     = user.fixed_monthly_salary != null ? user.fixed_monthly_salary : '';
+      if (fuelEl)   fuelEl.value       = user.fuel_allowance != null ? user.fuel_allowance : '';
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+      window.toggleEditEmployeeFixed();
+      openModal('editEmployeeModal');
+    };
+
+    window.saveEditEmployee = async function () {
+      if (!isManagerOrAdmin()) return;
+      const userId   = document.getElementById('editEmployeeUserId')?.value;
+      const nameEl   = document.getElementById('editEmployeeFullName');
+      const roleEl   = document.getElementById('editEmployeeRole');
+      const remuEl   = document.getElementById('editEmployeeRemuMode');
+      const salaryEl = document.getElementById('editEmployeeFixedSalary');
+      const fuelEl   = document.getElementById('editEmployeeFuel');
+      const statusEl = document.getElementById('editEmployeeStatus');
+      if (!userId) return;
+      const fullName = (nameEl?.value || '').trim();
+      if (!fullName) {
+        if (statusEl) { statusEl.textContent = '⚠️ Le nom ne peut pas être vide'; statusEl.style.color = '#e53935'; }
+        return;
+      }
+      const mode = remuEl?.value || 'commission_simple';
+      const updates = {
+        full_name:            fullName,
+        role:                 roleEl?.value || 'employee',
+        remuneration_mode:    mode,
+        fixed_monthly_salary: mode === 'fixed_plus_commission' ? Number(salaryEl?.value || 0) : 0,
+        fuel_allowance:       mode === 'fixed_plus_commission' ? Number(fuelEl?.value || 0) : 0,
+      };
+      if (statusEl) { statusEl.textContent = '⏳ Enregistrement…'; statusEl.style.color = ''; }
+      try {
+        const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+        if (error) throw error;
+        // Update local state
+        const idx = state.allUsers.findIndex(u => u.id === userId);
+        if (idx !== -1) Object.assign(state.allUsers[idx], updates);
+        if (userId === state.profile?.id) Object.assign(state.profile, updates);
+        // Refresh users list for fresh data
+        try { await loadAllUsers(); } catch (loadErr) { console.warn('[saveEditEmployee] loadAllUsers:', loadErr?.message); }
+        if (statusEl) { statusEl.textContent = '✅ Employé mis à jour'; statusEl.style.color = '#2e7d32'; }
+        showSessionStatus('✅ Fiche employé mise à jour', 'success');
+        logAction('employee_profile_updated', { targetUserId: userId });
+        setTimeout(() => {
+          closeModal('editEmployeeModal');
+          openEmployeeProfileModal(userId, 'resume');
+        }, 900);
+      } catch (e) {
+        const msg = e?.message || String(e);
+        if (statusEl) { statusEl.textContent = '❌ ' + msg; statusEl.style.color = '#e53935'; }
+        showSessionStatus('❌ Erreur modification employé : ' + msg.slice(0, 120), 'error', 9000);
+      }
     };
 
     window.copyEmployeeBalanceSummary = async function (userId) {
@@ -9157,38 +9270,122 @@
     }
 
     function renderEmployeeStatementPrintHtml(statement) {
-      const body = renderEmployeeArchivedStatementBody(statement);
+      if (!statement) return '<html><body>Bulletin introuvable.</body></html>';
+      const periodFrom  = statement.period_start ? new Date(statement.period_start + 'T12:00:00').toLocaleDateString('fr-FR') : '—';
+      const periodTo    = statement.period_end   ? new Date(statement.period_end   + 'T12:00:00').toLocaleDateString('fr-FR') : '—';
+      const periodLabelRaw = String(statement.period_label || `${periodFrom} → ${periodTo}`);
+      const periodLabel = periodLabelRaw.charAt(0).toUpperCase() + periodLabelRaw.slice(1);
+      const archivedAt  = statement.created_at ? new Date(statement.created_at).toLocaleDateString('fr-FR') : '—';
+      const empName     = statement.employee_name || '—';
+      const adjValue    = Number(statement.adjustments_total || 0);
+      const remaining   = Number(statement.remaining_due || 0);
+
+      function fmtDh(n) { return Number(n || 0).toFixed(2) + ' DHS'; }
+      function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
       return `<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>Bulletin employé archivé</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bulletin employé — ${esc(empName)}</title>
   <style>
-    body{margin:0;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#fff;color:#111;}
-    .wrap{max-width:760px;margin:0 auto;}
-    .bal-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 0;}
-    .bal-label{font-size:13px;color:#555;}
-    .bal-val{font-size:13px;font-weight:700;white-space:nowrap;color:#111;}
-    .muted{color:#666;}
-    .print-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;}
-    .print-actions button{padding:8px 12px;border:none;border-radius:8px;background:#111;color:#fff;cursor:pointer;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f5f5;color:#111;padding:24px 16px;}
+    .invoice-wrap{max-width:680px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.10);}
+    .invoice-header{background:#111;color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;}
+    .invoice-brand{font-size:22px;font-weight:800;letter-spacing:1px;}
+    .invoice-brand-sub{font-size:11px;opacity:.65;margin-top:2px;}
+    .invoice-meta{text-align:right;font-size:12px;opacity:.8;line-height:1.7;}
+    .invoice-body{padding:20px 24px;}
+    .invoice-section{background:#f9f9f9;border:1px solid #eee;border-radius:8px;padding:14px;margin-bottom:14px;}
+    .invoice-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;margin-bottom:8px;}
+    .inv-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid #f0f0f0;}
+    .inv-row:last-child{border-bottom:none;}
+    .inv-label{font-size:13px;color:#555;}
+    .inv-val{font-size:13px;font-weight:700;white-space:nowrap;color:#111;}
+    .inv-val.neg{color:#c62828;}
+    .inv-val.pos{color:#2e7d32;}
+    .invoice-total{background:#111;color:#fff;border-radius:8px;padding:16px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+    .invoice-total-label{font-size:14px;font-weight:700;}
+    .invoice-total-val{font-size:22px;font-weight:800;}
+    .invoice-footer{font-size:11px;color:#aaa;text-align:center;padding-bottom:18px;}
+    .print-actions{display:flex;gap:10px;justify-content:center;margin-bottom:16px;}
+    .btn-print{padding:10px 20px;border:none;border-radius:8px;background:#111;color:#fff;cursor:pointer;font-size:14px;font-weight:600;}
+    .btn-close{padding:10px 20px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#333;cursor:pointer;font-size:14px;}
+    .btn-close:hover{background:#f5f5f5;}
     @media print{
-      body{padding:0;background:#fff;color:#000;}
+      body{background:#fff;padding:0;}
       .print-actions{display:none !important;}
-      .statement-print-card{background:#fff !important;border:1px solid #ddd !important;color:#000 !important;}
+      .invoice-wrap{box-shadow:none;border:1px solid #ddd;}
+    }
+    @media(max-width:480px){
+      body{padding:12px 6px;}
+      .invoice-header{padding:14px 16px;}
+      .invoice-body{padding:14px 16px;}
+      .invoice-brand{font-size:18px;}
+      .invoice-total-val{font-size:18px;}
     }
   </style>
+  <script>
+    function handleCloseStatement() {
+      try { window.close(); } catch (e) {}
+      setTimeout(function () {
+        if (window.closed) return;
+        try { history.back(); } catch (e) {
+          var msg = document.getElementById('close-fallback-msg');
+          if (msg) msg.style.display = 'block';
+        }
+      }, 80);
+    }
+  </script>
 </head>
 <body>
-  <div class="wrap">
-    ${body}
-    <div class="print-actions">
-      <button type="button" onclick="window.print()">🖨 Imprimer / PDF</button>
+  <div id="close-fallback-msg" style="display:none;text-align:center;padding:10px;background:#fff3cd;border-radius:8px;margin-bottom:10px;font-size:13px;">⬅️ Ferme cet onglet pour revenir à TASKAFÉ</div>
+  <div class="print-actions">
+    <button class="btn-close" type="button" onclick="handleCloseStatement()">← Fermer / Retour</button>
+    <button class="btn-print" type="button" onclick="window.print()">🖨 Imprimer / PDF</button>
+  </div>
+  <div class="invoice-wrap">
+    <div class="invoice-header">
+      <div>
+        <div class="invoice-brand">TASKAFÉ</div>
+        <div class="invoice-brand-sub">Distribution café — Gestion commerciale</div>
+      </div>
+      <div class="invoice-meta">
+        <div><strong>Bulletin employé archivé</strong></div>
+        <div>Archivé le ${esc(archivedAt)}</div>
+      </div>
+    </div>
+    <div class="invoice-body">
+      <div class="invoice-section">
+        <div class="invoice-section-title">Employé</div>
+        <div class="inv-row"><span class="inv-label">Nom</span><span class="inv-val">${esc(empName)}</span></div>
+        <div class="inv-row"><span class="inv-label">Période</span><span class="inv-val">${esc(periodLabel)}</span></div>
+        <div class="inv-row"><span class="inv-label">Du</span><span class="inv-val">${esc(periodFrom)}</span></div>
+        <div class="inv-row"><span class="inv-label">Au</span><span class="inv-val">${esc(periodTo)}</span></div>
+      </div>
+      <div class="invoice-section">
+        <div class="invoice-section-title">Gains</div>
+        <div class="inv-row"><span class="inv-label">☕ Commissions café</span><span class="inv-val">${fmtDh(statement.commission_total)}</span></div>
+        <div class="inv-row"><span class="inv-label">💼 Salaire fixe</span><span class="inv-val">${fmtDh(statement.fixed_salary)}</span></div>
+        <div class="inv-row"><span class="inv-label">⛽ Carburant variable</span><span class="inv-val">${fmtDh(statement.fuel_amount)}</span></div>
+      </div>
+      <div class="invoice-section">
+        <div class="invoice-section-title">Déductions</div>
+        <div class="inv-row"><span class="inv-label">📉 Avances</span><span class="inv-val neg">-${fmtDh(statement.advances_total)}</span></div>
+        <div class="inv-row"><span class="inv-label">✅ Paiements faits</span><span class="inv-val neg">-${fmtDh(statement.payments_total)}</span></div>
+        <div class="inv-row"><span class="inv-label">🔧 Corrections</span><span class="inv-val ${adjValue >= 0 ? 'pos' : 'neg'}">${adjValue >= 0 ? '+' : ''}${fmtDh(adjValue)}</span></div>
+      </div>
+      <div class="invoice-total">
+        <span class="invoice-total-label">💳 Reste à régler</span>
+        <span class="invoice-total-val">${fmtDh(remaining)}</span>
+      </div>
+      <div class="invoice-footer">Généré par TASKAFÉ · ${new Date().toLocaleDateString('fr-FR')}</div>
     </div>
   </div>
 </body>
 </html>`;
-    }
 
     async function getEmployeeStatementById(statementId) {
       if (!statementId) throw new Error('ID bulletin manquant');
