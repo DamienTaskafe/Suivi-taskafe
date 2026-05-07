@@ -1133,8 +1133,37 @@
 
     /* ── Bulletin balance rows (mobile-safe) ── */
     .bal-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 4px 0; min-width: 0; }
-    .bal-label { flex: 1; min-width: 0; font-size: 13px; color: var(--color-text-muted); overflow-wrap: anywhere; word-break: break-word; }
+    .bal-label { flex: 1; min-width: 0; font-size: 13px; color: var(--color-text-muted); overflow-wrap: break-word; word-break: normal; }
     .bal-val { flex-shrink: 0; font-weight: 700; font-size: 13px; color: var(--color-text); white-space: nowrap; }
+    .bal-history-list { margin-top: 6px; display: grid; gap: 6px; }
+    .bal-history-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); min-width: 0; }
+    .bal-history-main { flex: 1; min-width: 0; }
+    .bal-history-top { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; font-size: 12px; line-height: 1.45; min-width: 0; }
+    .bal-history-date { white-space: nowrap; font-weight: 600; color: var(--color-text-muted); }
+    .bal-history-type { background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
+    .bal-history-amount { font-weight: 700; white-space: nowrap; }
+    .bal-history-note { font-size: 11px; color: var(--color-text-muted); margin-top: 3px; overflow-wrap: break-word; word-break: break-word; }
+    .bal-history-delete { width: auto; margin: 0; padding: 5px 7px; font-size: 12px; line-height: 1; flex-shrink: 0; }
+    .emp-archives-list { display: grid; gap: 8px; }
+    .emp-archive-item { border: 1px solid var(--color-border); border-radius: 8px; padding: 8px; background: rgba(0,0,0,0.02); }
+    .emp-archive-title { font-size: 13px; font-weight: 700; color: var(--color-text); margin-bottom: 3px; }
+    .emp-archive-meta { font-size: 11px; color: var(--color-text-muted); margin-bottom: 8px; }
+    .emp-archive-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .emp-archive-actions button { flex: 1; min-width: 120px; margin: 0; padding: 7px 8px; font-size: 12px; }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      body::before, body::after, .no-print { display: none !important; }
+      .statement-print-card {
+        margin: 0 auto !important;
+        max-width: 760px !important;
+        border: 1px solid #ddd !important;
+        border-radius: 12px !important;
+        padding: 18px !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+    }
 
     /* ── Compact preview bar ── */
     .preview-bar { display: flex; gap: 6px; margin: 10px 0; flex-wrap: nowrap; }

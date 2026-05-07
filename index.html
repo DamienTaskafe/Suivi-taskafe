@@ -996,6 +996,19 @@
     </div>
   </div>
 
+  <!-- ── Archived Employee Statement Modal ───────────────────────────────────── -->
+  <div id="employeeStatementModal" class="modal-backdrop" onclick="backdropClose(event, 'employeeStatementModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3>📄 Bulletin archivé</h3>
+        <button class="close-x" onclick="closeModal('employeeStatementModal')">✕</button>
+      </div>
+      <div id="employeeStatementContent">
+        <div class="muted" style="padding:12px">⏳ Chargement…</div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script type="module">
@@ -8147,6 +8160,8 @@
 
     let employeeBalancePeriodOption = 'current';
     const employeeBalanceSummaryCache = {};
+    const employeeMonthlyStatementsByUser = {};
+    const employeeMonthlyStatementsById = {};
 
     function normalizeBalancePeriodOption(option) {
       return option === 'previous' || option === 'all' ? option : 'current';
@@ -8197,6 +8212,27 @@
         warning: '',
         applyEntriesRange: true
       };
+    }
+
+    function shortSupabaseError(err, max = 180) {
+      return String(err?.message || err || 'Erreur inconnue').replace(/\s+/g, ' ').trim().slice(0, max);
+    }
+
+    function buildEmployeeBalanceStatementText(summary) {
+      if (!summary) return '';
+      const lines = [
+        'TASKAFÉ - Bulletin mensuel de l’employé',
+        `Employé : ${summary.employeeName || '—'}`,
+        `Période : ${summary.periodLabel || '—'}`,
+        `Commissions café : ${formatDh(Number(summary.commissions || 0))}`,
+        summary.isFixedMode ? `Salaire fixe : ${formatDh(Number(summary.fixedSalary || 0))}` : null,
+        summary.isFixedMode ? `Carburant variable : ${formatDh(Number(summary.fuelAllowance || 0))}` : null,
+        `Avances : -${formatDh(Number(summary.advances || 0))}`,
+        `Paiements faits : -${formatDh(Number(summary.payments || 0))}`,
+        `Corrections : ${Number(summary.adjustments || 0) >= 0 ? '+' : ''}${formatDh(Number(summary.adjustments || 0))}`,
+        `Reste à régler : ${formatDh(Number(summary.remainingDue || 0))}`
+      ].filter(Boolean);
+      return lines.join('\n');
     }
 
     /**
@@ -8808,6 +8844,9 @@
           employeeBalanceSummaryCache[userId] = {
             employeeName: user.full_name || user.email || '—',
             periodLabel: balancePeriod.summaryLabel,
+            periodOption: balancePeriod.option,
+            periodStart: balancePeriod.start,
+            periodEnd: balancePeriod.end,
             commissions: Number(balanceCommission.totalCommission || 0),
             fixedSalary: Number(user.fixed_monthly_salary || 0),
             fuelAllowance: Number(user.fuel_allowance || 0),
@@ -8815,8 +8854,17 @@
             payments: Number(totalPayments || 0),
             adjustments: Number(totalAdjustments || 0),
             remainingDue: Number(remainingDue || 0),
-            isFixedMode: isFixedModeBalance
+            isFixedMode: isFixedModeBalance,
+            entries: entries.map(e => ({
+              id: e.id,
+              entry_type: e.entry_type,
+              amount: Number(e.amount || 0),
+              direction: e.direction || null,
+              note: e.note || '',
+              created_at: e.created_at
+            }))
           };
+          employeeBalanceSummaryCache[userId].statementText = buildEmployeeBalanceStatementText(employeeBalanceSummaryCache[userId]);
 
           const bulletinTitle = balancePeriod.option === 'all'
             ? '📄 Vue globale — Balance employé'
@@ -8838,20 +8886,61 @@
               const signedAmount = `${isPositive ? '+' : '-'}${formatDh(Number(e.amount || 0))}`;
               const valColor = isPositive ? 'var(--color-success)' : 'var(--color-error)';
               const dateStr = new Date(e.created_at).toLocaleDateString('fr-FR');
-              entryRows += `<div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);min-width:0;">
-                <div style="flex:1;min-width:0;overflow-wrap:anywhere;word-break:break-word;line-height:1.45;font-size:12px;">
-                  <div>${dateStr} <span style="background:rgba(0,0,0,0.06);padding:1px 4px;border-radius:3px;font-size:11px;">${typeLabel}</span> <span style="font-weight:600;color:${valColor};">${signedAmount}</span></div>
-                  ${e.note ? `<div style="font-size:11px;color:var(--color-text-muted);margin-top:1px;overflow-wrap:anywhere;">${escHtml(e.note)}</div>` : ''}
+              entryRows += `<div class="bal-history-row">
+                <div class="bal-history-main">
+                  <div class="bal-history-top">
+                    <span class="bal-history-date">${dateStr}</span>
+                    <span class="bal-history-type">${typeLabel}</span>
+                    <span class="bal-history-amount" style="color:${valColor};">${signedAmount}</span>
+                  </div>
+                  ${e.note ? `<div class="bal-history-note">Note : ${escHtml(e.note)}</div>` : ''}
                 </div>
-                ${canManageBalance ? `<button type="button" aria-label="Supprimer l'entrée" style="padding:4px 7px;font-size:12px;line-height:1;flex-shrink:0;" onclick="deleteEmployeeBalanceEntry('${escHtml(e.id || '')}', '${uid}', '${escHtml(e.entry_type || '')}', ${Number(e.amount || 0)})">🗑</button>` : ''}
+                ${canManageBalance ? `<button type="button" aria-label="Supprimer l'entrée" class="bal-history-delete" onclick="deleteEmployeeBalanceEntry('${escHtml(e.id || '')}', '${uid}', '${escHtml(e.entry_type || '')}', ${Number(e.amount || 0)})">🗑</button>` : ''}
               </div>`;
             });
             historyHtml = `<details style="margin-top:6px;">
               <summary style="font-size:12px;font-weight:600;color:var(--color-text-muted);cursor:pointer;padding:4px 0;user-select:none;list-style:none;">🧾 Voir détails (${entries.length})</summary>
-              <div style="margin-top:6px;">${entryRows}</div>
+              <div class="bal-history-list">${entryRows}</div>
             </details>`;
           } else {
             historyHtml = `<div class="muted" style="font-size:12px;margin-top:6px;">Aucune entrée pour cette période.</div>`;
+          }
+
+          let archivesHtml = '';
+          try {
+            const { data: archiveRows, error: archiveErr } = await supabase
+              .from('employee_monthly_statements')
+              .select('*')
+              .eq('employee_id', userId)
+              .order('period_start', { ascending: false })
+              .limit(24);
+            if (archiveErr) throw archiveErr;
+            const list = archiveRows || [];
+            employeeMonthlyStatementsByUser[userId] = list;
+            list.forEach(row => { if (row?.id) employeeMonthlyStatementsById[row.id] = row; });
+
+            if (!list.length) {
+              archivesHtml = `<div class="muted" style="font-size:12px;">Aucun bulletin archivé.</div>`;
+            } else {
+              archivesHtml = `<div class="emp-archives-list">${list.map(st => {
+                const fallbackLabel = st.period_start
+                  ? new Date(st.period_start + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+                  : 'Période inconnue';
+                const periodLabelRaw = String(st.period_label || fallbackLabel);
+                const periodLabel = escHtml(periodLabelRaw.charAt(0).toUpperCase() + periodLabelRaw.slice(1));
+                const archivedAt = st.created_at ? new Date(st.created_at).toLocaleDateString('fr-FR') : '—';
+                return `<div class="emp-archive-item">
+                  <div class="emp-archive-title">${periodLabel} — Reste ${formatDh(Number(st.remaining_due || 0))}</div>
+                  <div class="emp-archive-meta">Archivé le ${archivedAt}</div>
+                  <div class="emp-archive-actions">
+                    <button type="button" onclick="openEmployeeStatementModal('${escHtml(st.id)}')">👁 Voir</button>
+                    <button type="button" onclick="printEmployeeStatement('${escHtml(st.id)}')">🖨 PDF</button>
+                  </div>
+                </div>`;
+              }).join('')}</div>`;
+            }
+          } catch (archiveLoadErr) {
+            archivesHtml = `<div class="muted" style="font-size:12px;color:var(--color-error);">⚠️ Archives non disponibles: ${escHtml(shortSupabaseError(archiveLoadErr, 140))}</div>`;
           }
 
           balanceHtml = `<div class="settings-option" style="margin-bottom:12px;" id="empProfile-balance">
@@ -8866,8 +8955,8 @@
             </div>
             ${balancePeriod.warning ? `<div class="muted" style="font-size:11px;margin-bottom:8px;color:#b26a00;">${escHtml(balancePeriod.warning)}</div>` : ''}
             <div style="background:rgba(0,0,0,0.03);border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid var(--color-border);min-width:0;">
-              <div style="font-weight:700;font-size:14px;margin-bottom:3px;overflow-wrap:anywhere;">${bulletinTitle}</div>
-              <div class="muted" style="font-size:11px;margin-bottom:10px;overflow-wrap:anywhere;">Employé : ${escHtml(user.full_name || user.email || '—')} · ${periodFrom} → ${periodTo}</div>
+              <div style="font-weight:700;font-size:14px;margin-bottom:3px;">${bulletinTitle}</div>
+              <div class="muted" style="font-size:11px;margin-bottom:10px;">Employé : ${escHtml(user.full_name || user.email || '—')} · ${periodFrom} → ${periodTo}</div>
               <div class="bal-row"><span class="bal-label">☕ Commissions café</span><span class="bal-val">${formatDh(balanceCommission.totalCommission)}</span></div>
               ${isFixedModeBalance
                 ? `<div class="bal-row"><span class="bal-label">💼 Salaire fixe</span><span class="bal-val">${formatDh(Number(user.fixed_monthly_salary || 0))}</span></div>
@@ -8887,7 +8976,13 @@
               : `<div style="margin-bottom:8px;padding:8px;background:#e8f5e9;border-radius:6px;text-align:center;font-size:13px;color:var(--color-success);font-weight:600;">✅ Période réglée</div>`}
             <button type="button" style="width:100%;margin-bottom:8px;font-size:13px;" onclick="openAddBalanceEntryModal('${uid}')">➕ Ajouter avance / paiement</button>
             <button type="button" style="width:100%;margin-bottom:8px;font-size:13px;" onclick="copyEmployeeBalanceSummary('${uid}')">📋 Copier bulletin</button>
+            <button type="button" style="width:100%;margin-bottom:8px;font-size:13px;" onclick="archiveEmployeeMonthlyStatement('${uid}')"${balancePeriod.option === 'all' ? ' disabled' : ''}>💾 Archiver bulletin du mois</button>
+            ${balancePeriod.option === 'all' ? `<div class="muted" style="font-size:11px;margin-top:-4px;margin-bottom:8px;">Choisis un mois avant d’archiver.</div>` : ''}
             ${historyHtml}
+            <div class="settings-option" style="margin-top:10px;margin-bottom:0;">
+              <div class="title">📁 Archives bulletins</div>
+              ${archivesHtml}
+            </div>
           </div>`;
         } catch (balanceErr) {
           console.warn('[openEmployeeProfileModal] balance error:', balanceErr?.message);
@@ -8929,26 +9024,17 @@
         showSessionStatus('❌ Erreur de copie: résumé indisponible', 'error', 7000);
         return;
       }
-      const periodLabel = summary.periodLabel || '—';
-      const lines = [
-        'TASKAFÉ - Bulletin mensuel',
-        `Employé : ${summary.employeeName || '—'}`,
-        `Période : ${periodLabel}`,
-        `Commissions café : ${formatDh(Number(summary.commissions || 0))}`,
-        summary.isFixedMode ? `Salaire fixe : ${formatDh(Number(summary.fixedSalary || 0))}` : null,
-        summary.isFixedMode ? `Carburant variable : ${formatDh(Number(summary.fuelAllowance || 0))}` : null,
-        `Avances : -${formatDh(Number(summary.advances || 0))}`,
-        `Paiements faits : -${formatDh(Number(summary.payments || 0))}`,
-        `Corrections : ${Number(summary.adjustments || 0) >= 0 ? '+' : ''}${formatDh(Number(summary.adjustments || 0))}`,
-        `Reste à régler : ${formatDh(Number(summary.remainingDue || 0))}`
-      ].filter(Boolean);
-      const text = lines.join('\n');
+      const text = buildEmployeeBalanceStatementText(summary);
+      if (!text) {
+        showSessionStatus('❌ Erreur de copie: bulletin vide', 'error', 7000);
+        return;
+      }
 
       // 1. Try navigator.clipboard (modern, requires HTTPS/secure context)
       if (navigator?.clipboard?.writeText) {
         try {
           await navigator.clipboard.writeText(text);
-          showSessionStatus('✅ Bulletin copié', 'success');
+          showSessionStatus('✅ Bulletin copié', 'success', 5000);
           return;
         } catch (_e) {
           // fall through to execCommand fallback
@@ -8968,7 +9054,7 @@
         try { copied = document.execCommand('copy'); } catch (_e) { /* ignore */ }
         document.body.removeChild(ta);
         if (copied) {
-          showSessionStatus('✅ Bulletin copié', 'success');
+          showSessionStatus('✅ Bulletin copié', 'success', 5000);
           return;
         }
       } catch (_e) { /* fall through */ }
@@ -8976,6 +9062,185 @@
       // 3. Manual fallback: show text in prompt so user can copy manually
       showSessionStatus('⚠️ Copie auto indisponible — texte affiché pour copie manuelle', 'error', 9000);
       prompt('Copiez ce bulletin (Ctrl+A puis Ctrl+C) :', text);
+    };
+
+    function renderEmployeeArchivedStatementBody(statement) {
+      if (!statement) return '<div class="muted">Bulletin introuvable.</div>';
+      const periodFrom = statement.period_start ? new Date(statement.period_start + 'T12:00:00').toLocaleDateString('fr-FR') : '—';
+      const periodTo = statement.period_end ? new Date(statement.period_end + 'T12:00:00').toLocaleDateString('fr-FR') : '—';
+      const periodLabelRaw = String(statement.period_label || `${periodFrom} → ${periodTo}`);
+      const periodLabel = escHtml(periodLabelRaw.charAt(0).toUpperCase() + periodLabelRaw.slice(1));
+      const archivedAt = statement.created_at ? new Date(statement.created_at).toLocaleDateString('fr-FR') : '—';
+      const adjValue = Number(statement.adjustments_total || 0);
+      return `
+        <div class="statement-print-card" style="background:rgba(0,0,0,0.03);border:1px solid var(--color-border);border-radius:10px;padding:12px;">
+          <div style="font-weight:800;font-size:17px;margin-bottom:3px;">TASKAFÉ</div>
+          <div class="muted" style="font-size:12px;margin-bottom:8px;">Bulletin employé archivé</div>
+          <div class="bal-row"><span class="bal-label">Employé</span><span class="bal-val">${escHtml(statement.employee_name || '—')}</span></div>
+          <div class="bal-row"><span class="bal-label">Période</span><span class="bal-val">${periodLabel}</span></div>
+          <div class="bal-row"><span class="bal-label">Dates</span><span class="bal-val">${periodFrom} → ${periodTo}</span></div>
+          <div style="border-top:1px dashed var(--color-border);margin:7px 0;"></div>
+          <div class="bal-row"><span class="bal-label">☕ Commissions café</span><span class="bal-val">${formatDh(Number(statement.commission_total || 0))}</span></div>
+          <div class="bal-row"><span class="bal-label">💼 Salaire fixe</span><span class="bal-val">${formatDh(Number(statement.fixed_salary || 0))}</span></div>
+          <div class="bal-row"><span class="bal-label">⛽ Carburant variable</span><span class="bal-val">${formatDh(Number(statement.fuel_amount || 0))}</span></div>
+          <div style="border-top:1px dashed var(--color-border);margin:7px 0;"></div>
+          <div class="bal-row"><span class="bal-label">📉 Avances</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(Number(statement.advances_total || 0))}</span></div>
+          <div class="bal-row"><span class="bal-label">✅ Paiements faits</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(Number(statement.payments_total || 0))}</span></div>
+          <div class="bal-row"><span class="bal-label">🔧 Corrections</span><span class="bal-val" style="color:${adjValue >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${adjValue >= 0 ? '+' : ''}${formatDh(adjValue)}</span></div>
+          <div style="border-top:2px solid var(--color-border);margin-top:8px;padding-top:8px;" class="bal-row">
+            <span class="bal-label" style="font-size:14px;font-weight:700;color:var(--color-text);">💳 Reste à régler</span>
+            <span class="bal-val" style="font-size:15px;color:${Number(statement.remaining_due || 0) > 0 ? 'var(--color-success)' : 'var(--color-text-muted)'};">${formatDh(Number(statement.remaining_due || 0))}</span>
+          </div>
+          <div class="muted" style="font-size:11px;margin-top:8px;">Archivé le ${archivedAt}</div>
+        </div>`;
+    }
+
+    function renderEmployeeStatementPrintHtml(statement) {
+      const body = renderEmployeeArchivedStatementBody(statement);
+      return `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Bulletin employé archivé</title>
+  <style>
+    body{margin:0;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#fff;color:#111;}
+    .wrap{max-width:760px;margin:0 auto;}
+    .bal-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 0;}
+    .bal-label{font-size:13px;color:#555;}
+    .bal-val{font-size:13px;font-weight:700;white-space:nowrap;color:#111;}
+    .muted{color:#666;}
+    .print-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;}
+    .print-actions button{padding:8px 12px;border:none;border-radius:8px;background:#111;color:#fff;cursor:pointer;}
+    @media print{
+      body{padding:0;background:#fff;color:#000;}
+      .print-actions{display:none !important;}
+      .statement-print-card{background:#fff !important;border:1px solid #ddd !important;color:#000 !important;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    ${body}
+    <div class="print-actions">
+      <button type="button" onclick="window.print()">🖨 Imprimer / PDF</button>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    async function getEmployeeStatementById(statementId) {
+      if (!statementId) throw new Error('ID bulletin manquant');
+      if (employeeMonthlyStatementsById[statementId]) return employeeMonthlyStatementsById[statementId];
+      const { data, error } = await supabase
+        .from('employee_monthly_statements')
+        .select('*')
+        .eq('id', statementId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('Bulletin introuvable');
+      employeeMonthlyStatementsById[statementId] = data;
+      return data;
+    }
+
+    window.openEmployeeStatementModal = async function (statementId) {
+      const contentEl = document.getElementById('employeeStatementContent');
+      if (contentEl) contentEl.innerHTML = '<div class="muted" style="padding:12px">⏳ Chargement…</div>';
+      openModal('employeeStatementModal');
+      try {
+        const statement = await getEmployeeStatementById(statementId);
+        if (contentEl) {
+          contentEl.innerHTML = `${renderEmployeeArchivedStatementBody(statement)}
+            <div class="emp-archive-actions no-print" style="margin-top:10px;">
+              <button type="button" onclick="printEmployeeStatement('${escHtml(statement.id)}')">🖨 PDF</button>
+            </div>`;
+        }
+      } catch (e) {
+        if (contentEl) {
+          contentEl.innerHTML = `<div class="muted" style="font-size:12px;color:var(--color-error);">⚠️ Archives non disponibles: ${escHtml(shortSupabaseError(e, 140))}</div>`;
+        }
+      }
+    };
+
+    window.printEmployeeStatement = async function (statementId) {
+      try {
+        const statement = await getEmployeeStatementById(statementId);
+        const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=720');
+        if (!printWindow) {
+          showSessionStatus('❌ Impossible d’ouvrir la fenêtre d’impression', 'error', 7000);
+          return;
+        }
+        printWindow.document.open();
+        printWindow.document.write(renderEmployeeStatementPrintHtml(statement));
+        printWindow.document.close();
+        setTimeout(() => {
+          try { printWindow.focus(); printWindow.print(); } catch (_) {}
+        }, 260);
+      } catch (e) {
+        showSessionStatus('❌ Erreur impression/PDF: ' + shortSupabaseError(e, 160), 'error', 9000);
+      }
+    };
+
+    window.archiveEmployeeMonthlyStatement = async function (userId) {
+      if (!isManagerOrAdmin()) return;
+      const summary = employeeBalanceSummaryCache[userId];
+      if (!summary) {
+        showSessionStatus('❌ Bulletin introuvable. Recharge la fiche employé.', 'error', 7000);
+        return;
+      }
+      if (summary.periodOption === 'all') {
+        showSessionStatus('Choisis un mois avant d’archiver', 'info', 5000);
+        return;
+      }
+      const periodLabelRaw = String(summary.periodLabel || '');
+      const periodLabel = periodLabelRaw ? periodLabelRaw.charAt(0).toUpperCase() + periodLabelRaw.slice(1) : 'ce mois';
+      const employeeName = summary.employeeName || 'Employé';
+      const confirmed = confirm(`Archiver le bulletin de ${periodLabel} pour ${employeeName} ?`);
+      if (!confirmed) return;
+
+      const payload = {
+        employee_id: userId,
+        period_start: summary.periodStart,
+        period_end: summary.periodEnd,
+        period_label: summary.periodLabel || null,
+        employee_name: summary.employeeName || null,
+        commission_total: Number(summary.commissions || 0),
+        fixed_salary: Number(summary.fixedSalary || 0),
+        fuel_amount: Number(summary.fuelAllowance || 0),
+        advances_total: Number(summary.advances || 0),
+        payments_total: Number(summary.payments || 0),
+        adjustments_total: Number(summary.adjustments || 0),
+        remaining_due: Number(summary.remainingDue || 0),
+        statement_text: summary.statementText || buildEmployeeBalanceStatementText(summary),
+        snapshot: {
+          period_start: summary.periodStart,
+          period_end: summary.periodEnd,
+          totals: {
+            commission_total: Number(summary.commissions || 0),
+            fixed_salary: Number(summary.fixedSalary || 0),
+            fuel_amount: Number(summary.fuelAllowance || 0),
+            advances_total: Number(summary.advances || 0),
+            payments_total: Number(summary.payments || 0),
+            adjustments_total: Number(summary.adjustments || 0),
+            remaining_due: Number(summary.remainingDue || 0)
+          },
+          entries: Array.isArray(summary.entries) ? summary.entries : []
+        },
+        status: 'archived',
+        created_by: state.session?.user?.id || null,
+        updated_at: new Date().toISOString()
+      };
+
+      try {
+        const { error } = await supabase
+          .from('employee_monthly_statements')
+          .upsert(payload, { onConflict: 'employee_id,period_start,period_end' });
+        if (error) throw error;
+        showSessionStatus('✅ Bulletin archivé / mis à jour', 'success', 6000);
+        openEmployeeProfileModal(userId, 'balance');
+      } catch (e) {
+        showSessionStatus('❌ Archives non disponibles: ' + shortSupabaseError(e, 160), 'error', 9000);
+      }
     };
 
     window.deleteEmployeeBalanceEntry = async function (entryId, userId, entryType, amount) {
