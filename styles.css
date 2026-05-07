@@ -1133,7 +1133,7 @@
 
     /* ── Bulletin balance rows (mobile-safe) ── */
     .bal-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 4px 0; min-width: 0; }
-    .bal-label { flex: 1; min-width: 0; font-size: 13px; color: var(--color-text-muted); overflow-wrap: normal; word-break: normal; }
+    .bal-label { flex: 1; min-width: 0; font-size: 13px; color: var(--color-text-muted); overflow-wrap: break-word; word-break: normal; }
     .bal-val { flex-shrink: 0; font-weight: 700; font-size: 13px; color: var(--color-text); white-space: nowrap; }
     .bal-history-list { margin-top: 6px; display: grid; gap: 6px; }
     .bal-history-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); min-width: 0; }
