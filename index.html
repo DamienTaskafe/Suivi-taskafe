@@ -3262,6 +3262,8 @@
       openModal('notificationsModal');
       await loadNotifications();
       renderNotificationsPanel();
+      // Auto-mark all unread as seen (WhatsApp style) — fire and forget
+      markAllNotificationsAsRead().catch(e => console.warn('[notifications] auto-markRead:', e?.message));
     };
 
     function renderNotificationsPanel() {
@@ -3274,16 +3276,59 @@
       }
       content.innerHTML = notifs.map(n => {
         const isUnread = !n.read_at;
-        const readBtn  = isUnread
-          ? `<button type="button" onclick="markNotificationAsRead('${escHtml(n.id)}')" style="margin-top:8px;width:auto;padding:5px 12px;font-size:12px;background:rgba(0,0,0,0.07);color:var(--color-text);border:1px solid rgba(0,0,0,0.1);">✅ Marquer comme lu</button>`
-          : '';
-        return `<div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-${escHtml(n.id)}">
+        return `<div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-${escHtml(n.id)}" style="cursor:pointer;" onclick="navigateFromNotification('${escHtml(n.type || '')}')">
           <div class="notif-item-title">${escHtml(n.title)}</div>
           <div class="notif-item-msg">${escHtml(n.message)}</div>
           <div class="notif-item-date">${_formatNotifDate(n.created_at)}</div>
-          ${readBtn}
         </div>`;
       }).join('');
+    }
+
+    // Navigate to the relevant section when a notification is clicked.
+    window.navigateFromNotification = function(type) {
+      closeModal('notificationsModal');
+      const t = (type || '').toLowerCase();
+      if (t.includes('stock')) {
+        show('stock');
+      } else if (t.includes('balance') || t.includes('commission') || t.includes('employ')) {
+        show('balance');
+      } else if (t.includes('client') || t.includes('sale') || t.includes('vente')) {
+        show('sales');
+      }
+      // If type is unknown, just close the modal without navigating
+    };
+
+    // Bulk-mark all currently unread notifications as read.
+    // Updates local state immediately and syncs to Supabase silently.
+    async function markAllNotificationsAsRead() {
+      const userId = state.session?.user?.id;
+      if (!userId) return;
+      const unread = (state.notifications || []).filter(n => !n.read_at);
+      if (unread.length === 0) return;
+      const ids = unread.map(n => n.id);
+      const now = new Date().toISOString();
+      // Update local state immediately for instant UI feedback
+      unread.forEach(n => { n.read_at = now; });
+      renderNotificationBell();
+      renderNotificationsPanel();
+      // Persist to Supabase (non-blocking, errors logged quietly)
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read_at: now })
+          .in('id', ids)
+          .eq('user_id', userId);
+        if (error) {
+          console.warn('[notifications] markAllAsRead error:', error?.message);
+          // Revert local state on failure so badge count stays accurate
+          unread.forEach(n => { n.read_at = null; });
+          renderNotificationBell();
+        }
+      } catch (e) {
+        console.warn('[notifications] markAllAsRead exception:', e?.message);
+        unread.forEach(n => { n.read_at = null; });
+        renderNotificationBell();
+      }
     }
 
     window.markNotificationAsRead = async function(notifId) {
@@ -3955,7 +4000,8 @@
 
         statusEl.textContent = "✅ Demande envoyée à l'admin.";
         if (btn) { btn.textContent = '✅ Envoyé'; }
-        renderNotificationBell();
+        // Reload notifications so the badge reflects the server-side self-notification
+        loadNotifications().catch(() => {});
         // Trigger push to admins/managers (non-blocking)
         _triggerPush({
           type:    'new_stock_request',
@@ -4775,8 +4821,9 @@
 
       await loadAllUsers();
       await loadRolePermissions();
-      // Load notifications for the current user (non-blocking)
-      loadNotifications().catch(e => console.warn('[loadCloudData] notifications:', e?.message));
+      // Load notifications for the current user — awaited so the bell badge is
+      // correct when paintApp() runs immediately after loadCloudData() returns.
+      await loadNotifications().catch(e => console.warn('[loadCloudData] notifications:', e?.message));
 
       // Persist to local cache for offline use
       try {
@@ -8536,8 +8583,8 @@
       document.getElementById('remuSettingsUserName').textContent = `👤 ${user.full_name || user.email || '—'}`;
       document.getElementById('remuSettingsUserId').value         = userId;
       document.getElementById('remuMode').value                   = user.remuneration_mode || 'commission_simple';
-      document.getElementById('remuFixedSalary').value            = user.fixed_monthly_salary || 0;
-      document.getElementById('remuFuel').value                   = user.fuel_allowance || 0;
+      document.getElementById('remuFixedSalary').value            = user.fixed_monthly_salary || '';
+      document.getElementById('remuFuel').value                   = user.fuel_allowance || '';
       document.getElementById('remuSettingsStatus').textContent   = '';
       document.getElementById('remuSettingsStatus').style.color   = '';
 
@@ -8552,7 +8599,7 @@
               <span class="badge ${cat}" style="margin:0;padding:1px 5px;font-size:9px;">${cat}</span>
               DHS/${unitLabel(cat)}
             </label>
-            <input id="remuRate${cat}" type="number" min="0" step="0.5" value="${Number(rates[cat] || 0)}" style="margin:4px 0 0;"/>
+            <input id="remuRate${cat}" type="number" min="0" step="0.5" value="${rates[cat] ? Number(rates[cat]) : ''}" style="margin:4px 0 0;" placeholder="0"/>
           </div>`).join('');
       }
 
@@ -9165,17 +9212,29 @@
     window.printEmployeeStatement = async function (statementId) {
       try {
         const statement = await getEmployeeStatementById(statementId);
-        const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=720');
+        // Do NOT pass noopener/noreferrer — those flags prevent document.write()
+        // from populating the new window in Chrome/Chromium, causing about:blank.
+        const printWindow = window.open('', '_blank', 'width=900,height=720');
         if (!printWindow) {
-          showSessionStatus('❌ Impossible d’ouvrir la fenêtre d’impression', 'error', 7000);
+          showSessionStatus('❌ Impossible d’ouvrir la fenêtre d’impression (popup bloquée ?)', 'error', 7000);
           return;
         }
         printWindow.document.open();
         printWindow.document.write(renderEmployeeStatementPrintHtml(statement));
         printWindow.document.close();
-        setTimeout(() => {
+        // Use onload as primary trigger; fall back to setTimeout in case the
+        // synchronous write makes onload fire immediately or not at all.
+        let printed = false;
+        printWindow.onload = function() {
+          if (printed) return;
+          printed = true;
           try { printWindow.focus(); printWindow.print(); } catch (_) {}
-        }, 260);
+        };
+        setTimeout(() => {
+          if (printed || printWindow.closed) return;
+          printed = true;
+          try { printWindow.focus(); printWindow.print(); } catch (_) {}
+        }, 600);
       } catch (e) {
         showSessionStatus('❌ Erreur impression/PDF: ' + shortSupabaseError(e, 160), 'error', 9000);
       }
