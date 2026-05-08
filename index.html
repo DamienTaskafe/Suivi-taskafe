@@ -431,6 +431,26 @@
     </div>
   </div>
 
+  <div id="userCredentialsModal" class="modal-backdrop" onclick="backdropClose(event, 'userCredentialsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3 data-i18n="cred_modal_title">🔐 Identifiants employé</h3><button class="close-x" onclick="closeModal('userCredentialsModal')">✕</button></div>
+      <div class="settings-option">
+        <div id="userCredentialsCurrentEmail" class="muted" style="margin-bottom:8px;">Email actuel : —</div>
+        <label for="userCredentialsEmail" data-i18n="cred_new_email">Nouvelle adresse email</label>
+        <input id="userCredentialsEmail" type="email" placeholder="email@exemple.com" data-i18n-placeholder="cred_new_email_placeholder" />
+        <label for="userCredentialsPassword" data-i18n="cred_new_password">Nouveau mot de passe</label>
+        <input id="userCredentialsPassword" type="password" placeholder="Min 6 caractères" data-i18n-placeholder="pwd_min6" />
+        <label for="userCredentialsConfirmPassword" data-i18n="cred_confirm_password">Confirmer mot de passe</label>
+        <input id="userCredentialsConfirmPassword" type="password" placeholder="Répéter le mot de passe" data-i18n-placeholder="pwd_repeter" />
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+          <button type="button" onclick="closeModal('userCredentialsModal')" data-i18n="sale_annuler">Annuler</button>
+          <button type="button" id="userCredentialsSaveBtn" onclick="saveUserCredentials()" data-i18n="sale_enregistrer">✅ Enregistrer</button>
+        </div>
+        <div id="userCredentialsStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="clientAdvancedModal" class="modal-backdrop" onclick="backdropClose(event, 'clientAdvancedModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head">
@@ -1225,6 +1245,13 @@
         user_modifier_role: '✏️ Modifier le rôle',
         user_nouveau_role: '🎖️ Nouveau rôle',
         user_supprimer: 'Supprimer',
+        cred_action: '🔐 Identifiants',
+        cred_modal_title: '🔐 Identifiants employé',
+        cred_current_email: 'Email actuel :',
+        cred_new_email: 'Nouvelle adresse email',
+        cred_new_email_placeholder: 'email@exemple.com',
+        cred_new_password: 'Nouveau mot de passe',
+        cred_confirm_password: 'Confirmer mot de passe',
         pwd_modal_titre: '🔐 Changer mot de passe',
         pwd_modal_admin_titre: '🔑 Changer mot de passe',
         pwd_ancien: 'Ancien mot de passe',
@@ -1241,6 +1268,11 @@
         msg_pwd_mismatch: '❌ Les mots de passe ne correspondent pas',
         msg_pwd_ancien_requis: '❌ Ancien mot de passe requis',
         msg_pwd_ancien_incorrect: '❌ Ancien mot de passe incorrect',
+        msg_cred_invalid_email: '❌ Adresse email invalide',
+        msg_cred_no_changes: '❌ Aucun champ à modifier',
+        msg_cred_updated: '✅ Identifiants mis à jour',
+        msg_cred_session_expired: '❌ Session expirée. Déconnectez-vous puis reconnectez-vous.',
+        msg_cred_server_error: '❌ Erreur serveur/API',
         msg_data_refreshed: '✅ Données actualisées',
         msg_refresh_error: '❌ Erreur actualisation',
         msg_session_expired: '⚠️ Session expirée — reconnectez-vous',
@@ -1435,6 +1467,13 @@
         user_modifier_role: '✏️ تعديل الدور',
         user_nouveau_role: '🎖️ الدور الجديد',
         user_supprimer: 'حذف',
+        cred_action: '🔐 بيانات الدخول',
+        cred_modal_title: '🔐 بيانات دخول الموظف',
+        cred_current_email: 'البريد الحالي:',
+        cred_new_email: 'البريد الإلكتروني الجديد',
+        cred_new_email_placeholder: 'email@example.com',
+        cred_new_password: 'كلمة مرور جديدة',
+        cred_confirm_password: 'تأكيد كلمة المرور',
         pwd_modal_titre: '🔐 تغيير كلمة المرور',
         pwd_modal_admin_titre: '🔑 تغيير كلمة المرور',
         pwd_ancien: 'كلمة المرور القديمة',
@@ -1451,6 +1490,11 @@
         msg_pwd_mismatch: '❌ كلمتا المرور غير متطابقتين',
         msg_pwd_ancien_requis: '❌ كلمة المرور القديمة مطلوبة',
         msg_pwd_ancien_incorrect: '❌ كلمة المرور القديمة غير صحيحة',
+        msg_cred_invalid_email: '❌ البريد الإلكتروني غير صالح',
+        msg_cred_no_changes: '❌ لا يوجد أي حقل للتعديل',
+        msg_cred_updated: '✅ تم تحديث بيانات الدخول',
+        msg_cred_session_expired: '❌ انتهت الجلسة. سجّل الخروج ثم ادخل مجددًا.',
+        msg_cred_server_error: '❌ خطأ في الخادم/API',
         msg_data_refreshed: '✅ تم تحديث البيانات',
         msg_refresh_error: '❌ خطأ في التحديث',
         msg_session_expired: '⚠️ انتهت الجلسة — أعد الاتصال',
@@ -1645,6 +1689,13 @@
         user_modifier_role: '✏️ Bdel dour',
         user_nouveau_role: '🎖️ Dour jdid',
         user_supprimer: 'Mse7',
+        cred_action: '🔐 Identifiants',
+        cred_modal_title: '🔐 Identifiants dyal lkhddam',
+        cred_current_email: 'Email dial daba:',
+        cred_new_email: 'Email jdid',
+        cred_new_email_placeholder: 'email@example.com',
+        cred_new_password: 'Mot de passe jdid',
+        cred_confirm_password: 'Confirmi mot de passe',
         pwd_modal_titre: '🔐 Bdel password',
         pwd_modal_admin_titre: '🔑 Bdel password',
         pwd_ancien: 'Password qadim',
@@ -1661,6 +1712,11 @@
         msg_pwd_mismatch: '❌ Mots de passe machi bhal bhal',
         msg_pwd_ancien_requis: '❌ Password qadim matlob',
         msg_pwd_ancien_incorrect: '❌ Password qadim ghalt',
+        msg_cred_invalid_email: '❌ Email machi valid',
+        msg_cred_no_changes: '❌ Ma kayn ta champ bach tbddel',
+        msg_cred_updated: '✅ Identifiants tbddlou',
+        msg_cred_session_expired: '❌ Session salat. Déconnecti w reconnecti.',
+        msg_cred_server_error: '❌ Khata f server/API',
         msg_data_refreshed: '✅ Data tjannat',
         msg_refresh_error: '❌ Mcheklat f ltajdid',
         msg_session_expired: '⚠️ Session salaet — connecti men jdid',
@@ -6704,6 +6760,10 @@
             const displayEmail = escHtml(user.email);
             const userIdEsc = escHtml(user.id);
             const editEmployeeBtn = `<button class="user-remu-btn" type="button" data-id="${userIdEsc}" onclick="openEditEmployeeModal(this.dataset.id)">✏️ Modifier employé</button>`;
+            const canManageCredentials = isManagerOrAdmin() && user.id !== state.session?.user?.id && user.role === 'employee';
+            const credentialsBtn = canManageCredentials
+              ? `<button class="user-remu-btn" type="button" onclick="openUserCredentialsModal('${userIdEsc}')">${t('cred_action')}</button>`
+              : '';
             return `
         <div class="user-row">
           <div class="user-info">
@@ -6717,11 +6777,13 @@
                   : isAdmin()
                     ? `<div class="user-row-actions">
                     ${editEmployeeBtn}
+                    ${credentialsBtn}
                     <button class="user-remu-btn" type="button" onclick="openRemunerationSettingsModal('${userIdEsc}')">💰 Régler</button>
                     <div class="menu-wrap">
                       <button class="menu-btn" onclick="toggleMenu(event, 'userActMenu_${userIdEsc}')">⋯</button>
                       <div class="menu" id="userActMenu_${userIdEsc}">
                         <button onclick="openRoleModal('${userIdEsc}', '${escHtml(user.role || 'employee')}')">✏️ Rôle</button>
+                        ${canManageCredentials ? `<button onclick="openUserCredentialsModal('${userIdEsc}')">${t('cred_action')}</button>` : ''}
                         <button onclick="openAdminPasswordModal('${userIdEsc}')">🔑 Mot de passe</button>
                         <button class="danger" onclick="deleteUser('${userIdEsc}', this)">🗑️ Supprimer</button>
                       </div>
@@ -6730,8 +6792,9 @@
                     : isManager()
                       ? `<div class="user-row-actions">
                     ${editEmployeeBtn}
+                    ${credentialsBtn}
                   </div>`
-                    : ''
+                      : ''
           }
         </div>
       `;
@@ -8091,6 +8154,173 @@
       if (statusEl) { statusEl.textContent = ''; }
       closeModal('passwordModal');
       showSessionStatus(t('msg_pwd_updated'), 'success');
+    };
+
+    // ── Admin/Manager: manage employee credentials ───────────────────────────
+    let _pendingCredentialsUserId = null;
+
+    window.openUserCredentialsModal = function (userId) {
+      if (!isManagerOrAdmin()) return;
+      const user = state.allUsers.find(u => u.id === userId);
+      if (!user || user.id === state.session?.user?.id || user.role !== 'employee') return;
+
+      _pendingCredentialsUserId = userId;
+      const currentEmailEl = document.getElementById('userCredentialsCurrentEmail');
+      const emailEl = document.getElementById('userCredentialsEmail');
+      const pwdEl = document.getElementById('userCredentialsPassword');
+      const confirmEl = document.getElementById('userCredentialsConfirmPassword');
+      const statusEl = document.getElementById('userCredentialsStatus');
+      const saveBtn = document.getElementById('userCredentialsSaveBtn');
+
+      if (currentEmailEl) currentEmailEl.textContent = `${t('cred_current_email')} ${user.email || '—'}`;
+      if (emailEl) emailEl.value = '';
+      if (pwdEl) pwdEl.value = '';
+      if (confirmEl) confirmEl.value = '';
+      if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.style.color = '';
+      }
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = t('sale_enregistrer');
+      }
+
+      openModal('userCredentialsModal');
+    };
+
+    window.saveUserCredentials = async function () {
+      if (!isManagerOrAdmin()) return;
+      const userId = _pendingCredentialsUserId;
+      if (!userId) return;
+
+      const emailEl = document.getElementById('userCredentialsEmail');
+      const pwdEl = document.getElementById('userCredentialsPassword');
+      const confirmEl = document.getElementById('userCredentialsConfirmPassword');
+      const statusEl = document.getElementById('userCredentialsStatus');
+      const saveBtn = document.getElementById('userCredentialsSaveBtn');
+
+      const emailRaw = String(emailEl?.value || '').trim().toLowerCase();
+      const password = pwdEl?.value ?? '';
+      const confirmPassword = confirmEl?.value ?? '';
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+      if (statusEl) {
+        statusEl.textContent = '';
+        statusEl.style.color = '';
+      }
+
+      if (!emailRaw && !password) {
+        if (statusEl) {
+          statusEl.textContent = t('msg_cred_no_changes');
+          statusEl.style.color = '#e53935';
+        }
+        return;
+      }
+
+      if (emailRaw && !emailRegex.test(emailRaw)) {
+        if (statusEl) {
+          statusEl.textContent = t('msg_cred_invalid_email');
+          statusEl.style.color = '#e53935';
+        }
+        return;
+      }
+
+      if (password && password.length < 6) {
+        if (statusEl) {
+          statusEl.textContent = t('msg_pwd_min6');
+          statusEl.style.color = '#e53935';
+        }
+        return;
+      }
+
+      if (password && password !== confirmPassword) {
+        if (statusEl) {
+          statusEl.textContent = t('msg_pwd_mismatch');
+          statusEl.style.color = '#e53935';
+        }
+        return;
+      }
+
+      const body = { userId };
+      if (emailRaw) body.email = emailRaw;
+      if (password) body.password = password;
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = '⏳ Enregistrement…';
+      }
+
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          if (statusEl) {
+            statusEl.textContent = t('msg_cred_session_expired');
+            statusEl.style.color = '#e53935';
+          }
+          return;
+        }
+        const accessToken = sessionData?.session?.access_token || state.session?.access_token;
+
+        if (!accessToken) {
+          if (statusEl) {
+            statusEl.textContent = t('msg_cred_session_expired');
+            statusEl.style.color = '#e53935';
+          }
+          return;
+        }
+
+        const resp = await fetch('/api/update-user-credentials', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(body)
+        });
+
+        const contentType = resp.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          if (statusEl) {
+            statusEl.textContent = `${t('msg_cred_server_error')} (HTTP ${resp.status})`;
+            statusEl.style.color = '#e53935';
+          }
+          return;
+        }
+
+        const result = await resp.json();
+        if (!resp.ok) {
+          if (statusEl) {
+            statusEl.textContent = `❌ ${result?.error || t('msg_cred_server_error')}`;
+            statusEl.style.color = '#e53935';
+          }
+          return;
+        }
+
+        if (statusEl) {
+          statusEl.textContent = t('msg_cred_updated');
+          statusEl.style.color = '#2e7d32';
+        }
+        showSessionStatus(t('msg_cred_updated'), 'success');
+
+        if (emailEl) emailEl.value = '';
+        if (pwdEl) pwdEl.value = '';
+        if (confirmEl) confirmEl.value = '';
+
+        await loadAllUsers().catch(() => {});
+        renderUsersList();
+
+        setTimeout(() => closeModal('userCredentialsModal'), 700);
+      } catch (err) {
+        if (statusEl) {
+          statusEl.textContent = `❌ ${err?.message || t('msg_cred_server_error')}`;
+          statusEl.style.color = '#e53935';
+        }
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = t('sale_enregistrer');
+        }
+      }
     };
 
     // ── Admin: change password for another user ──────────────────────────────
