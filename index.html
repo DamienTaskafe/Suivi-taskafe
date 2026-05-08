@@ -6702,6 +6702,8 @@
             const activityHtml = getActivityStatus(user.last_seen_at);
             const displayName = escHtml(user.full_name || user.email);
             const displayEmail = escHtml(user.email);
+            const userIdEsc = escHtml(user.id);
+            const editEmployeeBtn = `<button class="user-remu-btn" type="button" onclick="openEditEmployeeModal('${userIdEsc}')">✏️ Modifier employé</button>`;
             return `
         <div class="user-row">
           <div class="user-info">
@@ -6714,20 +6716,20 @@
                   ? '<span style="font-size:11px;">TOI</span>'
                   : isAdmin()
                     ? `<div class="user-row-actions">
-                    <button class="user-remu-btn" type="button" onclick="openEditEmployeeModal('${escHtml(user.id)}')">✏️ Modifier employé</button>
-                    <button class="user-remu-btn" type="button" onclick="openRemunerationSettingsModal('${escHtml(user.id)}')">💰 Régler</button>
+                    ${editEmployeeBtn}
+                    <button class="user-remu-btn" type="button" onclick="openRemunerationSettingsModal('${userIdEsc}')">💰 Régler</button>
                     <div class="menu-wrap">
-                      <button class="menu-btn" onclick="toggleMenu(event, 'userActMenu_${escHtml(user.id)}')">⋯</button>
-                      <div class="menu" id="userActMenu_${escHtml(user.id)}">
-                        <button onclick="openRoleModal('${escHtml(user.id)}', '${escHtml(user.role || 'employee')}')">✏️ Rôle</button>
-                        <button onclick="openAdminPasswordModal('${escHtml(user.id)}')">🔑 Mot de passe</button>
-                        <button class="danger" onclick="deleteUser('${escHtml(user.id)}', this)">🗑️ Supprimer</button>
+                      <button class="menu-btn" onclick="toggleMenu(event, 'userActMenu_${userIdEsc}')">⋯</button>
+                      <div class="menu" id="userActMenu_${userIdEsc}">
+                        <button onclick="openRoleModal('${userIdEsc}', '${escHtml(user.role || 'employee')}')">✏️ Rôle</button>
+                        <button onclick="openAdminPasswordModal('${userIdEsc}')">🔑 Mot de passe</button>
+                        <button class="danger" onclick="deleteUser('${userIdEsc}', this)">🗑️ Supprimer</button>
                       </div>
                     </div>
                   </div>`
                     : isManager()
                       ? `<div class="user-row-actions">
-                    <button class="user-remu-btn" type="button" onclick="openEditEmployeeModal('${escHtml(user.id)}')">✏️ Modifier employé</button>
+                    ${editEmployeeBtn}
                   </div>`
                     : ''
           }
