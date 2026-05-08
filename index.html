@@ -127,6 +127,8 @@
           <button id="depensesMenuBtn" type="button" onclick="openDepensesModal()" data-i18n="menu_depenses">💸 Dépenses</button>
           <!-- ── Employés (manager/admin only) ───────────────────────────── -->
           <button type="button" id="employesMenuBtn" onclick="openEmployesModal()" class="hidden" data-i18n="menu_employes">👥 Employés</button>
+          <!-- ── Clients par commercial (manager/admin only) ─────────────── -->
+          <button type="button" id="clientsParCommercialMenuBtn" onclick="openClientsParCommercialModal()" class="hidden" data-i18n="menu_clientsParCommercial">👥 Clients par commercial</button>
           <!-- ── Notifications settings ──────────────────────────────────── -->
           <button type="button" onclick="openNotifSettingsModal()" data-i18n="menu_notificationsReglages">🔔 Notifications</button>
           <!-- ── Paramètres ──────────────────────────────────────────────── -->
@@ -972,7 +974,7 @@
     </div>
   </div>
 
-  <!-- ── Employee Profile Modal (admin only) ─────────────────────────────────── -->
+  <!-- ── Employee Profile Modal (admin/manager) ──────────────────────────────── -->
   <div id="employeeProfileModal" class="modal-backdrop" onclick="backdropClose(event, 'employeeProfileModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head">
@@ -983,6 +985,26 @@
         <div class="muted" style="padding:12px">⏳ Chargement…</div>
       </div>
       <input type="hidden" id="employeeProfileUserId" />
+    </div>
+  </div>
+
+  <!-- ── Clients par commercial Modal (admin/manager only) ─────────────────── -->
+  <div id="clientsParCommercialModal" class="modal-backdrop" onclick="backdropClose(event, 'clientsParCommercialModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3 data-i18n="client_par_commercial_titre">👥 Clients par commercial</h3>
+        <button class="close-x" onclick="closeModal('clientsParCommercialModal')">✕</button>
+      </div>
+      <div style="margin-bottom:12px;">
+        <input id="clientsParCommercialSearch" type="text"
+          style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.12);background:rgba(255,255,255,0.9);font-size:14px;outline:none;"
+          placeholder="Rechercher un client ou commercial…"
+          data-i18n-placeholder="client_par_commercial_search"
+          oninput="renderClientsParCommercial()" autocomplete="off" />
+      </div>
+      <div id="clientsParCommercialContent" style="max-height:68vh;overflow-y:auto;">
+        <div class="muted" style="padding:12px">⏳ Chargement…</div>
+      </div>
     </div>
   </div>
 
@@ -1346,6 +1368,12 @@
         push_disabled: 'Notifications désactivées ✅',
         push_disable_error: 'Impossible de désactiver les notifications. Réessayez.',
         push_disable_local_ok: 'Désactivation locale OK, mais nettoyage serveur impossible. Réessayez.',
+        menu_clientsParCommercial: '👥 Clients par commercial',
+        client_par_commercial_titre: '👥 Clients par commercial',
+        client_par_commercial_search: 'Rechercher un client ou commercial…',
+        client_sans_commercial: 'Sans commercial',
+        client_par_commercial_vide: 'Aucun client enregistré.',
+        client_par_commercial_aucun_match: 'Aucun résultat pour cette recherche.',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1577,6 +1605,12 @@
         push_disabled: 'تم إلغاء الإشعارات ✅',
         push_disable_error: 'تعذّر إلغاء الإشعارات. أعد المحاولة.',
         push_disable_local_ok: 'تم الإلغاء محلياً لكن تعذّر التنظيف على الخادم. أعد المحاولة.',
+        menu_clientsParCommercial: '👥 العملاء حسب المندوب',
+        client_par_commercial_titre: '👥 العملاء حسب المندوب',
+        client_par_commercial_search: 'ابحث عن عميل أو مندوب…',
+        client_sans_commercial: 'بدون مندوب',
+        client_par_commercial_vide: 'لا يوجد عملاء مسجّلون.',
+        client_par_commercial_aucun_match: 'لا توجد نتائج لهذا البحث.',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1808,6 +1842,12 @@
         push_disabled: 'Notifications twaqqfu ✅',
         push_disable_error: 'Impossible twqqef notifications. 3wed tjreb.',
         push_disable_local_ok: 'Twqqef local OK, walakin nettoyage serveur mkan. 3wed tjreb.',
+        menu_clientsParCommercial: '👥 Clients dial commercial',
+        client_par_commercial_titre: '👥 Clients dial commercial',
+        client_par_commercial_search: 'Qelleb 3la client wela commercial…',
+        client_sans_commercial: 'Bla commercial',
+        client_par_commercial_vide: 'Ma kayn ta client msajjel.',
+        client_par_commercial_aucun_match: 'Ma kayn ta natija l had lbheth.',
       },
     };
 
@@ -4983,11 +5023,14 @@
             // threat, but sanitising early is good defence-in-depth.
             const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             if (userId && UUID_RE.test(userId)) {
-              // Filter: assigned to me OR unassigned (NULL) — legacy clients are always visible
-              return base.or(`assigned_user_id.eq.${userId},assigned_user_id.is.null`);
+              // Filter: only clients explicitly assigned to this employee.
+              // Legacy unassigned clients are NOT shown to employees — they
+              // must be assigned by an admin/manager to become visible.
+              return base.eq('assigned_user_id', userId);
             }
-            // Fallback: no valid user id — show only unassigned clients
-            return base.is('assigned_user_id', null);
+            // Fallback: no valid user id — use an impossible UUID value to return
+            // an intentionally empty set (Supabase will match zero rows).
+            return base.eq('assigned_user_id', '00000000-0000-0000-0000-000000000000');
           }
           return base;
         })(),
@@ -5139,6 +5182,7 @@
       }
 
       document.getElementById('employesMenuBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('clientsParCommercialMenuBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('usersBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('logsBtnMenu')?.classList.toggle('hidden', !isAdmin());
       document.getElementById('resetAppBtn')?.classList.toggle('hidden', !isAdmin());
@@ -6958,6 +7002,110 @@
       const hideForEmployee = String(state.profile?.role || '').toLowerCase() === 'employee';
       document.getElementById('settingsExportCloudOption')?.classList.toggle('hidden', hideForEmployee);
       openModal('settingsHubModal');
+    };
+
+    // ── Clients par commercial ─────────────────────────────────────────────────
+    // Opens a grouped view of all clients, organized by assigned commercial.
+    // Only accessible to admin/manager.
+    window.openClientsParCommercialModal = function () {
+      if (!isManagerOrAdmin()) return;
+      const searchEl = document.getElementById('clientsParCommercialSearch');
+      if (searchEl) searchEl.value = '';
+      openModal('clientsParCommercialModal');
+      renderClientsParCommercial();
+    };
+
+    window.renderClientsParCommercial = function () {
+      const contEl = document.getElementById('clientsParCommercialContent');
+      if (!contEl) return;
+      const q = ((document.getElementById('clientsParCommercialSearch')?.value) || '').trim().toLowerCase();
+
+      // Build a userId → user lookup Map once to avoid repeated O(n) searches.
+      const userMap = new Map(state.allUsers.map(u => [u.id, u]));
+
+      const allClients = sortClientsAZ(state.clients);
+      // Filter by search query if provided (match on client name OR commercial name)
+      const clients = q
+        ? allClients.filter(c => {
+            if (c.name.toLowerCase().includes(q)) return true;
+            const assignedUser = c.assigned_user_id ? userMap.get(c.assigned_user_id) : null;
+            const assignedName = assignedUser ? (assignedUser.full_name || assignedUser.email || '') : '';
+            return assignedName.toLowerCase().includes(q);
+          })
+        : allClients;
+
+      if (state.clients.length === 0) {
+        contEl.innerHTML = `<div class="muted" style="padding:12px;">${t('client_par_commercial_vide')}</div>`;
+        return;
+      }
+      if (clients.length === 0) {
+        contEl.innerHTML = `<div class="muted" style="padding:12px;">${t('client_par_commercial_aucun_match')}</div>`;
+        return;
+      }
+
+      // Group clients by assigned_user_id using the lookup Map
+      const groups = {}; // userId → { user, clients[] }
+      const unassigned = [];
+
+      clients.forEach(c => {
+        const uid = c.assigned_user_id || null;
+        if (!uid) {
+          unassigned.push(c);
+        } else {
+          if (!groups[uid]) {
+            groups[uid] = { user: userMap.get(uid) || null, clients: [] };
+          }
+          groups[uid].clients.push(c);
+        }
+      });
+
+      // Sort groups by commercial name
+      const sortedGroups = Object.entries(groups).sort(([, a], [, b]) => {
+        const nameA = (a.user?.full_name || a.user?.email || '').toLowerCase();
+        const nameB = (b.user?.full_name || b.user?.email || '').toLowerCase();
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+      });
+
+      let html = '';
+
+      // Render each commercial's group
+      sortedGroups.forEach(([, group]) => {
+        const commercialName = escHtml(group.user?.full_name || group.user?.email || '—');
+        html += `<div style="margin-bottom:16px;">
+          <div style="font-weight:700;font-size:13px;padding:6px 10px;background:rgba(0,0,0,0.06);border-radius:8px;margin-bottom:6px;">
+            👤 ${commercialName}
+            <span style="font-size:11px;font-weight:400;color:var(--color-text-muted);margin-left:6px;">(${group.clients.length})</span>
+          </div>
+          <div style="padding-left:8px;display:flex;flex-direction:column;gap:3px;">`;
+        group.clients.forEach(c => {
+          const phone = c.phone ? `<span style="color:var(--color-text-muted);font-size:11px;">📞 ${escHtml(c.phone)}</span>` : '';
+          html += `<div style="font-size:12px;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:space-between;gap:6px;">
+            <span>${escHtml(c.name)}</span>
+            ${phone}
+          </div>`;
+        });
+        html += `</div></div>`;
+      });
+
+      // Unassigned clients group
+      if (unassigned.length > 0) {
+        html += `<div style="margin-bottom:16px;">
+          <div style="font-weight:700;font-size:13px;padding:6px 10px;background:rgba(0,0,0,0.06);border-radius:8px;margin-bottom:6px;font-style:italic;opacity:0.8;">
+            ${t('client_sans_commercial')}
+            <span style="font-size:11px;font-weight:400;color:var(--color-text-muted);margin-left:6px;">(${unassigned.length})</span>
+          </div>
+          <div style="padding-left:8px;display:flex;flex-direction:column;gap:3px;">`;
+        unassigned.forEach(c => {
+          const phone = c.phone ? `<span style="color:var(--color-text-muted);font-size:11px;">📞 ${escHtml(c.phone)}</span>` : '';
+          html += `<div style="font-size:12px;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:space-between;gap:6px;">
+            <span>${escHtml(c.name)}</span>
+            ${phone}
+          </div>`;
+        });
+        html += `</div></div>`;
+      }
+
+      contEl.innerHTML = html;
     };
 
     // ── Stats & Balance ────────────────────────────────────────────────────────
@@ -9115,7 +9263,7 @@
 
     // ── Employee Actions Menu ───────────────────────────────────────────────────
     window.openEmployeeActionsMenu = function (userId) {
-      if (!isAdmin()) return;
+      if (!isManagerOrAdmin()) return;
       closeAllMenus();
       const user = state.allUsers.find(u => u.id === userId);
       if (!user) return;
@@ -9147,7 +9295,7 @@
 
     // ── Employee Profile Modal ──────────────────────────────────────────────────
     window.openEmployeeProfileModal = async function (userId, section) {
-      if (!isAdmin()) return;
+      if (!isManagerOrAdmin()) return;
       closeAllMenus();
 
       const user = state.allUsers.find(u => u.id === userId);
@@ -9229,18 +9377,30 @@
 
         // ── 4. Clients ──
         const userClients = state.clients.filter(c =>
-          c.created_by === userId || c.assigned_user_id === userId
+          c.assigned_user_id === userId || c.created_by === userId
         );
+        // Deduplicate in case both fields match the same client
+        const seenClientIds = new Set();
+        const uniqueUserClients = userClients.filter(c => {
+          if (seenClientIds.has(c.id)) return false;
+          seenClientIds.add(c.id);
+          return true;
+        });
         html += `<div id="empProfile-clients" class="settings-option" style="margin-bottom:12px;">
-          <div class="title">👥 Clients (${userClients.length})</div>`;
-        if (userClients.length > 0) {
-          html += `<div style="max-height:120px;overflow-y:auto;">`;
-          userClients.slice(0, 10).forEach(c => {
-            html += `<div style="font-size:12px;padding:3px 0;border-bottom:1px solid rgba(0,0,0,0.05);">${escHtml(c.name || '—')}</div>`;
+          <div class="title">👥 Clients (${uniqueUserClients.length})</div>`;
+        if (uniqueUserClients.length > 0) {
+          html += `<div style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">`;
+          uniqueUserClients.forEach(c => {
+            const clientName = escHtml(c.name || '—');
+            const phone = c.phone ? `<span style="color:var(--color-text-muted);font-size:11px;margin-left:6px;">📞 ${escHtml(c.phone)}</span>` : '';
+            const status = c.client_status || 'active';
+            const statusColors = { prospect: '#9e6b00', active: '#1a7f37', inactive: '#6e7681', lost: '#cf222e' };
+            const statusColor = statusColors[status] || 'var(--color-text-muted)';
+            html += `<div style="font-size:12px;padding:5px 8px;border-radius:6px;background:rgba(0,0,0,0.04);display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap;">
+              <span style="font-weight:600;">${clientName}${phone}</span>
+              <span style="font-size:10px;color:${statusColor};text-transform:capitalize;">${escHtml(status)}</span>
+            </div>`;
           });
-          if (userClients.length > 10) {
-            html += `<div class="muted" style="font-size:11px;margin-top:4px;">+${userClients.length - 10} autres…</div>`;
-          }
           html += `</div>`;
         } else {
           html += `<div class="muted" style="font-size:12px;">Aucun client lié à cet employé.</div>`;
