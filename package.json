@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Suivi Taskafe — application de gestion interne",
   "private": true,
+  "scripts": {
+    "validate": "node scripts/validate-index-html.mjs"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "web-push": "^3.6.7"
