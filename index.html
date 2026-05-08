@@ -239,6 +239,8 @@
         <div class="nouveau-client-panel">
           <div class="ncp-header" data-i18n="client_nouveau">➕ Nouveau client</div>
           <div class="ncp-body">
+            <div class="client-form-section-title" data-i18n="client_billing_section">🧾 Infos client / facturation</div>
+
             <div class="ncp-field">
               <label for="clientName" data-i18n="client_nom">Nom du client</label>
               <input id="clientName" type="text" placeholder="Nom du client" data-i18n-placeholder="client_nom" />
@@ -280,10 +282,16 @@
               <input id="clientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" data-i18n-placeholder="client_telephone_placeholder" />
             </div>
 
+            <div class="client-form-section-title" data-i18n="client_delivery_section">🚚 Livraison</div>
+
             <div class="ncp-field">
-              <label data-i18n="client_gps">📍 Position GPS</label>
-              <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()" data-i18n="client_gpsActuel">📍 Utiliser ma position actuelle</button>
-              <div id="gpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS enregistré</div>
+              <label data-i18n="client_gps">📍 Point GPS de livraison</label>
+              <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()" data-i18n="client_gpsActuel">📍 Utiliser ma position pour la livraison</button>
+              <div class="gps-inline-actions">
+                <button type="button" class="gps-btn" onclick="openClientDeliveryMaps('create')" data-i18n="client_open_maps_delivery">🗺️ Ouvrir Maps</button>
+                <button type="button" class="gps-btn" onclick="shareDraftClientDeliveryWhatsApp('create')" data-i18n="client_share_whatsapp_delivery">💬 Partager WhatsApp</button>
+              </div>
+              <div id="gpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
             </div>
 
             <h4 data-i18n="client_prix_custom">💰 Prix personnalisés par gamme</h4>
@@ -556,6 +564,8 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3 data-i18n="client_modifier">✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
       <input type="hidden" id="editClientId" />
+      <div class="client-form-section-title" data-i18n="client_billing_section">🧾 Infos client / facturation</div>
+
       <div class="ncp-field">
         <label for="editClientName" data-i18n="client_nom">Nom du client</label>
         <input id="editClientName" placeholder="Nom du client" data-i18n-placeholder="client_nom_placeholder" />
@@ -591,10 +601,15 @@
         <label for="editClientPhone" data-i18n="client_telephone">📞 Téléphone</label>
         <input id="editClientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" data-i18n-placeholder="client_telephone_placeholder" />
       </div>
+      <div class="client-form-section-title" data-i18n="client_delivery_section">🚚 Livraison</div>
       <div class="ncp-field">
-        <label data-i18n="client_gps">📍 Position GPS</label>
-        <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()" data-i18n="client_gps_update">📍 Mettre à jour avec ma position actuelle</button>
-        <div id="editGpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS enregistré</div>
+        <label data-i18n="client_gps">📍 Point GPS de livraison</label>
+        <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()" data-i18n="client_gps_update">📍 Mettre à jour le point GPS de livraison (ma position)</button>
+        <div class="gps-inline-actions">
+          <button type="button" class="gps-btn" onclick="openClientDeliveryMaps('edit')" data-i18n="client_open_maps_delivery">🗺️ Ouvrir Maps</button>
+          <button type="button" class="gps-btn" onclick="shareDraftClientDeliveryWhatsApp('edit')" data-i18n="client_share_whatsapp_delivery">💬 Partager WhatsApp</button>
+        </div>
+        <div id="editGpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
       </div>
       <div class="ncp-field">
         <label for="editClientStatus" data-i18n="client_statut">📊 Statut client</label>
@@ -1205,14 +1220,14 @@
         client_nom_placeholder: 'Nom du client',
         client_telephone: '📞 Téléphone',
         client_telephone_placeholder: 'Ex : 06 12 34 56 78',
-        client_adresse: 'Adresse',
+        client_adresse: 'Adresse (facturation)',
         client_nom_voie: 'Nom de voie',
         client_ville: 'Ville',
         client_ville_placeholder: 'Ville (rechercher…)',
         client_ice: '💳 ICE',
         client_ice_placeholder: 'Numéro ICE (facturation)',
-        client_gps: '📍 Position GPS',
-        client_gps_update: '📍 Mettre à jour avec ma position actuelle',
+        client_gps: '📍 Point GPS de livraison',
+        client_gps_update: '📍 Mettre à jour le point GPS de livraison (ma position)',
         client_numero: 'Numéro',
         client_type_voie: 'Type de voie',
         client_creer: '✅ Créer client',
@@ -1226,9 +1241,19 @@
         client_whatsapp: '💬 WhatsApp',
         client_gmaps: '🗺️ Google Maps',
         client_waze: '🧭 Waze',
-        client_gpsActuel: '📍 Utiliser ma position actuelle',
-        client_gpsOk: '✅ Position GPS enregistrée',
-        client_gpsNone: '📍 Aucun point GPS enregistré',
+        client_gpsActuel: '📍 Utiliser ma position pour la livraison',
+        client_gpsOk: '✅ Point GPS de livraison enregistré',
+        client_gpsNone: '📍 Aucun point GPS de livraison',
+        client_billing_section: '🧾 Infos client / facturation',
+        client_delivery_section: '🚚 Livraison',
+        client_open_maps_delivery: '🗺️ Ouvrir Maps',
+        client_share_whatsapp_delivery: '💬 Partager WhatsApp',
+        client_share_missing_gps: 'Impossible de partager : aucun point GPS de livraison disponible.',
+        client_maps_missing_gps: 'Impossible d’ouvrir Maps : aucun point GPS de livraison disponible.',
+        client_wa_delivery_intro: 'Voici le point de livraison de',
+        client_wa_phone_label: 'Téléphone',
+        client_wa_gps_label: 'GPS',
+        client_wa_maps_label: 'Maps',
         client_prix_custom: '💰 Prix personnalisés par gamme',
         client_prix_hint: 'Laisse vide pour utiliser les prix standard.',
         client_fiches: '👥 Fiches clients',
@@ -1442,14 +1467,14 @@
         client_nom_placeholder: 'اسم الزبون',
         client_telephone: '📞 الهاتف',
         client_telephone_placeholder: '06 xx xx xx xx',
-        client_adresse: 'العنوان',
+        client_adresse: 'عنوان الفوترة',
         client_nom_voie: 'اسم الشارع',
         client_ville: 'المدينة',
         client_ville_placeholder: 'المدينة (بحث…)',
         client_ice: '💳 ICE',
         client_ice_placeholder: 'رقم ICE (للفاتورة)',
-        client_gps: '📍 الموقع GPS',
-        client_gps_update: '📍 تحديث بموقعي الحالي',
+        client_gps: '📍 نقطة GPS للتوصيل',
+        client_gps_update: '📍 تحديث نقطة GPS للتوصيل (بموقعي الحالي)',
         client_numero: 'الرقم',
         client_type_voie: 'نوع الطريق',
         client_creer: '✅ إضافة زبون',
@@ -1463,9 +1488,19 @@
         client_whatsapp: '💬 واتساب',
         client_gmaps: '🗺️ خرائط جوجل',
         client_waze: '🧭 ويز',
-        client_gpsActuel: '📍 استخدام موقعي الحالي',
-        client_gpsOk: '✅ تم تسجيل الموقع',
-        client_gpsNone: '📍 لا يوجد موقع مسجل',
+        client_gpsActuel: '📍 استخدام موقعي للتوصيل',
+        client_gpsOk: '✅ تم تسجيل نقطة GPS للتوصيل',
+        client_gpsNone: '📍 لا توجد نقطة GPS للتوصيل',
+        client_billing_section: '🧾 معلومات الزبون / الفوترة',
+        client_delivery_section: '🚚 التوصيل',
+        client_open_maps_delivery: '🗺️ فتح الخرائط',
+        client_share_whatsapp_delivery: '💬 مشاركة واتساب',
+        client_share_missing_gps: 'تعذر المشاركة: لا توجد نقطة GPS للتوصيل.',
+        client_maps_missing_gps: 'تعذر فتح الخرائط: لا توجد نقطة GPS للتوصيل.',
+        client_wa_delivery_intro: 'هذه نقطة التوصيل الخاصة بـ',
+        client_wa_phone_label: 'الهاتف',
+        client_wa_gps_label: 'GPS',
+        client_wa_maps_label: 'Maps',
         client_prix_custom: '💰 أسعار مخصصة حسب الصنف',
         client_prix_hint: 'اتركه فارغاً لاستخدام الأسعار القياسية.',
         client_fiches: '👥 ملفات الزبائن',
@@ -1679,14 +1714,14 @@
         client_nom_placeholder: 'Smiyat client',
         client_telephone: '📞 Telephone',
         client_telephone_placeholder: '06 xx xx xx xx',
-        client_adresse: 'Adresse',
+        client_adresse: 'Adresse (facturation)',
         client_nom_voie: 'Smiyat zzanka',
         client_ville: 'Mdina',
         client_ville_placeholder: 'Mdina (qelleb…)',
         client_ice: '💳 ICE',
         client_ice_placeholder: 'Raqm ICE (lfacture)',
-        client_gps: '📍 GPS',
-        client_gps_update: '📍 Update b position dyal telephone',
+        client_gps: '📍 Point GPS dyal livraison',
+        client_gps_update: '📍 Update point GPS dyal livraison b position dyal telephone',
         client_numero: 'Raqm',
         client_type_voie: 'Naw3 triq',
         client_creer: '✅ Zid client',
@@ -1700,9 +1735,19 @@
         client_whatsapp: '💬 WhatsApp',
         client_gmaps: '🗺️ Google Maps',
         client_waze: '🧭 Waze',
-        client_gpsActuel: '📍 Khdem position dyal telephone',
-        client_gpsOk: '✅ Position GPS tsajlat',
-        client_gpsNone: '📍 Ma kayn ta GPS',
+        client_gpsActuel: '📍 Khdem position dyal telephone llivraison',
+        client_gpsOk: '✅ Point GPS dyal livraison tsajjal',
+        client_gpsNone: '📍 Ma kayn ta point GPS dyal livraison',
+        client_billing_section: '🧾 Infos client / facturation',
+        client_delivery_section: '🚚 Livraison',
+        client_open_maps_delivery: '🗺️ 7ell Maps',
+        client_share_whatsapp_delivery: '💬 Partaji WhatsApp',
+        client_share_missing_gps: 'Mymkench tpartaji: ma kayn ta point GPS dyal livraison.',
+        client_maps_missing_gps: 'Mymkench t7ell Maps: ma kayn ta point GPS dyal livraison.',
+        client_wa_delivery_intro: 'Hada point dyal livraison dyal',
+        client_wa_phone_label: 'Telephone',
+        client_wa_gps_label: 'GPS',
+        client_wa_maps_label: 'Maps',
         client_prix_custom: '💰 Prix khassin b gamme',
         client_prix_hint: 'Khalliha khawya bash tstemmel les prix standard.',
         client_fiches: '👥 Fiches clients',
@@ -2761,19 +2806,30 @@
             </div>
 
             <div class="client-card-info">
-              ${c.address ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(c.address)}</span></div>` : ''}
-              ${c.ice ? `<div class="client-info-row"><span class="client-info-icon">💳</span><span>ICE: ${escHtml(c.ice)}</span></div>` : ''}
-              ${c.phone ? `<div class="client-info-row"><span class="client-info-icon">📞</span><span>${escHtml(c.phone)}</span></div>` : ''}
-              ${assignedChip}
-              ${!c.address && !c.ice && !c.phone && !assignedChip ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
+              <div class="client-info-group">
+                <div class="client-info-group-title">${escHtml(t('client_billing_section'))}</div>
+                ${c.address ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(c.address)}</span></div>` : ''}
+                ${c.ice ? `<div class="client-info-row"><span class="client-info-icon">💳</span><span>ICE: ${escHtml(c.ice)}</span></div>` : ''}
+                ${c.phone ? `<div class="client-info-row"><span class="client-info-icon">📞</span><span>${escHtml(c.phone)}</span></div>` : ''}
+                ${assignedChip}
+                ${!c.address && !c.ice && !c.phone && !assignedChip ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
+              </div>
+              <div class="client-info-group">
+                <div class="client-info-group-title">${escHtml(t('client_delivery_section'))}</div>
+                ${(c.latitude != null && c.longitude != null)
+                  ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(t('client_gps'))}: ${escHtml(Number(c.latitude).toFixed(5))}, ${escHtml(Number(c.longitude).toFixed(5))}</span></div>`
+                  : `<div class="client-info-row client-info-empty">${escHtml(t('client_gpsNone'))}</div>`
+                }
+              </div>
             </div>
 
-            ${(c.phone || c.address || (c.latitude && c.longitude)) ? `
+            ${(c.phone || (c.latitude != null && c.longitude != null)) ? `
             <div class="client-contact-actions">
               ${c.phone ? `<a href="tel:${escHtml(normalizePhoneForTel(c.phone))}" class="client-action-btn">📞 Appeler</a>` : ''}
               ${c.phone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
-              ${(c.latitude && c.longitude) ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">📍 Google Maps</a>` : (c.address ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}" class="client-action-btn" target="_blank" rel="noopener">📍 Google Maps</a>` : '')}
-              ${(c.latitude && c.longitude) ? `<a href="https://waze.com/ul?ll=${encodeURIComponent(c.latitude + ',' + c.longitude)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">🧭 Waze</a>` : (c.address ? `<a href="https://waze.com/ul?q=${encodeURIComponent(c.address)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">🧭 Waze</a>` : '')}
+              ${(c.latitude != null && c.longitude != null) ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">📍 Google Maps</a>` : ''}
+              ${(c.latitude != null && c.longitude != null) ? `<a href="https://waze.com/ul?ll=${encodeURIComponent(c.latitude + ',' + c.longitude)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">🧭 Waze</a>` : ''}
+              ${(c.latitude != null && c.longitude != null) ? `<button class="client-action-btn" data-action="client-share-delivery-whatsapp" data-id="${c.id}">${escHtml(t('client_share_whatsapp_delivery'))}</button>` : ''}
             </div>` : ''}
 
             <div class="client-stat-row">
@@ -5914,7 +5970,7 @@
         _newClientLat = null;
         _newClientLng = null;
         const _gpsStatusEl = document.getElementById('gpsStatus');
-        if (_gpsStatusEl) { _gpsStatusEl.textContent = '📍 Aucun point GPS enregistré'; _gpsStatusEl.className = 'gps-status gps-none'; }
+        if (_gpsStatusEl) { _gpsStatusEl.textContent = t('client_gpsNone'); _gpsStatusEl.className = 'gps-status gps-none'; }
         renderClients(); loadClientSelectors();
         showSessionStatus('✅ Fusionné avec la fiche existante', 'success');
 
@@ -6022,9 +6078,9 @@
         (pos) => {
           _newClientLat = pos.coords.latitude;
           _newClientLng = pos.coords.longitude;
-          document.getElementById('gpsStatus').textContent = `📍 Position GPS enregistrée (${_newClientLat.toFixed(5)}, ${_newClientLng.toFixed(5)})`;
+          document.getElementById('gpsStatus').textContent = `${t('client_gpsOk')} (${_newClientLat.toFixed(5)}, ${_newClientLng.toFixed(5)})`;
           document.getElementById('gpsStatus').className = 'gps-status gps-ok';
-          if (btn) { btn.disabled = false; btn.textContent = '📍 Utiliser ma position actuelle'; }
+          if (btn) { btn.disabled = false; btn.textContent = t('client_gpsActuel'); }
         },
         (err) => {
           const msgs = {
@@ -6034,7 +6090,7 @@
           };
           document.getElementById('gpsStatus').textContent = msgs[err.code] || '📍 Erreur GPS — réessayez';
           document.getElementById('gpsStatus').className = 'gps-status gps-error';
-          if (btn) { btn.disabled = false; btn.textContent = '📍 Utiliser ma position actuelle'; }
+          if (btn) { btn.disabled = false; btn.textContent = t('client_gpsActuel'); }
         },
         { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
       );
@@ -6052,9 +6108,9 @@
         (pos) => {
           _editClientLat = pos.coords.latitude;
           _editClientLng = pos.coords.longitude;
-          document.getElementById('editGpsStatus').textContent = `📍 Position GPS mise à jour (${_editClientLat.toFixed(5)}, ${_editClientLng.toFixed(5)})`;
+          document.getElementById('editGpsStatus').textContent = `${t('client_gpsOk')} (${_editClientLat.toFixed(5)}, ${_editClientLng.toFixed(5)})`;
           document.getElementById('editGpsStatus').className = 'gps-status gps-ok';
-          if (btn) { btn.disabled = false; btn.textContent = '📍 Mettre à jour avec ma position actuelle'; }
+          if (btn) { btn.disabled = false; btn.textContent = t('client_gps_update'); }
         },
         (err) => {
           const msgs = {
@@ -6064,10 +6120,68 @@
           };
           document.getElementById('editGpsStatus').textContent = msgs[err.code] || '📍 Erreur GPS — réessayez';
           document.getElementById('editGpsStatus').className = 'gps-status gps-error';
-          if (btn) { btn.disabled = false; btn.textContent = '📍 Mettre à jour avec ma position actuelle'; }
+          if (btn) { btn.disabled = false; btn.textContent = t('client_gps_update'); }
         },
         { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
       );
+    };
+
+    function formatClientDeliveryCoords(lat, lng) {
+      return `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`;
+    }
+
+    function buildClientDeliveryWhatsAppMessage(clientName, clientPhone, lat, lng) {
+      const coords = formatClientDeliveryCoords(lat, lng);
+      const mapsLink = `https://www.google.com/maps?q=${encodeURIComponent(coords)}`;
+      return [
+        `${t('client_wa_delivery_intro')} ${clientName}`,
+        clientPhone ? `${t('client_wa_phone_label')} : ${clientPhone}` : null,
+        `${t('client_wa_gps_label')} : ${coords}`,
+        `${t('client_wa_maps_label')} : ${mapsLink}`
+      ].filter(Boolean).join('\n');
+    }
+
+    window.openClientDeliveryMaps = function(mode = 'create') {
+      const lat = mode === 'edit' ? _editClientLat : _newClientLat;
+      const lng = mode === 'edit' ? _editClientLng : _newClientLng;
+      if (lat == null || lng == null) {
+        showSessionStatus(t('client_maps_missing_gps'), 'error', 4500);
+        return;
+      }
+      window.open(`https://www.google.com/maps?q=${encodeURIComponent(formatClientDeliveryCoords(lat, lng))}`, '_blank', 'noopener');
+    };
+
+    window.shareDraftClientDeliveryWhatsApp = function(mode = 'create') {
+      const lat = mode === 'edit' ? _editClientLat : _newClientLat;
+      const lng = mode === 'edit' ? _editClientLng : _newClientLng;
+      if (lat == null || lng == null) {
+        showSessionStatus(t('client_share_missing_gps'), 'error', 4500);
+        return;
+      }
+      const name = mode === 'edit'
+        ? ((document.getElementById('editClientName')?.value || '').trim() || 'Client')
+        : ((document.getElementById('clientName')?.value || '').trim() || 'Client');
+      const phone = mode === 'edit'
+        ? (document.getElementById('editClientPhone')?.value || '').trim()
+        : (document.getElementById('clientPhone')?.value || '').trim();
+      const msg = buildClientDeliveryWhatsAppMessage(name, phone, lat, lng);
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    };
+
+    window.shareClientDeliveryWhatsApp = function(clientId) {
+      const client = state.clients.find(c => String(c.id) === String(clientId));
+      if (!client) return;
+      if (client.latitude == null || client.longitude == null) {
+        showSessionStatus(t('client_share_missing_gps'), 'error', 4500);
+        return;
+      }
+      const msg = buildClientDeliveryWhatsAppMessage(
+        client.name || 'Client',
+        (client.phone || '').trim(),
+        client.latitude,
+        client.longitude
+      );
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
     };
 
     window.addClient = async function () {
@@ -6136,7 +6250,7 @@
         _newClientLat = null;
         _newClientLng = null;
         const gpsStatus = document.getElementById('gpsStatus');
-        if (gpsStatus) { gpsStatus.textContent = '📍 Aucun point GPS enregistré'; gpsStatus.className = 'gps-status gps-none'; }
+        if (gpsStatus) { gpsStatus.textContent = t('client_gpsNone'); gpsStatus.className = 'gps-status gps-none'; }
         const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 150, priceSANTOS: 180, priceSUCRE: 100 };
         Object.entries(defaults).forEach(([id, val]) => { document.getElementById(id).value = val; });
       }
@@ -6645,10 +6759,10 @@
       const editGpsStatus = document.getElementById('editGpsStatus');
       if (editGpsStatus) {
         if (_editClientLat != null && _editClientLng != null) {
-          editGpsStatus.textContent = `📍 Position GPS enregistrée (${_editClientLat.toFixed(5)}, ${_editClientLng.toFixed(5)})`;
+          editGpsStatus.textContent = `${t('client_gpsOk')} (${_editClientLat.toFixed(5)}, ${_editClientLng.toFixed(5)})`;
           editGpsStatus.className = 'gps-status gps-ok';
         } else {
-          editGpsStatus.textContent = '📍 Aucun point GPS enregistré';
+          editGpsStatus.textContent = t('client_gpsNone');
           editGpsStatus.className = 'gps-status gps-none';
         }
       }
@@ -7932,6 +8046,7 @@
         case 'user-password': openAdminPasswordModal(id); break;
         case 'user-delete':   deleteUser(id, el); break;
         case 'open-client-sales': openClientSales(el.dataset.client); break;
+        case 'client-share-delivery-whatsapp': shareClientDeliveryWhatsApp(id); break;
       }
     });
 
