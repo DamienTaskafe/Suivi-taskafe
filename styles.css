@@ -884,6 +884,15 @@
       border-bottom: 1px solid rgba(0,0,0,0.05);
     }
     body.dark .client-card-info { border-bottom-color: rgba(255,255,255,0.07); }
+    .client-info-group { display: grid; gap: 4px; }
+    .client-info-group-title {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.35px;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
 
     .client-info-row {
       display: flex;
@@ -1082,6 +1091,14 @@
       font-size: 15px;
     }
     .ncp-body { padding: var(--spacing-lg); }
+    .client-form-section-title {
+      margin: 2px 0 8px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.45px;
+    }
     /* Single-field rows */
     .ncp-field { margin-bottom: var(--spacing-sm); }
     .ncp-field label { display: block; font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
@@ -1092,6 +1109,7 @@
     .ncp-num-type-row .ncp-field { margin-bottom: 0; }
     /* Darker, cleaner inputs inside nouveau client panel */
     .nouveau-client-panel input[type="text"],
+    .nouveau-client-panel input[type="tel"],
     .nouveau-client-panel input[type="number"],
     .nouveau-client-panel select {
       background: rgba(0,0,0,0.08);
@@ -1099,6 +1117,7 @@
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
     }
     .nouveau-client-panel input[type="text"]:focus,
+    .nouveau-client-panel input[type="tel"]:focus,
     .nouveau-client-panel input[type="number"]:focus,
     .nouveau-client-panel select:focus {
       background: rgba(255,255,255,0.88);
@@ -1106,6 +1125,7 @@
       box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
     }
     body.dark .nouveau-client-panel input[type="text"],
+    body.dark .nouveau-client-panel input[type="tel"],
     body.dark .nouveau-client-panel input[type="number"],
     body.dark .nouveau-client-panel select {
       background: rgba(20,16,12,0.82);
@@ -1114,6 +1134,7 @@
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.4);
     }
     body.dark .nouveau-client-panel input[type="text"]:focus,
+    body.dark .nouveau-client-panel input[type="tel"]:focus,
     body.dark .nouveau-client-panel input[type="number"]:focus,
     body.dark .nouveau-client-panel select:focus {
       background: rgba(40,34,26,0.98);
@@ -1432,6 +1453,7 @@
 
     /* ── Edit-client modal: match create-client input styling ── */
     #editClientModal input[type="text"],
+    #editClientModal input[type="tel"],
     #editClientModal input:not([type]),
     #editClientModal input[type="number"],
     #editClientModal select {
@@ -1440,6 +1462,7 @@
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
     }
     #editClientModal input[type="text"]:focus,
+    #editClientModal input[type="tel"]:focus,
     #editClientModal input:not([type]):focus,
     #editClientModal input[type="number"]:focus,
     #editClientModal select:focus {
@@ -1448,6 +1471,7 @@
       box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
     }
     body.dark #editClientModal input[type="text"],
+    body.dark #editClientModal input[type="tel"],
     body.dark #editClientModal input:not([type]),
     body.dark #editClientModal input[type="number"],
     body.dark #editClientModal select {
@@ -1457,6 +1481,7 @@
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.4);
     }
     body.dark #editClientModal input[type="text"]:focus,
+    body.dark #editClientModal input[type="tel"]:focus,
     body.dark #editClientModal input:not([type]):focus,
     body.dark #editClientModal input[type="number"]:focus,
     body.dark #editClientModal select:focus {
@@ -1747,8 +1772,20 @@
       transition: background 0.15s;
     }
     .gps-btn:active { background: rgba(0,0,0,0.12); }
+    .gps-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     body.dark .gps-btn { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.13); }
     body.dark .gps-btn:active { background: rgba(255,255,255,0.13); }
+    .gps-inline-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .gps-inline-actions .gps-btn {
+      text-align: center;
+      justify-content: center;
+      padding: 8px 10px;
+    }
 
     .gps-status {
       font-size: 12px;
