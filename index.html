@@ -6703,7 +6703,7 @@
             const displayName = escHtml(user.full_name || user.email);
             const displayEmail = escHtml(user.email);
             const userIdEsc = escHtml(user.id);
-            const editEmployeeBtn = `<button class="user-remu-btn" type="button" onclick="openEditEmployeeModal('${userIdEsc}')">✏️ Modifier employé</button>`;
+            const editEmployeeBtn = `<button class="user-remu-btn" type="button" data-id="${userIdEsc}" onclick="openEditEmployeeModal(this.dataset.id)">✏️ Modifier employé</button>`;
             return `
         <div class="user-row">
           <div class="user-info">
