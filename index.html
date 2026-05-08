@@ -9417,6 +9417,7 @@
         if (statusEl) { statusEl.textContent = t('msg_cred_modal_open_failed'); statusEl.style.color = '#e53935'; }
         return;
       }
+      closeModal('employeeProfileModal');
       let opened = false;
       try {
         opened = window.openUserCredentialsModal(userId);
