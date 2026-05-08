@@ -431,6 +431,24 @@
     </div>
   </div>
 
+  <div id="credentialsModal" class="modal-backdrop" onclick="backdropClose(event, 'credentialsModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head"><h3 data-i18n="creds_modal_titre">🔐 Identifiants employé</h3><button class="close-x" onclick="closeModal('credentialsModal')">✕</button></div>
+      <div class="settings-option">
+        <div id="credentialsUserLabel" class="title">—</div>
+        <div id="credentialsCurrentEmail" class="muted" style="font-size:12px;margin-bottom:10px;"></div>
+        <label for="credentialsNewEmail" data-i18n="creds_new_email">Nouvelle adresse email</label>
+        <input id="credentialsNewEmail" type="email" placeholder="Laisser vide pour ne pas modifier" data-i18n-placeholder="creds_new_email_placeholder" autocomplete="off" />
+        <label for="credentialsNewPassword" data-i18n="creds_new_pwd" style="margin-top:10px;">Nouveau mot de passe</label>
+        <input id="credentialsNewPassword" type="password" placeholder="Laisser vide pour ne pas modifier" data-i18n-placeholder="creds_new_pwd_placeholder" autocomplete="new-password" />
+        <label for="credentialsConfirmPassword" data-i18n="creds_confirm_pwd">Confirmer mot de passe</label>
+        <input id="credentialsConfirmPassword" type="password" placeholder="Répéter le nouveau mot de passe" data-i18n-placeholder="creds_confirm_pwd_placeholder" autocomplete="new-password" />
+        <button id="credentialsSaveBtn" onclick="saveCredentials()" data-i18n="creds_save" style="margin-top:12px;">✅ Enregistrer</button>
+        <div id="credentialsStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="clientAdvancedModal" class="modal-backdrop" onclick="backdropClose(event, 'clientAdvancedModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head">
@@ -1298,6 +1316,21 @@
         push_disabled: 'Notifications désactivées ✅',
         push_disable_error: 'Impossible de désactiver les notifications. Réessayez.',
         push_disable_local_ok: 'Désactivation locale OK, mais nettoyage serveur impossible. Réessayez.',
+        creds_modal_titre: '🔐 Identifiants employé',
+        creds_email_actuel: 'Email actuel',
+        creds_new_email: 'Nouvelle adresse email',
+        creds_new_email_placeholder: 'Laisser vide pour ne pas modifier',
+        creds_new_pwd: 'Nouveau mot de passe',
+        creds_new_pwd_placeholder: 'Laisser vide pour ne pas modifier',
+        creds_confirm_pwd: 'Confirmer mot de passe',
+        creds_confirm_pwd_placeholder: 'Répéter le nouveau mot de passe',
+        creds_save: '✅ Enregistrer',
+        creds_btn: '🔐 Identifiants',
+        msg_creds_saved: '✅ Identifiants mis à jour',
+        msg_creds_email_invalid: '❌ Format d\'email invalide',
+        msg_creds_pwd_short: '❌ Mot de passe minimum 6 caractères',
+        msg_creds_pwd_mismatch: '❌ Les mots de passe ne correspondent pas',
+        msg_creds_nothing: '❌ Aucun champ à modifier',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1508,6 +1541,21 @@
         push_disabled: 'تم إلغاء الإشعارات ✅',
         push_disable_error: 'تعذّر إلغاء الإشعارات. أعد المحاولة.',
         push_disable_local_ok: 'تم الإلغاء محلياً لكن تعذّر التنظيف على الخادم. أعد المحاولة.',
+        creds_modal_titre: '🔐 بيانات دخول الموظف',
+        creds_email_actuel: 'البريد الإلكتروني الحالي',
+        creds_new_email: 'بريد إلكتروني جديد',
+        creds_new_email_placeholder: 'اتركه فارغاً إن لم تريد التغيير',
+        creds_new_pwd: 'كلمة مرور جديدة',
+        creds_new_pwd_placeholder: 'اتركه فارغاً إن لم تريد التغيير',
+        creds_confirm_pwd: 'تأكيد كلمة المرور',
+        creds_confirm_pwd_placeholder: 'أعد كتابة كلمة المرور الجديدة',
+        creds_save: '✅ حفظ',
+        creds_btn: '🔐 بيانات الدخول',
+        msg_creds_saved: '✅ تم تحديث بيانات الدخول',
+        msg_creds_email_invalid: '❌ صيغة البريد الإلكتروني غير صحيحة',
+        msg_creds_pwd_short: '❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+        msg_creds_pwd_mismatch: '❌ كلمتا المرور غير متطابقتين',
+        msg_creds_nothing: '❌ لا يوجد حقل للتعديل',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1718,6 +1766,21 @@
         push_disabled: 'Notifications twaqqfu ✅',
         push_disable_error: 'Impossible twqqef notifications. 3wed tjreb.',
         push_disable_local_ok: 'Twqqef local OK, walakin nettoyage serveur mkan. 3wed tjreb.',
+        creds_modal_titre: '🔐 Identifiants dial employe',
+        creds_email_actuel: 'Email dial daba',
+        creds_new_email: 'Email jdid',
+        creds_new_email_placeholder: 'Khalli khawi ila bghiti tbddel walo',
+        creds_new_pwd: 'Password jdid',
+        creds_new_pwd_placeholder: 'Khalli khawi ila bghiti tbddel walo',
+        creds_confirm_pwd: 'Confirmi password',
+        creds_confirm_pwd_placeholder: 'Awed password jdid',
+        creds_save: '✅ Sjjel',
+        creds_btn: '🔐 Identifiants',
+        msg_creds_saved: '✅ Identifiants tbddlu',
+        msg_creds_email_invalid: '❌ Email machi sahih',
+        msg_creds_pwd_short: '❌ Password khasso 6 caractères minimum',
+        msg_creds_pwd_mismatch: '❌ Mots de passe machi bhal bhal',
+        msg_creds_nothing: '❌ Ma kaynch haja tbddel',
       },
     };
 
@@ -6722,6 +6785,7 @@
                       <button class="menu-btn" onclick="toggleMenu(event, 'userActMenu_${userIdEsc}')">⋯</button>
                       <div class="menu" id="userActMenu_${userIdEsc}">
                         <button onclick="openRoleModal('${userIdEsc}', '${escHtml(user.role || 'employee')}')">✏️ Rôle</button>
+                        <button onclick="openCredentialsModal('${userIdEsc}')">🔐 Identifiants</button>
                         <button onclick="openAdminPasswordModal('${userIdEsc}')">🔑 Mot de passe</button>
                         <button class="danger" onclick="deleteUser('${userIdEsc}', this)">🗑️ Supprimer</button>
                       </div>
@@ -6730,6 +6794,7 @@
                     : isManager()
                       ? `<div class="user-row-actions">
                     ${editEmployeeBtn}
+                    <button class="user-remu-btn" type="button" onclick="openCredentialsModal('${userIdEsc}')">${t('creds_btn')}</button>
                   </div>`
                     : ''
           }
@@ -8187,6 +8252,125 @@
       }
     };
 
+    // ── Employee Credentials Modal ─────────────────────────────────────────────
+    let _pendingCredentialsUserId = null;
+
+    function openCredentialsModal(userId) {
+      if (!isManagerOrAdmin()) return;
+      closeAllMenus();
+      const user = state.allUsers.find(u => u.id === userId);
+      if (!user) return;
+      _pendingCredentialsUserId = userId;
+      document.getElementById('credentialsUserLabel').textContent =
+        `👤 ${user.full_name || user.email || '—'}`;
+      document.getElementById('credentialsCurrentEmail').textContent =
+        user.email ? `${t('creds_email_actuel')} : ${user.email}` : '';
+      document.getElementById('credentialsNewEmail').value = '';
+      document.getElementById('credentialsNewPassword').value = '';
+      document.getElementById('credentialsConfirmPassword').value = '';
+      const statusEl = document.getElementById('credentialsStatus');
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+      openModal('credentialsModal');
+    }
+    window.openCredentialsModal = openCredentialsModal;
+
+    window.saveCredentials = async function () {
+      if (!isManagerOrAdmin()) return;
+      const userId = _pendingCredentialsUserId;
+      if (!userId) return;
+
+      const newEmail    = (document.getElementById('credentialsNewEmail')?.value || '').trim();
+      const newPassword = document.getElementById('credentialsNewPassword')?.value || '';
+      const confirmPwd  = document.getElementById('credentialsConfirmPassword')?.value || '';
+      const statusEl    = document.getElementById('credentialsStatus');
+      const btn         = document.getElementById('credentialsSaveBtn');
+
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+
+      // Client-side validation
+      if (!newEmail && !newPassword) {
+        if (statusEl) { statusEl.textContent = t('msg_creds_nothing'); statusEl.style.color = '#e53935'; }
+        return;
+      }
+      if (newEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!emailRegex.test(newEmail)) {
+          if (statusEl) { statusEl.textContent = t('msg_creds_email_invalid'); statusEl.style.color = '#e53935'; }
+          return;
+        }
+      }
+      if (newPassword) {
+        if (newPassword.length < 6) {
+          if (statusEl) { statusEl.textContent = t('msg_creds_pwd_short'); statusEl.style.color = '#e53935'; }
+          return;
+        }
+        if (newPassword !== confirmPwd) {
+          if (statusEl) { statusEl.textContent = t('msg_creds_pwd_mismatch'); statusEl.style.color = '#e53935'; }
+          return;
+        }
+      }
+
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Mise à jour…'; }
+
+      try {
+        const accessToken = await getFreshToken();
+        if (!accessToken) {
+          if (statusEl) { statusEl.textContent = '❌ Session expirée. Déconnectez-vous puis reconnectez-vous.'; statusEl.style.color = '#e53935'; }
+          return;
+        }
+
+        const body = { userId };
+        if (newEmail)    body.email    = newEmail;
+        if (newPassword) body.password = newPassword;
+
+        const resp = await fetch('/api/update-user-credentials', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(body)
+        });
+
+        const ct = resp.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          const rawText = await resp.text().catch(() => '');
+          console.error('[saveCredentials] Réponse non-JSON (statut', resp.status, ') :', rawText.substring(0, 300));
+          if (statusEl) { statusEl.textContent = `❌ L'API n'a pas répondu en JSON (statut ${resp.status}). Vérifiez le déploiement Vercel.`; statusEl.style.color = '#e53935'; }
+          return;
+        }
+
+        const result = await resp.json();
+        if (!resp.ok) {
+          if (statusEl) { statusEl.textContent = '❌ ' + (result?.error || 'Erreur lors de la mise à jour'); statusEl.style.color = '#e53935'; }
+          return;
+        }
+
+        // Update local state if email changed
+        if (newEmail) {
+          const localUser = state.allUsers.find(u => u.id === userId);
+          if (localUser) localUser.email = newEmail;
+        }
+
+        document.getElementById('credentialsNewEmail').value = '';
+        document.getElementById('credentialsNewPassword').value = '';
+        document.getElementById('credentialsConfirmPassword').value = '';
+        closeModal('credentialsModal');
+        showSessionStatus(t('msg_creds_saved'), 'success');
+        logAction('admin_credentials_update', { targetUserId: userId, updatedFields: result?.updatedFields || [] });
+
+        // Refresh user list if visible
+        try { renderUsersList(); } catch (_) { /* not always mounted */ }
+      } catch (err) {
+        const msg = err?.name === 'AbortError'
+          ? 'Délai dépassé — réessayez dans quelques instants'
+          : (err instanceof Error ? err.message : 'Impossible de contacter le serveur');
+        if (statusEl) { statusEl.textContent = '❌ ' + msg; statusEl.style.color = '#e53935'; }
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = t('creds_save'); }
+      }
+    };
+
     function openClientAdvanced(clientId) {
       closeAllMenus();
       const client = state.clients.find(c => c.id === clientId);
@@ -8753,6 +8937,7 @@
             <button type="button" onclick="openEmployeeProfileModal('${uid}', 'clients'); closeModal('employeeActionsModal');">👥 Clients</button>
             <button type="button" onclick="openEmployeeProfileModal('${uid}', 'ventes'); closeModal('employeeActionsModal');">💰 Ventes</button>
             <button type="button" onclick="openEmployeeProfileModal('${uid}', 'remu'); closeModal('employeeActionsModal');">⚙️ Réglages</button>
+            <button type="button" onclick="openCredentialsModal('${uid}'); closeModal('employeeActionsModal');">${t('creds_btn')}</button>
           </div>`;
       }
 
