@@ -6709,11 +6709,12 @@
             <div class="user-role">👤 ${displayEmail} • ${roleLabel}</div>
             <div class="user-activity">${activityHtml}</div>
           </div>
-          ${
-            user.id === state.session?.user?.id
-              ? '<span style="font-size:11px;">TOI</span>'
-              : isAdmin()
-                ? `<div class="user-row-actions">
+              ${
+                user.id === state.session?.user?.id
+                  ? '<span style="font-size:11px;">TOI</span>'
+                  : isAdmin()
+                    ? `<div class="user-row-actions">
+                    <button class="user-remu-btn" type="button" onclick="openEditEmployeeModal('${escHtml(user.id)}')">✏️ Modifier employé</button>
                     <button class="user-remu-btn" type="button" onclick="openRemunerationSettingsModal('${escHtml(user.id)}')">💰 Régler</button>
                     <div class="menu-wrap">
                       <button class="menu-btn" onclick="toggleMenu(event, 'userActMenu_${escHtml(user.id)}')">⋯</button>
@@ -6724,7 +6725,11 @@
                       </div>
                     </div>
                   </div>`
-                : ''
+                    : isManager()
+                      ? `<div class="user-row-actions">
+                    <button class="user-remu-btn" type="button" onclick="openEditEmployeeModal('${escHtml(user.id)}')">✏️ Modifier employé</button>
+                  </div>`
+                    : ''
           }
         </div>
       `;
@@ -9183,7 +9188,11 @@
         logAction('employee_profile_updated', { targetUserId: userId });
         setTimeout(() => {
           closeModal('editEmployeeModal');
-          openEmployeeProfileModal(userId, 'resume');
+          if (isAdmin()) {
+            openEmployeeProfileModal(userId, 'resume');
+          } else {
+            renderUsersList();
+          }
         }, 900);
       } catch (e) {
         const msg = e?.message || String(e);
