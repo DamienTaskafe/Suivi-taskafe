@@ -122,9 +122,9 @@
             <span id="menuUserRole">—</span>
           </div>
           <!-- ── Stats & Balance ──────────────────────────────────────────── -->
-          <button type="button" onclick="openStatsBalanceModal()" data-i18n="menu_statsBalance">📊 Stats &amp; Balance</button>
+          <button id="statsBalanceMenuBtn" type="button" onclick="openStatsBalanceModal()" data-i18n="menu_statsBalance">📊 Stats &amp; Balance</button>
           <!-- ── Dépenses ─────────────────────────────────────────────────── -->
-          <button type="button" onclick="openDepensesModal()" data-i18n="menu_depenses">💸 Dépenses</button>
+          <button id="depensesMenuBtn" type="button" onclick="openDepensesModal()" data-i18n="menu_depenses">💸 Dépenses</button>
           <!-- ── Employés (manager/admin only) ───────────────────────────── -->
           <button type="button" id="employesMenuBtn" onclick="openEmployesModal()" class="hidden" data-i18n="menu_employes">👥 Employés</button>
           <!-- ── Notifications settings ──────────────────────────────────── -->
@@ -394,7 +394,7 @@
         <div class="muted" data-i18n="settings_modifier_mdp">Modifier ton mot de passe.</div>
         <button onclick="closeModal('settingsHubModal'); openPasswordModal();" data-i18n="settings_changer_mdp">Changer mot de passe</button>
       </div>
-      <div class="settings-option">
+      <div id="settingsExportCloudOption" class="settings-option">
         <div class="title" data-i18n="settings_export_cloud">☁️ Export cloud</div>
         <div class="muted" data-i18n="settings_export_desc">Télécharger une sauvegarde JSON complète.</div>
         <button onclick="exportData()" data-i18n="settings_exporter_btn">📥 Exporter données</button>
@@ -744,7 +744,13 @@
   <!-- ── Notifications modal ─────────────────────────────────────────────────── -->
   <div id="notificationsModal" class="modal-backdrop" onclick="backdropClose(event, 'notificationsModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>🔔 Notifications</h3><button class="close-x" onclick="closeModal('notificationsModal')">✕</button></div>
+      <div class="modal-head">
+        <h3>🔔 Notifications</h3>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="clearNotificationsBtn" type="button" onclick="clearAllNotifications()" style="font-size:12px;padding:6px 10px;background:rgba(0,0,0,0.07);color:var(--color-text);" data-i18n="notif_clear_all">Tout effacer</button>
+          <button class="close-x" onclick="closeModal('notificationsModal')">✕</button>
+        </div>
+      </div>
       <div id="notificationsContent"><div class="muted">Chargement…</div></div>
     </div>
   </div>
@@ -1299,6 +1305,12 @@
         settings_export_cloud: '☁️ Export cloud',
         settings_export_desc: 'Télécharger une sauvegarde JSON complète.',
         settings_exporter_btn: '📥 Exporter données',
+        notif_clear_all: 'Tout effacer',
+        notif_clearing: '⏳ Effacement…',
+        notif_cleared: '✅ Notifications effacées',
+        notif_clear_error: '❌ Impossible d’effacer les notifications',
+        stock_requests_load_error: '❌ Impossible de charger les demandes. Réessayez.',
+        stock_request_timeout: '❌ Délai dépassé — réessayez.',
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
@@ -1524,6 +1536,12 @@
         settings_export_cloud: '☁️ تصدير السحابة',
         settings_export_desc: 'تنزيل نسخة احتياطية JSON كاملة.',
         settings_exporter_btn: '📥 تصدير البيانات',
+        notif_clear_all: 'مسح الكل',
+        notif_clearing: '⏳ جارٍ المسح…',
+        notif_cleared: '✅ تم مسح الإشعارات',
+        notif_clear_error: '❌ تعذّر مسح الإشعارات',
+        stock_requests_load_error: '❌ تعذّر تحميل الطلبات. أعد المحاولة.',
+        stock_request_timeout: '❌ انتهت المهلة — أعد المحاولة.',
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
@@ -1749,6 +1767,12 @@
         settings_export_cloud: '☁️ Export cloud',
         settings_export_desc: 'Nazel nuskha JSON kaml.',
         settings_exporter_btn: '📥 Exporter données',
+        notif_clear_all: 'Mse7 kolchi',
+        notif_clearing: '⏳ Kaytms7…',
+        notif_cleared: '✅ Notifications tmshaw',
+        notif_clear_error: '❌ Ma t9darch tmse7 notifications',
+        stock_requests_load_error: '❌ Ma t7emmlouch talabats. 3awed jarrab.',
+        stock_request_timeout: '❌ Tal l waqt — 3awed jarrab.',
         lang_fr: 'Français',
         lang_ar: 'العربية',
         lang_darija: 'Darija',
@@ -3374,8 +3398,7 @@
       }
       content.innerHTML = notifs.map(n => {
         const isUnread = !n.read_at;
-        // Use data attribute to store the type — avoids inline string concatenation in onclick
-        return `<div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-${escHtml(n.id)}" style="cursor:pointer;" data-notif-type="${escHtml(n.type || '')}">
+        return `<div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-${escHtml(n.id)}" style="cursor:pointer;" data-notif-id="${escHtml(n.id)}">
           <div class="notif-item-title">${escHtml(n.title)}</div>
           <div class="notif-item-msg">${escHtml(n.message)}</div>
           <div class="notif-item-date">${_formatNotifDate(n.created_at)}</div>
@@ -3385,25 +3408,78 @@
       // to avoid multiple listeners since renderNotificationsPanel() can be called
       // multiple times. Event delegation prevents the need to inline onclick in HTML.
       content.onclick = function(e) {
-        const item = e.target.closest('[data-notif-type]');
+        const item = e.target.closest('[data-notif-id]');
         if (!item) return;
-        const type = item.dataset.notifType || '';
-        navigateFromNotification(type);
+        navigateFromNotification(item.dataset.notifId || '');
       };
     }
 
+    function _isStockRequestNotification(notif) {
+      const type = String(notif?.type || '').toLowerCase();
+      if (type.startsWith('stock_request')) return true;
+      const payload = notif?.payload;
+      return !!(type.includes('stock') && (payload?.request_id || payload?.requestId));
+    }
+
     // Navigate to the relevant section when a notification is clicked.
-    window.navigateFromNotification = function(type) {
+    window.navigateFromNotification = function(notifId) {
       closeModal('notificationsModal');
-      const t = (type || '').toLowerCase();
-      if (t.includes('stock')) {
+      const notif = (state.notifications || []).find(n => String(n.id) === String(notifId));
+      const type = String(notif?.type || '').toLowerCase();
+      if (_isStockRequestNotification(notif)) {
         show('stock');
-      } else if (t.includes('balance') || t.includes('commission') || t.includes('employ')) {
+        const openTargetModal = isManagerOrAdmin() ? openAdminStockRequestsModal : openMyStockRequestsModal;
+        if (openTargetModal) openTargetModal();
+        const reqId = notif?.payload?.request_id || notif?.payload?.requestId;
+        if (reqId) {
+          const delays = [250, 650, 1100, 1800];
+          let highlighted = false;
+          delays.forEach(delay => {
+            setTimeout(() => {
+              if (!highlighted) highlighted = _highlightStockRequest(reqId);
+            }, delay);
+          });
+        }
+      } else if (type.includes('stock')) {
+        show('stock');
+      } else if (type.includes('balance') || type.includes('commission') || type.includes('employ')) {
         show('balance');
-      } else if (t.includes('client') || t.includes('sale') || t.includes('vente')) {
+      } else if (type.includes('client') || type.includes('sale') || type.includes('vente')) {
         show('sales');
       }
       // If type is unknown, just close the modal without navigating
+    };
+
+    window.clearAllNotifications = async function() {
+      const btn = document.getElementById('clearNotificationsBtn');
+      const userId = state.session?.user?.id;
+      if (!userId) {
+        showSessionStatus(t('msg_cred_session_expired'), 'error', 5000);
+        return;
+      }
+      if (!navigator.onLine) {
+        showSessionStatus(t('msg_offline'), 'error', 4000);
+        return;
+      }
+
+      const originalText = btn?.textContent || '';
+      if (btn) { btn.disabled = true; btn.textContent = t('notif_clearing'); }
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('user_id', userId);
+        if (error) throw error;
+        state.notifications = [];
+        renderNotificationsPanel();
+        renderNotificationBell();
+        showSessionStatus(t('notif_cleared'), 'success', 3000);
+      } catch (e) {
+        console.warn('[notifications] clearAll error:', e?.message);
+        showSessionStatus(t('notif_clear_error'), 'error', 4000);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = originalText || t('notif_clear_all'); }
+      }
     };
 
     // Bulk-mark all currently unread notifications as read.
@@ -4025,6 +4101,21 @@
     // ── Stock Requests (employee) ─────────────────────────────────────────────
 
     let _stockReqLines = []; // [{ category, quantity }]
+    const STOCK_REQUEST_TIMEOUT_MS = 12000;
+
+    async function withUiTimeout(promise, timeoutMs, timeoutMessage) {
+      let timer = null;
+      try {
+        return await Promise.race([
+          promise,
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error(timeoutMessage || t('stock_request_timeout'))), timeoutMs);
+          })
+        ]);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    }
 
 
     function renderStockReqLines() {
@@ -4062,7 +4153,15 @@
       renderStockReqLines();
     };
 
-    window.openStockRequestModal = function() {
+    window.openStockRequestModal = async function() {
+      const activeSession = await ensureActiveSession();
+      if (!activeSession?.user?.id) {
+        showSessionStatus(t('msg_cred_session_expired'), 'error', 5000);
+        return;
+      }
+      if (navigator.onLine && Object.keys(state.commercialStock || {}).length === 0) {
+        refreshStockData().then(renderStock).catch(e => console.warn('[openStockRequestModal] refreshStockData:', e?.message));
+      }
       _stockReqLines = [{ category: '', quantity: '' }];
       renderStockReqLines();
       const notesEl = document.getElementById('stockReqNotes');
@@ -4075,13 +4174,19 @@
     };
 
     window.submitStockRequest = async function() {
+      const statusEl = document.getElementById('stockReqStatus');
+      const btn = document.getElementById('submitStockReqBtn');
       if (!navigator.onLine) {
-        document.getElementById('stockReqStatus').textContent = '❌ Connexion requise.';
+        if (statusEl) statusEl.textContent = t('msg_offline');
+        return;
+      }
+      const activeSession = await ensureActiveSession();
+      if (!activeSession?.user?.id) {
+        if (statusEl) statusEl.textContent = t('msg_cred_session_expired');
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Envoyer la demande'; }
         return;
       }
       syncStockReqLinesFromDOM();
-      const statusEl = document.getElementById('stockReqStatus');
-      const btn = document.getElementById('submitStockReqBtn');
 
       // Validate
       if (_stockReqLines.length === 0) {
@@ -4104,10 +4209,11 @@
       statusEl.textContent = '⏳ Envoi en cours…';
 
       try {
-        const { data: reqId, error } = await supabase.rpc('create_stock_request', {
-          p_items: items,
-          p_notes: notes
-        });
+        const { data: reqId, error } = await withUiTimeout(
+          supabase.rpc('create_stock_request', { p_items: items, p_notes: notes }),
+          STOCK_REQUEST_TIMEOUT_MS,
+          t('stock_request_timeout')
+        );
         if (error) throw error;
 
         statusEl.textContent = "✅ Demande envoyée à l'admin.";
@@ -4145,12 +4251,22 @@
       if (content) content.innerHTML = '<div class="muted">Chargement…</div>';
       openModal('myStockRequestsModal');
       try {
-        const { data, error } = await supabase
-          .from('stock_requests')
-          .select('*')
-          .eq('employee_id', state.session?.user?.id)
-          .order('created_at', { ascending: false })
-          .limit(30);
+        const activeSession = await ensureActiveSession();
+        const userId = activeSession?.user?.id;
+        if (!userId) {
+          if (content) content.innerHTML = `<div class="muted">${t('msg_cred_session_expired')}</div>`;
+          return;
+        }
+        const { data, error } = await withUiTimeout(
+          supabase
+            .from('stock_requests')
+            .select('*')
+            .eq('employee_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(30),
+          STOCK_REQUEST_TIMEOUT_MS,
+          t('stock_request_timeout')
+        );
         if (error) throw error;
         if (!data || data.length === 0) {
           if (content) content.innerHTML = "<div class=\"empty-state\">📋 Aucune demande pour l'instant.</div>";
@@ -4177,7 +4293,7 @@
           }).join('');
         }
       } catch (err) {
-        if (content) content.innerHTML = `<div class="muted">❌ ${getFriendlyErrorMessage(err)}</div>`;
+        if (content) content.innerHTML = `<div class="muted">${t('stock_requests_load_error')}</div>`;
       }
     };
 
@@ -5033,6 +5149,10 @@
       document.getElementById('remunerationsListBtn')?.classList.toggle('hidden', !isAdmin());
       document.getElementById('sectionEquipe')?.classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('sectionFinance')?.classList.toggle('hidden', !isManagerOrAdmin());
+      const hideEmployeeOnly = String(state.profile?.role || '').toLowerCase() === 'employee';
+      document.getElementById('statsBalanceMenuBtn')?.classList.toggle('hidden', hideEmployeeOnly);
+      document.getElementById('depensesMenuBtn')?.classList.toggle('hidden', hideEmployeeOnly);
+      document.getElementById('settingsExportCloudOption')?.classList.toggle('hidden', hideEmployeeOnly);
 
       updateDarkModeBtn();
       initAccordions();
@@ -6835,6 +6955,8 @@
     };
 
     window.openSettingsHubModal = function () {
+      const hideForEmployee = String(state.profile?.role || '').toLowerCase() === 'employee';
+      document.getElementById('settingsExportCloudOption')?.classList.toggle('hidden', hideForEmployee);
       openModal('settingsHubModal');
     };
 
@@ -8098,6 +8220,28 @@
       showSessionStatus(t('msg_export_ok'), 'success');
     };
 
+    async function ensureActiveSession() {
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (!sessionError && sessionData?.session) {
+          state.session = sessionData.session;
+          return sessionData.session;
+        }
+      } catch (e) {
+        console.warn('[session] getSession failed:', e?.message);
+      }
+      try {
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError && refreshData?.session) {
+          state.session = refreshData.session;
+          return refreshData.session;
+        }
+      } catch (e) {
+        console.warn('[session] refreshSession failed:', e?.message);
+      }
+      return null;
+    }
+
     window.openPasswordModal = function () {
       closeAllMenus();
       document.getElementById('oldPassword').value = '';
@@ -8132,9 +8276,10 @@
         return showSessionStatus(msg, 'error');
       }
 
-      const email = state.profile?.email || state.session?.user?.email;
+      const activeSession = await ensureActiveSession();
+      const email = activeSession?.user?.email || state.profile?.email || state.session?.user?.email;
       if (!email) {
-        const msg = '❌ Session invalide. Reconnectez-vous.';
+        const msg = t('msg_cred_session_expired');
         if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
         return showSessionStatus(msg, 'error');
       }
