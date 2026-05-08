@@ -1274,6 +1274,9 @@
         msg_cred_updated: '✅ Identifiants mis à jour',
         msg_cred_session_expired: '❌ Session expirée. Déconnectez-vous puis reconnectez-vous.',
         msg_cred_server_error: '❌ Erreur serveur/API',
+        msg_cred_access_denied: '❌ Accès refusé : rôle admin ou manager requis',
+        msg_cred_invalid_target: '❌ Action disponible uniquement pour un autre compte employé',
+        msg_cred_modal_open_failed: '❌ Impossible d’ouvrir la fenêtre identifiants. Réessayez.',
         msg_data_refreshed: '✅ Données actualisées',
         msg_refresh_error: '❌ Erreur actualisation',
         msg_session_expired: '⚠️ Session expirée — reconnectez-vous',
@@ -1496,6 +1499,9 @@
         msg_cred_updated: '✅ تم تحديث بيانات الدخول',
         msg_cred_session_expired: '❌ انتهت الجلسة. سجّل الخروج ثم ادخل مجددًا.',
         msg_cred_server_error: '❌ خطأ في الخادم/API',
+        msg_cred_access_denied: '❌ تم رفض الوصول: يلزم دور مسؤول أو مدير',
+        msg_cred_invalid_target: '❌ هذا الإجراء متاح فقط لحساب موظف آخر',
+        msg_cred_modal_open_failed: '❌ تعذر فتح نافذة بيانات الدخول. حاول مرة أخرى.',
         msg_data_refreshed: '✅ تم تحديث البيانات',
         msg_refresh_error: '❌ خطأ في التحديث',
         msg_session_expired: '⚠️ انتهت الجلسة — أعد الاتصال',
@@ -1718,6 +1724,9 @@
         msg_cred_updated: '✅ Identifiants tbddlou',
         msg_cred_session_expired: '❌ Session salat. Déconnecti w reconnecti.',
         msg_cred_server_error: '❌ Khata f server/API',
+        msg_cred_access_denied: '❌ Accès refusé : khas admin wela manager',
+        msg_cred_invalid_target: '❌ Had l action ghir l compte employé akhor',
+        msg_cred_modal_open_failed: '❌ Ma t7ellatch fenêtre dial identifiants. 3awed jarrab.',
         msg_data_refreshed: '✅ Data tjannat',
         msg_refresh_error: '❌ Mcheklat f ltajdid',
         msg_session_expired: '⚠️ Session salaet — connecti men jdid',
@@ -8161,9 +8170,9 @@
     let _pendingCredentialsUserId = null;
 
     window.openUserCredentialsModal = function (userId) {
-      if (!isManagerOrAdmin()) return;
+      if (!isManagerOrAdmin()) return false;
       const user = state.allUsers.find(u => u.id === userId);
-      if (!user || user.id === state.session?.user?.id || user.role !== 'employee') return;
+      if (!user || user.id === state.session?.user?.id || user.role !== 'employee') return false;
 
       _pendingCredentialsUserId = userId;
       const currentEmailEl = document.getElementById('userCredentialsCurrentEmail');
@@ -8187,6 +8196,7 @@
       }
 
       openModal('userCredentialsModal');
+      return !!document.getElementById('userCredentialsModal')?.classList.contains('show');
     };
 
     window.saveUserCredentials = async function () {
@@ -9387,12 +9397,37 @@
     };
 
     window.openEditEmployeeCredentialsModal = function () {
+      const statusEl = document.getElementById('editEmployeeStatus');
       const userId = document.getElementById('editEmployeeUserId')?.value;
-      if (!userId) return;
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+      if (!userId) {
+        if (statusEl) { statusEl.textContent = t('msg_cred_invalid_target'); statusEl.style.color = '#e53935'; }
+        return;
+      }
       const user = state.allUsers.find(u => u.id === userId);
-      if (!isManagerOrAdmin() || !user || user.id === state.session?.user?.id || user.role !== 'employee') return;
+      if (!isManagerOrAdmin()) {
+        if (statusEl) { statusEl.textContent = t('msg_cred_access_denied'); statusEl.style.color = '#e53935'; }
+        return;
+      }
+      if (!user || user.id === state.session?.user?.id || user.role !== 'employee') {
+        if (statusEl) { statusEl.textContent = t('msg_cred_invalid_target'); statusEl.style.color = '#e53935'; }
+        return;
+      }
+      if (typeof window.openUserCredentialsModal !== 'function') {
+        if (statusEl) { statusEl.textContent = t('msg_cred_modal_open_failed'); statusEl.style.color = '#e53935'; }
+        return;
+      }
+      let opened = false;
+      try {
+        opened = window.openUserCredentialsModal(userId);
+      } catch (err) {
+        console.warn('[openEditEmployeeCredentialsModal] erreur :', err?.message);
+      }
+      if (!opened) {
+        if (statusEl) { statusEl.textContent = t('msg_cred_modal_open_failed'); statusEl.style.color = '#e53935'; }
+        return;
+      }
       closeModal('editEmployeeModal');
-      openUserCredentialsModal(userId);
     };
 
     window.saveEditEmployee = async function () {
