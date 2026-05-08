@@ -9423,7 +9423,7 @@
       } catch (err) {
         console.warn('[openEditEmployeeCredentialsModal] erreur :', err?.message);
       }
-      if (!opened || !document.getElementById('userCredentialsModal')?.classList.contains('show')) {
+      if (!opened) {
         if (statusEl) { statusEl.textContent = t('msg_cred_modal_open_failed'); statusEl.style.color = '#e53935'; }
         return;
       }
