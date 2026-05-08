@@ -1008,6 +1008,7 @@
         <input type="number" id="editEmployeeFuel" min="0" step="0.01" placeholder="0" />
       </div>
       <div id="editEmployeeStatus" style="font-size:13px;min-height:18px;margin:8px 0;"></div>
+      <button type="button" id="editEmployeeCredentialsBtn" onclick="openEditEmployeeCredentialsModal()" data-i18n="cred_action" style="display:none;">🔐 Identifiants</button>
       <button type="button" onclick="saveEditEmployee()">💾 Enregistrer</button>
     </div>
   </div>
@@ -9370,6 +9371,8 @@
       const salaryEl = document.getElementById('editEmployeeFixedSalary');
       const fuelEl   = document.getElementById('editEmployeeFuel');
       const statusEl = document.getElementById('editEmployeeStatus');
+      const credentialsBtnEl = document.getElementById('editEmployeeCredentialsBtn');
+      const canManageCredentials = isManagerOrAdmin() && user.id !== state.session?.user?.id && user.role === 'employee';
       if (titleEl)  titleEl.textContent = `✏️ Modifier : ${user.full_name || user.email || '—'}`;
       if (idEl)     idEl.value         = userId;
       if (nameEl)   nameEl.value       = user.full_name || '';
@@ -9378,8 +9381,18 @@
       if (salaryEl) salaryEl.value     = user.fixed_monthly_salary != null ? user.fixed_monthly_salary : '';
       if (fuelEl)   fuelEl.value       = user.fuel_allowance != null ? user.fuel_allowance : '';
       if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+      if (credentialsBtnEl) credentialsBtnEl.style.display = canManageCredentials ? '' : 'none';
       window.toggleEditEmployeeFixed();
       openModal('editEmployeeModal');
+    };
+
+    window.openEditEmployeeCredentialsModal = function () {
+      const userId = document.getElementById('editEmployeeUserId')?.value;
+      if (!userId) return;
+      const user = state.allUsers.find(u => u.id === userId);
+      if (!isManagerOrAdmin() || !user || user.id === state.session?.user?.id || user.role !== 'employee') return;
+      closeModal('editEmployeeModal');
+      openUserCredentialsModal(userId);
     };
 
     window.saveEditEmployee = async function () {
