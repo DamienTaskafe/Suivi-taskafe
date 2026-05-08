@@ -32,12 +32,26 @@ module.exports = async (req, res) => {
 
     const body = parseBody(req);
     const userId = String(body?.userId || '').trim();
-    const email = String(body?.email || '').trim().toLowerCase();
-    const password = String(body?.password || '');
+    const rawEmail = body?.email;
+    const rawPassword = body?.password;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId manquant ou invalide' });
     }
+
+    if (userId === caller.id) {
+      return res.status(403).json({ error: 'Impossible de modifier vos propres identifiants via cette action' });
+    }
+
+    if (rawEmail != null && typeof rawEmail !== 'string') {
+      return res.status(400).json({ error: 'email invalide' });
+    }
+    if (rawPassword != null && typeof rawPassword !== 'string') {
+      return res.status(400).json({ error: 'password invalide' });
+    }
+
+    const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
+    const password = typeof rawPassword === 'string' ? rawPassword : '';
 
     const hasEmail = email.length > 0;
     const hasPassword = password.length > 0;
@@ -75,7 +89,12 @@ module.exports = async (req, res) => {
     const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, updates);
     if (authError) {
       const raw = String(authError.message || '').toLowerCase();
-      const alreadyExists = raw.includes('already') || raw.includes('registered') || raw.includes('duplicate');
+      const alreadyExists =
+        raw.includes('already') ||
+        raw.includes('registered') ||
+        raw.includes('duplicate') ||
+        authError.code === 'email_exists' ||
+        authError.status === 422;
       return res.status(alreadyExists ? 409 : 500).json({ error: authError.message || 'Échec mise à jour utilisateur' });
     }
 

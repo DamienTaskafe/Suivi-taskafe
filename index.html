@@ -8200,8 +8200,8 @@
       const saveBtn = document.getElementById('userCredentialsSaveBtn');
 
       const emailRaw = String(emailEl?.value || '').trim().toLowerCase();
-      const password = String(pwdEl?.value || '');
-      const confirmPassword = String(confirmEl?.value || '');
+      const password = pwdEl?.value ?? '';
+      const confirmPassword = confirmEl?.value ?? '';
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
       if (statusEl) {
@@ -8252,7 +8252,13 @@
 
       try {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          if (statusEl) {
+            statusEl.textContent = t('msg_cred_session_expired');
+            statusEl.style.color = '#e53935';
+          }
+          return;
+        }
         const accessToken = sessionData?.session?.access_token || state.session?.access_token;
 
         if (!accessToken) {
