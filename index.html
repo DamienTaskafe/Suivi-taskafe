@@ -8173,6 +8173,8 @@
       if (!isManagerOrAdmin()) return false;
       const user = state.allUsers.find(u => u.id === userId);
       if (!user || user.id === state.session?.user?.id || user.role !== 'employee') return false;
+      const modalEl = document.getElementById('userCredentialsModal');
+      if (!modalEl) return false;
 
       _pendingCredentialsUserId = userId;
       const currentEmailEl = document.getElementById('userCredentialsCurrentEmail');
@@ -8196,7 +8198,7 @@
       }
 
       openModal('userCredentialsModal');
-      return !!document.getElementById('userCredentialsModal')?.classList.contains('show');
+      return true;
     };
 
     window.saveUserCredentials = async function () {
@@ -8262,15 +8264,14 @@
       }
 
       try {
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-          if (statusEl) {
-            statusEl.textContent = t('msg_cred_session_expired');
-            statusEl.style.color = '#e53935';
+        const { data: sessionData } = await supabase.auth.getSession();
+        let accessToken = sessionData?.session?.access_token || state.session?.access_token;
+        if (!accessToken) {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError) {
+            accessToken = refreshData?.session?.access_token || accessToken;
           }
-          return;
         }
-        const accessToken = sessionData?.session?.access_token || state.session?.access_token;
 
         if (!accessToken) {
           if (statusEl) {
@@ -9417,17 +9418,23 @@
         if (statusEl) { statusEl.textContent = t('msg_cred_modal_open_failed'); statusEl.style.color = '#e53935'; }
         return;
       }
-      let opened = false;
-      try {
-        opened = window.openUserCredentialsModal(userId);
-      } catch (err) {
-        console.warn('[openEditEmployeeCredentialsModal] erreur :', err?.message);
-      }
-      if (!opened) {
-        if (statusEl) { statusEl.textContent = t('msg_cred_modal_open_failed'); statusEl.style.color = '#e53935'; }
-        return;
-      }
+      const employeeProfileModalEl = document.getElementById('employeeProfileModal');
+      const shouldCloseEmployeeProfile = !!employeeProfileModalEl?.classList.contains('show');
       closeModal('editEmployeeModal');
+      if (shouldCloseEmployeeProfile) closeModal('employeeProfileModal');
+
+      requestAnimationFrame(() => {
+        let opened = false;
+        try {
+          opened = window.openUserCredentialsModal(userId);
+        } catch (err) {
+          console.warn('[openEditEmployeeCredentialsModal] erreur :', err?.message);
+        }
+        if (opened) return;
+        if (shouldCloseEmployeeProfile) openModal('employeeProfileModal');
+        openModal('editEmployeeModal');
+        if (statusEl) { statusEl.textContent = t('msg_cred_modal_open_failed'); statusEl.style.color = '#e53935'; }
+      });
     };
 
     window.saveEditEmployee = async function () {
