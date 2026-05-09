@@ -129,6 +129,8 @@
           <button type="button" id="employesMenuBtn" onclick="openEmployesModal()" class="hidden" data-i18n="menu_employes">👥 Employés</button>
           <!-- ── Clients par commercial (manager/admin only) ─────────────── -->
           <button type="button" id="clientsParCommercialMenuBtn" onclick="openClientsParCommercialModal()" class="hidden" data-i18n="menu_clientsParCommercial">👥 Clients par commercial</button>
+          <!-- ── Achats en gros (manager/admin only) ─────────────────────── -->
+          <button type="button" id="achatsGrosMenuBtn" onclick="openWholesalePurchasesModal()" class="hidden" data-i18n="menu_achatsGros">🧾 Achats en gros</button>
           <!-- ── Notifications settings ──────────────────────────────────── -->
           <button type="button" onclick="openNotifSettingsModal()" data-i18n="menu_notificationsReglages">🔔 Notifications</button>
           <!-- ── Paramètres ──────────────────────────────────────────────── -->
@@ -1023,6 +1025,110 @@
     </div>
   </div>
 
+  <!-- ── Achats en gros Modal (admin/manager only) ─────────────────────────── -->
+  <div id="wholesalePurchasesModal" class="modal-backdrop" onclick="backdropClose(event, 'wholesalePurchasesModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3 data-i18n="wholesale_title">🧾 Achats en gros</h3>
+        <button class="close-x" onclick="closeModal('wholesalePurchasesModal')">✕</button>
+      </div>
+
+      <div class="settings-option" style="margin-bottom:12px;">
+        <h4 style="margin:0 0 10px;" data-i18n="wholesale_add_purchase">➕ Ajouter achat</h4>
+        <label for="wholesalePurchaseSupplier" data-i18n="wholesale_supplier">Fournisseur</label>
+        <input id="wholesalePurchaseSupplier" type="text" data-i18n-placeholder="wholesale_supplier_placeholder" placeholder="Nom fournisseur" />
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div>
+            <label for="wholesalePurchaseDate" data-i18n="wholesale_purchase_date">Date achat</label>
+            <input id="wholesalePurchaseDate" type="date" onchange="syncWholesalePurchaseMonthFromDate(); updateWholesalePurchaseTotalPreview();" />
+          </div>
+          <div>
+            <label for="wholesalePurchaseMonth" data-i18n="wholesale_month">Mois</label>
+            <input id="wholesalePurchaseMonth" type="month" />
+          </div>
+        </div>
+
+        <label for="wholesalePurchaseCategory" style="margin-top:8px;" data-i18n="wholesale_product_range">Gamme / produit</label>
+        <select id="wholesalePurchaseCategory">
+          <option value="" data-i18n="wholesale_all_ranges">—</option>
+          <option value="ORO">ORO</option>
+          <option value="RIO">RIO</option>
+          <option value="ESPRESSO">ESPRESSO</option>
+          <option value="CLASSIC">CLASSIC</option>
+          <option value="SANTOS">SANTOS</option>
+          <option value="SUCRE">SUCRE</option>
+        </select>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div>
+            <label for="wholesalePurchaseQtyKg" data-i18n="wholesale_quantity_kg">Quantité kg</label>
+            <input id="wholesalePurchaseQtyKg" type="number" min="0.01" step="0.01" placeholder="0" oninput="updateWholesalePurchaseTotalPreview()" />
+          </div>
+          <div>
+            <label for="wholesalePurchaseUnitPrice" data-i18n="wholesale_purchase_price_kg">Prix achat/kg</label>
+            <input id="wholesalePurchaseUnitPrice" type="number" min="0.01" step="0.01" placeholder="0" oninput="updateWholesalePurchaseTotalPreview()" />
+          </div>
+        </div>
+
+        <div style="margin-top:8px;font-size:13px;">
+          <span class="muted" data-i18n="wholesale_line_total_gross">Total brut ligne</span>
+          <strong id="wholesalePurchaseTotalGrossPreview" style="margin-left:6px;">0.00 DHS</strong>
+        </div>
+
+        <label for="wholesalePurchaseNote" style="margin-top:8px;" data-i18n="wholesale_note_optional">Note (optionnelle)</label>
+        <input id="wholesalePurchaseNote" type="text" data-i18n-placeholder="wholesale_note_placeholder" placeholder="Note" />
+
+        <button type="button" onclick="saveWholesalePurchase()" style="margin-top:10px;width:100%;" data-i18n="wholesale_add_purchase">➕ Ajouter achat</button>
+        <div id="wholesalePurchaseStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+
+      <div class="settings-option" style="margin-bottom:12px;">
+        <h4 style="margin:0 0 10px;" data-i18n="wholesale_add_payment">💳 Ajouter paiement</h4>
+        <label for="wholesalePaymentSupplier" data-i18n="wholesale_supplier">Fournisseur</label>
+        <input id="wholesalePaymentSupplier" type="text" data-i18n-placeholder="wholesale_supplier_placeholder" placeholder="Nom fournisseur" />
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div>
+            <label for="wholesalePaymentMonth" data-i18n="wholesale_month">Mois</label>
+            <input id="wholesalePaymentMonth" type="month" />
+          </div>
+          <div>
+            <label for="wholesalePaymentDate" data-i18n="wholesale_payment_date">Date paiement</label>
+            <input id="wholesalePaymentDate" type="date" />
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div>
+            <label for="wholesalePaymentAmount" data-i18n="wholesale_paid_amount">Montant payé</label>
+            <input id="wholesalePaymentAmount" type="number" min="0.01" step="0.01" placeholder="0" />
+          </div>
+          <div>
+            <label for="wholesalePaymentMethod" data-i18n="wholesale_payment_method">Méthode</label>
+            <select id="wholesalePaymentMethod">
+              <option value="cash" data-i18n="wholesale_method_cash">Cash</option>
+              <option value="transfer" data-i18n="wholesale_method_transfer">Virement</option>
+              <option value="check" data-i18n="wholesale_method_check">Chèque</option>
+              <option value="other" data-i18n="wholesale_method_other">Autre</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="wholesalePaymentNote" style="margin-top:8px;" data-i18n="wholesale_note_optional">Note (optionnelle)</label>
+        <input id="wholesalePaymentNote" type="text" data-i18n-placeholder="wholesale_note_placeholder" placeholder="Note" />
+
+        <button type="button" onclick="saveWholesalePayment()" style="margin-top:10px;width:100%;" data-i18n="wholesale_add_payment">💳 Ajouter paiement</button>
+        <div id="wholesalePaymentStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+
+      <div>
+        <h4 style="margin:0 0 10px;" data-i18n="wholesale_monthly_groups">📚 Regroupement fournisseur + mois</h4>
+        <div id="wholesaleGroupsList" style="max-height:42vh;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Edit Employee Modal (admin/manager only) ─────────────────────────────── -->
   <div id="editEmployeeModal" class="modal-backdrop" onclick="backdropClose(event, 'editEmployeeModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
@@ -1410,6 +1516,52 @@
         client_sans_commercial: 'Sans commercial',
         client_par_commercial_vide: 'Aucun client enregistré.',
         client_par_commercial_aucun_match: 'Aucun résultat pour cette recherche.',
+        menu_achatsGros: '🧾 Achats en gros',
+        wholesale_title: '🧾 Achats en gros',
+        wholesale_add_purchase: '➕ Ajouter achat',
+        wholesale_add_payment: '💳 Ajouter paiement',
+        wholesale_supplier: 'Fournisseur',
+        wholesale_supplier_placeholder: 'Nom fournisseur',
+        wholesale_month: 'Mois',
+        wholesale_purchase_date: 'Date achat',
+        wholesale_payment_date: 'Date paiement',
+        wholesale_product_range: 'Gamme / produit',
+        wholesale_all_ranges: '—',
+        wholesale_quantity_kg: 'Quantité kg',
+        wholesale_purchase_price_kg: 'Prix achat/kg',
+        wholesale_line_total_gross: 'Total brut ligne',
+        wholesale_total_gross: 'Total brut',
+        wholesale_total_kg_month: 'Total kg mensuel',
+        wholesale_tier_discount: 'Remise palier',
+        wholesale_tier_reached: 'Palier atteint',
+        wholesale_tier_not_reached: 'Palier non atteint',
+        wholesale_supplier_total_net: 'Total net fournisseur',
+        wholesale_payments: 'Paiements',
+        wholesale_paid_amount: 'Montant payé',
+        wholesale_total_paid: 'Total payé',
+        wholesale_remaining_to_pay: 'Reste à payer',
+        wholesale_real_remaining_to_pay: 'Reste réel à payer',
+        wholesale_last_payment_regularization: 'Régularisation dernier versement',
+        wholesale_status_unpaid: 'Non payé',
+        wholesale_status_partial: 'Partiel',
+        wholesale_status_paid: 'Payé',
+        wholesale_payment_method: 'Méthode',
+        wholesale_method_cash: 'Cash',
+        wholesale_method_transfer: 'Virement',
+        wholesale_method_check: 'Chèque',
+        wholesale_method_other: 'Autre',
+        wholesale_no_purchases: 'Aucun achat enregistré',
+        wholesale_no_payments: 'Aucun paiement enregistré',
+        wholesale_note_optional: 'Note (optionnelle)',
+        wholesale_note_placeholder: 'Note',
+        wholesale_monthly_groups: '📚 Regroupement fournisseur + mois',
+        wholesale_group_payment_action: '➕ Ajouter paiement sur ce groupe',
+        wholesale_purchase_history: 'Achats',
+        wholesale_status_label: 'Statut paiement',
+        wholesale_saved_purchase: '✅ Achat enregistré',
+        wholesale_saved_payment: '✅ Paiement enregistré',
+        wholesale_error_required_fields: '❌ Champs requis manquants',
+        wholesale_error_positive_values: '❌ Quantité, prix et montant doivent être > 0',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1668,6 +1820,52 @@
         client_sans_commercial: 'بدون مندوب',
         client_par_commercial_vide: 'لا يوجد عملاء مسجّلون.',
         client_par_commercial_aucun_match: 'لا توجد نتائج لهذا البحث.',
+        menu_achatsGros: '🧾 مشتريات الجملة',
+        wholesale_title: '🧾 مشتريات الجملة',
+        wholesale_add_purchase: '➕ إضافة عملية شراء',
+        wholesale_add_payment: '💳 إضافة دفعة',
+        wholesale_supplier: 'المورّد',
+        wholesale_supplier_placeholder: 'اسم المورّد',
+        wholesale_month: 'الشهر',
+        wholesale_purchase_date: 'تاريخ الشراء',
+        wholesale_payment_date: 'تاريخ الدفع',
+        wholesale_product_range: 'الصنف / المنتج',
+        wholesale_all_ranges: '—',
+        wholesale_quantity_kg: 'الكمية بالكيلوغرام',
+        wholesale_purchase_price_kg: 'سعر الشراء/كغ',
+        wholesale_line_total_gross: 'إجمالي السطر قبل الخصم',
+        wholesale_total_gross: 'الإجمالي قبل الخصم',
+        wholesale_total_kg_month: 'إجمالي كغ الشهري',
+        wholesale_tier_discount: 'خصم الشريحة',
+        wholesale_tier_reached: 'تم بلوغ الشريحة',
+        wholesale_tier_not_reached: 'لم يتم بلوغ الشريحة',
+        wholesale_supplier_total_net: 'الإجمالي الصافي للمورّد',
+        wholesale_payments: 'الدفعات',
+        wholesale_paid_amount: 'المبلغ المدفوع',
+        wholesale_total_paid: 'إجمالي المدفوع',
+        wholesale_remaining_to_pay: 'المتبقي للدفع',
+        wholesale_real_remaining_to_pay: 'المتبقي الحقيقي للدفع',
+        wholesale_last_payment_regularization: 'تسوية الدفعة الأخيرة',
+        wholesale_status_unpaid: 'غير مدفوع',
+        wholesale_status_partial: 'جزئي',
+        wholesale_status_paid: 'مدفوع',
+        wholesale_payment_method: 'طريقة الدفع',
+        wholesale_method_cash: 'نقداً',
+        wholesale_method_transfer: 'تحويل',
+        wholesale_method_check: 'شيك',
+        wholesale_method_other: 'أخرى',
+        wholesale_no_purchases: 'لا توجد مشتريات مسجّلة',
+        wholesale_no_payments: 'لا توجد دفعات مسجّلة',
+        wholesale_note_optional: 'ملاحظة (اختيارية)',
+        wholesale_note_placeholder: 'ملاحظة',
+        wholesale_monthly_groups: '📚 تجميع حسب المورّد + الشهر',
+        wholesale_group_payment_action: '➕ إضافة دفعة لهذا التجميع',
+        wholesale_purchase_history: 'المشتريات',
+        wholesale_status_label: 'حالة الدفع',
+        wholesale_saved_purchase: '✅ تم حفظ عملية الشراء',
+        wholesale_saved_payment: '✅ تم حفظ الدفعة',
+        wholesale_error_required_fields: '❌ حقول مطلوبة ناقصة',
+        wholesale_error_positive_values: '❌ يجب أن تكون الكمية والسعر والمبلغ أكبر من 0',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -1926,6 +2124,52 @@
         client_sans_commercial: 'Bla commercial',
         client_par_commercial_vide: 'Ma kayn ta client msajjel.',
         client_par_commercial_aucun_match: 'Ma kayn ta natija l had lbheth.',
+        menu_achatsGros: '🧾 Chri b l3la',
+        wholesale_title: '🧾 Chri b l3la',
+        wholesale_add_purchase: '➕ Zid chri',
+        wholesale_add_payment: '💳 Zid versement',
+        wholesale_supplier: 'Fournisseur',
+        wholesale_supplier_placeholder: 'Smiya dyal fournisseur',
+        wholesale_month: 'Chhar',
+        wholesale_purchase_date: 'Tarikh chri',
+        wholesale_payment_date: 'Tarikh lkhless',
+        wholesale_product_range: 'Gamme / produit',
+        wholesale_all_ranges: '—',
+        wholesale_quantity_kg: 'Kmiya kg',
+        wholesale_purchase_price_kg: 'Taman chri/kg',
+        wholesale_line_total_gross: 'Majmou3 brut dyal lligne',
+        wholesale_total_gross: 'Total brut',
+        wholesale_total_kg_month: 'Total kg chahri',
+        wholesale_tier_discount: 'Remise palier',
+        wholesale_tier_reached: 'Palier twssel',
+        wholesale_tier_not_reached: 'Palier ma twsselch',
+        wholesale_supplier_total_net: 'Total net fournisseur',
+        wholesale_payments: 'Versements',
+        wholesale_paid_amount: 'Montant mkhelles',
+        wholesale_total_paid: 'Total mkhelles',
+        wholesale_remaining_to_pay: 'Baqi tkhlles',
+        wholesale_real_remaining_to_pay: 'Baqi l7a9i9i tkhlles',
+        wholesale_last_payment_regularization: 'Taswiya dyal akher versement',
+        wholesale_status_unpaid: 'Ma tkhllesch',
+        wholesale_status_partial: 'Partiel',
+        wholesale_status_paid: 'Tkhlles',
+        wholesale_payment_method: 'Tariqat lkhless',
+        wholesale_method_cash: 'Cash',
+        wholesale_method_transfer: 'Virement',
+        wholesale_method_check: 'Chèque',
+        wholesale_method_other: 'Akhor',
+        wholesale_no_purchases: 'Ma kayn ta chri msajjel',
+        wholesale_no_payments: 'Ma kayn ta versement msajjel',
+        wholesale_note_optional: 'Note (ikhtiyariya)',
+        wholesale_note_placeholder: 'Note',
+        wholesale_monthly_groups: '📚 Tajmi3 fournisseur + chhar',
+        wholesale_group_payment_action: '➕ Zid versement l had tajmi3',
+        wholesale_purchase_history: 'Chriyat',
+        wholesale_status_label: 'Statut dyal lkhless',
+        wholesale_saved_purchase: '✅ Chri ttsajjel',
+        wholesale_saved_payment: '✅ Versement ttsajjel',
+        wholesale_error_required_fields: '❌ Kaynin champs khasrin',
+        wholesale_error_positive_values: '❌ Kmiya w taman w montant khashom ykono > 0',
       },
     };
 
@@ -1979,6 +2223,12 @@
         if (prevMain && document.getElementById('category')) document.getElementById('category').value = prevMain;
         if (prevEdit && document.getElementById('editSaleCategory')) document.getElementById('editSaleCategory').value = prevEdit;
         if (prevFilter && document.getElementById('filterCategory')) document.getElementById('filterCategory').value = prevFilter;
+      }
+
+      if (typeof renderWholesalePurchases === 'function' &&
+          document.getElementById('wholesalePurchasesModal')?.classList.contains('show')) {
+        renderWholesalePurchases();
+        window.updateWholesalePurchaseTotalPreview?.();
       }
 
       localStorage.setItem('preferred_language', lang);
@@ -5284,6 +5534,7 @@
 
       document.getElementById('employesMenuBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('clientsParCommercialMenuBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('achatsGrosMenuBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('usersBtn')?.classList.toggle('hidden', !isManagerOrAdmin());
       document.getElementById('logsBtnMenu')?.classList.toggle('hidden', !isAdmin());
       document.getElementById('resetAppBtn')?.classList.toggle('hidden', !isAdmin());
@@ -7363,6 +7614,393 @@
     window.openNotifSettingsModal = function () {
       _refreshPushSettingsUI();
       openModal('notifSettingsModal');
+    };
+
+    // ── Achats en gros fournisseur (admin/manager) ────────────────────────────
+    const WHOLESALE_THRESHOLD_KG = 1000;
+    const WHOLESALE_DISCOUNT_DH_PER_KG = 3;
+    const LS_WHOLESALE_PURCHASES = 'wholesalePurchases';
+    const LS_WHOLESALE_PAYMENTS = 'wholesalePayments';
+
+    let _wholesalePurchases = [];
+    let _wholesalePayments = [];
+    let _wholesaleLoaded = false;
+    let _wholesaleGroupsCache = [];
+
+    function wholesaleNowDate() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function wholesaleCurrentMonth() {
+      return wholesaleNowDate().slice(0, 7);
+    }
+
+    function normalizeWholesaleSupplier(value) {
+      return String(value || '').trim();
+    }
+
+    function wholesaleMonthFromDate(dateValue) {
+      const date = String(dateValue || '').trim();
+      return date.length >= 7 ? date.slice(0, 7) : '';
+    }
+
+    function loadWholesaleData() {
+      if (_wholesaleLoaded) return;
+      _wholesaleLoaded = true;
+      try {
+        const parsed = JSON.parse(localStorage.getItem(LS_WHOLESALE_PURCHASES) || '[]');
+        _wholesalePurchases = Array.isArray(parsed) ? parsed.map((p, idx) => {
+          const supplier = normalizeWholesaleSupplier(p.supplier);
+          const month = String(p.month || wholesaleMonthFromDate(p.date) || '').slice(0, 7);
+          const quantity = Number(p.quantity_kg ?? 0);
+          const unitPrice = Number(p.unit_price_kg ?? 0);
+          return {
+            id: p.id || `wp_${Date.now()}_${idx}`,
+            supplier,
+            month,
+            date: String(p.date || (month ? `${month}-01` : '')).slice(0, 10),
+            category: p.category || '',
+            quantity_kg: quantity,
+            unit_price_kg: unitPrice,
+            total_gross: Number(p.total_gross ?? quantity * unitPrice),
+            note: p.note ? String(p.note) : '',
+            created_at: p.created_at || new Date().toISOString()
+          };
+        }).filter(p => p.supplier && p.month) : [];
+      } catch (e) {
+        console.warn('[loadWholesaleData] purchases parse error:', e?.message);
+        _wholesalePurchases = [];
+      }
+
+      try {
+        const parsed = JSON.parse(localStorage.getItem(LS_WHOLESALE_PAYMENTS) || '[]');
+        _wholesalePayments = Array.isArray(parsed) ? parsed.map((p, idx) => ({
+          id: p.id || `wpay_${Date.now()}_${idx}`,
+          supplier: normalizeWholesaleSupplier(p.supplier),
+          month: String(p.month || '').slice(0, 7),
+          date: String(p.date || '').slice(0, 10),
+          amount: Number(p.amount ?? 0),
+          method: ['cash', 'transfer', 'check', 'other'].includes(p.method) ? p.method : 'other',
+          note: p.note ? String(p.note) : '',
+          created_at: p.created_at || new Date().toISOString()
+        })).filter(p => p.supplier && p.month) : [];
+      } catch (e) {
+        console.warn('[loadWholesaleData] payments parse error:', e?.message);
+        _wholesalePayments = [];
+      }
+    }
+
+    function persistWholesaleData() {
+      localStorage.setItem(LS_WHOLESALE_PURCHASES, JSON.stringify(_wholesalePurchases));
+      localStorage.setItem(LS_WHOLESALE_PAYMENTS, JSON.stringify(_wholesalePayments));
+    }
+
+    function setWholesaleStatus(id, message, type = 'success') {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = message;
+      el.style.color = type === 'error' ? 'var(--color-error,#c0392b)' : 'var(--color-text)';
+    }
+
+    window.syncWholesalePurchaseMonthFromDate = function() {
+      const dateEl = document.getElementById('wholesalePurchaseDate');
+      const monthEl = document.getElementById('wholesalePurchaseMonth');
+      if (!dateEl || !monthEl) return;
+      const monthFromDate = wholesaleMonthFromDate(dateEl.value);
+      if (monthFromDate) monthEl.value = monthFromDate;
+    };
+
+    function getWholesaleStatusKey(totalPaid, totalNet) {
+      if (totalPaid <= 0) return 'wholesale_status_unpaid';
+      if (totalPaid < totalNet) return 'wholesale_status_partial';
+      return 'wholesale_status_paid';
+    }
+
+    function getWholesalePaymentMethodLabel(method) {
+      if (method === 'cash') return t('wholesale_method_cash');
+      if (method === 'transfer') return t('wholesale_method_transfer');
+      if (method === 'check') return t('wholesale_method_check');
+      return t('wholesale_method_other');
+    }
+
+    function buildWholesaleGroups() {
+      const groupsMap = new Map();
+      _wholesalePurchases.forEach((p) => {
+        const supplier = normalizeWholesaleSupplier(p.supplier);
+        const month = String(p.month || wholesaleMonthFromDate(p.date) || '').slice(0, 7);
+        if (!supplier || !month) return;
+        const key = `${supplier.toLowerCase()}__${month}`;
+        if (!groupsMap.has(key)) {
+          groupsMap.set(key, {
+            key,
+            supplier,
+            month,
+            purchases: [],
+            payments: [],
+            totalKg: 0,
+            totalGross: 0,
+            totalPaid: 0
+          });
+        }
+        const group = groupsMap.get(key);
+        const quantity = Number(p.quantity_kg || 0);
+        const unitPrice = Number(p.unit_price_kg || 0);
+        const gross = Number(p.total_gross ?? (quantity * unitPrice));
+        group.purchases.push({ ...p, quantity_kg: quantity, unit_price_kg: unitPrice, total_gross: gross });
+        group.totalKg += quantity;
+        group.totalGross += gross;
+      });
+
+      _wholesalePayments.forEach((p) => {
+        const supplier = normalizeWholesaleSupplier(p.supplier);
+        const month = String(p.month || '').slice(0, 7);
+        if (!supplier || !month) return;
+        const key = `${supplier.toLowerCase()}__${month}`;
+        if (!groupsMap.has(key)) {
+          groupsMap.set(key, {
+            key,
+            supplier,
+            month,
+            purchases: [],
+            payments: [],
+            totalKg: 0,
+            totalGross: 0,
+            totalPaid: 0
+          });
+        }
+        const group = groupsMap.get(key);
+        const amount = Number(p.amount || 0);
+        group.payments.push({ ...p, amount });
+        group.totalPaid += amount;
+      });
+
+      const groups = Array.from(groupsMap.values()).map(group => {
+        group.purchases.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+        group.payments.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+        const discount = group.totalKg > WHOLESALE_THRESHOLD_KG ? (group.totalKg * WHOLESALE_DISCOUNT_DH_PER_KG) : 0;
+        const totalNet = group.totalGross - discount;
+        const remaining = totalNet - group.totalPaid;
+        return {
+          ...group,
+          discount,
+          totalNet,
+          remaining,
+          tierReached: group.totalKg > WHOLESALE_THRESHOLD_KG,
+          statusKey: getWholesaleStatusKey(group.totalPaid, totalNet)
+        };
+      });
+
+      groups.sort((a, b) => b.month.localeCompare(a.month) || a.supplier.localeCompare(b.supplier, 'fr', { sensitivity: 'base' }));
+      return groups;
+    }
+
+    window.updateWholesalePurchaseTotalPreview = function() {
+      const qty = Number(document.getElementById('wholesalePurchaseQtyKg')?.value || 0);
+      const unit = Number(document.getElementById('wholesalePurchaseUnitPrice')?.value || 0);
+      const previewEl = document.getElementById('wholesalePurchaseTotalGrossPreview');
+      if (previewEl) previewEl.textContent = formatDh(qty * unit);
+    };
+
+    window.prefillWholesalePaymentByGroup = function(index) {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      const group = _wholesaleGroupsCache[index];
+      if (!group) return;
+      const supplierEl = document.getElementById('wholesalePaymentSupplier');
+      const monthEl = document.getElementById('wholesalePaymentMonth');
+      const dateEl = document.getElementById('wholesalePaymentDate');
+      if (supplierEl) supplierEl.value = group.supplier;
+      if (monthEl) monthEl.value = group.month;
+      if (dateEl && !dateEl.value) dateEl.value = wholesaleNowDate();
+    };
+
+    window.saveWholesalePurchase = function() {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      loadWholesaleData();
+      const supplierEl = document.getElementById('wholesalePurchaseSupplier');
+      const dateEl = document.getElementById('wholesalePurchaseDate');
+      const monthEl = document.getElementById('wholesalePurchaseMonth');
+      const categoryEl = document.getElementById('wholesalePurchaseCategory');
+      const qtyEl = document.getElementById('wholesalePurchaseQtyKg');
+      const unitEl = document.getElementById('wholesalePurchaseUnitPrice');
+      const noteEl = document.getElementById('wholesalePurchaseNote');
+
+      const supplier = normalizeWholesaleSupplier(supplierEl?.value);
+      const date = String(dateEl?.value || '').slice(0, 10);
+      const month = String(monthEl?.value || wholesaleMonthFromDate(date) || wholesaleCurrentMonth()).slice(0, 7);
+      const quantity = Number(qtyEl?.value || 0);
+      const unitPrice = Number(unitEl?.value || 0);
+      const note = String(noteEl?.value || '').trim();
+
+      if (!supplier || !month || !date) {
+        setWholesaleStatus('wholesalePurchaseStatus', t('wholesale_error_required_fields'), 'error');
+        return;
+      }
+      if (quantity <= 0 || unitPrice <= 0) {
+        setWholesaleStatus('wholesalePurchaseStatus', t('wholesale_error_positive_values'), 'error');
+        return;
+      }
+
+      _wholesalePurchases.push({
+        id: `wp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+        supplier,
+        month,
+        date,
+        category: categoryEl?.value || '',
+        quantity_kg: quantity,
+        unit_price_kg: unitPrice,
+        total_gross: quantity * unitPrice,
+        note,
+        created_at: new Date().toISOString()
+      });
+      persistWholesaleData();
+      setWholesaleStatus('wholesalePurchaseStatus', t('wholesale_saved_purchase'));
+      if (qtyEl) qtyEl.value = '';
+      if (unitEl) unitEl.value = '';
+      if (noteEl) noteEl.value = '';
+      window.updateWholesalePurchaseTotalPreview?.();
+      renderWholesalePurchases();
+    };
+
+    window.saveWholesalePayment = function() {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      loadWholesaleData();
+      const supplierEl = document.getElementById('wholesalePaymentSupplier');
+      const monthEl = document.getElementById('wholesalePaymentMonth');
+      const dateEl = document.getElementById('wholesalePaymentDate');
+      const amountEl = document.getElementById('wholesalePaymentAmount');
+      const methodEl = document.getElementById('wholesalePaymentMethod');
+      const noteEl = document.getElementById('wholesalePaymentNote');
+
+      const supplier = normalizeWholesaleSupplier(supplierEl?.value);
+      const month = String(monthEl?.value || '').slice(0, 7);
+      const date = String(dateEl?.value || '').slice(0, 10);
+      const amount = Number(amountEl?.value || 0);
+      const method = methodEl?.value || 'other';
+      const note = String(noteEl?.value || '').trim();
+
+      if (!supplier || !month || !date) {
+        setWholesaleStatus('wholesalePaymentStatus', t('wholesale_error_required_fields'), 'error');
+        return;
+      }
+      if (amount <= 0) {
+        setWholesaleStatus('wholesalePaymentStatus', t('wholesale_error_positive_values'), 'error');
+        return;
+      }
+
+      _wholesalePayments.push({
+        id: `wpay_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+        supplier,
+        month,
+        date,
+        amount,
+        method: ['cash', 'transfer', 'check', 'other'].includes(method) ? method : 'other',
+        note,
+        created_at: new Date().toISOString()
+      });
+      persistWholesaleData();
+      setWholesaleStatus('wholesalePaymentStatus', t('wholesale_saved_payment'));
+      if (amountEl) amountEl.value = '';
+      if (noteEl) noteEl.value = '';
+      renderWholesalePurchases();
+    };
+
+    function renderWholesalePurchases() {
+      if (!isManagerOrAdmin()) return;
+      loadWholesaleData();
+      const listEl = document.getElementById('wholesaleGroupsList');
+      if (!listEl) return;
+      const groups = buildWholesaleGroups();
+      _wholesaleGroupsCache = groups;
+
+      if (groups.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">${escHtml(t('wholesale_no_purchases'))}</div>`;
+        return;
+      }
+
+      listEl.innerHTML = groups.map((group, idx) => {
+        const statusText = t(group.statusKey);
+        const statusColor = group.statusKey === 'wholesale_status_paid'
+          ? '#148c37'
+          : group.statusKey === 'wholesale_status_partial' ? '#b26a00' : '#c0392b';
+        const tierText = group.tierReached ? t('wholesale_tier_reached') : t('wholesale_tier_not_reached');
+        const purchasesHtml = group.purchases.length > 0
+          ? group.purchases.map(p => {
+            const product = p.category ? `<span class="badge ${escHtml(p.category)}">${escHtml(p.category)}</span>` : '—';
+            return `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
+              <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                <strong>${escHtml(p.date || group.month)}</strong>
+                <span>${product}</span>
+              </div>
+              <div class="muted" style="font-size:11px;">
+                ${formatQty(p.quantity_kg)} kg × ${formatDh(p.unit_price_kg)} = ${formatDh(p.total_gross)}
+              </div>
+              ${p.note ? `<div class="muted" style="font-size:11px;">${escHtml(p.note)}</div>` : ''}
+            </div>`;
+          }).join('')
+          : `<div class="muted" style="font-size:12px;">${escHtml(t('wholesale_no_purchases'))}</div>`;
+
+        const paymentsHtml = group.payments.length > 0
+          ? group.payments.map(p => `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
+            <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <strong>${escHtml(p.date || group.month)}</strong>
+              <span>${escHtml(getWholesalePaymentMethodLabel(p.method))}</span>
+            </div>
+            <div class="muted" style="font-size:11px;">${formatDh(p.amount)}</div>
+            ${p.note ? `<div class="muted" style="font-size:11px;">${escHtml(p.note)}</div>` : ''}
+          </div>`).join('')
+          : `<div class="muted" style="font-size:12px;">${escHtml(t('wholesale_no_payments'))}</div>`;
+
+        return `<div class="settings-option" style="margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
+            <strong>${escHtml(group.supplier)}</strong>
+            <span class="muted" style="font-size:12px;">${escHtml(group.month)}</span>
+          </div>
+          <div class="muted" style="font-size:11px;margin:6px 0 8px;">
+            ${escHtml(tierText)} · ${escHtml(t('wholesale_tier_discount'))}: -${formatDh(group.discount)}
+          </div>
+          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_kg_month'))}</span><span class="bal-val">${formatQty(group.totalKg)} kg</span></div>
+          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_gross'))}</span><span class="bal-val">${formatDh(group.totalGross)}</span></div>
+          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_supplier_total_net'))}</span><span class="bal-val">${formatDh(group.totalNet)}</span></div>
+          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_paid'))}</span><span class="bal-val">${formatDh(group.totalPaid)}</span></div>
+          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_remaining_to_pay'))}</span><span class="bal-val">${formatDh(group.remaining)}</span></div>
+          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_status_label'))}</span><span class="bal-val" style="color:${statusColor};">${escHtml(statusText)}</span></div>
+          <div style="margin-top:6px;font-size:12px;">
+            <strong>${escHtml(t('wholesale_last_payment_regularization'))}:</strong> -${formatDh(group.discount)}
+          </div>
+          <div style="font-size:12px;">
+            <strong>${escHtml(t('wholesale_real_remaining_to_pay'))}:</strong> ${formatDh(group.remaining)}
+          </div>
+          <button type="button" onclick="prefillWholesalePaymentByGroup(${idx})" style="width:100%;margin-top:8px;">${escHtml(t('wholesale_group_payment_action'))}</button>
+          <div style="margin-top:10px;">
+            <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${escHtml(t('wholesale_purchase_history'))}</div>
+            ${purchasesHtml}
+          </div>
+          <div style="margin-top:8px;">
+            <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${escHtml(t('wholesale_payments'))}</div>
+            ${paymentsHtml}
+          </div>
+        </div>`;
+      }).join('');
+    }
+    window.renderWholesalePurchases = renderWholesalePurchases;
+
+    window.openWholesalePurchasesModal = function () {
+      closeAllMenus();
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      loadWholesaleData();
+      const purchaseDateEl = document.getElementById('wholesalePurchaseDate');
+      const purchaseMonthEl = document.getElementById('wholesalePurchaseMonth');
+      const paymentDateEl = document.getElementById('wholesalePaymentDate');
+      const paymentMonthEl = document.getElementById('wholesalePaymentMonth');
+      if (purchaseDateEl && !purchaseDateEl.value) purchaseDateEl.value = wholesaleNowDate();
+      if (purchaseMonthEl && !purchaseMonthEl.value) purchaseMonthEl.value = wholesaleCurrentMonth();
+      if (paymentDateEl && !paymentDateEl.value) paymentDateEl.value = wholesaleNowDate();
+      if (paymentMonthEl && !paymentMonthEl.value) paymentMonthEl.value = wholesaleCurrentMonth();
+      setWholesaleStatus('wholesalePurchaseStatus', '');
+      setWholesaleStatus('wholesalePaymentStatus', '');
+      window.updateWholesalePurchaseTotalPreview?.();
+      renderWholesalePurchases();
+      openModal('wholesalePurchasesModal');
     };
 
     // ── Dépenses (stub — no feature yet) ──────────────────────────────────────
