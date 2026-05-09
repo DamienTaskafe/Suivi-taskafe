@@ -1233,6 +1233,14 @@
         <option value="payment">✅ Paiement</option>
         <option value="adjustment">🔧 Correction</option>
       </select>
+      <div id="balanceEntryAdvanceCategoryRow" style="margin-top:10px;">
+        <label for="balanceEntryAdvanceCategory">Catégorie d'avance</label>
+        <select id="balanceEntryAdvanceCategory">
+          <option value="salary">💼 Avance salaire/commission</option>
+          <option value="fuel">⛽ Avance carburant</option>
+          <option value="other">🧾 Autre avance</option>
+        </select>
+      </div>
       <div id="balanceEntryDirectionRow" style="display:none;margin-top:10px;">
         <label for="balanceEntryDirection">Direction de la correction</label>
         <select id="balanceEntryDirection">
@@ -1249,6 +1257,64 @@
       <input type="hidden" id="balanceEntryEmployeeId" />
       <input type="hidden" id="balanceEntryPeriodStart" />
       <input type="hidden" id="balanceEntryPeriodEnd" />
+    </div>
+  </div>
+
+  <!-- ── Fuel Declaration Modal (employee + admin/manager) ───────────────────── -->
+  <div id="fuelDeclarationModal" class="modal-backdrop" onclick="backdropClose(event, 'fuelDeclarationModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3 data-i18n="fuel_declare_fill">⛽ Déclarer un plein</h3>
+        <button class="close-x" onclick="closeModal('fuelDeclarationModal')">✕</button>
+      </div>
+      <label for="fuelVehicleSelect" data-i18n="fuel_vehicle">Véhicule / immatriculation</label>
+      <select id="fuelVehicleSelect" onchange="onFuelVehicleSelectChange()">
+        <option value="">—</option>
+      </select>
+      <label for="fuelVehicleRegistrationInput" style="margin-top:8px;" data-i18n="fuel_registration_optional">Immatriculation (optionnel)</label>
+      <input id="fuelVehicleRegistrationInput" type="text" placeholder="AA-123-BB" />
+      <label for="fuelCurrentKmInput" style="margin-top:8px;" data-i18n="fuel_current_km">Kilométrage actuel</label>
+      <input id="fuelCurrentKmInput" type="number" min="0" step="1" placeholder="0" />
+      <label for="fuelLitersInput" style="margin-top:8px;" data-i18n="fuel_liters">Litres</label>
+      <input id="fuelLitersInput" type="number" min="0.01" step="0.01" placeholder="0" />
+      <label for="fuelAmountInput" style="margin-top:8px;" data-i18n="fuel_amount_paid">Montant payé (DHS)</label>
+      <input id="fuelAmountInput" type="number" min="0" step="0.01" placeholder="0" />
+      <label for="fuelReceiptInput" style="margin-top:8px;" data-i18n="fuel_receipt_photo">Photo ticket/pompe (URL)</label>
+      <input id="fuelReceiptInput" type="url" placeholder="https://..." />
+      <label for="fuelCommentInput" style="margin-top:8px;" data-i18n="fuel_comment_optional">Commentaire (optionnel)</label>
+      <input id="fuelCommentInput" type="text" placeholder="..." />
+      <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelDeclaration()">💾 <span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
+      <div id="fuelDeclarationStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+    </div>
+  </div>
+
+  <!-- ── Fuel Vehicles Settings Modal (admin/manager) ────────────────────────── -->
+  <div id="fuelVehiclesModal" class="modal-backdrop" onclick="backdropClose(event, 'fuelVehiclesModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3 data-i18n="fuel_vehicle_settings">🚗 Réglages véhicules carburant</h3>
+        <button class="close-x" onclick="closeModal('fuelVehiclesModal')">✕</button>
+      </div>
+      <div id="fuelVehiclesList" style="max-height:220px;overflow:auto;margin-bottom:10px;">
+        <div class="muted">⏳ Chargement…</div>
+      </div>
+      <input type="hidden" id="fuelVehicleEditId" />
+      <label for="fuelVehicleRegistration" data-i18n="fuel_vehicle">Véhicule / immatriculation</label>
+      <input id="fuelVehicleRegistration" type="text" placeholder="AA-123-BB" />
+      <label for="fuelVehicleEmployee" style="margin-top:8px;" data-i18n="fuel_assigned_employee">Employé affecté</label>
+      <select id="fuelVehicleEmployee"></select>
+      <label for="fuelVehicleNormalConso" style="margin-top:8px;" data-i18n="fuel_normal_consumption">Consommation normale (L/100 km)</label>
+      <input id="fuelVehicleNormalConso" type="number" min="0" step="0.01" placeholder="5.5" />
+      <label for="fuelVehicleTolerance" style="margin-top:8px;" data-i18n="fuel_tolerance">Tolérance (L/100 km)</label>
+      <input id="fuelVehicleTolerance" type="number" min="0" step="0.01" placeholder="0.5" />
+      <label for="fuelVehicleInterval" style="margin-top:8px;" data-i18n="fuel_maintenance_interval">Intervalle entretien (km)</label>
+      <input id="fuelVehicleInterval" type="number" min="0" step="1" placeholder="10000" />
+      <label for="fuelVehicleLastMaintenance" style="margin-top:8px;" data-i18n="fuel_last_maintenance_km">Dernier entretien (km)</label>
+      <input id="fuelVehicleLastMaintenance" type="number" min="0" step="1" placeholder="80000" />
+      <label for="fuelVehicleCurrentKm" style="margin-top:8px;" data-i18n="fuel_current_km">Kilométrage actuel</label>
+      <input id="fuelVehicleCurrentKm" type="number" min="0" step="1" placeholder="0" />
+      <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelVehicle()">💾 <span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
+      <div id="fuelVehicleStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
   </div>
 
@@ -1503,6 +1569,45 @@
         remu_calcul_dabord: '⚠️ Calculez d\'abord les commissions',
         remu_enregistrement: '⏳ Enregistrement…',
         remu_saved: '✅ Rémunération configurée',
+        fuel_vehicle: 'Véhicule / immatriculation',
+        fuel_vehicle_settings: '🚗 Réglages véhicules carburant',
+        fuel_assigned_employee: 'Employé affecté',
+        fuel_declare_fill: '⛽ Déclarer un plein',
+        fuel_current_km: 'Kilométrage actuel',
+        fuel_liters: 'Litres',
+        fuel_amount_paid: 'Montant payé (DHS)',
+        fuel_receipt_photo: 'Photo ticket/pompe (URL)',
+        fuel_comment_optional: 'Commentaire (optionnel)',
+        fuel_registration_optional: 'Immatriculation (optionnel)',
+        fuel_monthly_reimbursement: '⏳ Remboursement prévu fin de mois',
+        fuel_status_pending: 'En attente',
+        fuel_status_validated: 'Validé pour paie',
+        fuel_status_rejected: 'Refusé',
+        fuel_status_paid: 'Payé avec paie',
+        fuel_validate: '✅ Valider',
+        fuel_reject: '❌ Refuser',
+        fuel_mark_paid: '💳 Marquer payé',
+        fuel_normal_consumption: 'Consommation normale (L/100 km)',
+        fuel_tolerance: 'Tolérance (L/100 km)',
+        fuel_abnormal_consumption: '⚠️ Consommation anormale',
+        fuel_maintenance_interval: 'Intervalle entretien (km)',
+        fuel_last_maintenance_km: 'Dernier entretien (km)',
+        fuel_maintenance_soon: '⚠️ Entretien bientôt',
+        fuel_maintenance_overdue: '⛔ Entretien dépassé',
+        fuel_validated_total: 'Total carburant validé',
+        fuel_advances_total: 'Avances carburant',
+        fuel_remaining_to_reimburse: 'Reste carburant à rembourser',
+        fuel_pending_not_included: 'En attente (non inclus)',
+        fuel_already_covered_fixed: 'Déjà couvert par carburant variable fixe',
+        fuel_no_entries: 'Aucun plein déclaré pour cette période.',
+        fuel_no_vehicles: 'Aucun véhicule configuré.',
+        fuel_vehicle_required: 'Immatriculation obligatoire',
+        fuel_delete_vehicle_confirm: 'Supprimer ce véhicule ?',
+        fuel_status_updated: '✅ Statut carburant mis à jour',
+        fuel_invalid_data: 'Données invalides',
+        fuel_invalid_url: 'URL photo invalide (http/https)',
+        fuel_declaration_saved: '✅ Plein déclaré',
+        fuel_balance_entry_saved: '✅ Avance carburant enregistrée',
         user_creer: 'Créer nouvel utilisateur',
         user_nom: '👤 Nom complet',
         user_nom_placeholder: 'Nom complet',
@@ -1949,6 +2054,45 @@
         remu_calcul_dabord: '⚠️ احسب العمولات أولاً',
         remu_enregistrement: '⏳ جارٍ الحفظ…',
         remu_saved: '✅ تم ضبط الأجر',
+        fuel_vehicle: 'المركبة / رقم اللوحة',
+        fuel_vehicle_settings: '🚗 إعدادات مركبات الوقود',
+        fuel_assigned_employee: 'الموظف المكلّف',
+        fuel_declare_fill: '⛽ تصريح تعبئة الوقود',
+        fuel_current_km: 'الكيلومترات الحالية',
+        fuel_liters: 'اللترات',
+        fuel_amount_paid: 'المبلغ المدفوع (درهم)',
+        fuel_receipt_photo: 'صورة الوصل/المضخة (رابط)',
+        fuel_comment_optional: 'ملاحظة (اختياري)',
+        fuel_registration_optional: 'رقم اللوحة (اختياري)',
+        fuel_monthly_reimbursement: '⏳ التعويض متوقع نهاية الشهر',
+        fuel_status_pending: 'قيد الانتظار',
+        fuel_status_validated: 'مقبول للرواتب',
+        fuel_status_rejected: 'مرفوض',
+        fuel_status_paid: 'مدفوع مع الراتب',
+        fuel_validate: '✅ قبول',
+        fuel_reject: '❌ رفض',
+        fuel_mark_paid: '💳 تعليم كمدفوع',
+        fuel_normal_consumption: 'الاستهلاك العادي (ل/100 كم)',
+        fuel_tolerance: 'الهامش',
+        fuel_abnormal_consumption: '⚠️ استهلاك غير عادي',
+        fuel_maintenance_interval: 'فاصل الصيانة (كم)',
+        fuel_last_maintenance_km: 'آخر صيانة (كم)',
+        fuel_maintenance_soon: '⚠️ صيانة قريبًا',
+        fuel_maintenance_overdue: '⛔ صيانة متجاوزة',
+        fuel_validated_total: 'إجمالي الوقود المقبول',
+        fuel_advances_total: 'سلفات الوقود',
+        fuel_remaining_to_reimburse: 'الباقي لتعويض الوقود',
+        fuel_pending_not_included: 'قيد الانتظار (غير مدرج)',
+        fuel_already_covered_fixed: 'مغطى مسبقًا ببدل وقود ثابت',
+        fuel_no_entries: 'لا توجد تصريحات وقود لهذه الفترة.',
+        fuel_no_vehicles: 'لا توجد مركبات مهيأة.',
+        fuel_vehicle_required: 'رقم اللوحة إلزامي',
+        fuel_delete_vehicle_confirm: 'هل تريد حذف هذه المركبة؟',
+        fuel_status_updated: '✅ تم تحديث حالة الوقود',
+        fuel_invalid_data: 'بيانات غير صالحة',
+        fuel_invalid_url: 'رابط الصورة غير صالح (http/https)',
+        fuel_declaration_saved: '✅ تم تسجيل التعبئة',
+        fuel_balance_entry_saved: '✅ تم تسجيل سلفة الوقود',
         user_creer: 'إنشاء مستخدم جديد',
         user_nom: '👤 الاسم الكامل',
         user_nom_placeholder: 'الاسم الكامل',
@@ -2395,6 +2539,45 @@
         remu_calcul_dabord: '⚠️ Hseb commissions lwwel',
         remu_enregistrement: '⏳ Tsajjel…',
         remu_saved: '✅ Khlass tsajjel',
+        fuel_vehicle: 'Tomobil / numero',
+        fuel_vehicle_settings: '🚗 Réglages tomobilat carburant',
+        fuel_assigned_employee: 'Khdam m3ayan',
+        fuel_declare_fill: '⛽ Sajjel plein',
+        fuel_current_km: 'Kilometrage daba',
+        fuel_liters: 'Litres',
+        fuel_amount_paid: 'Montant mkhalles (DHS)',
+        fuel_receipt_photo: 'Tsawir ticket/pompe (URL)',
+        fuel_comment_optional: 'Ta3liq (ikhtiyari)',
+        fuel_registration_optional: 'Numero tomobil (ikhtiyari)',
+        fuel_monthly_reimbursement: '⏳ Remboursement f akhir chhar',
+        fuel_status_pending: 'Mazel kaytsenna',
+        fuel_status_validated: 'Mtsade9 l paie',
+        fuel_status_rejected: 'Mrfoud',
+        fuel_status_paid: 'Tkhlles m3a paie',
+        fuel_validate: '✅ Sade9',
+        fuel_reject: '❌ Rfd',
+        fuel_mark_paid: '💳 7ettou mkhalles',
+        fuel_normal_consumption: 'Consommation normale (L/100 km)',
+        fuel_tolerance: 'Tolérance',
+        fuel_abnormal_consumption: '⚠️ Consommation mashi 3adiya',
+        fuel_maintenance_interval: 'Intervalle entretien (km)',
+        fuel_last_maintenance_km: 'Akher entretien (km)',
+        fuel_maintenance_soon: '⚠️ Entretien qarib',
+        fuel_maintenance_overdue: '⛔ Entretien fat l7ed',
+        fuel_validated_total: 'Total carburant mtsade9',
+        fuel_advances_total: 'Avances carburant',
+        fuel_remaining_to_reimburse: 'Baqi carburant ytraja3',
+        fuel_pending_not_included: 'Mazel (ma mdkholch)',
+        fuel_already_covered_fixed: 'Déjà mghatti b carburant variable fixe',
+        fuel_no_entries: 'Ma kayn hatta plein f had période.',
+        fuel_no_vehicles: 'Ma kaynach tomobil mconfigurée.',
+        fuel_vehicle_required: 'Numero tomobil darori',
+        fuel_delete_vehicle_confirm: 'Bghiti tms7 had tomobil?',
+        fuel_status_updated: '✅ Statut carburant tbeddel',
+        fuel_invalid_data: 'Données ma sahhch',
+        fuel_invalid_url: 'URL dyal tswira ma sahihach (http/https)',
+        fuel_declaration_saved: '✅ Plein tsajjel',
+        fuel_balance_entry_saved: '✅ Avance carburant tsajlat',
         user_creer: 'Dir utilisateur jdid',
         user_nom: '👤 Smiya kamel',
         user_nom_placeholder: 'Smiya kamel',
@@ -2942,6 +3125,8 @@
       allUsers: [],
       commercialStock: {},      // current user's commercial mini-stock; only populated for categories that have a DB row
       allCommercialStocks: [],  // all employees' rows [{ user_id, category, quantity }]
+      fuelDeclarations: [],
+      fuelVehicles: [],
       rolePermissions: { employee: {}, manager: {} },
       notifications: []         // current user's notifications
     };
@@ -3807,6 +3992,128 @@
     // Expose renderSales so static HTML onchange handlers can call it directly.
     window.renderSales = renderSales;
 
+    function fuelStatusMeta(status) {
+      if (status === 'validated') return { key: 'fuel_status_validated', cls: 'color:var(--color-success);' };
+      if (status === 'rejected') return { key: 'fuel_status_rejected', cls: 'color:var(--color-error);' };
+      if (status === 'paid_in_payroll') return { key: 'fuel_status_paid', cls: 'color:#1b6ac9;' };
+      return { key: 'fuel_status_pending', cls: 'color:#9e6b00;' };
+    }
+
+    function safeExternalUrl(rawValue) {
+      if (!rawValue) return '';
+      try {
+        const url = new URL(String(rawValue));
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+        return url.href;
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function renderFuelEntriesList(entries, includeEmployee = false) {
+      if (!entries.length) return `<div class="muted" style="font-size:12px;">${escHtml(t('fuel_no_entries'))}</div>`;
+      const usersById = new Map((state.allUsers || []).map(u => [String(u.id), u]));
+      const vehiclesById = new Map((state.fuelVehicles || []).map(v => [String(v.id), v]));
+      return entries.map(entry => {
+        const statusMeta = fuelStatusMeta(entry.status);
+        const user = usersById.get(String(entry.employee_id || ''));
+        const vehicle = vehiclesById.get(String(entry.vehicle_id || ''));
+        const who = includeEmployee ? `<div class="muted" style="font-size:11px;">👤 ${escHtml(user?.full_name || user?.email || '—')}</div>` : '';
+        const reg = escHtml(entry.vehicle_registration || vehicle?.registration || '—');
+        const dateStr = entry.declared_at ? new Date(entry.declared_at).toLocaleDateString('fr-FR') : '—';
+        const conso = Number(entry.consumption_l100);
+        const consoLabel = Number.isFinite(conso) ? `${conso.toFixed(2)} L/100` : '—';
+        const warning = entry.consumption_alert
+          ? `<div class="muted" style="font-size:11px;color:#b26a00;">${escHtml(t('fuel_abnormal_consumption'))}</div>`
+          : '';
+        const pendingHint = entry.status === 'pending'
+          ? `<div class="muted" style="font-size:11px;">${escHtml(t('fuel_monthly_reimbursement'))}</div>`
+          : '';
+        const receiptHref = safeExternalUrl(entry.receipt_photo_url || '');
+        const receipt = receiptHref
+          ? `<a href="${escHtml(receiptHref)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;">📎 ticket</a>`
+          : '';
+        let actions = '';
+        if (isManagerOrAdmin()) {
+          const eid = escHtml(String(entry.id || ''));
+          if (entry.status === 'pending') {
+            actions = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+              <button type="button" style="font-size:11px;padding:4px 8px;" onclick="updateFuelDeclarationStatus('${eid}', 'validated')">${escHtml(t('fuel_validate'))}</button>
+              <button type="button" style="font-size:11px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error);" onclick="updateFuelDeclarationStatus('${eid}', 'rejected')">${escHtml(t('fuel_reject'))}</button>
+            </div>`;
+          } else if (entry.status === 'validated') {
+            actions = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+              <button type="button" style="font-size:11px;padding:4px 8px;background:#1b6ac9;color:#fff;" onclick="updateFuelDeclarationStatus('${eid}', 'paid_in_payroll')">${escHtml(t('fuel_mark_paid'))}</button>
+            </div>`;
+          }
+        }
+        return `<div style="border:1px solid var(--color-border);border-radius:8px;padding:8px;margin-bottom:7px;background:rgba(0,0,0,0.02);">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
+            <strong style="${statusMeta.cls}">${escHtml(t(statusMeta.key))}</strong>
+            <span class="muted" style="font-size:11px;">${dateStr}</span>
+          </div>
+          ${who}
+          <div style="font-size:12px;margin-top:4px;">🚗 ${reg} · ${formatDh(Number(entry.amount || 0))} · ${Number(entry.liters || 0)} L · ${Number(entry.current_km || 0)} km</div>
+          <div class="muted" style="font-size:11px;">${escHtml(t('fuel_normal_consumption'))}: ${escHtml(consoLabel)} ${receipt ? `· ${receipt}` : ''}</div>
+          ${warning}
+          ${pendingHint}
+          ${actions}
+        </div>`;
+      }).join('');
+    }
+
+    function renderFuelSectionForEmployee() {
+      const me = state.session?.user?.id;
+      const rows = (state.fuelDeclarations || [])
+        .filter(e => String(e.employee_id || '') === String(me || ''))
+        .sort((a, b) => new Date(b.declared_at || b.created_at || 0) - new Date(a.declared_at || a.created_at || 0))
+        .slice(0, 20);
+      return `<div class="stock-section-label" style="margin-top:20px;">⛽ ${escHtml(t('fuel_declare_fill'))}</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <button type="button" style="flex:1;" onclick="openFuelDeclarationModal()">⛽ ${escHtml(t('fuel_declare_fill'))}</button>
+        </div>
+        ${renderFuelEntriesList(rows, false)}`;
+    }
+
+    function renderFuelSectionForAdmin() {
+      const rows = (state.fuelDeclarations || [])
+        .slice()
+        .sort((a, b) => new Date(b.declared_at || b.created_at || 0) - new Date(a.declared_at || a.created_at || 0))
+        .slice(0, 50);
+      const vehicles = (state.fuelVehicles || []).slice().sort((a, b) => String(a.registration || '').localeCompare(String(b.registration || '')));
+      const usersById = new Map((state.allUsers || []).map(u => [String(u.id), u]));
+      const vehiclesHtml = vehicles.map(v => {
+        const currentKm = Number(v.current_km || 0);
+        const interval = Number(v.maintenance_interval_km || 0);
+        const lastKm = Number(v.last_maintenance_km || 0);
+        const nextKm = interval > 0 ? lastKm + interval : 0;
+        const overdue = nextKm > 0 && currentKm >= nextKm;
+        const soon = !overdue && nextKm > 0 && currentKm >= (nextKm - 500);
+        const alert = overdue
+          ? `<div class="muted" style="font-size:11px;color:var(--color-error);">${escHtml(t('fuel_maintenance_overdue'))}</div>`
+          : soon
+            ? `<div class="muted" style="font-size:11px;color:#b26a00;">${escHtml(t('fuel_maintenance_soon'))}</div>`
+            : '';
+        const emp = usersById.get(String(v.assigned_employee_id || ''));
+        return `<div style="border:1px dashed var(--color-border);border-radius:8px;padding:6px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
+            <strong>🚗 ${escHtml(v.registration || '—')}</strong>
+            <button type="button" style="font-size:11px;padding:4px 8px;" onclick="editFuelVehicle('${escHtml(String(v.id || ''))}')">✏️</button>
+          </div>
+          <div class="muted" style="font-size:11px;">👤 ${escHtml(emp?.full_name || emp?.email || '—')} · ${escHtml(t('fuel_normal_consumption'))}: ${Number(v.normal_consumption_l100 || 0)} · ±${Number(v.consumption_tolerance_l100 || 0)}</div>
+          <div class="muted" style="font-size:11px;">${escHtml(t('fuel_current_km'))}: ${currentKm} · ${escHtml(t('fuel_last_maintenance_km'))}: ${lastKm}${nextKm > 0 ? ` · Prochain: ${nextKm}` : ''}</div>
+          ${alert}
+        </div>`;
+      }).join('');
+      return `<div class="stock-section-label" style="margin-top:20px;">⛽ Carburant</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <button type="button" style="flex:1;" onclick="openFuelDeclarationModal()">⛽ ${escHtml(t('fuel_declare_fill'))}</button>
+          <button type="button" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);" onclick="openFuelVehiclesModal()">🚗 ${escHtml(t('fuel_vehicle_settings'))}</button>
+        </div>
+        ${vehicles.length ? `<details style="margin-bottom:8px;"><summary style="cursor:pointer;font-size:12px;">🚗 ${escHtml(t('fuel_vehicle_settings'))} (${vehicles.length})</summary><div style="margin-top:6px;">${vehiclesHtml}</div></details>` : ''}
+        ${renderFuelEntriesList(rows, true)}`;
+    }
+
     function renderStock() {
       const list = document.getElementById('stockList');
       if (!list) return;
@@ -3841,6 +4148,7 @@
           <button onclick="openStockRequestModal()" style="flex:1;">📦 Demander du stock</button>
           <button onclick="openMyStockRequestsModal()" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);">📋 Mes demandes</button>
         </div>`;
+        html += renderFuelSectionForEmployee();
 
         list.innerHTML = html;
       } else {
@@ -3922,6 +4230,7 @@
         } else {
           html += `<p class="muted" style="margin-top:8px;font-size:12px;">Aucun stock commercial attribué pour l'instant.</p>`;
         }
+        html += renderFuelSectionForAdmin();
 
         list.innerHTML = html;
       }
@@ -3930,6 +4239,278 @@
       const tabBadge = document.getElementById('stockAlert');
       if (tabBadge) tabBadge.style.display = anyLow ? 'inline-block' : 'none';
     }
+
+    async function refreshFuelData() {
+      if (!state.session?.user?.id) {
+        state.fuelDeclarations = [];
+        state.fuelVehicles = [];
+        return;
+      }
+      try {
+        const userId = state.session.user.id;
+        const [fuelRes, vehRes] = await Promise.all([
+          (() => {
+            const q = supabase.from('fuel_declarations').select('*').order('declared_at', { ascending: false }).limit(400);
+            return isManagerOrAdmin() ? q : q.eq('employee_id', userId);
+          })(),
+          (() => {
+            const q = supabase.from('vehicles').select('*').order('registration', { ascending: true });
+            return isManagerOrAdmin() ? q : q.eq('assigned_employee_id', userId);
+          })()
+        ]);
+        if (fuelRes.error) throw fuelRes.error;
+        if (vehRes.error) throw vehRes.error;
+        state.fuelDeclarations = fuelRes.data || [];
+        state.fuelVehicles = vehRes.data || [];
+      } catch (e) {
+        console.warn('[refreshFuelData] error:', e?.message);
+        state.fuelDeclarations = [];
+        state.fuelVehicles = [];
+      }
+    }
+
+    function fillFuelVehicleSelectOptions(targetSelectId = 'fuelVehicleSelect') {
+      const selectEl = document.getElementById(targetSelectId);
+      if (!selectEl) return;
+      const options = (state.fuelVehicles || []).map(v =>
+        `<option value="${escHtml(String(v.id || ''))}" data-reg="${escHtml(v.registration || '')}" data-km="${Number(v.current_km || 0)}">${escHtml(v.registration || '—')}</option>`
+      ).join('');
+      selectEl.innerHTML = `<option value="">—</option>${options}`;
+    }
+
+    window.openFuelDeclarationModal = async function () {
+      await refreshFuelData();
+      fillFuelVehicleSelectOptions('fuelVehicleSelect');
+      const fields = ['fuelVehicleRegistrationInput', 'fuelCurrentKmInput', 'fuelLitersInput', 'fuelAmountInput', 'fuelReceiptInput', 'fuelCommentInput'];
+      fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      const statusEl = document.getElementById('fuelDeclarationStatus');
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+      openModal('fuelDeclarationModal');
+    };
+
+    window.onFuelVehicleSelectChange = function () {
+      const selectEl = document.getElementById('fuelVehicleSelect');
+      const regEl = document.getElementById('fuelVehicleRegistrationInput');
+      const kmEl = document.getElementById('fuelCurrentKmInput');
+      const selected = selectEl?.selectedOptions?.[0];
+      if (!selected) return;
+      if (regEl && !regEl.value) regEl.value = selected.getAttribute('data-reg') || '';
+      if (kmEl && !kmEl.value) kmEl.value = selected.getAttribute('data-km') || '';
+    };
+
+    window.saveFuelDeclaration = async function () {
+      const vehicleId = document.getElementById('fuelVehicleSelect')?.value || null;
+      const reg = (document.getElementById('fuelVehicleRegistrationInput')?.value || '').trim();
+      const km = Number(document.getElementById('fuelCurrentKmInput')?.value || 0);
+      const liters = Number(document.getElementById('fuelLitersInput')?.value || 0);
+      const amount = Number(document.getElementById('fuelAmountInput')?.value || 0);
+      const receiptUrl = (document.getElementById('fuelReceiptInput')?.value || '').trim() || null;
+      const comment = (document.getElementById('fuelCommentInput')?.value || '').trim() || null;
+      const statusEl = document.getElementById('fuelDeclarationStatus');
+      if (km < 0 || liters <= 0 || amount < 0) {
+        if (statusEl) { statusEl.textContent = `❌ ${t('fuel_invalid_data')}`; statusEl.style.color = '#e53935'; }
+        return;
+      }
+      const sanitizedReceiptUrl = receiptUrl ? safeExternalUrl(receiptUrl) : null;
+      if (receiptUrl && !sanitizedReceiptUrl) {
+        if (statusEl) { statusEl.textContent = `❌ ${t('fuel_invalid_url')}`; statusEl.style.color = '#e53935'; }
+        return;
+      }
+      const userId = state.session?.user?.id;
+      if (!userId) return;
+      if (statusEl) { statusEl.textContent = t('remu_enregistrement'); statusEl.style.color = ''; }
+      try {
+        const vehicle = (state.fuelVehicles || []).find(v => String(v.id || '') === String(vehicleId || ''));
+        let consumption = null;
+        let consumptionAlert = false;
+        if (vehicleId) {
+          const { data: prevRows, error: prevErr } = await supabase
+            .from('fuel_declarations')
+            .select('current_km')
+            .eq('vehicle_id', vehicleId)
+            .lt('current_km', km)
+            .order('current_km', { ascending: false })
+            .limit(1);
+          if (prevErr) throw prevErr;
+          const prevKm = Number(prevRows?.[0]?.current_km || 0);
+          const distance = km - prevKm;
+          if (distance > 0) {
+            consumption = (liters / distance) * 100;
+            if (vehicle && Number.isFinite(consumption)) {
+              const normal = Number(vehicle.normal_consumption_l100 || 0);
+              const tol = Number(vehicle.consumption_tolerance_l100 || 0);
+              if (normal > 0) consumptionAlert = consumption < (normal - tol) || consumption > (normal + tol);
+            }
+          }
+        }
+        const { error } = await supabase
+          .from('fuel_declarations')
+          .insert({
+            employee_id: userId,
+            vehicle_id: vehicleId || null,
+            vehicle_registration: reg || vehicle?.registration || null,
+            declared_at: new Date().toISOString(),
+            current_km: km,
+            liters,
+            amount,
+            receipt_photo_url: sanitizedReceiptUrl,
+            comment,
+            status: 'pending',
+            consumption_l100: consumption,
+            consumption_alert: consumptionAlert,
+            created_by: userId
+          });
+        if (error) throw error;
+        if (vehicleId) {
+          const nextKm = Math.max(Number(vehicle?.current_km || 0), km);
+          await supabase.from('vehicles').update({ current_km: nextKm }).eq('id', vehicleId);
+        }
+        if (statusEl) { statusEl.textContent = t('fuel_declaration_saved'); statusEl.style.color = '#2e7d32'; }
+        showSessionStatus(`${t('fuel_declaration_saved')} · ${t('fuel_monthly_reimbursement')}`, 'success', 6000);
+        await refreshFuelData();
+        renderStock();
+        setTimeout(() => closeModal('fuelDeclarationModal'), 500);
+      } catch (e) {
+        if (statusEl) { statusEl.textContent = '❌ ' + shortSupabaseError(e, 120); statusEl.style.color = '#e53935'; }
+        showSessionStatus('❌ ' + shortSupabaseError(e, 120), 'error', 8000);
+      }
+    };
+
+    function renderFuelVehiclesListInModal() {
+      const listEl = document.getElementById('fuelVehiclesList');
+      if (!listEl) return;
+      const usersById = new Map((state.allUsers || []).map(u => [String(u.id), u]));
+      const vehicles = (state.fuelVehicles || []).slice().sort((a, b) => String(a.registration || '').localeCompare(String(b.registration || '')));
+      if (!vehicles.length) {
+        listEl.innerHTML = `<div class="muted" style="font-size:12px;">${escHtml(t('fuel_no_vehicles'))}</div>`;
+        return;
+      }
+      listEl.innerHTML = vehicles.map(v => {
+        const emp = usersById.get(String(v.assigned_employee_id || ''));
+        return `<div style="padding:7px;border:1px solid var(--color-border);border-radius:8px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+            <strong>🚗 ${escHtml(v.registration || '—')}</strong>
+            <div style="display:flex;gap:6px;">
+              <button type="button" style="font-size:11px;padding:4px 8px;" onclick="editFuelVehicle('${escHtml(String(v.id || ''))}')">✏️</button>
+              <button type="button" style="font-size:11px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error);" onclick="deleteFuelVehicle('${escHtml(String(v.id || ''))}')">🗑</button>
+            </div>
+          </div>
+          <div class="muted" style="font-size:11px;">👤 ${escHtml(emp?.full_name || emp?.email || '—')} · ${escHtml(t('fuel_current_km'))}: ${Number(v.current_km || 0)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    window.openFuelVehiclesModal = async function () {
+      if (!isManagerOrAdmin()) return;
+      await refreshFuelData();
+      try { await loadAllUsers(); } catch (_) {}
+      const empSelect = document.getElementById('fuelVehicleEmployee');
+      if (empSelect) {
+        const employeeOptions = (state.allUsers || [])
+          .filter(u => String(u.role || '').toLowerCase() === 'employee')
+          .map(u => `<option value="${escHtml(String(u.id || ''))}">${escHtml(u.full_name || u.email || '—')}</option>`)
+          .join('');
+        empSelect.innerHTML = `<option value="">—</option>${employeeOptions}`;
+      }
+      const ids = ['fuelVehicleEditId', 'fuelVehicleRegistration', 'fuelVehicleNormalConso', 'fuelVehicleTolerance', 'fuelVehicleInterval', 'fuelVehicleLastMaintenance', 'fuelVehicleCurrentKm'];
+      ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      const statusEl = document.getElementById('fuelVehicleStatus');
+      if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+      renderFuelVehiclesListInModal();
+      openModal('fuelVehiclesModal');
+    };
+
+    window.editFuelVehicle = function (vehicleId) {
+      const vehicle = (state.fuelVehicles || []).find(v => String(v.id || '') === String(vehicleId || ''));
+      if (!vehicle) return;
+      const byId = (id, value) => { const el = document.getElementById(id); if (el) el.value = value ?? ''; };
+      byId('fuelVehicleEditId', vehicle.id);
+      byId('fuelVehicleRegistration', vehicle.registration || '');
+      byId('fuelVehicleEmployee', vehicle.assigned_employee_id || '');
+      byId('fuelVehicleNormalConso', vehicle.normal_consumption_l100 != null ? Number(vehicle.normal_consumption_l100) : '');
+      byId('fuelVehicleTolerance', vehicle.consumption_tolerance_l100 != null ? Number(vehicle.consumption_tolerance_l100) : '');
+      byId('fuelVehicleInterval', vehicle.maintenance_interval_km != null ? Number(vehicle.maintenance_interval_km) : '');
+      byId('fuelVehicleLastMaintenance', vehicle.last_maintenance_km != null ? Number(vehicle.last_maintenance_km) : '');
+      byId('fuelVehicleCurrentKm', vehicle.current_km != null ? Number(vehicle.current_km) : '');
+    };
+
+    window.saveFuelVehicle = async function () {
+      if (!isManagerOrAdmin()) return;
+      const editId = document.getElementById('fuelVehicleEditId')?.value || '';
+      const registration = (document.getElementById('fuelVehicleRegistration')?.value || '').trim().toUpperCase();
+      const employeeId = document.getElementById('fuelVehicleEmployee')?.value || null;
+      const normal = Number(document.getElementById('fuelVehicleNormalConso')?.value || 0);
+      const tolerance = Number(document.getElementById('fuelVehicleTolerance')?.value || 0);
+      const interval = Number(document.getElementById('fuelVehicleInterval')?.value || 0);
+      const lastMaintenance = Number(document.getElementById('fuelVehicleLastMaintenance')?.value || 0);
+      const currentKm = Number(document.getElementById('fuelVehicleCurrentKm')?.value || 0);
+      const statusEl = document.getElementById('fuelVehicleStatus');
+      if (!registration) {
+        if (statusEl) { statusEl.textContent = `❌ ${t('fuel_vehicle_required')}`; statusEl.style.color = '#e53935'; }
+        return;
+      }
+      if (statusEl) { statusEl.textContent = t('remu_enregistrement'); statusEl.style.color = ''; }
+      const payload = {
+        registration,
+        assigned_employee_id: employeeId || null,
+        normal_consumption_l100: normal > 0 ? normal : null,
+        consumption_tolerance_l100: tolerance > 0 ? tolerance : null,
+        maintenance_interval_km: interval > 0 ? interval : null,
+        last_maintenance_km: lastMaintenance > 0 ? lastMaintenance : null,
+        current_km: currentKm > 0 ? currentKm : null,
+        is_active: true,
+        created_by: state.session?.user?.id || null
+      };
+      try {
+        let query = supabase.from('vehicles');
+        const { error } = editId
+          ? await query.update(payload).eq('id', editId)
+          : await query.insert(payload);
+        if (error) throw error;
+        if (statusEl) { statusEl.textContent = '✅ Enregistré'; statusEl.style.color = '#2e7d32'; }
+        await refreshFuelData();
+        renderFuelVehiclesListInModal();
+        fillFuelVehicleSelectOptions('fuelVehicleSelect');
+        renderStock();
+      } catch (e) {
+        if (statusEl) { statusEl.textContent = '❌ ' + shortSupabaseError(e, 120); statusEl.style.color = '#e53935'; }
+      }
+    };
+
+    window.deleteFuelVehicle = async function (vehicleId) {
+      if (!isManagerOrAdmin() || !vehicleId) return;
+      if (!confirm(t('fuel_delete_vehicle_confirm'))) return;
+      try {
+        const { error } = await supabase.from('vehicles').delete().eq('id', vehicleId);
+        if (error) throw error;
+        await refreshFuelData();
+        renderFuelVehiclesListInModal();
+        renderStock();
+      } catch (e) {
+        showSessionStatus('❌ ' + shortSupabaseError(e, 120), 'error', 8000);
+      }
+    };
+
+    window.updateFuelDeclarationStatus = async function (declarationId, nextStatus) {
+      if (!isManagerOrAdmin() || !declarationId) return;
+      const allowed = ['validated', 'rejected', 'paid_in_payroll'];
+      if (!allowed.includes(nextStatus)) return;
+      const updates = { status: nextStatus };
+      if (nextStatus === 'validated' || nextStatus === 'rejected') {
+        updates.validated_by = state.session?.user?.id || null;
+        updates.validated_at = new Date().toISOString();
+      }
+      if (nextStatus === 'paid_in_payroll') updates.paid_in_payroll_at = new Date().toISOString();
+      try {
+        const { error } = await supabase.from('fuel_declarations').update(updates).eq('id', declarationId);
+        if (error) throw error;
+        showSessionStatus(t('fuel_status_updated'), 'success');
+        await refreshFuelData();
+        renderStock();
+      } catch (e) {
+        showSessionStatus('❌ ' + shortSupabaseError(e, 120), 'error', 8000);
+      }
+    };
 
     // ── Stock transfer helpers (admin / manager only) — multi-product ─────────
 
@@ -6039,6 +6620,7 @@
       }
 
       await loadAllUsers();
+      await refreshFuelData();
       await loadRolePermissions();
       // Load notifications for the current user — awaited so the bell badge is
       // correct when paintApp() runs immediately after loadCloudData() returns.
@@ -9971,7 +10553,7 @@
         try {
           const { data: entryRows, error: entriesError } = await supabase
             .from('employee_balance_entries')
-            .select('employee_id, entry_type, amount')
+            .select('employee_id, entry_type, amount, advance_category')
             .gte('created_at', `${commissionMonth.start}T00:00:00Z`)
             .lte('created_at', `${commissionMonth.end}T23:59:59Z`);
           if (entriesError) throw entriesError;
@@ -9979,7 +10561,11 @@
             const uid = String(entry.employee_id || '');
             if (!uid) return;
             if (!monthEntriesByUser[uid]) monthEntriesByUser[uid] = { advances: 0, payments: 0 };
-            if (entry.entry_type === 'advance') monthEntriesByUser[uid].advances += Number(entry.amount || 0);
+            // Legacy rows may have advance_category null (before fuel-advance support):
+            // treat them as salary/commission advances to preserve old behavior.
+            if (entry.entry_type === 'advance' && (entry.advance_category || 'salary') !== 'fuel') {
+              monthEntriesByUser[uid].advances += Number(entry.amount || 0);
+            }
             if (entry.entry_type === 'payment') monthEntriesByUser[uid].payments += Number(entry.amount || 0);
           });
         } catch (e) {
@@ -11675,14 +12261,20 @@
 
     function buildEmployeeBalanceStatementText(summary) {
       if (!summary) return '';
+      const fuelValidated = Number(summary.fuelValidated || 0);
+      const fuelAdvances = Number(summary.fuelAdvances || 0);
+      const fuelRemainder = Number(summary.fuelRemaining || (fuelValidated - fuelAdvances));
       const lines = [
         'TASKAFÉ - Bulletin mensuel de l’employé',
         `Employé : ${summary.employeeName || '—'}`,
         `Période : ${summary.periodLabel || '—'}`,
         `Commissions café : ${formatDh(Number(summary.commissions || 0))}`,
         summary.isFixedMode ? `Salaire fixe : ${formatDh(Number(summary.fixedSalary || 0))}` : null,
-        summary.isFixedMode ? `Carburant variable : ${formatDh(Number(summary.fuelAllowance || 0))}` : null,
-        `Avances : -${formatDh(Number(summary.advances || 0))}`,
+        summary.isFixedMode ? `Carburant forfaitaire : ${formatDh(Number(summary.fuelAllowance || 0))}` : null,
+        `Carburant validé : +${formatDh(fuelValidated)}`,
+        `Avances carburant : -${formatDh(fuelAdvances)}`,
+        `Reste carburant à rembourser : ${formatDh(fuelRemainder)}`,
+        `Avances salaire/commission : -${formatDh(Number(summary.salaryAdvances || summary.advances || 0))}`,
         `Paiements faits : -${formatDh(Number(summary.payments || 0))}`,
         `Corrections : ${Number(summary.adjustments || 0) >= 0 ? '+' : ''}${formatDh(Number(summary.adjustments || 0))}`,
         `Reste à régler : ${formatDh(Number(summary.remainingDue || 0))}`
@@ -12286,9 +12878,13 @@
             ? result
             : calcCommissionForUser(user, state.sales, balancePeriod.start, balancePeriod.end);
 
-          const totalAdvances = entries
-            .filter(e => e.entry_type === 'advance')
+          const salaryAdvances = entries
+            .filter(e => e.entry_type === 'advance' && (e.advance_category || 'salary') !== 'fuel')
             .reduce((s, e) => s + Number(e.amount || 0), 0);
+          const fuelAdvances = entries
+            .filter(e => e.entry_type === 'advance' && (e.advance_category || 'salary') === 'fuel')
+            .reduce((s, e) => s + Number(e.amount || 0), 0);
+          const totalAdvances = salaryAdvances + fuelAdvances;
           const totalPayments = entries
             .filter(e => e.entry_type === 'payment')
             .reduce((s, e) => s + Number(e.amount || 0), 0);
@@ -12299,6 +12895,31 @@
               return s + (dir === 'deduct' ? -Number(e.amount || 0) : Number(e.amount || 0));
             }, 0);
 
+          let fuelRows = [];
+          let fuelValidated = 0;
+          let fuelPending = 0;
+          let fuelPaidInPayroll = 0;
+          try {
+            const { data: declaredFuelRows, error: fuelErr } = await supabase
+              .from('fuel_declarations')
+              .select('*')
+              .eq('employee_id', userId)
+              .gte('declared_at', `${balancePeriod.start}T00:00:00Z`)
+              .lte('declared_at', `${balancePeriod.end}T23:59:59Z`)
+              .order('declared_at', { ascending: false });
+            if (fuelErr) throw fuelErr;
+            fuelRows = declaredFuelRows || [];
+            fuelRows.forEach(row => {
+              const amount = Number(row.amount || 0);
+              if (row.status === 'validated') fuelValidated += amount;
+              else if (row.status === 'pending') fuelPending += amount;
+              else if (row.status === 'paid_in_payroll') fuelPaidInPayroll += amount;
+            });
+          } catch (fuelLoadErr) {
+            console.warn('[openEmployeeProfileModal] fuel_declarations:', fuelLoadErr?.message);
+            fuelRows = [];
+          }
+
           // Balance formula
           let baseDue = balanceCommission.totalCommission;
           const isFixedModeBalance = user.remuneration_mode === 'fixed_plus_commission';
@@ -12306,7 +12927,11 @@
             baseDue += Number(user.fixed_monthly_salary || 0);
             baseDue += Number(user.fuel_allowance || 0);
           }
-          const remainingDue = baseDue - totalAdvances - totalPayments + totalAdjustments;
+          const fuelRemaining = fuelValidated - fuelAdvances;
+          // Avoid double fuel reimbursement: when a fixed fuel allowance is already
+          // configured on fixed mode, declaration-based fuel remainder is not added.
+          const fuelRemainingForPayroll = (isFixedModeBalance && Number(user.fuel_allowance || 0) > 0) ? 0 : fuelRemaining;
+          const remainingDue = baseDue - salaryAdvances - totalPayments + totalAdjustments + fuelRemainingForPayroll;
           const canManageBalance = isManagerOrAdmin();
 
           employeeBalanceSummaryCache[userId] = {
@@ -12319,6 +12944,13 @@
             fixedSalary: Number(user.fixed_monthly_salary || 0),
             fuelAllowance: Number(user.fuel_allowance || 0),
             advances: Number(totalAdvances || 0),
+            salaryAdvances: Number(salaryAdvances || 0),
+            fuelAdvances: Number(fuelAdvances || 0),
+            fuelValidated: Number(fuelValidated || 0),
+            fuelPending: Number(fuelPending || 0),
+            fuelPaidInPayroll: Number(fuelPaidInPayroll || 0),
+            fuelRemaining: Number(fuelRemainingForPayroll || 0),
+            fuelRemainingRaw: Number(fuelRemaining || 0),
             payments: Number(totalPayments || 0),
             adjustments: Number(totalAdjustments || 0),
             remainingDue: Number(remainingDue || 0),
@@ -12328,8 +12960,16 @@
               entry_type: e.entry_type,
               amount: Number(e.amount || 0),
               direction: e.direction || null,
+              advance_category: e.advance_category || null,
               note: e.note || '',
               created_at: e.created_at
+            })),
+            fuelEntries: fuelRows.map(r => ({
+              id: r.id,
+              declared_at: r.declared_at,
+              vehicle_registration: r.vehicle_registration || '',
+              amount: Number(r.amount || 0),
+              status: r.status || 'pending'
             }))
           };
           employeeBalanceSummaryCache[userId].statementText = buildEmployeeBalanceStatementText(employeeBalanceSummaryCache[userId]);
@@ -12346,7 +12986,7 @@
             let entryRows = '';
             entries.forEach(e => {
               const typeLabel = e.entry_type === 'advance'
-                ? 'Avance'
+                ? ((e.advance_category || 'salary') === 'fuel' ? 'Avance carburant' : 'Avance')
                 : e.entry_type === 'payment'
                   ? 'Paiement'
                   : (e.direction === 'deduct' ? 'Correction −' : 'Correction +');
@@ -12430,8 +13070,13 @@
                 ? `<div class="bal-row"><span class="bal-label">💼 Salaire fixe</span><span class="bal-val">${formatDh(Number(user.fixed_monthly_salary || 0))}</span></div>
                    <div class="bal-row"><span class="bal-label">⛽ Carburant variable</span><span class="bal-val">${formatDh(Number(user.fuel_allowance || 0))}</span></div>`
                 : `<div class="muted" style="font-size:11px;padding:2px 0 6px;">⛽ Commission simple : l'employé paie lui-même son carburant.</div>`}
+              <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_validated_total'))}</span><span class="bal-val">+${formatDh(fuelValidated)}</span></div>
+              <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_advances_total'))}</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(fuelAdvances)}</span></div>
+              <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_remaining_to_reimburse'))}</span><span class="bal-val" style="color:${fuelRemainingForPayroll >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${fuelRemainingForPayroll >= 0 ? '+' : ''}${formatDh(fuelRemainingForPayroll)}</span></div>
+              ${(fuelRemainingForPayroll !== fuelRemaining) ? `<div class="muted" style="font-size:11px;padding:2px 0 6px;">⛽ ${escHtml(t('fuel_already_covered_fixed'))}</div>` : ''}
+              ${fuelPending > 0 ? `<div class="muted" style="font-size:11px;padding:2px 0 6px;">⏳ ${escHtml(t('fuel_pending_not_included'))}: ${formatDh(fuelPending)}</div>` : ''}
               <div style="border-top:1px dashed var(--color-border);margin:6px 0;"></div>
-              <div class="bal-row"><span class="bal-label">📉 Avances</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(totalAdvances)}</span></div>
+              <div class="bal-row"><span class="bal-label">📉 Avances salaire/commission</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(salaryAdvances)}</span></div>
               <div class="bal-row"><span class="bal-label">✅ Paiements faits</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(totalPayments)}</span></div>
               <div class="bal-row"><span class="bal-label">🔧 Corrections</span><span class="bal-val" style="color:${adjColor};">${totalAdjustments >= 0 ? '+' : ''}${formatDh(totalAdjustments)}</span></div>
               <div style="border-top:2px solid var(--color-border);margin-top:6px;padding-top:8px;" class="bal-row">
@@ -12439,6 +13084,26 @@
                 <span class="bal-val" style="font-size:15px;color:${remainingDue > 0 ? 'var(--color-success)' : 'var(--color-text-muted)'};">${formatDh(remainingDue)}</span>
               </div>
             </div>
+            <details style="margin-bottom:8px;">
+              <summary style="font-size:12px;font-weight:600;color:var(--color-text-muted);cursor:pointer;user-select:none;">⛽ Détail carburant (${fuelRows.length})</summary>
+              <div style="margin-top:6px;">
+                ${fuelRows.length ? fuelRows.map(row => {
+                  const date = row.declared_at ? new Date(row.declared_at).toLocaleDateString('fr-FR') : '—';
+                  const st = fuelStatusMeta(row.status || 'pending');
+                  const label = t(st.key);
+                  const reg = escHtml(row.vehicle_registration || '—');
+                  return `<div class="bal-history-row">
+                    <div class="bal-history-main">
+                      <div class="bal-history-top">
+                        <span class="bal-history-date">${date}</span>
+                        <span class="bal-history-type">🚗 ${reg}</span>
+                        <span class="bal-history-amount" style="${st.cls}">${escHtml(label)} · ${formatDh(Number(row.amount || 0))}</span>
+                      </div>
+                    </div>
+                  </div>`;
+                }).join('') : `<div class="muted" style="font-size:12px;">${escHtml(t('fuel_no_entries'))}</div>`}
+              </div>
+            </details>
             ${remainingDue > 0
               ? `<button type="button" style="width:100%;margin-bottom:8px;font-size:13px;background:var(--color-success);color:#fff;" onclick="settleEmployeeBalance('${uid}', ${remainingDue}, '${balancePeriod.start}', '${balancePeriod.end}')">✅ Régler ce mois</button>`
               : `<div style="margin-bottom:8px;padding:8px;background:#e8f5e9;border-radius:6px;text-align:center;font-size:13px;color:var(--color-success);font-weight:600;">✅ Période réglée</div>`}
@@ -12663,6 +13328,10 @@
       const periodLabel = escHtml(periodLabelRaw.charAt(0).toUpperCase() + periodLabelRaw.slice(1));
       const archivedAt = statement.created_at ? new Date(statement.created_at).toLocaleDateString('fr-FR') : '—';
       const adjValue = Number(statement.adjustments_total || 0);
+      const snapshotTotals = statement.snapshot?.totals || {};
+      const fuelValidated = Number(snapshotTotals.fuel_validated || 0);
+      const fuelAdvances = Number(snapshotTotals.fuel_advances || 0);
+      const fuelRemaining = Number(snapshotTotals.fuel_remaining || 0);
       return `
         <div class="statement-print-card" style="background:rgba(0,0,0,0.03);border:1px solid var(--color-border);border-radius:10px;padding:12px;">
           <div style="font-weight:800;font-size:17px;margin-bottom:3px;">TASKAFÉ</div>
@@ -12674,6 +13343,10 @@
           <div class="bal-row"><span class="bal-label">☕ Commissions café</span><span class="bal-val">${formatDh(Number(statement.commission_total || 0))}</span></div>
           <div class="bal-row"><span class="bal-label">💼 Salaire fixe</span><span class="bal-val">${formatDh(Number(statement.fixed_salary || 0))}</span></div>
           <div class="bal-row"><span class="bal-label">⛽ Carburant variable</span><span class="bal-val">${formatDh(Number(statement.fuel_amount || 0))}</span></div>
+          ${(fuelValidated || fuelAdvances || fuelRemaining) ? `
+          <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_validated_total'))}</span><span class="bal-val">+${formatDh(fuelValidated)}</span></div>
+          <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_advances_total'))}</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(fuelAdvances)}</span></div>
+          <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_remaining_to_reimburse'))}</span><span class="bal-val">${fuelRemaining >= 0 ? '+' : ''}${formatDh(fuelRemaining)}</span></div>` : ''}
           <div style="border-top:1px dashed var(--color-border);margin:7px 0;"></div>
           <div class="bal-row"><span class="bal-label">📉 Avances</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(Number(statement.advances_total || 0))}</span></div>
           <div class="bal-row"><span class="bal-label">✅ Paiements faits</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(Number(statement.payments_total || 0))}</span></div>
@@ -12811,7 +13484,7 @@
         employee_name: summary.employeeName || null,
         commission_total: Number(summary.commissions || 0),
         fixed_salary: Number(summary.fixedSalary || 0),
-        fuel_amount: Number(summary.fuelAllowance || 0),
+        fuel_amount: Number((summary.fuelAllowance || 0) + (summary.fuelRemaining || 0)),
         advances_total: Number(summary.advances || 0),
         payments_total: Number(summary.payments || 0),
         adjustments_total: Number(summary.adjustments || 0),
@@ -12823,8 +13496,12 @@
           totals: {
             commission_total: Number(summary.commissions || 0),
             fixed_salary: Number(summary.fixedSalary || 0),
-            fuel_amount: Number(summary.fuelAllowance || 0),
+            fuel_amount: Number((summary.fuelAllowance || 0) + (summary.fuelRemaining || 0)),
             advances_total: Number(summary.advances || 0),
+            salary_advances: Number(summary.salaryAdvances || 0),
+            fuel_validated: Number(summary.fuelValidated || 0),
+            fuel_advances: Number(summary.fuelAdvances || 0),
+            fuel_remaining: Number(summary.fuelRemaining || 0),
             payments_total: Number(summary.payments || 0),
             adjustments_total: Number(summary.adjustments || 0),
             remaining_due: Number(summary.remainingDue || 0)
@@ -12883,6 +13560,7 @@
       const pStartEl  = document.getElementById('balanceEntryPeriodStart');
       const pEndEl    = document.getElementById('balanceEntryPeriodEnd');
       const typeEl    = document.getElementById('balanceEntryType');
+      const advCatEl  = document.getElementById('balanceEntryAdvanceCategory');
       const amountEl  = document.getElementById('balanceEntryAmount');
       const noteEl    = document.getElementById('balanceEntryNote');
       const statusEl  = document.getElementById('balanceEntryStatus');
@@ -12892,6 +13570,7 @@
       if (pStartEl) pStartEl.value     = balancePeriod.start;
       if (pEndEl)   pEndEl.value       = balancePeriod.end;
       if (typeEl)   typeEl.value       = 'advance';
+      if (advCatEl) advCatEl.value     = 'salary';
       if (amountEl) amountEl.value     = '';
       if (noteEl)   noteEl.value       = '';
       if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
@@ -12902,7 +13581,9 @@
     window.toggleBalanceEntryDirection = function () {
       const typeEl  = document.getElementById('balanceEntryType');
       const dirRow  = document.getElementById('balanceEntryDirectionRow');
+      const advCatRow = document.getElementById('balanceEntryAdvanceCategoryRow');
       if (dirRow) dirRow.style.display = (typeEl?.value === 'adjustment') ? '' : 'none';
+      if (advCatRow) advCatRow.style.display = (typeEl?.value === 'advance') ? '' : 'none';
     };
 
     window.saveBalanceEntry = async function () {
@@ -12911,6 +13592,7 @@
       const amountEl  = document.getElementById('balanceEntryAmount');
       const noteEl    = document.getElementById('balanceEntryNote');
       const dirEl     = document.getElementById('balanceEntryDirection');
+      const advCatEl  = document.getElementById('balanceEntryAdvanceCategory');
       const pStartEl  = document.getElementById('balanceEntryPeriodStart');
       const pEndEl    = document.getElementById('balanceEntryPeriodEnd');
       const statusEl  = document.getElementById('balanceEntryStatus');
@@ -12920,6 +13602,7 @@
       const amount    = parseFloat(amountEl?.value || '0');
       const note      = noteEl?.value?.trim() || null;
       const direction = entryType === 'adjustment' ? (dirEl?.value || 'add') : null;
+      const advanceCategory = entryType === 'advance' ? (advCatEl?.value || 'salary') : null;
       const periodStart = pStartEl?.value || null;
       const periodEnd   = pEndEl?.value   || null;
 
@@ -12935,17 +13618,19 @@
         const { error } = await supabase.from('employee_balance_entries').insert({
           employee_id:  userId,
           entry_type:   entryType,
-          amount:       amount,
-          direction:    direction,
-          note:         note,
-          period_start: periodStart,
-          period_end:   periodEnd,
-          created_by:   state.session?.user?.id || null
+            amount:       amount,
+            direction:    direction,
+            advance_category: advanceCategory,
+            note:         note,
+            period_start: periodStart,
+            period_end:   periodEnd,
+            created_by:   state.session?.user?.id || null
         });
         if (error) throw error;
 
         if (statusEl) { statusEl.textContent = '✅ Enregistré'; statusEl.style.color = '#2e7d32'; }
-        showSessionStatus('✅ Entrée de balance ajoutée', 'success');
+        const successMsg = advanceCategory === 'fuel' ? t('fuel_balance_entry_saved') : '✅ Entrée de balance ajoutée';
+        showSessionStatus(successMsg, 'success');
         setTimeout(() => {
           closeModal('addBalanceEntryModal');
           openEmployeeProfileModal(userId, 'balance');
@@ -12979,7 +13664,20 @@
         });
         if (error) throw error;
 
+        const { error: fuelMarkErr } = await supabase
+          .from('fuel_declarations')
+          .update({
+            status: 'paid_in_payroll',
+            paid_in_payroll_at: new Date().toISOString()
+          })
+          .eq('employee_id', userId)
+          .eq('status', 'validated')
+          .gte('declared_at', `${start}T00:00:00Z`)
+          .lte('declared_at', `${end}T23:59:59Z`);
+        if (fuelMarkErr) console.warn('[settleEmployeeBalance] fuel update:', fuelMarkErr.message);
+
         showSessionStatus('✅ Règlement enregistré', 'success');
+        await refreshFuelData();
         openEmployeeProfileModal(userId, 'balance');
       } catch (e) {
         showSessionStatus('❌ Erreur lors du règlement : ' + (e?.message || 'Erreur inconnue'), 'error', 8000);
