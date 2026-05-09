@@ -4193,7 +4193,7 @@
       if (diffMin < 60) return t('notif_min_ago').replace('{count}', String(diffMin));
       const diffH = Math.floor(diffMin / 60);
       if (diffH < 24)   return t('notif_hour_ago').replace('{count}', String(diffH));
-      const localeMap = { fr: 'fr-FR', ar: 'ar-MA', darija: 'fr-MA' };
+      const localeMap = { fr: 'fr-FR', ar: 'ar-MA', darija: 'ar-MA' };
       const locale = localeMap[_currentLang] || 'fr-FR';
       return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
@@ -4209,9 +4209,11 @@
     }
 
     function _notifTemplate(key, vars = {}) {
-      return Object.entries(vars).reduce((text, [name, value]) => (
-        String(text).replace(new RegExp(`\\{${name}\\}`, 'g'), String(value ?? ''))
-      ), t(key));
+      let text = t(key);
+      Object.entries(vars).forEach(([name, value]) => {
+        text = String(text).split(`{${name}}`).join(String(value ?? ''));
+      });
+      return text;
     }
 
     function _getLocalizedNotificationContent(notif) {

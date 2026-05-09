@@ -162,7 +162,7 @@ module.exports = async function handler(req, res) {
     const { type, title, message, url, employee_id, user_ids, payload } = body;
 
     if (!type) {
-      return res.status(400).json({ error: 'Missing required field: type' });
+      return res.status(400).json({ error: 'Champ obligatoire : type' });
     }
 
     let targetUserIds = [];
