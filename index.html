@@ -421,7 +421,7 @@
       <input id="newPassword" type="password" placeholder="Min 6 caractères" data-i18n-placeholder="pwd_min6" />
       <label for="confirmPassword" data-i18n="pwd_confirmer">Confirmer nouveau mot de passe</label>
       <input id="confirmPassword" type="password" placeholder="Répéter le mot de passe" data-i18n-placeholder="pwd_repeter" />
-      <button onclick="changeMyPassword()" data-i18n="pwd_mettre_a_jour">✅ Mettre à jour</button>
+      <button id="myPasswordSaveBtn" onclick="changeMyPassword()" data-i18n="pwd_mettre_a_jour">✅ Mettre à jour</button>
       <div id="passwordStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
   </div>
@@ -1534,6 +1534,8 @@
         auth_email: '📧 Email',
         auth_email_placeholder: 'Email',
         msg_pwd_updated: '✅ Mot de passe mis à jour',
+        msg_pwd_employee_updated: '✅ Mot de passe employé mis à jour',
+        msg_pwd_update_failed: '❌ Impossible de modifier le mot de passe',
         msg_pwd_min6: '❌ Mot de passe minimum 6 caractères',
         msg_pwd_mismatch: '❌ Les mots de passe ne correspondent pas',
         msg_pwd_ancien_requis: '❌ Ancien mot de passe requis',
@@ -1978,6 +1980,8 @@
         auth_email: '📧 البريد الإلكتروني',
         auth_email_placeholder: 'البريد الإلكتروني',
         msg_pwd_updated: '✅ تم تحديث كلمة المرور',
+        msg_pwd_employee_updated: '✅ تم تحديث كلمة مرور الموظف',
+        msg_pwd_update_failed: '❌ تعذر تحديث كلمة المرور',
         msg_pwd_min6: '❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل',
         msg_pwd_mismatch: '❌ كلمتا المرور غير متطابقتين',
         msg_pwd_ancien_requis: '❌ كلمة المرور القديمة مطلوبة',
@@ -2422,6 +2426,8 @@
         auth_email: '📧 Email',
         auth_email_placeholder: 'Email',
         msg_pwd_updated: '✅ Password tbddel',
+        msg_pwd_employee_updated: '✅ Password dyal lkhddam tbddel',
+        msg_pwd_update_failed: '❌ Ma t9darch tbddel password',
         msg_pwd_min6: '❌ Mot de passe khaso 6 caractères minimum',
         msg_pwd_mismatch: '❌ Mots de passe machi bhal bhal',
         msg_pwd_ancien_requis: '❌ Password qadim matlob',
@@ -11175,27 +11181,28 @@
 
     window.openPasswordModal = function () {
       closeAllMenus();
-      document.getElementById('oldPassword').value = '';
+      const oldPasswordEl = document.getElementById('oldPassword');
+      if (oldPasswordEl) oldPasswordEl.value = '';
       document.getElementById('newPassword').value = '';
       document.getElementById('confirmPassword').value = '';
       const statusEl = document.getElementById('passwordStatus');
+      const btn = document.getElementById('myPasswordSaveBtn');
       if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = t('pwd_mettre_a_jour');
+      }
       openModal('passwordModal');
     };
 
     window.changeMyPassword = async function () {
-      const oldPassword     = document.getElementById('oldPassword').value;
       const newPassword     = document.getElementById('newPassword').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
       const statusEl        = document.getElementById('passwordStatus');
+      const btn             = document.getElementById('myPasswordSaveBtn');
 
       if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
 
-      if (!oldPassword) {
-        const msg = t('msg_pwd_ancien_requis');
-        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
-        return showSessionStatus(msg, 'error');
-      }
       if (!newPassword || newPassword.length < 6) {
         const msg = t('msg_pwd_min6');
         if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
@@ -11215,31 +11222,43 @@
         return showSessionStatus(msg, 'error');
       }
 
-      if (statusEl) { statusEl.textContent = '⏳ Vérification…'; statusEl.style.color = ''; }
-
-      // Verify old password via a sign-in attempt.  Supabase Auth does not expose
-      // a dedicated "verify password" endpoint on the client SDK, so signInWithPassword
-      // is the standard approach.  On success it also refreshes the current session,
-      // which is harmless and expected when the user is changing their own password.
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: oldPassword });
-      if (signInError) {
-        const msg = t('msg_pwd_ancien_incorrect');
-        if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
-        return showSessionStatus(msg, 'error');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = t('remu_enregistrement');
       }
+      if (statusEl) { statusEl.textContent = t('remu_enregistrement'); statusEl.style.color = ''; }
 
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) {
-        const msg = '❌ ' + error.message;
+      try {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+          const raw = String(error.message || '').toLowerCase();
+          let msg = t('msg_pwd_update_failed');
+          if (raw.includes('jwt') || raw.includes('session') || raw.includes('token')) {
+            msg = t('msg_cred_session_expired');
+          } else if (raw.includes('password') && (raw.includes('weak') || raw.includes('least') || raw.includes('short') || raw.includes('minimum'))) {
+            msg = t('msg_pwd_min6');
+          }
+          if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
+          return showSessionStatus(msg, 'error');
+        }
+
+        const oldPasswordEl = document.getElementById('oldPassword');
+        if (oldPasswordEl) oldPasswordEl.value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+        if (statusEl) { statusEl.textContent = ''; }
+        closeModal('passwordModal');
+        showSessionStatus(t('msg_pwd_updated'), 'success');
+      } catch (_) {
+        const msg = t('msg_pwd_update_failed');
         if (statusEl) { statusEl.textContent = msg; statusEl.style.color = '#e53935'; }
-        return showSessionStatus(msg, 'error');
+        showSessionStatus(msg, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = t('pwd_mettre_a_jour');
+        }
       }
-      document.getElementById('oldPassword').value = '';
-      document.getElementById('newPassword').value = '';
-      document.getElementById('confirmPassword').value = '';
-      if (statusEl) { statusEl.textContent = ''; }
-      closeModal('passwordModal');
-      showSessionStatus(t('msg_pwd_updated'), 'success');
     };
 
     // ── Admin/Manager: manage employee credentials ───────────────────────────
@@ -11301,6 +11320,7 @@
           statusEl.textContent = t('msg_cred_no_changes');
           statusEl.style.color = '#e53935';
         }
+        showSessionStatus(t('msg_cred_no_changes'), 'error');
         return;
       }
 
@@ -11309,6 +11329,7 @@
           statusEl.textContent = t('msg_cred_invalid_email');
           statusEl.style.color = '#e53935';
         }
+        showSessionStatus(t('msg_cred_invalid_email'), 'error');
         return;
       }
 
@@ -11317,6 +11338,7 @@
           statusEl.textContent = t('msg_pwd_min6');
           statusEl.style.color = '#e53935';
         }
+        showSessionStatus(t('msg_pwd_min6'), 'error');
         return;
       }
 
@@ -11325,6 +11347,7 @@
           statusEl.textContent = t('msg_pwd_mismatch');
           statusEl.style.color = '#e53935';
         }
+        showSessionStatus(t('msg_pwd_mismatch'), 'error');
         return;
       }
 
@@ -11334,7 +11357,7 @@
 
       if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.textContent = '⏳ Enregistrement…';
+        saveBtn.textContent = t('remu_enregistrement');
       }
 
       try {
@@ -11344,6 +11367,7 @@
             statusEl.textContent = t('msg_cred_session_expired');
             statusEl.style.color = '#e53935';
           }
+          showSessionStatus(t('msg_cred_session_expired'), 'error');
           return;
         }
         const accessToken = sessionData?.session?.access_token || state.session?.access_token;
@@ -11353,6 +11377,7 @@
             statusEl.textContent = t('msg_cred_session_expired');
             statusEl.style.color = '#e53935';
           }
+          showSessionStatus(t('msg_cred_session_expired'), 'error');
           return;
         }
 
@@ -11367,27 +11392,32 @@
 
         const contentType = resp.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
+          const msg = `${t('msg_cred_server_error')} (HTTP ${resp.status})`;
           if (statusEl) {
-            statusEl.textContent = `${t('msg_cred_server_error')} (HTTP ${resp.status})`;
+            statusEl.textContent = msg;
             statusEl.style.color = '#e53935';
           }
+          showSessionStatus(msg, 'error');
           return;
         }
 
         const result = await resp.json();
         if (!resp.ok) {
+          const msg = `❌ ${result?.error || t('msg_cred_server_error')}`;
           if (statusEl) {
-            statusEl.textContent = `❌ ${result?.error || t('msg_cred_server_error')}`;
+            statusEl.textContent = msg;
             statusEl.style.color = '#e53935';
           }
+          showSessionStatus(msg, 'error');
           return;
         }
 
+        const successMsg = password ? t('msg_pwd_employee_updated') : t('msg_cred_updated');
         if (statusEl) {
-          statusEl.textContent = t('msg_cred_updated');
+          statusEl.textContent = successMsg;
           statusEl.style.color = '#2e7d32';
         }
-        showSessionStatus(t('msg_cred_updated'), 'success');
+        showSessionStatus(successMsg, 'success');
 
         if (emailEl) emailEl.value = '';
         if (pwdEl) pwdEl.value = '';
@@ -11398,10 +11428,12 @@
 
         setTimeout(() => closeModal('userCredentialsModal'), 700);
       } catch (err) {
+        const msg = `❌ ${err?.message || t('msg_cred_server_error')}`;
         if (statusEl) {
-          statusEl.textContent = `❌ ${err?.message || t('msg_cred_server_error')}`;
+          statusEl.textContent = msg;
           statusEl.style.color = '#e53935';
         }
+        showSessionStatus(msg, 'error');
       } finally {
         if (saveBtn) {
           saveBtn.disabled = false;
@@ -11445,25 +11477,28 @@
       if (!newPassword || newPassword.length < 6) {
         statusEl.textContent = t('msg_pwd_min6');
         statusEl.style.color = '#e53935';
+        showSessionStatus(t('msg_pwd_min6'), 'error');
         return;
       }
       if (newPassword !== confirmPassword) {
         statusEl.textContent = t('msg_pwd_mismatch');
         statusEl.style.color = '#e53935';
+        showSessionStatus(t('msg_pwd_mismatch'), 'error');
         return;
       }
 
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ Mise à jour…'; }
+      if (btn) { btn.disabled = true; btn.textContent = t('remu_enregistrement'); }
 
       try {
         const accessToken = await getFreshToken();
         if (!accessToken) {
-          statusEl.textContent = '❌ Session expirée. Déconnectez-vous puis reconnectez-vous.';
+          statusEl.textContent = t('msg_cred_session_expired');
           statusEl.style.color = '#e53935';
+          showSessionStatus(t('msg_cred_session_expired'), 'error');
           return;
         }
 
-        const resp = await fetch('/api/update-password', {
+        const resp = await fetch('/api/update-user-credentials', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -11474,24 +11509,26 @@
 
         const ct = resp.headers.get('content-type') || '';
         if (!ct.includes('application/json')) {
-          const rawText = await resp.text().catch(() => '');
-          console.error('[saveAdminPassword] Réponse non-JSON (statut', resp.status, ') :', rawText.substring(0, 300));
-          statusEl.textContent = `❌ L'API n'a pas répondu en JSON (statut ${resp.status}). Vérifiez le déploiement Vercel.`;
+          const msg = `${t('msg_cred_server_error')} (HTTP ${resp.status})`;
+          statusEl.textContent = msg;
           statusEl.style.color = '#e53935';
+          showSessionStatus(msg, 'error');
           return;
         }
 
         const result = await resp.json();
         if (!resp.ok) {
-          statusEl.textContent = '❌ ' + (result?.error || 'Erreur lors de la mise à jour');
+          const msg = '❌ ' + (result?.error || t('msg_pwd_update_failed'));
+          statusEl.textContent = msg;
           statusEl.style.color = '#e53935';
+          showSessionStatus(msg, 'error');
           return;
         }
 
         document.getElementById('adminNewPassword').value = '';
         document.getElementById('adminConfirmPassword').value = '';
         closeModal('adminPasswordModal');
-        showSessionStatus(t('msg_pwd_updated'), 'success');
+        showSessionStatus(t('msg_pwd_employee_updated'), 'success');
         logAction('admin_password_update', { targetUserId: userId });
       } catch (err) {
         const msg = err?.name === 'AbortError'
@@ -11499,6 +11536,7 @@
           : (err instanceof Error ? err.message : 'Impossible de contacter le serveur');
         statusEl.textContent = '❌ ' + msg;
         statusEl.style.color = '#e53935';
+        showSessionStatus('❌ ' + msg, 'error');
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = t('pwd_mettre_a_jour'); }
       }
