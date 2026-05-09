@@ -7665,7 +7665,7 @@
       _wholesaleLoaded = true;
       try {
         const parsed = JSON.parse(localStorage.getItem(LS_WHOLESALE_PURCHASES) || '[]');
-        _wholesalePurchases = Array.isArray(parsed) ? parsed.map((p, idx) => {
+        _wholesalePurchases = Array.isArray(parsed) ? parsed.map((p) => {
           const supplier = normalizeWholesaleSupplier(p.supplier);
           const month = normalizeWholesaleMonth(p.month, p.date);
           const quantity = Number(p.quantity_kg ?? 0);
@@ -7690,7 +7690,7 @@
 
       try {
         const parsed = JSON.parse(localStorage.getItem(LS_WHOLESALE_PAYMENTS) || '[]');
-        _wholesalePayments = Array.isArray(parsed) ? parsed.map((p, idx) => ({
+        _wholesalePayments = Array.isArray(parsed) ? parsed.map((p) => ({
           id: p.id || `wpay_${genLocalId()}`,
           supplier: normalizeWholesaleSupplier(p.supplier),
           month: String(p.month || '').slice(0, 7),
