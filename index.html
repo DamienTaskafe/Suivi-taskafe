@@ -7914,7 +7914,9 @@
           const qty = Number(purchase.quantity_kg || 0);
           const unitPrice = Number(purchase.unit_price_kg || 0);
           if (!(qty > 0) || !(unitPrice > 0)) return;
-          const gross = Number(purchase.total_gross || 0) || qty * unitPrice;
+          // Use total_gross when stored; fall back to qty × unitPrice when absent or zero.
+          // A genuinely free purchase (unitPrice = 0) is already excluded by the guard above.
+          const gross = Number(purchase.total_gross) > 0 ? Number(purchase.total_gross) : qty * unitPrice;
           if (!byCat[cat]) byCat[cat] = { kg: 0, gross: 0 };
           byCat[cat].kg += qty;
           byCat[cat].gross += gross;
@@ -8721,8 +8723,6 @@
         const revenue = Number(sale?.total_price || 0);
         const costInfo = resolveSaleCostInfo(sale);
         const hasCost = !costInfo.missing;
-        const rowCost = hasCost ? Number(costInfo.totalCost || 0) : 0;
-        const rowProfit = hasCost ? (revenue - rowCost) : 0;
 
         const rangeBucket = ensureBucket(byRange, categoryKey, categoryLabel);
         const clientBucket = ensureBucket(byClient, clientKey, clientLabel);
@@ -8732,8 +8732,9 @@
           bucket.qty += qty;
           bucket.revenue += revenue;
           if (hasCost) {
+            const rowCost = Number(costInfo.totalCost || 0);
             bucket.cost += rowCost;
-            bucket.profit += rowProfit;
+            bucket.profit += revenue - rowCost;
           } else {
             bucket.missingQty += qty;
             bucket.missingRevenue += revenue;
@@ -8742,8 +8743,9 @@
 
         totalRevenue += revenue;
         if (hasCost) {
+          const rowCost = Number(costInfo.totalCost || 0);
           totalCost += rowCost;
-          totalProfit += rowProfit;
+          totalProfit += revenue - rowCost;
           if (costInfo.estimated) totalEstimatedCost += rowCost;
           if (costInfo.regularized) totalRegularizedCost += rowCost;
         } else {
