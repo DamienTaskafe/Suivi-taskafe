@@ -1541,7 +1541,7 @@
         wholesale_total_paid: 'Total payé',
         wholesale_remaining_to_pay: 'Reste à payer',
         wholesale_real_remaining_to_pay: 'Reste réel à payer',
-        wholesale_last_payment_regularization: 'Régularisation dernier versement',
+        wholesale_last_payment_regularization: 'Régularisation palier',
         wholesale_status_unpaid: 'Non payé',
         wholesale_status_partial: 'Partiel',
         wholesale_status_paid: 'Payé',
@@ -1845,7 +1845,7 @@
         wholesale_total_paid: 'إجمالي المدفوع',
         wholesale_remaining_to_pay: 'المتبقي للدفع',
         wholesale_real_remaining_to_pay: 'المتبقي الحقيقي للدفع',
-        wholesale_last_payment_regularization: 'تسوية الدفعة الأخيرة',
+        wholesale_last_payment_regularization: 'تسوية الشريحة',
         wholesale_status_unpaid: 'غير مدفوع',
         wholesale_status_partial: 'جزئي',
         wholesale_status_paid: 'مدفوع',
@@ -2149,7 +2149,7 @@
         wholesale_total_paid: 'Total mkhelles',
         wholesale_remaining_to_pay: 'Baqi tkhlles',
         wholesale_real_remaining_to_pay: 'Baqi l7a9i9i tkhlles',
-        wholesale_last_payment_regularization: 'Taswiya dyal akher versement',
+        wholesale_last_payment_regularization: 'Taswiya dyal palier',
         wholesale_status_unpaid: 'Ma tkhllesch',
         wholesale_status_partial: 'Partiel',
         wholesale_status_paid: 'Tkhlles',
@@ -7806,7 +7806,7 @@
         };
       });
 
-      const sortLocale = _currentLang === 'ar' ? 'ar' : (_currentLang === 'darija' ? 'fr' : 'fr');
+      const sortLocale = _currentLang === 'ar' ? 'ar' : 'fr';
       groups.sort((a, b) => b.month.localeCompare(a.month) || a.supplier.localeCompare(b.supplier, sortLocale, { sensitivity: 'base' }));
       return groups;
     }
