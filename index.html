@@ -1028,49 +1028,39 @@
   <!-- ── Achats en gros Modal (admin/manager only) ─────────────────────────── -->
   <div id="wholesalePurchasesModal" class="modal-backdrop" onclick="backdropClose(event, 'wholesalePurchasesModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head">
-        <h3 data-i18n="wholesale_title">🧾 Achats en gros</h3>
+      <div class="modal-head" style="gap:8px;">
+        <h3 data-i18n="wholesale_title" style="flex:1;min-width:0;">🧾 Achats en gros</h3>
+        <div style="position:relative;flex-shrink:0;">
+          <button class="menu-btn" onclick="toggleMenu(event,'wholesaleActionsMenu')" style="font-size:18px;padding:4px 10px;">⋯</button>
+          <div id="wholesaleActionsMenu" class="menu" style="display:none;min-width:180px;">
+            <button type="button" onclick="openWholesaleSettingsPanel()">⚙️ <span data-i18n="wholesale_settings_menu">Réglages achats</span></button>
+          </div>
+        </div>
         <button class="close-x" onclick="closeModal('wholesalePurchasesModal')">✕</button>
       </div>
 
-      <div class="settings-option" style="margin-bottom:12px;">
-        <h4 style="margin:0 0 10px;" data-i18n="wholesale_order_title">🧾 Commande fournisseur</h4>
-        <label for="wholesalePurchaseSupplier" data-i18n="wholesale_supplier">Fournisseur</label>
-        <input id="wholesalePurchaseSupplier" type="text" data-i18n-placeholder="wholesale_supplier_placeholder" placeholder="Nom fournisseur" />
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-          <div>
-            <label for="wholesalePurchaseDate" data-i18n="wholesale_purchase_date">Date achat</label>
-            <input id="wholesalePurchaseDate" type="date" onchange="syncWholesalePurchaseMonthFromDate();" />
-          </div>
-          <div>
-            <label for="wholesalePurchaseMonth" data-i18n="wholesale_month">Mois</label>
-            <input id="wholesalePurchaseMonth" type="month" />
-          </div>
+      <!-- ── Panel: Main (tabs + lists) ── -->
+      <div id="wholesaleMainPanel">
+        <div style="display:flex;gap:6px;margin-bottom:12px;">
+          <button id="wholesaleTabOrdersBtn" type="button" onclick="switchWholesaleTab('orders')" style="flex:1;font-size:13px;" data-i18n="wholesale_tab_orders">📦 Commandes fournisseur</button>
+          <button id="wholesaleTabPaymentsBtn" type="button" onclick="switchWholesaleTab('payments')" style="flex:1;font-size:13px;background:rgba(0,0,0,0.04);color:var(--color-text-muted);" data-i18n="wholesale_tab_payments">💳 Règlements fournisseur</button>
         </div>
-
-        <h5 style="margin:10px 0 6px;" data-i18n="wholesale_order_lines">Lignes commande</h5>
-        <div id="wholesaleOrderLinesList" style="display:flex;flex-direction:column;gap:8px;"></div>
-        <button type="button" onclick="addWholesaleOrderLine()" style="margin-top:8px;width:100%;" data-i18n="wholesale_add_line">➕ Ajouter une ligne</button>
-
-        <div style="margin-top:8px;font-size:13px;">
-          <span class="muted" data-i18n="wholesale_order_total_kg">Total commande (kg)</span>
-          <strong id="wholesaleOrderTotalKgPreview" style="margin-left:6px;">0 kg</strong>
+        <div id="wholesaleOrdersTabContent">
+          <button type="button" onclick="openWholesaleNewOrderPanel()" style="width:100%;margin-bottom:10px;" data-i18n="wholesale_new_order">📦 Nouvelle commande</button>
+          <div id="wholesaleOrdersList" style="max-height:55vh;overflow-y:auto;"></div>
         </div>
-        <div style="margin-top:4px;font-size:13px;">
-          <span class="muted" data-i18n="wholesale_order_total_gross">Total brut commande</span>
-          <strong id="wholesaleOrderTotalGrossPreview" style="margin-left:6px;">0.00 DHS</strong>
+        <div id="wholesalePaymentsTabContent" style="display:none;">
+          <button type="button" onclick="openWholesaleNewPaymentPanel()" style="width:100%;margin-bottom:10px;" data-i18n="wholesale_new_payment">💳 Nouveau règlement</button>
+          <div id="wholesalePaymentsList" style="max-height:55vh;overflow-y:auto;"></div>
         </div>
-
-        <label for="wholesalePurchaseNote" style="margin-top:8px;" data-i18n="wholesale_note_optional">Note (optionnelle)</label>
-        <input id="wholesalePurchaseNote" type="text" data-i18n-placeholder="wholesale_note_placeholder" placeholder="Note" />
-
-        <button type="button" onclick="saveWholesaleOrder()" style="margin-top:10px;width:100%;" data-i18n="wholesale_save_order">✅ Enregistrer la commande</button>
-        <div id="wholesalePurchaseStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
       </div>
 
-      <div class="settings-option" style="margin-bottom:12px;">
-        <h4 style="margin:0 0 10px;" data-i18n="wholesale_purchase_settings_title">⚙️ Réglages achats</h4>
+      <!-- ── Panel: Settings ── -->
+      <div id="wholesaleSettingsPanel" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <button type="button" onclick="closeWholesaleSubPanel()" style="padding:6px 10px;font-size:13px;" data-i18n="wholesale_back">← Retour</button>
+          <h4 style="margin:0;" data-i18n="wholesale_purchase_settings_title">⚙️ Réglages achats</h4>
+        </div>
         <label for="wholesaleSettingsDefaultSupplier" data-i18n="wholesale_settings_default_supplier">Fournisseur par défaut</label>
         <input id="wholesaleSettingsDefaultSupplier" type="text" data-i18n-placeholder="wholesale_supplier_placeholder" placeholder="Nom fournisseur" />
         <div style="margin-top:8px;">
@@ -1095,11 +1085,50 @@
         <div id="wholesaleSettingsStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
       </div>
 
-      <div class="settings-option" style="margin-bottom:12px;">
-        <h4 style="margin:0 0 10px;" data-i18n="wholesale_add_payment">💳 Ajouter paiement</h4>
+      <!-- ── Panel: Order Form ── -->
+      <div id="wholesaleOrderFormPanel" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <button type="button" onclick="closeWholesaleSubPanel()" style="padding:6px 10px;font-size:13px;" data-i18n="wholesale_back">← Retour</button>
+          <h4 id="wholesaleOrderFormTitle" style="margin:0;" data-i18n="wholesale_order_title">🧾 Commande fournisseur</h4>
+        </div>
+        <label for="wholesalePurchaseSupplier" data-i18n="wholesale_supplier">Fournisseur</label>
+        <input id="wholesalePurchaseSupplier" type="text" data-i18n-placeholder="wholesale_supplier_placeholder" placeholder="Nom fournisseur" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div>
+            <label for="wholesalePurchaseDate" data-i18n="wholesale_purchase_date">Date achat</label>
+            <input id="wholesalePurchaseDate" type="date" onchange="syncWholesalePurchaseMonthFromDate();" />
+          </div>
+          <div>
+            <label for="wholesalePurchaseMonth" data-i18n="wholesale_month">Mois</label>
+            <input id="wholesalePurchaseMonth" type="month" />
+          </div>
+        </div>
+        <h5 style="margin:10px 0 6px;" data-i18n="wholesale_order_lines">Lignes commande</h5>
+        <div id="wholesaleOrderLinesList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <button type="button" onclick="addWholesaleOrderLine()" style="margin-top:8px;width:100%;" data-i18n="wholesale_add_line">➕ Ajouter une ligne</button>
+        <div style="margin-top:8px;font-size:13px;">
+          <span class="muted" data-i18n="wholesale_order_total_kg">Total commande (kg)</span>
+          <strong id="wholesaleOrderTotalKgPreview" style="margin-left:6px;">0 kg</strong>
+        </div>
+        <div style="margin-top:4px;font-size:13px;">
+          <span class="muted" data-i18n="wholesale_order_total_gross">Total brut commande</span>
+          <strong id="wholesaleOrderTotalGrossPreview" style="margin-left:6px;">0.00 DHS</strong>
+        </div>
+        <label for="wholesalePurchaseNote" style="margin-top:8px;" data-i18n="wholesale_note_optional">Note (optionnelle)</label>
+        <input id="wholesalePurchaseNote" type="text" data-i18n-placeholder="wholesale_note_placeholder" placeholder="Note" />
+        <input type="hidden" id="wholesaleEditingOrderId" value="" />
+        <button type="button" onclick="saveWholesaleOrder()" style="margin-top:10px;width:100%;" data-i18n="wholesale_save_order">✅ Enregistrer la commande</button>
+        <div id="wholesalePurchaseStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+
+      <!-- ── Panel: Payment Form ── -->
+      <div id="wholesalePaymentFormPanel" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <button type="button" onclick="closeWholesaleSubPanel()" style="padding:6px 10px;font-size:13px;" data-i18n="wholesale_back">← Retour</button>
+          <h4 id="wholesalePaymentFormTitle" style="margin:0;" data-i18n="wholesale_new_payment">💳 Nouveau règlement</h4>
+        </div>
         <label for="wholesalePaymentSupplier" data-i18n="wholesale_supplier">Fournisseur</label>
         <input id="wholesalePaymentSupplier" type="text" data-i18n-placeholder="wholesale_supplier_placeholder" placeholder="Nom fournisseur" />
-
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
           <div>
             <label for="wholesalePaymentMonth" data-i18n="wholesale_month">Mois</label>
@@ -1110,7 +1139,6 @@
             <input id="wholesalePaymentDate" type="date" />
           </div>
         </div>
-
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
           <div>
             <label for="wholesalePaymentAmount" data-i18n="wholesale_paid_amount">Montant payé</label>
@@ -1126,18 +1154,13 @@
             </select>
           </div>
         </div>
-
         <label for="wholesalePaymentNote" style="margin-top:8px;" data-i18n="wholesale_note_optional">Note (optionnelle)</label>
         <input id="wholesalePaymentNote" type="text" data-i18n-placeholder="wholesale_note_placeholder" placeholder="Note" />
-
+        <input type="hidden" id="wholesaleEditingPaymentId" value="" />
         <button type="button" onclick="saveWholesalePayment()" style="margin-top:10px;width:100%;" data-i18n="wholesale_add_payment">💳 Ajouter paiement</button>
         <div id="wholesalePaymentStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
       </div>
 
-      <div>
-        <h4 style="margin:0 0 10px;" data-i18n="wholesale_monthly_groups">📚 Regroupement fournisseur + mois</h4>
-        <div id="wholesaleGroupsList" style="max-height:42vh;overflow-y:auto;"></div>
-      </div>
     </div>
   </div>
 
@@ -1575,6 +1598,8 @@
         wholesale_method_other: 'Autre',
         wholesale_no_purchases: 'Aucun achat enregistré',
         wholesale_no_payments: 'Aucun paiement enregistré',
+        wholesale_no_orders: 'Aucune commande',
+        wholesale_no_settlements: 'Aucun règlement',
         wholesale_note_optional: 'Note (optionnelle)',
         wholesale_note_placeholder: 'Note',
         wholesale_monthly_groups: '📚 Regroupement fournisseur + mois',
@@ -1586,6 +1611,24 @@
         wholesale_error_required_fields: '❌ Champs requis manquants',
         wholesale_error_positive_values: '❌ Quantité, prix et montant doivent être > 0',
         wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_tab_orders: '📦 Commandes fournisseur',
+        wholesale_tab_payments: '💳 Règlements fournisseur',
+        wholesale_new_order: '📦 Nouvelle commande',
+        wholesale_new_payment: '💳 Nouveau règlement',
+        wholesale_edit_order: '✏️ Modifier',
+        wholesale_delete_order: '🗑️ Supprimer',
+        wholesale_edit_payment: '✏️ Modifier',
+        wholesale_delete_payment: '🗑️ Supprimer',
+        wholesale_confirm_delete_order: 'Supprimer cette commande ?',
+        wholesale_confirm_delete_payment: 'Supprimer ce règlement ?',
+        wholesale_order_deleted: '✅ Commande supprimée',
+        wholesale_payment_deleted: '✅ Règlement supprimé',
+        wholesale_order_updated: '✅ Commande modifiée',
+        wholesale_payment_updated: '✅ Règlement modifié',
+        wholesale_settings_menu: '⚙️ Réglages achats',
+        wholesale_back: '← Retour',
+        wholesale_edit_order_title: '✏️ Modifier commande',
+        wholesale_edit_payment_title: '✏️ Modifier règlement',
         wholesale_purchase_settings_title: '⚙️ Réglages achats',
         wholesale_settings_default_supplier: 'Fournisseur par défaut',
         wholesale_settings_purchase_prices: 'Prix achat/kg par gamme',
@@ -1922,6 +1965,8 @@
         wholesale_method_other: 'أخرى',
         wholesale_no_purchases: 'لا توجد مشتريات مسجّلة',
         wholesale_no_payments: 'لا توجد دفعات مسجّلة',
+        wholesale_no_orders: 'لا توجد طلبيات',
+        wholesale_no_settlements: 'لا توجد تسويات',
         wholesale_note_optional: 'ملاحظة (اختيارية)',
         wholesale_note_placeholder: 'ملاحظة',
         wholesale_monthly_groups: '📚 تجميع حسب المورّد + الشهر',
@@ -1933,6 +1978,24 @@
         wholesale_error_required_fields: '❌ حقول مطلوبة ناقصة',
         wholesale_error_positive_values: '❌ يجب أن تكون الكمية والسعر والمبلغ أكبر من 0',
         wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_tab_orders: '📦 طلبيات المورّد',
+        wholesale_tab_payments: '💳 تسويات المورّد',
+        wholesale_new_order: '📦 طلبية جديدة',
+        wholesale_new_payment: '💳 تسوية جديدة',
+        wholesale_edit_order: '✏️ تعديل',
+        wholesale_delete_order: '🗑️ حذف',
+        wholesale_edit_payment: '✏️ تعديل',
+        wholesale_delete_payment: '🗑️ حذف',
+        wholesale_confirm_delete_order: 'حذف هذه الطلبية؟',
+        wholesale_confirm_delete_payment: 'حذف هذه التسوية؟',
+        wholesale_order_deleted: '✅ تم حذف الطلبية',
+        wholesale_payment_deleted: '✅ تم حذف التسوية',
+        wholesale_order_updated: '✅ تم تعديل الطلبية',
+        wholesale_payment_updated: '✅ تم تعديل التسوية',
+        wholesale_settings_menu: '⚙️ إعدادات المشتريات',
+        wholesale_back: '← رجوع',
+        wholesale_edit_order_title: '✏️ تعديل الطلبية',
+        wholesale_edit_payment_title: '✏️ تعديل التسوية',
         wholesale_purchase_settings_title: '⚙️ إعدادات المشتريات',
         wholesale_settings_default_supplier: 'المورّد الافتراضي',
         wholesale_settings_purchase_prices: 'سعر الشراء/كغ حسب الصنف',
@@ -2269,6 +2332,8 @@
         wholesale_method_other: 'Akhor',
         wholesale_no_purchases: 'Ma kayn ta chri msajjel',
         wholesale_no_payments: 'Ma kayn ta versement msajjel',
+        wholesale_no_orders: 'Ma kayn ta commande',
+        wholesale_no_settlements: 'Ma kayn ta règlement',
         wholesale_note_optional: 'Note (ikhtiyariya)',
         wholesale_note_placeholder: 'Note',
         wholesale_monthly_groups: '📚 Tajmi3 fournisseur + chhar',
@@ -2280,6 +2345,24 @@
         wholesale_error_required_fields: '❌ Kaynin champs khasrin',
         wholesale_error_positive_values: '❌ Kmiya w taman w montant khashom ykono > 0',
         wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_tab_orders: '📦 Commandes fournisseur',
+        wholesale_tab_payments: '💳 Règlements fournisseur',
+        wholesale_new_order: '📦 Commande jdida',
+        wholesale_new_payment: '💳 Règlement jdid',
+        wholesale_edit_order: '✏️ Bdel',
+        wholesale_delete_order: '🗑️ Hayed',
+        wholesale_edit_payment: '✏️ Bdel',
+        wholesale_delete_payment: '🗑️ Hayed',
+        wholesale_confirm_delete_order: 'Hayed had commande?',
+        wholesale_confirm_delete_payment: 'Hayed had règlement?',
+        wholesale_order_deleted: '✅ Commande that7at',
+        wholesale_payment_deleted: '✅ Règlement that7',
+        wholesale_order_updated: '✅ Commande tbdlet',
+        wholesale_payment_updated: '✅ Règlement tbdel',
+        wholesale_settings_menu: '⚙️ Réglages achats',
+        wholesale_back: '← Rje3',
+        wholesale_edit_order_title: '✏️ Bdel commande',
+        wholesale_edit_payment_title: '✏️ Bdel règlement',
         wholesale_purchase_settings_title: '⚙️ Réglages achats',
         wholesale_settings_default_supplier: 'Fournisseur par défaut',
         wholesale_settings_purchase_prices: 'Taman chri/kg par gamme',
@@ -7782,6 +7865,7 @@
     let _wholesaleLoaded = false;
     let _wholesaleSettingsLoaded = false;
     let _wholesaleGroupsCache = [];
+    let _wholesaleActiveTab = 'orders';
 
     function wholesaleNowDate() {
       return new Date().toISOString().slice(0, 10);
@@ -8213,14 +8297,175 @@
       if (!requireManagerOrAdmin(t('wholesale_title'))) return;
       const group = _wholesaleGroupsCache[index];
       if (!group) return;
+      // Open payment form pre-filled for this group
+      const editIdEl = document.getElementById('wholesaleEditingPaymentId');
       const supplierEl = document.getElementById('wholesalePaymentSupplier');
       const monthEl = document.getElementById('wholesalePaymentMonth');
       const dateEl = document.getElementById('wholesalePaymentDate');
       const amountEl = document.getElementById('wholesalePaymentAmount');
+      const methodEl = document.getElementById('wholesalePaymentMethod');
+      const noteEl = document.getElementById('wholesalePaymentNote');
+      const titleEl = document.getElementById('wholesalePaymentFormTitle');
+      if (editIdEl) editIdEl.value = '';
       if (supplierEl) supplierEl.value = group.supplier;
       if (monthEl) monthEl.value = group.month;
-      if (dateEl && !dateEl.value) dateEl.value = wholesaleNowDate();
+      if (dateEl) dateEl.value = wholesaleNowDate();
       if (amountEl) amountEl.value = Math.max(0, Number(group.remaining || 0)).toFixed(2);
+      if (methodEl) methodEl.value = 'cash';
+      if (noteEl) noteEl.value = '';
+      if (titleEl) { titleEl.textContent = t('wholesale_new_payment'); titleEl.setAttribute('data-i18n', 'wholesale_new_payment'); }
+      setWholesaleStatus('wholesalePaymentStatus', '');
+      showWholesalePanel('wholesalePaymentFormPanel');
+    };
+
+    function showWholesalePanel(panelId) {
+      ['wholesaleMainPanel','wholesaleSettingsPanel','wholesaleOrderFormPanel','wholesalePaymentFormPanel'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === panelId) ? '' : 'none';
+      });
+    }
+
+    window.closeWholesaleSubPanel = function() {
+      showWholesalePanel('wholesaleMainPanel');
+    };
+
+    window.switchWholesaleTab = function(tab) {
+      _wholesaleActiveTab = tab;
+      const ordersBtn = document.getElementById('wholesaleTabOrdersBtn');
+      const paymentsBtn = document.getElementById('wholesaleTabPaymentsBtn');
+      const ordersContent = document.getElementById('wholesaleOrdersTabContent');
+      const paymentsContent = document.getElementById('wholesalePaymentsTabContent');
+      const activeStyle = 'flex:1;font-size:13px;';
+      const inactiveStyle = 'flex:1;font-size:13px;background:rgba(0,0,0,0.04);color:var(--color-text-muted);';
+      if (ordersBtn) ordersBtn.style.cssText = tab === 'orders' ? activeStyle : inactiveStyle;
+      if (paymentsBtn) paymentsBtn.style.cssText = tab === 'payments' ? activeStyle : inactiveStyle;
+      if (ordersContent) ordersContent.style.display = tab === 'orders' ? '' : 'none';
+      if (paymentsContent) paymentsContent.style.display = tab === 'payments' ? '' : 'none';
+    };
+
+    window.openWholesaleSettingsPanel = function() {
+      closeAllMenus();
+      hydrateWholesaleSettingsForm();
+      setWholesaleStatus('wholesaleSettingsStatus', '');
+      showWholesalePanel('wholesaleSettingsPanel');
+    };
+
+    window.openWholesaleNewOrderPanel = function() {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      const editIdEl = document.getElementById('wholesaleEditingOrderId');
+      const supplierEl = document.getElementById('wholesalePurchaseSupplier');
+      const dateEl = document.getElementById('wholesalePurchaseDate');
+      const monthEl = document.getElementById('wholesalePurchaseMonth');
+      const noteEl = document.getElementById('wholesalePurchaseNote');
+      const titleEl = document.getElementById('wholesaleOrderFormTitle');
+      if (editIdEl) editIdEl.value = '';
+      if (supplierEl) supplierEl.value = getWholesaleDefaultSupplier();
+      if (dateEl) dateEl.value = wholesaleNowDate();
+      if (monthEl) monthEl.value = wholesaleCurrentMonth();
+      if (noteEl) noteEl.value = '';
+      if (titleEl) { titleEl.textContent = t('wholesale_order_title'); titleEl.setAttribute('data-i18n', 'wholesale_order_title'); }
+      _wholesaleOrderLines = [createWholesaleOrderLine()];
+      renderWholesaleOrderLines();
+      setWholesaleStatus('wholesalePurchaseStatus', '');
+      showWholesalePanel('wholesaleOrderFormPanel');
+    };
+
+    window.openWholesaleNewPaymentPanel = function() {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      const editIdEl = document.getElementById('wholesaleEditingPaymentId');
+      const supplierEl = document.getElementById('wholesalePaymentSupplier');
+      const monthEl = document.getElementById('wholesalePaymentMonth');
+      const dateEl = document.getElementById('wholesalePaymentDate');
+      const amountEl = document.getElementById('wholesalePaymentAmount');
+      const methodEl = document.getElementById('wholesalePaymentMethod');
+      const noteEl = document.getElementById('wholesalePaymentNote');
+      const titleEl = document.getElementById('wholesalePaymentFormTitle');
+      if (editIdEl) editIdEl.value = '';
+      if (supplierEl) supplierEl.value = getWholesaleDefaultSupplier();
+      if (monthEl) monthEl.value = wholesaleCurrentMonth();
+      if (dateEl) dateEl.value = wholesaleNowDate();
+      if (amountEl) amountEl.value = '';
+      if (methodEl) methodEl.value = 'cash';
+      if (noteEl) noteEl.value = '';
+      if (titleEl) { titleEl.textContent = t('wholesale_new_payment'); titleEl.setAttribute('data-i18n', 'wholesale_new_payment'); }
+      setWholesaleStatus('wholesalePaymentStatus', '');
+      showWholesalePanel('wholesalePaymentFormPanel');
+    };
+
+    window.openWholesaleEditOrderPanel = function(orderKey) {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      loadWholesaleData();
+      const lines = _wholesalePurchases.filter(p => (p.order_id || p.id) === orderKey);
+      if (lines.length === 0) return;
+      const first = lines[0];
+      const editIdEl = document.getElementById('wholesaleEditingOrderId');
+      const supplierEl = document.getElementById('wholesalePurchaseSupplier');
+      const dateEl = document.getElementById('wholesalePurchaseDate');
+      const monthEl = document.getElementById('wholesalePurchaseMonth');
+      const noteEl = document.getElementById('wholesalePurchaseNote');
+      const titleEl = document.getElementById('wholesaleOrderFormTitle');
+      if (editIdEl) editIdEl.value = orderKey;
+      if (supplierEl) supplierEl.value = first.supplier || '';
+      if (dateEl) dateEl.value = first.date || '';
+      if (monthEl) monthEl.value = first.month || '';
+      if (noteEl) noteEl.value = first.note || '';
+      if (titleEl) { titleEl.textContent = t('wholesale_edit_order_title'); titleEl.setAttribute('data-i18n', 'wholesale_edit_order_title'); }
+      _wholesaleOrderLines = lines.map(p => ({
+        category: p.category || '',
+        quantity_kg: Number(p.quantity_kg || 0),
+        unit_price_kg: Number(p.unit_price_kg || 0)
+      }));
+      if (_wholesaleOrderLines.length === 0) _wholesaleOrderLines = [createWholesaleOrderLine()];
+      renderWholesaleOrderLines();
+      setWholesaleStatus('wholesalePurchaseStatus', '');
+      showWholesalePanel('wholesaleOrderFormPanel');
+    };
+
+    window.openWholesaleEditPaymentPanel = function(paymentId) {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      loadWholesaleData();
+      const payment = _wholesalePayments.find(p => p.id === paymentId);
+      if (!payment) return;
+      const editIdEl = document.getElementById('wholesaleEditingPaymentId');
+      const supplierEl = document.getElementById('wholesalePaymentSupplier');
+      const monthEl = document.getElementById('wholesalePaymentMonth');
+      const dateEl = document.getElementById('wholesalePaymentDate');
+      const amountEl = document.getElementById('wholesalePaymentAmount');
+      const methodEl = document.getElementById('wholesalePaymentMethod');
+      const noteEl = document.getElementById('wholesalePaymentNote');
+      const titleEl = document.getElementById('wholesalePaymentFormTitle');
+      if (editIdEl) editIdEl.value = paymentId;
+      if (supplierEl) supplierEl.value = payment.supplier || '';
+      if (monthEl) monthEl.value = payment.month || '';
+      if (dateEl) dateEl.value = payment.date || '';
+      if (amountEl) amountEl.value = payment.amount > 0 ? String(payment.amount) : '';
+      if (methodEl) methodEl.value = payment.method || 'other';
+      if (noteEl) noteEl.value = payment.note || '';
+      if (titleEl) { titleEl.textContent = t('wholesale_edit_payment_title'); titleEl.setAttribute('data-i18n', 'wholesale_edit_payment_title'); }
+      setWholesaleStatus('wholesalePaymentStatus', '');
+      showWholesalePanel('wholesalePaymentFormPanel');
+    };
+
+    window.deleteWholesaleOrder = function(orderKey) {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      if (!confirm(t('wholesale_confirm_delete_order'))) return;
+      loadWholesaleData();
+      _wholesalePurchases = _wholesalePurchases.filter(p => (p.order_id || p.id) !== orderKey);
+      persistWholesaleData();
+      renderWholesalePurchases();
+      renderAnalytics(_allSalesData);
+      showSessionStatus(t('wholesale_order_deleted'), 'success', 2500);
+    };
+
+    window.deleteWholesalePayment = function(paymentId) {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      if (!confirm(t('wholesale_confirm_delete_payment'))) return;
+      loadWholesaleData();
+      _wholesalePayments = _wholesalePayments.filter(p => p.id !== paymentId);
+      persistWholesaleData();
+      renderWholesalePurchases();
+      renderAnalytics(_allSalesData);
+      showSessionStatus(t('wholesale_payment_deleted'), 'success', 2500);
     };
 
     window.saveWholesaleOrder = function() {
@@ -8231,11 +8476,13 @@
       const dateEl = document.getElementById('wholesalePurchaseDate');
       const monthEl = document.getElementById('wholesalePurchaseMonth');
       const noteEl = document.getElementById('wholesalePurchaseNote');
+      const editIdEl = document.getElementById('wholesaleEditingOrderId');
 
       const supplier = normalizeWholesaleSupplier(supplierEl?.value) || getWholesaleDefaultSupplier();
       const date = String(dateEl?.value || '').slice(0, 10);
       const month = normalizeWholesaleMonth(monthEl?.value, date);
       const note = String(noteEl?.value || '').trim();
+      const editingOrderKey = String(editIdEl?.value || '').trim();
 
       if (!supplier || !month || !date) {
         setWholesaleStatus('wholesalePurchaseStatus', t('wholesale_error_required_fields'), 'error');
@@ -8276,30 +8523,61 @@
         return;
       }
 
-      const orderId = `wo_${genLocalId()}`;
-      preparedLines.forEach((line, index) => {
-        _wholesalePurchases.push({
-          id: `wp_${genLocalId()}`,
-          order_id: orderId,
-          order_line_index: index + 1,
-          supplier,
-          month,
-          date,
-          category: line.category,
-          quantity_kg: line.quantity_kg,
-          unit_price_kg: line.unit_price_kg,
-          total_gross: line.quantity_kg * line.unit_price_kg,
-          note,
-          created_at: new Date().toISOString()
-        });
-      });
-      persistWholesaleData();
       const autoFillInfo = autoFilledPriceCount > 0 ? ` · ${autoFilledPriceCount} ${t('wholesale_purchase_price_prefilled')}` : '';
-      setWholesaleStatus('wholesalePurchaseStatus', `${t('wholesale_saved_order')} · ${preparedLines.length} ${t('wholesale_order_lines')}${autoFillInfo}`);
+
+      if (editingOrderKey) {
+        // Edit mode: remove existing lines and replace
+        _wholesalePurchases = _wholesalePurchases.filter(p => (p.order_id || p.id) !== editingOrderKey);
+        const orderId = editingOrderKey.startsWith('wo_') ? editingOrderKey : `wo_${genLocalId()}`;
+        preparedLines.forEach((line, index) => {
+          _wholesalePurchases.push({
+            id: `wp_${genLocalId()}`,
+            order_id: orderId,
+            order_line_index: index + 1,
+            supplier,
+            month,
+            date,
+            category: line.category,
+            quantity_kg: line.quantity_kg,
+            unit_price_kg: line.unit_price_kg,
+            total_gross: line.quantity_kg * line.unit_price_kg,
+            note,
+            created_at: new Date().toISOString()
+          });
+        });
+        persistWholesaleData();
+        setWholesaleStatus('wholesalePurchaseStatus', `${t('wholesale_order_updated')} · ${preparedLines.length} ${t('wholesale_order_lines')}${autoFillInfo}`);
+      } else {
+        // New mode
+        const orderId = `wo_${genLocalId()}`;
+        preparedLines.forEach((line, index) => {
+          _wholesalePurchases.push({
+            id: `wp_${genLocalId()}`,
+            order_id: orderId,
+            order_line_index: index + 1,
+            supplier,
+            month,
+            date,
+            category: line.category,
+            quantity_kg: line.quantity_kg,
+            unit_price_kg: line.unit_price_kg,
+            total_gross: line.quantity_kg * line.unit_price_kg,
+            note,
+            created_at: new Date().toISOString()
+          });
+        });
+        persistWholesaleData();
+        setWholesaleStatus('wholesalePurchaseStatus', `${t('wholesale_saved_order')} · ${preparedLines.length} ${t('wholesale_order_lines')}${autoFillInfo}`);
+      }
+
       if (noteEl) noteEl.value = '';
       _wholesaleOrderLines = [createWholesaleOrderLine()];
       renderWholesaleOrderLines();
       renderWholesalePurchases();
+      renderAnalytics(_allSalesData);
+      showWholesalePanel('wholesaleMainPanel');
+      _wholesaleActiveTab = 'orders';
+      switchWholesaleTab('orders');
     };
 
     window.saveWholesalePurchase = window.saveWholesaleOrder;
@@ -8313,6 +8591,7 @@
       const amountEl = document.getElementById('wholesalePaymentAmount');
       const methodEl = document.getElementById('wholesalePaymentMethod');
       const noteEl = document.getElementById('wholesalePaymentNote');
+      const editIdEl = document.getElementById('wholesaleEditingPaymentId');
 
       const supplier = normalizeWholesaleSupplier(supplierEl?.value) || getWholesaleDefaultSupplier();
       const month = String(monthEl?.value || '').slice(0, 7);
@@ -8320,6 +8599,7 @@
       const amount = Number(amountEl?.value || 0);
       const method = methodEl?.value || 'other';
       const note = String(noteEl?.value || '').trim();
+      const editingPaymentId = String(editIdEl?.value || '').trim();
 
       if (!supplier || !month || !date) {
         setWholesaleStatus('wholesalePaymentStatus', t('wholesale_error_required_fields'), 'error');
@@ -8330,104 +8610,154 @@
         return;
       }
 
-      _wholesalePayments.push({
-        id: `wpay_${genLocalId()}`,
-        supplier,
-        month,
-        date,
-        amount,
-        method: ['cash', 'transfer', 'check', 'other'].includes(method) ? method : 'other',
-        note,
-        created_at: new Date().toISOString()
-      });
-      persistWholesaleData();
-      setWholesaleStatus('wholesalePaymentStatus', t('wholesale_saved_payment'));
+      if (editingPaymentId) {
+        const idx = _wholesalePayments.findIndex(p => p.id === editingPaymentId);
+        if (idx >= 0) {
+          _wholesalePayments[idx] = {
+            ..._wholesalePayments[idx],
+            supplier,
+            month,
+            date,
+            amount,
+            method: ['cash', 'transfer', 'check', 'other'].includes(method) ? method : 'other',
+            note
+          };
+        }
+        persistWholesaleData();
+        setWholesaleStatus('wholesalePaymentStatus', t('wholesale_payment_updated'));
+      } else {
+        _wholesalePayments.push({
+          id: `wpay_${genLocalId()}`,
+          supplier,
+          month,
+          date,
+          amount,
+          method: ['cash', 'transfer', 'check', 'other'].includes(method) ? method : 'other',
+          note,
+          created_at: new Date().toISOString()
+        });
+        persistWholesaleData();
+        setWholesaleStatus('wholesalePaymentStatus', t('wholesale_saved_payment'));
+      }
+
       if (amountEl) amountEl.value = '';
       if (noteEl) noteEl.value = '';
       renderWholesalePurchases();
+      renderAnalytics(_allSalesData);
+      showWholesalePanel('wholesaleMainPanel');
+      _wholesaleActiveTab = 'payments';
+      switchWholesaleTab('payments');
     };
+
+    function formatWholesaleMonthLabel(monthStr) {
+      if (!monthStr || !/^\d{4}-\d{2}$/.test(monthStr)) return monthStr || '';
+      try {
+        return new Date(`${monthStr}-01T00:00:00`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      } catch(e) { return monthStr; }
+    }
+
+    function renderWholesaleMonthOrders(group) {
+      const monthLabel = formatWholesaleMonthLabel(group.month);
+      const orderMap = new Map();
+      group.purchases.forEach(p => {
+        const key = p.order_id || p.id;
+        if (!orderMap.has(key)) orderMap.set(key, []);
+        orderMap.get(key).push(p);
+      });
+
+      const ordersHtml = Array.from(orderMap.entries()).map(([orderKey, lines], orderIdx) => {
+        const totalKg = lines.reduce((s, p) => s + Number(p.quantity_kg || 0), 0);
+        const totalGross = lines.reduce((s, p) => s + Number(p.total_gross || (p.quantity_kg * p.unit_price_kg) || 0), 0);
+        const supplier = lines[0]?.supplier || group.supplier;
+        const date = lines[0]?.date || '';
+        const note = lines[0]?.note || '';
+        const orderLabel = `#${String(orderIdx + 1).padStart(3, '0')}`;
+        const orderKeyJson = JSON.stringify(orderKey);
+        const linesHtml = lines.map(p => {
+          const badge = p.category ? `<span class="badge ${escHtml(p.category)}" style="font-size:11px;">${escHtml(p.category)}</span>` : '';
+          return `<div style="font-size:12px;padding:2px 0;">${badge} ${formatQty(p.quantity_kg)} kg × ${formatDh(p.unit_price_kg)} = <strong>${formatDh(Number(p.total_gross || p.quantity_kg * p.unit_price_kg || 0))}</strong></div>`;
+        }).join('');
+        return `<div class="settings-option" style="margin-bottom:8px;padding:10px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px;">${escHtml(orderLabel)} — ${escHtml(supplier)}</div>
+          <div class="muted" style="font-size:12px;margin-bottom:6px;">${escHtml(date)} · ${formatQty(totalKg)} kg · ${formatDh(totalGross)}</div>
+          <div style="margin-bottom:6px;">${linesHtml}</div>
+          ${note ? `<div class="muted" style="font-size:12px;margin-bottom:6px;">${escHtml(note)}</div>` : ''}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" onclick="openWholesaleEditOrderPanel(${escHtml(orderKeyJson)})" style="padding:5px 10px;font-size:12px;">${escHtml(t('wholesale_edit_order'))}</button>
+            <button type="button" onclick="deleteWholesaleOrder(${escHtml(orderKeyJson)})" style="padding:5px 10px;font-size:12px;color:var(--color-error,#c0392b);">${escHtml(t('wholesale_delete_order'))}</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      const summaryHtml = `<div style="background:rgba(0,0,0,0.04);border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;">
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_kg_month'))}</span><span class="bal-val">${formatQty(group.totalKg)} kg</span></div>
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_gross'))}</span><span class="bal-val">${formatDh(group.totalGross)}</span></div>
+        ${group.tierReached ? `<div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_tier_discount'))} ✓</span><span class="bal-val">-${formatDh(group.discount)}</span></div>` : ''}
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_supplier_total_net'))}</span><span class="bal-val">${formatDh(group.totalNet)}</span></div>
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_paid'))}</span><span class="bal-val">${formatDh(group.totalPaid)}</span></div>
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_remaining_to_pay'))}</span><span class="bal-val">${formatDh(group.remaining)}</span></div>
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_last_payment_suggested'))}</span><span class="bal-val"><strong>${formatDh(Math.max(0, Number(group.remaining || 0)))}</strong></span></div>
+      </div>`;
+
+      return `<div style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid rgba(0,0,0,0.1);">${escHtml(monthLabel)}</div>
+        ${summaryHtml}
+        ${ordersHtml}
+      </div>`;
+    }
+
+    function renderWholesaleMonthPayments(group) {
+      const monthLabel = formatWholesaleMonthLabel(group.month);
+      const paymentsHtml = group.payments.map(p => {
+        const methodLabel = getWholesalePaymentMethodLabel(p.method);
+        const pIdJson = JSON.stringify(p.id);
+        return `<div class="settings-option" style="margin-bottom:8px;padding:10px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px;">${escHtml(p.date || group.month)} — ${escHtml(p.supplier || group.supplier)}</div>
+          <div class="muted" style="font-size:12px;margin-bottom:4px;">${formatDh(p.amount)} · ${escHtml(methodLabel)}</div>
+          ${p.note ? `<div class="muted" style="font-size:12px;margin-bottom:6px;">${escHtml(p.note)}</div>` : ''}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" onclick="openWholesaleEditPaymentPanel(${escHtml(pIdJson)})" style="padding:5px 10px;font-size:12px;">${escHtml(t('wholesale_edit_payment'))}</button>
+            <button type="button" onclick="deleteWholesalePayment(${escHtml(pIdJson)})" style="padding:5px 10px;font-size:12px;color:var(--color-error,#c0392b);">${escHtml(t('wholesale_delete_payment'))}</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      const summaryHtml = `<div style="background:rgba(0,0,0,0.04);border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;">
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_kg_month'))}</span><span class="bal-val">${formatQty(group.totalKg)} kg</span></div>
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_supplier_total_net'))}</span><span class="bal-val">${formatDh(group.totalNet)}</span></div>
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_paid'))}</span><span class="bal-val">${formatDh(group.totalPaid)}</span></div>
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_remaining_to_pay'))}</span><span class="bal-val">${formatDh(group.remaining)}</span></div>
+        <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_last_payment_suggested'))}</span><span class="bal-val"><strong>${formatDh(Math.max(0, Number(group.remaining || 0)))}</strong></span></div>
+      </div>`;
+
+      return `<div style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid rgba(0,0,0,0.1);">${escHtml(monthLabel)}</div>
+        ${summaryHtml}
+        ${paymentsHtml}
+      </div>`;
+    }
 
     function renderWholesalePurchases() {
       if (!isManagerOrAdmin()) return;
       loadWholesaleData();
-      const listEl = document.getElementById('wholesaleGroupsList');
-      if (!listEl) return;
       const groups = buildWholesaleGroups();
       _wholesaleGroupsCache = groups;
 
-      if (groups.length === 0) {
-        listEl.innerHTML = `<div class="empty-state">${escHtml(t('wholesale_no_purchases'))}</div>`;
-        return;
+      const ordersEl = document.getElementById('wholesaleOrdersList');
+      if (ordersEl) {
+        const monthsWithPurchases = groups.filter(g => g.purchases.length > 0);
+        ordersEl.innerHTML = monthsWithPurchases.length === 0
+          ? `<div class="empty-state">${escHtml(t('wholesale_no_orders'))}</div>`
+          : monthsWithPurchases.map(g => renderWholesaleMonthOrders(g)).join('');
       }
 
-      listEl.innerHTML = groups.map((group, idx) => {
-        const statusText = t(group.statusKey);
-        const statusColor = group.statusKey === 'wholesale_status_paid'
-          ? '#148c37'
-          : group.statusKey === 'wholesale_status_partial' ? '#b26a00' : '#c0392b';
-        const tierText = group.tierReached ? t('wholesale_tier_reached') : t('wholesale_tier_not_reached');
-        const purchasesHtml = group.purchases.length > 0
-          ? group.purchases.map(p => {
-            const product = p.category ? `<span class="badge ${escHtml(p.category)}">${escHtml(p.category)}</span>` : '—';
-            return `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
-              <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                <strong>${escHtml(p.date || group.month)}</strong>
-                <span>${product}</span>
-              </div>
-              <div class="muted" style="font-size:11px;">
-                ${formatQty(p.quantity_kg)} kg × ${formatDh(p.unit_price_kg)} = ${formatDh(p.total_gross)}
-              </div>
-              <div class="muted" style="font-size:11px;">ℹ️ ${escHtml(t('wholesale_order_price_frozen'))}</div>
-              ${p.note ? `<div class="muted" style="font-size:11px;">${escHtml(p.note)}</div>` : ''}
-            </div>`;
-          }).join('')
-          : `<div class="muted" style="font-size:12px;">${escHtml(t('wholesale_no_purchases'))}</div>`;
-
-        const paymentsHtml = group.payments.length > 0
-          ? group.payments.map(p => `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12px;">
-            <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-              <strong>${escHtml(p.date || group.month)}</strong>
-              <span>${escHtml(getWholesalePaymentMethodLabel(p.method))}</span>
-            </div>
-            <div class="muted" style="font-size:11px;">${formatDh(p.amount)}</div>
-            ${p.note ? `<div class="muted" style="font-size:11px;">${escHtml(p.note)}</div>` : ''}
-          </div>`).join('')
-          : `<div class="muted" style="font-size:12px;">${escHtml(t('wholesale_no_payments'))}</div>`;
-
-        return `<div class="settings-option" style="margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
-            <strong>${escHtml(group.supplier)}</strong>
-            <span class="muted" style="font-size:12px;">${escHtml(group.month)}</span>
-          </div>
-          <div class="muted" style="font-size:11px;margin:6px 0 8px;">
-            ${escHtml(tierText)} · ${escHtml(t('wholesale_tier_discount'))}: -${formatDh(group.discount)}
-          </div>
-          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_kg_month'))}</span><span class="bal-val">${formatQty(group.totalKg)} kg</span></div>
-          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_gross'))}</span><span class="bal-val">${formatDh(group.totalGross)}</span></div>
-          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_supplier_total_net'))}</span><span class="bal-val">${formatDh(group.totalNet)}</span></div>
-          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_total_paid'))}</span><span class="bal-val">${formatDh(group.totalPaid)}</span></div>
-          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_remaining_to_pay'))}</span><span class="bal-val">${formatDh(group.remaining)}</span></div>
-          <div class="bal-row"><span class="bal-label">${escHtml(t('wholesale_status_label'))}</span><span class="bal-val" style="color:${statusColor};">${escHtml(statusText)}</span></div>
-          <div style="margin-top:6px;font-size:12px;">
-            <strong>${escHtml(t('wholesale_last_payment_regularization'))}:</strong> -${formatDh(group.discount)}
-          </div>
-          <div style="font-size:12px;">
-            <strong>${escHtml(t('wholesale_real_remaining_to_pay'))}:</strong> ${formatDh(group.remaining)}
-          </div>
-          <div style="font-size:12px;">
-            <strong>${escHtml(t('wholesale_last_payment_suggested'))}:</strong> ${formatDh(Math.max(0, Number(group.remaining || 0)))}
-          </div>
-          <button type="button" onclick="prefillWholesalePaymentByGroup(${idx})" style="width:100%;margin-top:8px;">${escHtml(t('wholesale_group_payment_action'))}</button>
-          <div style="margin-top:10px;">
-            <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${escHtml(t('wholesale_purchase_history'))}</div>
-            ${purchasesHtml}
-          </div>
-          <div style="margin-top:8px;">
-            <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${escHtml(t('wholesale_payments'))}</div>
-            ${paymentsHtml}
-          </div>
-        </div>`;
-      }).join('');
+      const paymentsEl = document.getElementById('wholesalePaymentsList');
+      if (paymentsEl) {
+        const monthsWithPayments = groups.filter(g => g.payments.length > 0);
+        paymentsEl.innerHTML = monthsWithPayments.length === 0
+          ? `<div class="empty-state">${escHtml(t('wholesale_no_settlements'))}</div>`
+          : monthsWithPayments.map(g => renderWholesaleMonthPayments(g)).join('');
+      }
     }
     window.renderWholesalePurchases = renderWholesalePurchases;
 
@@ -8436,25 +8766,11 @@
       if (!requireManagerOrAdmin(t('wholesale_title'))) return;
       loadWholesaleData();
       loadWholesaleSettings();
-      const purchaseDateEl = document.getElementById('wholesalePurchaseDate');
-      const purchaseMonthEl = document.getElementById('wholesalePurchaseMonth');
-      const purchaseSupplierEl = document.getElementById('wholesalePurchaseSupplier');
-      const paymentDateEl = document.getElementById('wholesalePaymentDate');
-      const paymentMonthEl = document.getElementById('wholesalePaymentMonth');
-      const paymentSupplierEl = document.getElementById('wholesalePaymentSupplier');
-      if (purchaseDateEl && !purchaseDateEl.value) purchaseDateEl.value = wholesaleNowDate();
-      if (purchaseMonthEl && !purchaseMonthEl.value) purchaseMonthEl.value = wholesaleCurrentMonth();
-      if (purchaseSupplierEl && !purchaseSupplierEl.value) purchaseSupplierEl.value = getWholesaleDefaultSupplier();
-      if (paymentDateEl && !paymentDateEl.value) paymentDateEl.value = wholesaleNowDate();
-      if (paymentMonthEl && !paymentMonthEl.value) paymentMonthEl.value = wholesaleCurrentMonth();
-      if (paymentSupplierEl && !paymentSupplierEl.value) paymentSupplierEl.value = getWholesaleDefaultSupplier();
-      ensureWholesaleOrderLines();
-      hydrateWholesaleSettingsForm();
+      showWholesalePanel('wholesaleMainPanel');
+      switchWholesaleTab(_wholesaleActiveTab || 'orders');
       setWholesaleStatus('wholesalePurchaseStatus', '');
       setWholesaleStatus('wholesalePaymentStatus', '');
       setWholesaleStatus('wholesaleSettingsStatus', '');
-      renderWholesaleOrderLines();
-      window.updateWholesalePurchaseTotalPreview?.();
       renderWholesalePurchases();
       openModal('wholesalePurchasesModal');
     };
