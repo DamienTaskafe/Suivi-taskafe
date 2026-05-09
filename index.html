@@ -123,8 +123,6 @@
           </div>
           <!-- ── Stats & Balance ──────────────────────────────────────────── -->
           <button id="statsBalanceMenuBtn" type="button" onclick="openStatsBalanceModal()" data-i18n="menu_statsBalance">📊 Statistiques &amp; 💰 Balances</button>
-          <!-- ── Dépenses ─────────────────────────────────────────────────── -->
-          <button id="depensesMenuBtn" class="hidden" type="button" onclick="openDepensesModal()" data-i18n="menu_depenses">💸 Dépenses</button>
           <!-- ── Employés (manager/admin only) ───────────────────────────── -->
           <button type="button" id="employesMenuBtn" onclick="openEmployesModal()" class="hidden" data-i18n="menu_employes">👥 Employés</button>
           <!-- ── Clients par commercial (manager/admin only) ─────────────── -->
@@ -1362,6 +1360,7 @@
         analytics_balance_suggested_payment: 'Dernier paiement suggéré',
         analytics_no_supplier_balance: 'Aucune balance fournisseur.',
         analytics_total_label: 'TOTAL',
+        analytics_commission_entries_load_warn: '⚠️ Impossible de charger les avances/paiements. Les restes commission peuvent être incomplets.',
         sale_title: '💵 Nouvelle vente',
         sale_selectClient: 'Sélectionner un client',
         sale_searchClient: '🔎 Rechercher un client...',
@@ -1762,6 +1761,7 @@
         analytics_balance_suggested_payment: 'آخر دفعة مقترحة',
         analytics_no_supplier_balance: 'لا توجد أرصدة موردين.',
         analytics_total_label: 'المجموع',
+        analytics_commission_entries_load_warn: '⚠️ تعذر تحميل السلفات/المدفوعات. قد تكون مبالغ العمولة المتبقية غير مكتملة.',
         sale_title: '💵 بيع جديد',
         sale_selectClient: 'اختر زبوناً',
         sale_searchClient: '🔎 ابحث عن زبون...',
@@ -2162,6 +2162,7 @@
         analytics_balance_suggested_payment: 'Akher paiement suggéré',
         analytics_no_supplier_balance: 'Ma kaynach balance fournisseur.',
         analytics_total_label: 'TOTAL',
+        analytics_commission_entries_load_warn: '⚠️ Ma qdrnach njibou avances/paiements. B9a commission y9dr ykoun naqess.',
         sale_title: '💵 Tbi3a jdida',
         sale_selectClient: 'Khtar client',
         sale_searchClient: '🔎 Qelleb 3la client...',
@@ -9438,8 +9439,9 @@
     };
 
     function toMonthBounds(monthValue) {
-      const safeMonth = /^\d{4}-\d{2}$/.test(String(monthValue || '').trim())
-        ? String(monthValue).trim()
+      const monthText = String(monthValue || '').trim();
+      const safeMonth = /^\d{4}-\d{2}$/.test(monthText)
+        ? monthText
         : new Date().toISOString().slice(0, 7);
       const start = `${safeMonth}-01`;
       const [yyyy, mm] = safeMonth.split('-').map(Number);
@@ -9449,8 +9451,9 @@
     }
 
     function toWeekBounds(dateValue) {
-      const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(String(dateValue || '').trim())
-        ? String(dateValue).trim()
+      const dateText = String(dateValue || '').trim();
+      const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(dateText)
+        ? dateText
         : new Date().toISOString().slice(0, 10);
       const current = new Date(`${safeDate}T12:00:00`);
       const weekday = (current.getDay() + 6) % 7;
@@ -9769,6 +9772,7 @@
         ? allSellers
         : allSellers.filter(u => String(u.id || '') === analyticsSellerUiState.commissionSellerId);
       const monthEntriesByUser = {};
+      let commissionEntriesLoadWarning = '';
       try {
         const { data: entryRows, error: entriesError } = await supabase
           .from('employee_balance_entries')
@@ -9785,6 +9789,7 @@
         });
       } catch (e) {
         console.warn('[renderAnalytics] employee_balance_entries:', e?.message);
+        commissionEntriesLoadWarning = t('analytics_commission_entries_load_warn');
       }
 
       let totalCommissionsDue = 0;
@@ -9851,7 +9856,7 @@
       const clientRows = clientEntries.map((entry) => `<tr>
         <td>${escHtml(entry.name)}</td>
         <td>${formatDh(entry.totalSold)}</td>
-        <td style="color:#148c37;">${formatDh(entry.paid)}</td>
+        <td style="color:var(--color-success);">${formatDh(entry.paid)}</td>
         <td style="${entry.unpaid > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(entry.unpaid)}</td>
       </tr>`).join('');
       const clientsTotal = clientEntries.reduce((acc, entry) => {
@@ -9866,7 +9871,7 @@
         <td>${escHtml(formatWholesaleMonthLabel(group.month))}</td>
         <td>${escHtml(group.supplier)}</td>
         <td>${formatDh(Number(group.totalNet || 0))}</td>
-        <td style="color:#148c37;">${formatDh(Number(group.totalPaid || 0))}</td>
+        <td style="color:var(--color-success);">${formatDh(Number(group.totalPaid || 0))}</td>
         <td style="${Number(group.remaining || 0) > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(Number(group.remaining || 0))}</td>
         <td><strong>${formatDh(Math.max(0, Number(group.remaining || 0)))}</strong></td>
       </tr>`).join('');
@@ -9891,8 +9896,8 @@
           <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_commercial'))}</h4>
           ${renderProfitTableRows(byCommercial, { colTitle: t('wholesale_real_profit_by_commercial') })}
           <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-            <div class="preview-chip" style="flex:1;"><span class="pchip-label">✅ ${escHtml(t('analytics_balance_paid'))}</span><span class="pchip-val" style="color:#148c37">${formatDh(paidAmount)}</span></div>
-            <div class="preview-chip" style="flex:1;"><span class="pchip-label">❌ ${escHtml(t('analytics_balance_remaining'))}</span><span class="pchip-val" style="color:#cc2d2d">${formatDh(unpaidAmount)}</span></div>
+            <div class="preview-chip" style="flex:1;"><span class="pchip-label">✅ ${escHtml(t('analytics_balance_paid'))}</span><span class="pchip-val" style="color:var(--color-success);">${formatDh(paidAmount)}</span></div>
+            <div class="preview-chip" style="flex:1;"><span class="pchip-label">❌ ${escHtml(t('analytics_balance_remaining'))}</span><span class="pchip-val" style="color:var(--color-error);">${formatDh(unpaidAmount)}</span></div>
             <div class="preview-chip" style="flex:1;"><span class="pchip-label">${escHtml(t('wholesale_real_estimation'))}</span><span class="pchip-val">${formatDh(totalEstimatedCost)}</span></div>
           </div>
         </div>
@@ -9932,6 +9937,7 @@
               <select onchange="setAnalyticsCommissionSellerId(this.value)">${sellerOptionsCommission}</select>
             </div>
           </div>
+          ${commissionEntriesLoadWarning ? `<div class="muted" style="font-size:12px;margin-bottom:8px;color:var(--color-error);">${escHtml(commissionEntriesLoadWarning)}</div>` : ''}
           ${commissionHtml || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
           <div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:6px;margin-top:8px;">
             <span class="adv-stat-label" style="font-weight:700;">${escHtml(t('analytics_total_commissions_due'))}</span>
@@ -9951,7 +9957,7 @@
                   <tr class="analytics-total-row">
                     <td>${escHtml(t('analytics_total_label'))}</td>
                     <td>${formatDh(clientsTotal.sold)}</td>
-                    <td style="color:#148c37">${formatDh(clientsTotal.paid)}</td>
+                    <td style="color:var(--color-success);">${formatDh(clientsTotal.paid)}</td>
                     <td style="color:var(--color-error);font-weight:700;">${formatDh(clientsTotal.unpaid)}</td>
                   </tr>
                 </tbody>
