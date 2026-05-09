@@ -7645,7 +7645,7 @@
       const parsed = new Date(`${date}T00:00:00`);
       if (Number.isNaN(parsed.getTime())) return '';
       const [yy, mm, dd] = date.split('-').map(Number);
-      if (parsed.getUTCFullYear() !== yy || (parsed.getUTCMonth() + 1) !== mm || parsed.getUTCDate() !== dd) return '';
+      if (parsed.getFullYear() !== yy || (parsed.getMonth() + 1) !== mm || parsed.getDate() !== dd) return '';
       return date.slice(0, 7);
     }
 
@@ -7671,7 +7671,7 @@
           const quantity = Number(p.quantity_kg ?? 0);
           const unitPrice = Number(p.unit_price_kg ?? 0);
           return {
-            id: p.id || `wp_${genLocalId()}_${idx}`,
+            id: p.id || `wp_${genLocalId()}`,
             supplier,
             month,
             date: String(p.date || (month ? `${month}-01` : '')).slice(0, 10),
@@ -7691,7 +7691,7 @@
       try {
         const parsed = JSON.parse(localStorage.getItem(LS_WHOLESALE_PAYMENTS) || '[]');
         _wholesalePayments = Array.isArray(parsed) ? parsed.map((p, idx) => ({
-          id: p.id || `wpay_${genLocalId()}_${idx}`,
+          id: p.id || `wpay_${genLocalId()}`,
           supplier: normalizeWholesaleSupplier(p.supplier),
           month: String(p.month || '').slice(0, 7),
           date: String(p.date || '').slice(0, 10),
