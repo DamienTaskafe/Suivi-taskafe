@@ -1598,6 +1598,7 @@
         fuel_advances_total: 'Avances carburant',
         fuel_remaining_to_reimburse: 'Reste carburant à rembourser',
         fuel_pending_not_included: 'En attente (non inclus)',
+        fuel_already_covered_fixed: 'Déjà couvert par carburant variable fixe',
         fuel_no_entries: 'Aucun plein déclaré pour cette période.',
         fuel_no_vehicles: 'Aucun véhicule configuré.',
         fuel_vehicle_required: 'Immatriculation obligatoire',
@@ -2082,6 +2083,7 @@
         fuel_advances_total: 'سلفات الوقود',
         fuel_remaining_to_reimburse: 'الباقي لتعويض الوقود',
         fuel_pending_not_included: 'قيد الانتظار (غير مدرج)',
+        fuel_already_covered_fixed: 'مغطى مسبقًا ببدل وقود ثابت',
         fuel_no_entries: 'لا توجد تصريحات وقود لهذه الفترة.',
         fuel_no_vehicles: 'لا توجد مركبات مهيأة.',
         fuel_vehicle_required: 'رقم اللوحة إلزامي',
@@ -2540,7 +2542,7 @@
         fuel_vehicle: 'Tomobil / numero',
         fuel_vehicle_settings: '🚗 Réglages tomobilat carburant',
         fuel_assigned_employee: 'Khdam m3ayan',
-        fuel_declare_fill: '⛽ Sajjjel plein',
+        fuel_declare_fill: '⛽ Sajjel plein',
         fuel_current_km: 'Kilometrage daba',
         fuel_liters: 'Litres',
         fuel_amount_paid: 'Montant mkhalles (DHS)',
@@ -2566,6 +2568,7 @@
         fuel_advances_total: 'Avances carburant',
         fuel_remaining_to_reimburse: 'Baqi carburant ytraja3',
         fuel_pending_not_included: 'Mazel (ma mdkholch)',
+        fuel_already_covered_fixed: 'Déjà mghatti b carburant variable fixe',
         fuel_no_entries: 'Ma kayn hatta plein f had période.',
         fuel_no_vehicles: 'Ma kaynach tomobil mconfigurée.',
         fuel_vehicle_required: 'Numero tomobil darori',
@@ -3999,7 +4002,7 @@
     function safeExternalUrl(rawValue) {
       if (!rawValue) return '';
       try {
-        const url = new URL(String(rawValue), window.location.origin);
+        const url = new URL(String(rawValue));
         if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
         return url.href;
       } catch (_) {
@@ -4492,11 +4495,11 @@
       if (!isManagerOrAdmin() || !declarationId) return;
       const allowed = ['validated', 'rejected', 'paid_in_payroll'];
       if (!allowed.includes(nextStatus)) return;
-      const updates = {
-        status: nextStatus,
-        validated_by: state.session?.user?.id || null,
-        validated_at: new Date().toISOString()
-      };
+      const updates = { status: nextStatus };
+      if (nextStatus === 'validated' || nextStatus === 'rejected') {
+        updates.validated_by = state.session?.user?.id || null;
+        updates.validated_at = new Date().toISOString();
+      }
       if (nextStatus === 'paid_in_payroll') updates.paid_in_payroll_at = new Date().toISOString();
       try {
         const { error } = await supabase.from('fuel_declarations').update(updates).eq('id', declarationId);
@@ -10558,6 +10561,8 @@
             const uid = String(entry.employee_id || '');
             if (!uid) return;
             if (!monthEntriesByUser[uid]) monthEntriesByUser[uid] = { advances: 0, payments: 0 };
+            // Legacy rows may have advance_category null (before fuel-advance support):
+            // treat them as salary/commission advances to preserve old behavior.
             if (entry.entry_type === 'advance' && (entry.advance_category || 'salary') !== 'fuel') {
               monthEntriesByUser[uid].advances += Number(entry.amount || 0);
             }
@@ -12923,7 +12928,10 @@
             baseDue += Number(user.fuel_allowance || 0);
           }
           const fuelRemaining = fuelValidated - fuelAdvances;
-          const remainingDue = baseDue - salaryAdvances - totalPayments + totalAdjustments + fuelRemaining;
+          // Avoid double fuel reimbursement: when a fixed fuel allowance is already
+          // configured on fixed mode, declaration-based fuel remainder is not added.
+          const fuelRemainingForPayroll = (isFixedModeBalance && Number(user.fuel_allowance || 0) > 0) ? 0 : fuelRemaining;
+          const remainingDue = baseDue - salaryAdvances - totalPayments + totalAdjustments + fuelRemainingForPayroll;
           const canManageBalance = isManagerOrAdmin();
 
           employeeBalanceSummaryCache[userId] = {
@@ -12941,7 +12949,8 @@
             fuelValidated: Number(fuelValidated || 0),
             fuelPending: Number(fuelPending || 0),
             fuelPaidInPayroll: Number(fuelPaidInPayroll || 0),
-            fuelRemaining: Number(fuelRemaining || 0),
+            fuelRemaining: Number(fuelRemainingForPayroll || 0),
+            fuelRemainingRaw: Number(fuelRemaining || 0),
             payments: Number(totalPayments || 0),
             adjustments: Number(totalAdjustments || 0),
             remainingDue: Number(remainingDue || 0),
@@ -13063,7 +13072,8 @@
                 : `<div class="muted" style="font-size:11px;padding:2px 0 6px;">⛽ Commission simple : l'employé paie lui-même son carburant.</div>`}
               <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_validated_total'))}</span><span class="bal-val">+${formatDh(fuelValidated)}</span></div>
               <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_advances_total'))}</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(fuelAdvances)}</span></div>
-              <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_remaining_to_reimburse'))}</span><span class="bal-val" style="color:${fuelRemaining >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${fuelRemaining >= 0 ? '+' : ''}${formatDh(fuelRemaining)}</span></div>
+              <div class="bal-row"><span class="bal-label">⛽ ${escHtml(t('fuel_remaining_to_reimburse'))}</span><span class="bal-val" style="color:${fuelRemainingForPayroll >= 0 ? 'var(--color-success)' : 'var(--color-error)'};">${fuelRemainingForPayroll >= 0 ? '+' : ''}${formatDh(fuelRemainingForPayroll)}</span></div>
+              ${(fuelRemainingForPayroll !== fuelRemaining) ? `<div class="muted" style="font-size:11px;padding:2px 0 6px;">⛽ ${escHtml(t('fuel_already_covered_fixed'))}</div>` : ''}
               ${fuelPending > 0 ? `<div class="muted" style="font-size:11px;padding:2px 0 6px;">⏳ ${escHtml(t('fuel_pending_not_included'))}: ${formatDh(fuelPending)}</div>` : ''}
               <div style="border-top:1px dashed var(--color-border);margin:6px 0;"></div>
               <div class="bal-row"><span class="bal-label">📉 Avances salaire/commission</span><span class="bal-val" style="color:var(--color-error);">-${formatDh(salaryAdvances)}</span></div>
@@ -13658,9 +13668,7 @@
           .from('fuel_declarations')
           .update({
             status: 'paid_in_payroll',
-            paid_in_payroll_at: new Date().toISOString(),
-            validated_by: state.session?.user?.id || null,
-            validated_at: new Date().toISOString()
+            paid_in_payroll_at: new Date().toISOString()
           })
           .eq('employee_id', userId)
           .eq('status', 'validated')
