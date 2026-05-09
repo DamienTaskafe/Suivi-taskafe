@@ -1571,10 +1571,13 @@
         wholesale_real_purchase_cost_estimated: 'Coût achat provisoire',
         wholesale_real_purchase_cost_regularized: 'Coût achat régularisé',
         wholesale_real_purchase_cost_mixed: 'Coût achat mixte',
-        wholesale_real_profit_global: 'Bénéfice global',
+        wholesale_real_profit_global: 'Bénéfice calculable',
         wholesale_real_profit_by_range: 'Bénéfice par gamme',
         wholesale_real_profit_by_client: 'Bénéfice par client',
         wholesale_real_profit_by_commercial: 'Bénéfice par commercial',
+        wholesale_real_profit_calculable: 'Bénéfice calculable',
+        wholesale_real_revenue_calculable: 'CA avec coût calculable',
+        wholesale_real_revenue_missing_cost: 'CA avec coût manquant',
         wholesale_real_cost_missing: 'Coût manquant',
         wholesale_real_data_incomplete: 'Données incomplètes',
         wholesale_real_estimation: 'Estimation',
@@ -1896,10 +1899,13 @@
         wholesale_real_purchase_cost_estimated: 'تكلفة شراء تقديرية',
         wholesale_real_purchase_cost_regularized: 'تكلفة شراء مُسوّاة',
         wholesale_real_purchase_cost_mixed: 'تكلفة شراء مختلطة',
-        wholesale_real_profit_global: 'الربح الإجمالي',
+        wholesale_real_profit_global: 'الربح القابل للحساب',
         wholesale_real_profit_by_range: 'الربح حسب الصنف',
         wholesale_real_profit_by_client: 'الربح حسب العميل',
         wholesale_real_profit_by_commercial: 'الربح حسب المندوب',
+        wholesale_real_profit_calculable: 'الربح القابل للحساب',
+        wholesale_real_revenue_calculable: 'CA مع تكلفة محسوبة',
+        wholesale_real_revenue_missing_cost: 'CA مع تكلفة مجهولة',
         wholesale_real_cost_missing: 'تكلفة غير متوفرة',
         wholesale_real_data_incomplete: 'بيانات غير مكتملة',
         wholesale_real_estimation: 'تقدير',
@@ -2221,10 +2227,13 @@
         wholesale_real_purchase_cost_estimated: 'Kout chri provisoire',
         wholesale_real_purchase_cost_regularized: 'Kout chri mswwa',
         wholesale_real_purchase_cost_mixed: 'Kout chri mkhalt',
-        wholesale_real_profit_global: 'Rbe7 l3am',
+        wholesale_real_profit_global: 'Rbe7 li y9der ytHseb',
         wholesale_real_profit_by_range: 'Rbe7 3la hsab gamme',
         wholesale_real_profit_by_client: 'Rbe7 3la hsab client',
         wholesale_real_profit_by_commercial: 'Rbe7 3la hsab commercial',
+        wholesale_real_profit_calculable: 'Rbe7 li y9der ytHseb',
+        wholesale_real_revenue_calculable: 'CA m3a kout m3rouf',
+        wholesale_real_revenue_missing_cost: 'CA m3a kout majhoul',
         wholesale_real_cost_missing: 'Kout ma kaynch',
         wholesale_real_data_incomplete: 'Données naqsin',
         wholesale_real_estimation: 'T9dir',
@@ -7897,14 +7906,27 @@
         const key = buildWholesaleSupplierMonthKey(group.supplier, group.month);
         if (!key || !group.month) return;
         const discountPerKg = group.tierReached ? WHOLESALE_DISCOUNT_DH_PER_KG : 0;
-        const categoryMap = {};
+        // Accumulate qty and gross per category to compute weighted average unit price.
+        const byCat = {};
         (group.purchases || []).forEach((purchase) => {
           const cat = String(purchase.category || '').trim();
           if (!cat) return;
+          const qty = Number(purchase.quantity_kg || 0);
           const unitPrice = Number(purchase.unit_price_kg || 0);
-          if (!(unitPrice > 0)) return;
-          categoryMap[cat] = Math.max(0, unitPrice - discountPerKg);
+          if (!(qty > 0) || !(unitPrice > 0)) return;
+          const gross = Number(purchase.total_gross || 0) || qty * unitPrice;
+          if (!byCat[cat]) byCat[cat] = { kg: 0, gross: 0 };
+          byCat[cat].kg += qty;
+          byCat[cat].gross += gross;
         });
+        // Build categoryMap from weighted average, then apply tier discount.
+        const categoryMap = {};
+        for (const cat of Object.keys(byCat)) {
+          const { kg, gross } = byCat[cat];
+          if (!(kg > 0)) continue;
+          const avgUnit = gross / kg;
+          categoryMap[cat] = Math.max(0, avgUnit - discountPerKg);
+        }
         map.set(key, {
           supplier: group.supplier,
           month: group.month,
@@ -8668,7 +8690,8 @@
             revenue: 0,
             cost: 0,
             profit: 0,
-            missingQty: 0
+            missingQty: 0,
+            missingRevenue: 0
           };
         }
         return map[key];
@@ -8683,6 +8706,7 @@
       let totalEstimatedCost = 0;
       let totalRegularizedCost = 0;
       let totalMissingQty = 0;
+      let totalMissingRevenue = 0;
 
       sales.forEach((sale) => {
         const categoryRaw = String(sale?.category || '').trim();
@@ -8696,8 +8720,9 @@
         const qty = Number(sale?.quantity || 0);
         const revenue = Number(sale?.total_price || 0);
         const costInfo = resolveSaleCostInfo(sale);
-        const rowCost = Number(costInfo.totalCost || 0);
-        const rowProfit = revenue - rowCost;
+        const hasCost = !costInfo.missing;
+        const rowCost = hasCost ? Number(costInfo.totalCost || 0) : 0;
+        const rowProfit = hasCost ? (revenue - rowCost) : 0;
 
         const rangeBucket = ensureBucket(byRange, categoryKey, categoryLabel);
         const clientBucket = ensureBucket(byClient, clientKey, clientLabel);
@@ -8706,17 +8731,25 @@
         [rangeBucket, clientBucket, commercialBucket].forEach((bucket) => {
           bucket.qty += qty;
           bucket.revenue += revenue;
-          bucket.cost += rowCost;
-          bucket.profit += rowProfit;
-          if (costInfo.missing) bucket.missingQty += qty;
+          if (hasCost) {
+            bucket.cost += rowCost;
+            bucket.profit += rowProfit;
+          } else {
+            bucket.missingQty += qty;
+            bucket.missingRevenue += revenue;
+          }
         });
 
         totalRevenue += revenue;
-        totalCost += rowCost;
-        totalProfit += rowProfit;
-        if (costInfo.estimated) totalEstimatedCost += rowCost;
-        if (costInfo.regularized) totalRegularizedCost += rowCost;
-        if (costInfo.missing) totalMissingQty += qty;
+        if (hasCost) {
+          totalCost += rowCost;
+          totalProfit += rowProfit;
+          if (costInfo.estimated) totalEstimatedCost += rowCost;
+          if (costInfo.regularized) totalRegularizedCost += rowCost;
+        } else {
+          totalMissingQty += qty;
+          totalMissingRevenue += revenue;
+        }
       });
 
       function renderProfitTableRows(rows, options = {}) {
@@ -8729,7 +8762,7 @@
         const tableRows = entries.map(entry => {
           const marginClass = entry.profit >= 0 ? 'margin-positive' : 'margin-negative';
           const missingText = entry.missingQty > 0
-            ? `<div class="muted" style="font-size:11px;">${escHtml(t('wholesale_real_cost_missing'))}: ${formatQty(entry.missingQty)} kg</div>`
+            ? `<div class="muted" style="font-size:11px;">⚠️ ${escHtml(t('wholesale_real_cost_missing'))}: ${formatQty(entry.missingQty)} kg · ${formatDh(entry.missingRevenue)}</div>`
             : '';
           return `<tr>
             <td>${escHtml(entry.label)}</td>
@@ -8741,7 +8774,7 @@
         }).join('');
 
         return `<table class="analytics-table">
-          <thead><tr><th>${escHtml(options.colTitle || t('wholesale_real_profit_by_range'))}</th><th>${escHtml(t('sale_quantite'))}</th><th>${escHtml(t('wholesale_real_purchase_cost'))}</th><th>${escHtml(t('wholesale_revenue'))}</th><th>${escHtml(t('wholesale_real_profit_global'))}</th></tr></thead>
+          <thead><tr><th>${escHtml(options.colTitle || t('wholesale_real_profit_by_range'))}</th><th>${escHtml(t('sale_quantite'))}</th><th>${escHtml(t('wholesale_real_purchase_cost'))}</th><th>${escHtml(t('wholesale_revenue'))}</th><th>${escHtml(t('wholesale_real_profit_calculable'))}</th></tr></thead>
           <tbody>${tableRows}</tbody>
         </table>`;
       }
@@ -8767,11 +8800,13 @@
         <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">${escHtml(t('wholesale_real_based_on_regulated_monthly_costs'))}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px;">
           <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_revenue'))}</span><span class="pchip-val">${formatDh(totalRevenue)}</span></div>
+          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_revenue_calculable'))}</span><span class="pchip-val">${formatDh(totalRevenue - totalMissingRevenue)}</span></div>
+          ${totalMissingRevenue > 0 ? `<div class="preview-chip"><span class="pchip-label">⚠️ ${escHtml(t('wholesale_real_revenue_missing_cost'))}</span><span class="pchip-val" style="color:#cc7700">${formatDh(totalMissingRevenue)}</span></div>` : ''}
           <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_purchase_cost'))}</span><span class="pchip-val">${formatDh(totalCost)}</span></div>
-          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_profit_global'))}</span><span class="pchip-val ${totalProfitClass}">${formatDh(totalProfit)}</span></div>
+          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_profit_calculable'))}</span><span class="pchip-val ${totalProfitClass}">${formatDh(totalProfit)}</span></div>
           <div class="preview-chip"><span class="pchip-label">${escHtml(costModeText)}</span><span class="pchip-val">${formatDh(displayedCostAmount)}</span></div>
         </div>
-        ${totalMissingQty > 0 ? `<div class="muted" style="margin-bottom:8px;font-size:12px;">⚠️ ${escHtml(t('wholesale_real_data_incomplete'))} · ${escHtml(t('wholesale_real_cost_missing'))}: ${formatQty(totalMissingQty)} kg</div>` : ''}
+        ${totalMissingQty > 0 ? `<div class="muted" style="margin-bottom:8px;font-size:12px;">⚠️ ${escHtml(t('wholesale_real_data_incomplete'))} · ${escHtml(t('wholesale_real_cost_missing'))}: ${formatQty(totalMissingQty)} kg · ${formatDh(totalMissingRevenue)}</div>` : ''}
         <h4 style="margin:10px 0 6px;">${escHtml(t('wholesale_real_profit_by_range'))}</h4>
         ${renderProfitTableRows(byRange, { colTitle: t('wholesale_real_profit_by_range') })}
         <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_client'))}</h4>
