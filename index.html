@@ -1241,6 +1241,16 @@
         client_whatsapp: '💬 WhatsApp',
         client_gmaps: '🗺️ Google Maps',
         client_waze: '🧭 Waze',
+        client_view_sheet: '👁️ Voir fiche',
+        client_edit_short: '✏️ Modifier',
+        client_share_whatsapp_gps: '📍💬 Partager GPS WhatsApp',
+        client_no_info: 'Aucune information renseignée',
+        client_unassigned: 'Non assigné',
+        client_total_unpaid: 'Total non payé',
+        client_orders_count: 'Talabat',
+        client_empty_search: 'Aucun client trouvé.',
+        client_no_clients_for_employee: 'Aucun client lié à cet employé.',
+        client_all_clients: 'Tous les clients',
         client_gpsActuel: '📍 Utiliser ma position pour la livraison',
         client_gpsOk: '✅ Point GPS de livraison enregistré',
         client_gpsNone: '📍 Aucun point GPS de livraison',
@@ -1489,6 +1499,16 @@
         client_whatsapp: '💬 واتساب',
         client_gmaps: '🗺️ خرائط جوجل',
         client_waze: '🧭 ويز',
+        client_view_sheet: '👁️ عرض البطاقة',
+        client_edit_short: '✏️ تعديل',
+        client_share_whatsapp_gps: '📍💬 مشاركة GPS واتساب',
+        client_no_info: 'لا توجد معلومات مُدخلة',
+        client_unassigned: 'غير مُعيَّن',
+        client_total_unpaid: 'إجمالي غير مدفوع',
+        client_orders_count: 'الطلبات',
+        client_empty_search: 'لم يتم العثور على أي زبون.',
+        client_no_clients_for_employee: 'لا يوجد أي زبون مرتبط بهذا الموظف.',
+        client_all_clients: 'جميع الزبائن',
         client_gpsActuel: '📍 استخدام موقعي للتوصيل',
         client_gpsOk: '✅ تم تسجيل نقطة GPS للتوصيل',
         client_gpsNone: '📍 لا توجد نقطة GPS للتوصيل',
@@ -1737,6 +1757,16 @@
         client_whatsapp: '💬 WhatsApp',
         client_gmaps: '🗺️ Google Maps',
         client_waze: '🧭 Waze',
+        client_view_sheet: '👁️ Chof fiche',
+        client_edit_short: '✏️ Bdel',
+        client_share_whatsapp_gps: '📍💬 Partaji GPS WhatsApp',
+        client_no_info: 'Ma tzadat ta ma3louma.',
+        client_unassigned: 'Machi m3ayyen',
+        client_total_unpaid: 'Majmou3 ma mdfo3ch',
+        client_orders_count: 'Commandes',
+        client_empty_search: 'Ma kayn ta client.',
+        client_no_clients_for_employee: 'Ma kayn ta client mrbout b had l’employé.',
+        client_all_clients: 'Ga3 lclients',
         client_gpsActuel: '📍 Khdem position dyal telephone llivraison',
         client_gpsOk: '✅ Point GPS dyal livraison tsajjal',
         client_gpsNone: '📍 Ma kayn ta point GPS dyal livraison',
@@ -2764,6 +2794,17 @@
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
 
+    function getClientStatusLabel(status) {
+      const statusKeyMap = {
+        prospect: 'client_prospect',
+        active: 'client_actif',
+        inactive: 'client_inactif',
+        lost: 'client_perdu'
+      };
+      const normalized = String(status || '').toLowerCase();
+      return statusKeyMap[normalized] ? t(statusKeyMap[normalized]) : (status || '—');
+    }
+
     function renderClients() {
       const list = document.getElementById('clientList');
       const q = (document.getElementById('clientSearchInput')?.value || '').trim().toLowerCase();
@@ -2781,8 +2822,7 @@
 
         // Status badge (only when the column is present and non-default)
         const status = c.client_status || 'active';
-        const statusLabels = { prospect: 'Prospect', active: 'Actif', inactive: 'Inactif', lost: 'Perdu' };
-        const statusBadge = `<span class="client-status-badge ${escHtml(status)}">${escHtml(statusLabels[status] || status)}</span>`;
+        const statusBadge = `<span class="client-status-badge ${escHtml(status)}">${escHtml(getClientStatusLabel(status))}</span>`;
 
         // Assigned user chip — only shown to managers/admins to keep employee UI clean
         let assignedChip = '';
@@ -2791,7 +2831,7 @@
           const assignedName = assignedUser ? (assignedUser.full_name || assignedUser.email || '—') : '—';
           assignedChip = `<div class="client-info-row client-assigned-chip"><span class="client-info-icon">👤</span><span>${escHtml(assignedName)}</span></div>`;
         } else if (isManagerOrAdmin() && !c.assigned_user_id) {
-          assignedChip = `<div class="client-info-row client-assigned-chip"><span class="client-info-icon">👤</span><span style="font-style:italic;opacity:0.6;">Non assigné</span></div>`;
+          assignedChip = `<div class="client-info-row client-assigned-chip"><span class="client-info-icon">👤</span><span style="font-style:italic;opacity:0.6;">${escHtml(t('client_unassigned'))}</span></div>`;
         }
 
         html += `
@@ -2817,7 +2857,7 @@
                 ${c.ice ? `<div class="client-info-row"><span class="client-info-icon">💳</span><span>ICE: ${escHtml(c.ice)}</span></div>` : ''}
                 ${c.phone ? `<div class="client-info-row"><span class="client-info-icon">📞</span><span>${escHtml(c.phone)}</span></div>` : ''}
                 ${assignedChip}
-                ${!c.address && !c.ice && !c.phone && !assignedChip ? `<div class="client-info-row client-info-empty">Aucune information renseignée</div>` : ''}
+                ${!c.address && !c.ice && !c.phone && !assignedChip ? `<div class="client-info-row client-info-empty">${escHtml(t('client_no_info'))}</div>` : ''}
               </div>
               <div class="client-info-group">
                 <div class="client-info-group-title">${escHtml(t('client_delivery_section'))}</div>
@@ -2830,28 +2870,28 @@
 
             ${(c.phone || (c.latitude != null && c.longitude != null)) ? `
             <div class="client-contact-actions">
-              ${c.phone ? `<a href="tel:${escHtml(normalizePhoneForTel(c.phone))}" class="client-action-btn">📞 Appeler</a>` : ''}
-              ${c.phone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
-              ${(c.latitude != null && c.longitude != null) ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">📍 Google Maps</a>` : ''}
-              ${(c.latitude != null && c.longitude != null) ? `<a href="https://waze.com/ul?ll=${encodeURIComponent(c.latitude + ',' + c.longitude)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">🧭 Waze</a>` : ''}
+              ${c.phone ? `<a href="tel:${escHtml(normalizePhoneForTel(c.phone))}" class="client-action-btn">${escHtml(t('client_appeler'))}</a>` : ''}
+              ${c.phone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_whatsapp'))}</a>` : ''}
+              ${(c.latitude != null && c.longitude != null) ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_gmaps'))}</a>` : ''}
+              ${(c.latitude != null && c.longitude != null) ? `<a href="https://waze.com/ul?ll=${encodeURIComponent(c.latitude + ',' + c.longitude)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_waze'))}</a>` : ''}
               ${(c.latitude != null && c.longitude != null) ? `<button class="client-action-btn" data-action="client-share-delivery-whatsapp" data-id="${c.id}">${escHtml(t('client_share_whatsapp_delivery'))}</button>` : ''}
             </div>` : ''}
 
             <div class="client-stat-row">
               <div class="client-stat">
-                <div class="client-stat-label">Total non payé</div>
+                <div class="client-stat-label">${escHtml(t('client_total_unpaid'))}</div>
                 <div class="client-stat-value${totalUnpaid > 0 ? ' unpaid' : ''}">${formatDh(totalUnpaid)}</div>
               </div>
               <div class="client-stat-sep"></div>
               <div class="client-stat">
-                <div class="client-stat-label">Commandes</div>
+                <div class="client-stat-label">${escHtml(t('client_orders_count'))}</div>
                 <div class="client-stat-value">${sales.length}</div>
               </div>
             </div>
           </div>`;
       });
 
-      list.innerHTML = html || `<div class="empty-state">${q ? 'Aucun client trouvé.' : 'Aucun client enregistré.'}</div>`;
+      list.innerHTML = html || `<div class="empty-state">${q ? escHtml(t('client_empty_search')) : escHtml(t('client_par_commercial_vide'))}</div>`;
     }
 
     let _allSalesData = [];
@@ -6942,7 +6982,7 @@
 
       // Populate user dropdown — include all employees and managers the admin can see
       const sel = document.getElementById('reassignUserSelect');
-      sel.innerHTML = `<option value="">— Non assigné —</option>` +
+      sel.innerHTML = `<option value="">— ${escHtml(t('client_unassigned'))} —</option>` +
         getAssignableUsers().map(u => {
           const selected = u.id === client.assigned_user_id ? 'selected' : '';
           return `<option value="${escHtml(u.id)}" ${selected}>${escHtml(u.full_name || u.email || u.id)}</option>`;
@@ -7164,6 +7204,19 @@
       renderClientsParCommercial();
     };
 
+    window.openClientSheetFromCommercial = function (clientId) {
+      if (!isManagerOrAdmin()) return;
+      closeModal('clientsParCommercialModal');
+      if (typeof window.show === 'function') window.show('sales');
+      openClientSales(`id:${clientId}`);
+    };
+
+    window.openEditClientFromCommercial = function (clientId) {
+      if (!isManagerOrAdmin()) return;
+      closeModal('clientsParCommercialModal');
+      openEditClient(clientId);
+    };
+
     window.renderClientsParCommercial = function () {
       const contEl = document.getElementById('clientsParCommercialContent');
       if (!contEl) return;
@@ -7217,6 +7270,40 @@
 
       let html = '';
 
+      function renderClientCard(c) {
+        const hasPhone = Boolean((c.phone || '').trim());
+        const hasGps = c.latitude != null && c.longitude != null;
+        const status = c.client_status || 'active';
+        const statusBadge = `<span class="client-status-badge ${escHtml(status)}">${escHtml(getClientStatusLabel(status))}</span>`;
+        const clientId = String(c.id || '');
+        return `
+          <div class="client-card" style="margin-bottom:8px;">
+            <div class="client-card-header">
+              <span class="client-card-name">${escHtml(c.name)}${statusBadge}</span>
+            </div>
+            <div class="client-card-info">
+              <div class="client-info-group">
+                ${hasPhone
+                  ? `<div class="client-info-row"><span class="client-info-icon">📞</span><span>${escHtml(c.phone)}</span></div>`
+                  : `<div class="client-info-row client-info-empty">${escHtml(t('client_no_info'))}</div>`
+                }
+                ${hasGps
+                  ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(t('client_gps'))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
+                  : `<div class="client-info-row client-info-empty">${escHtml(t('client_gpsNone'))}</div>`
+                }
+              </div>
+            </div>
+            <div class="client-contact-actions">
+              <button type="button" class="client-action-btn" onclick='openClientSheetFromCommercial(${JSON.stringify(clientId)})'>${escHtml(t('client_view_sheet'))}</button>
+              ${hasPermission('clients.edit') ? `<button type="button" class="client-action-btn" onclick='openEditClientFromCommercial(${JSON.stringify(clientId)})'>${escHtml(t('client_edit_short'))}</button>` : ''}
+              ${hasPhone ? `<a href="tel:${escHtml(normalizePhoneForTel(c.phone))}" class="client-action-btn">${escHtml(t('client_appeler'))}</a>` : ''}
+              ${hasPhone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_whatsapp'))}</a>` : ''}
+              ${hasGps ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_open_maps_delivery'))}</a>` : ''}
+              ${hasGps ? `<button type="button" class="client-action-btn" onclick='shareClientDeliveryWhatsApp(${JSON.stringify(clientId)})'>${escHtml(t('client_share_whatsapp_gps'))}</button>` : ''}
+            </div>
+          </div>`;
+      }
+
       // Render each commercial's group
       sortedGroups.forEach(([, group]) => {
         const commercialName = escHtml(group.user?.full_name || group.user?.email || '—');
@@ -7225,13 +7312,9 @@
             👤 ${commercialName}
             <span style="font-size:11px;font-weight:400;color:var(--color-text-muted);margin-left:6px;">(${group.clients.length})</span>
           </div>
-          <div style="padding-left:8px;display:flex;flex-direction:column;gap:3px;">`;
+          <div style="padding-left:8px;display:flex;flex-direction:column;gap:6px;">`;
         group.clients.forEach(c => {
-          const phone = c.phone ? `<span style="color:var(--color-text-muted);font-size:11px;">📞 ${escHtml(c.phone)}</span>` : '';
-          html += `<div style="font-size:12px;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:space-between;gap:6px;">
-            <span>${escHtml(c.name)}</span>
-            ${phone}
-          </div>`;
+          html += renderClientCard(c);
         });
         html += `</div></div>`;
       });
@@ -7243,13 +7326,9 @@
             ${t('client_sans_commercial')}
             <span style="font-size:11px;font-weight:400;color:var(--color-text-muted);margin-left:6px;">(${unassigned.length})</span>
           </div>
-          <div style="padding-left:8px;display:flex;flex-direction:column;gap:3px;">`;
+          <div style="padding-left:8px;display:flex;flex-direction:column;gap:6px;">`;
         unassigned.forEach(c => {
-          const phone = c.phone ? `<span style="color:var(--color-text-muted);font-size:11px;">📞 ${escHtml(c.phone)}</span>` : '';
-          html += `<div style="font-size:12px;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:space-between;gap:6px;">
-            <span>${escHtml(c.name)}</span>
-            ${phone}
-          </div>`;
+          html += renderClientCard(c);
         });
         html += `</div></div>`;
       }
@@ -7521,10 +7600,10 @@
 
         let html = '';
         if (allOption) {
-          html += `<div class="csearch-item${!current ? ' selected' : ''}" data-client="">Tous les clients</div>`;
+          html += `<div class="csearch-item${!current ? ' selected' : ''}" data-client="">${escHtml(t('client_all_clients'))}</div>`;
         }
         if (filtered.length === 0 && !allOption) {
-          html = `<div class="csearch-item" style="color:var(--color-text-muted);">Aucun client trouvé</div>`;
+          html = `<div class="csearch-item" style="color:var(--color-text-muted);">${escHtml(t('client_empty_search'))}</div>`;
         } else {
           filtered.forEach(c => {
             const escaped = escHtml(c.name);
@@ -9546,14 +9625,15 @@
             const status = c.client_status || 'active';
             const statusColors = { prospect: '#9e6b00', active: '#1a7f37', inactive: '#6e7681', lost: '#cf222e' };
             const statusColor = statusColors[status] || 'var(--color-text-muted)';
+            const statusLabel = getClientStatusLabel(status);
             html += `<div style="font-size:12px;padding:5px 8px;border-radius:6px;background:rgba(0,0,0,0.04);display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap;">
               <span style="font-weight:600;">${clientName}${phone}</span>
-              <span style="font-size:10px;color:${statusColor};text-transform:capitalize;">${escHtml(status)}</span>
+              <span style="font-size:10px;color:${statusColor};text-transform:capitalize;">${escHtml(statusLabel)}</span>
             </div>`;
           });
           html += `</div>`;
         } else {
-          html += `<div class="muted" style="font-size:12px;">Aucun client lié à cet employé.</div>`;
+          html += `<div class="muted" style="font-size:12px;">${escHtml(t('client_no_clients_for_employee'))}</div>`;
         }
         html += `</div>`;
 
