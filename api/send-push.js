@@ -21,6 +21,114 @@ const {
   resolveCallerRole
 } = require('./_utils');
 
+const SUPPORTED_LANGS = new Set(['fr', 'ar', 'darija']);
+
+function normalizeLang(value) {
+  const lang = String(value || '').trim().toLowerCase();
+  return SUPPORTED_LANGS.has(lang) ? lang : 'fr';
+}
+
+function statusLabel(lang, status) {
+  const labels = {
+    fr: {
+      pending: '⏳ Envoyée',
+      preparing: '📦 En préparation',
+      ready_pickup: '✅ Prêt à récupérer',
+      fulfilled: '✅ Remis / transféré',
+      rejected: '❌ Refusée',
+      cancelled: '🚫 Annulée'
+    },
+    ar: {
+      pending: '⏳ تم الإرسال',
+      preparing: '📦 قيد التحضير',
+      ready_pickup: '✅ جاهز للاستلام',
+      fulfilled: '✅ تم التسليم / التحويل',
+      rejected: '❌ مرفوض',
+      cancelled: '🚫 مُلغى'
+    },
+    darija: {
+      pending: '⏳ Tsiftat',
+      preparing: '📦 Kaytwejjed',
+      ready_pickup: '✅ Wjdat bach tkhodha',
+      fulfilled: '✅ Ttslmat / t7ewlat',
+      rejected: '❌ Trfdat',
+      cancelled: '🚫 Tlghat'
+    }
+  };
+  return labels[lang]?.[status] || labels.fr[status] || status || '';
+}
+
+function formatItems(items = []) {
+  if (!Array.isArray(items) || items.length === 0) return '';
+  return items
+    .map((it) => {
+      const rawQty = Number(it?.quantity ?? 0);
+      const qty = Number.isFinite(rawQty) ? Math.round(rawQty * 100) / 100 : 0;
+      return `- ${it?.category || '—'} : ${qty}`;
+    })
+    .join('\n');
+}
+
+function buildLocalizedPush({ lang, type, payload, fallbackTitle, fallbackMessage }) {
+  const actor = String(
+    payload?.employee_name ||
+    payload?.creator_name ||
+    payload?.creator ||
+    ''
+  ).trim();
+  const status = statusLabel(lang, payload?.status || '');
+  const items = formatItems(payload?.items);
+
+  if (type === 'new_stock_request' || type === 'stock_request') {
+    const title = lang === 'ar'
+      ? '📦 طلب مخزون'
+      : lang === 'darija'
+        ? '📦 Talab stock'
+        : '📦 Demande de stock';
+    let body = lang === 'ar'
+      ? `${actor || 'موظف'} أرسل طلب مخزون.`
+      : lang === 'darija'
+        ? `${actor || 'Mokhdam'} sift talab stock.`
+        : `${actor || 'Employé'} a envoyé une demande de stock.`;
+    if (items) body += `\n${items}`;
+    return { title, body };
+  }
+
+  if (type === 'stock_request_status') {
+    const title = lang === 'ar'
+      ? '📦 تحديث حالة الطلب'
+      : lang === 'darija'
+        ? '📦 Tbdil 7alat talab'
+        : '📦 Mise à jour de la demande';
+    let body = lang === 'ar'
+      ? `الحالة الجديدة: ${status || '—'}`
+      : lang === 'darija'
+        ? `Statut jdid: ${status || '—'}`
+        : `Nouveau statut : ${status || '—'}`;
+    if (payload?.admin_notes) body += `\n📝 ${payload.admin_notes}`;
+    return { title, body };
+  }
+
+  if (type === 'stock_request_cancelled') {
+    const title = lang === 'ar'
+      ? '🚫 تم إلغاء الطلب'
+      : lang === 'darija'
+        ? '🚫 Talab tlgha'
+        : '🚫 Demande annulée';
+    const body = lang === 'ar'
+      ? 'تم إلغاء طلب المخزون.'
+      : lang === 'darija'
+        ? 'Talab stock tlgha.'
+        : 'La demande de stock a été annulée.';
+    return { title, body };
+  }
+
+  return {
+    title: fallbackTitle || 'TASKAFÉ',
+    body: fallbackMessage || ''
+  };
+}
+
 module.exports = async function handler(req, res) {
   if (handleOptions(req, res)) return;
   setCors(req, res);
@@ -51,10 +159,10 @@ module.exports = async function handler(req, res) {
 
     // ── Parse request body ──────────────────────────────────────────────────
     const body = parseBody(req);
-    const { type, title, message, url, employee_id, user_ids } = body;
+    const { type, title, message, url, employee_id, user_ids, payload } = body;
 
-    if (!type || !title) {
-      return res.status(400).json({ error: 'Champs obligatoires : type, title' });
+    if (!type) {
+      return res.status(400).json({ error: 'Champ obligatoire : type' });
     }
 
     let targetUserIds = [];
@@ -102,6 +210,13 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ sent: 0, message: 'Aucun destinataire' });
     }
 
+    const { data: profiles, error: profilesErr } = await supabaseAdmin
+      .from('profiles')
+      .select('id, preferred_language')
+      .in('id', targetUserIds);
+    if (profilesErr) throw profilesErr;
+    const languageByUserId = new Map((profiles || []).map(p => [p.id, normalizeLang(p.preferred_language)]));
+
     // ── Fetch subscriptions ─────────────────────────────────────────────────
     const { data: subs, error: subsErr } = await supabaseAdmin
       .from('push_subscriptions')
@@ -114,24 +229,31 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Send push notifications ─────────────────────────────────────────────
-    const payload = JSON.stringify({
-      title:   title   || 'TASKAFÉ',
-      body:    message || '',
-      url:     url     || '/',
-      // icon-512.png.PNG is the actual asset filename in this repository (see manifest.json)
-      icon:    '/icon-512.png.PNG',
-      badge:   '/icon-512.png.PNG',
-      vibrate: [200, 100, 200],
-      tag:     type
-    });
-
     const expiredIds = [];
     let sent = 0;
 
     await Promise.allSettled(
       subs.map(async sub => {
         try {
-          await webpush.sendNotification(sub.subscription, payload);
+          const lang = languageByUserId.get(sub.user_id) || 'fr';
+          const localized = buildLocalizedPush({
+            lang,
+            type,
+            payload,
+            fallbackTitle: title,
+            fallbackMessage: message
+          });
+          const pushPayload = JSON.stringify({
+            title:   localized.title || 'TASKAFÉ',
+            body:    localized.body || '',
+            url:     url || '/',
+            // icon-512.png.PNG is the actual asset filename in this repository (see manifest.json)
+            icon:    '/icon-512.png.PNG',
+            badge:   '/icon-512.png.PNG',
+            vibrate: [200, 100, 200],
+            tag:     type
+          });
+          await webpush.sendNotification(sub.subscription, pushPayload);
           sent++;
         } catch (err) {
           // 410 Gone or 404 means the subscription is no longer valid
