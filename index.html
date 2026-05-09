@@ -693,7 +693,7 @@
 
   <div id="analyticsModal" class="modal-backdrop" onclick="backdropClose(event, 'analyticsModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3>📈 Analytiques</h3><button class="close-x" onclick="closeModal('analyticsModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="menu_statsBalance">📊 Statistiques &amp; 💰 Balances</h3><button class="close-x" onclick="closeModal('analyticsModal')">✕</button></div>
       <div id="analyticsContent"></div>
     </div>
   </div>
@@ -1370,6 +1370,17 @@
         analytics_no_supplier_balance: 'Aucune balance fournisseur.',
         analytics_total_label: 'TOTAL',
         analytics_commission_entries_load_warn: '⚠️ Impossible de charger les avances/paiements. Les restes commission peuvent être incomplets.',
+        analytics_back: '← Retour',
+        analytics_choose_section: 'Choisir une rubrique',
+        analytics_sales_stats: '📊 Statistiques ventes',
+        analytics_sales_stats_desc: 'Voir les ventes et performances',
+        analytics_seller_stats_desc: 'Suivre les vendeurs par période',
+        analytics_commissions_desc: 'Préparer le paiement mensuel',
+        analytics_client_balances_desc: 'Suivre les restes clients',
+        analytics_supplier_purchases: '🏭 Fournisseurs / achats',
+        analytics_supplier_desc: 'Suivre achats et dettes fournisseurs',
+        analytics_company_profit: '📈 Bénéfice entreprise',
+        analytics_company_profit_desc: 'Analyser bénéfice réel',
         sale_title: '💵 Nouvelle vente',
         sale_selectClient: 'Sélectionner un client',
         sale_searchClient: '🔎 Rechercher un client...',
@@ -1800,6 +1811,17 @@
         analytics_no_supplier_balance: 'لا توجد أرصدة موردين.',
         analytics_total_label: 'المجموع',
         analytics_commission_entries_load_warn: '⚠️ تعذر تحميل السلفات/المدفوعات. قد تكون مبالغ العمولة المتبقية غير مكتملة.',
+        analytics_back: '→ رجوع',
+        analytics_choose_section: 'اختر قسماً',
+        analytics_sales_stats: '📊 إحصائيات المبيعات',
+        analytics_sales_stats_desc: 'عرض المبيعات والأداء',
+        analytics_seller_stats_desc: 'متابعة البائعين حسب الفترة',
+        analytics_commissions_desc: 'تحضير الدفع الشهري',
+        analytics_client_balances_desc: 'متابعة المبالغ المتبقية للعملاء',
+        analytics_supplier_purchases: '🏭 الموردون / المشتريات',
+        analytics_supplier_desc: 'متابعة المشتريات وديون الموردين',
+        analytics_company_profit: '📈 أرباح الشركة',
+        analytics_company_profit_desc: 'تحليل الربح الحقيقي',
         sale_title: '💵 بيع جديد',
         sale_selectClient: 'اختر زبوناً',
         sale_searchClient: '🔎 ابحث عن زبون...',
@@ -2230,6 +2252,17 @@
         analytics_no_supplier_balance: 'Ma kaynach balance fournisseur.',
         analytics_total_label: 'TOTAL',
         analytics_commission_entries_load_warn: '⚠️ Ma qdrnach njibou avances/paiements. B9a commission y9dr ykoun naqess.',
+        analytics_back: '← Rje3',
+        analytics_choose_section: 'Khtar rubrique',
+        analytics_sales_stats: '📊 Stats ventes',
+        analytics_sales_stats_desc: 'Chuf ventes w performance',
+        analytics_seller_stats_desc: 'Tbi3 vendeurs 7asab période',
+        analytics_commissions_desc: 'Thadir dfa3 dyal chhar',
+        analytics_client_balances_desc: 'Tbi3 lbaqi dyal clients',
+        analytics_supplier_purchases: '🏭 Fournisseurs / achats',
+        analytics_supplier_desc: 'Tbi3 achats w dioun fournisseurs',
+        analytics_company_profit: '📈 Rbe7 sharika',
+        analytics_company_profit_desc: 'Analize rbe7 el 7qi9i',
         sale_title: '💵 Tbi3a jdida',
         sale_selectClient: 'Khtar client',
         sale_searchClient: '🔎 Qelleb 3la client...',
@@ -9176,6 +9209,7 @@
 
     window.openAnalyticsModal = function () {
       if (!isManagerOrAdmin()) return;
+      _analyticsView = 'home';
       renderAnalytics(_allSalesData);
       openModal('analyticsModal');
     };
@@ -9670,6 +9704,9 @@
       commissionMonth: new Date().toISOString().slice(0, 7),
       commissionSellerId: 'all'
     };
+    // Navigation state for the analytics modal home screen
+    let _analyticsView = 'home';
+    const ANALYTICS_VIEWS = ['home', 'salesStats', 'sellerStats', 'commissions', 'clientBalances', 'supplierBalances', 'companyProfit'];
 
     function toMonthBounds(monthValue) {
       const monthText = String(monthValue || '').trim();
@@ -9722,6 +9759,12 @@
       renderAnalytics(_allSalesData);
     };
 
+    // Navigate to a sub-view within the analytics modal
+    window.setAnalyticsView = function (view) {
+      _analyticsView = ANALYTICS_VIEWS.includes(view) ? view : 'home';
+      renderAnalytics(_allSalesData);
+    };
+
     async function renderAnalytics(data) {
       const analyticsBtn = document.getElementById('analyticsBtn');
       if (analyticsBtn) analyticsBtn.classList.toggle('hidden', !isManagerOrAdmin());
@@ -9730,10 +9773,334 @@
       if (!content) return;
       if (!isManagerOrAdmin()) return;
 
-      const groups = buildWholesaleGroups();
-      const wholesaleCostMap = buildWholesaleUnitCostMapByGroup(groups);
+      // ── Home view: clickable category cards ──────────────────────────────────
+      if (_analyticsView === 'home') {
+        content.innerHTML = `
+          <div style="margin-bottom:12px;font-size:12px;color:var(--color-text-muted);">${escHtml(t('analytics_choose_section'))}</div>
+          <div class="analytics-home-grid">
+            <button class="analytics-home-card" onclick="setAnalyticsView('salesStats')">
+              <span class="analytics-home-card-icon">📊</span>
+              <span class="analytics-home-card-title">${escHtml(t('analytics_sales_stats'))}</span>
+              <span class="analytics-home-card-desc">${escHtml(t('analytics_sales_stats_desc'))}</span>
+            </button>
+            <button class="analytics-home-card" onclick="setAnalyticsView('sellerStats')">
+              <span class="analytics-home-card-icon">👤</span>
+              <span class="analytics-home-card-title">${escHtml(t('analytics_seller_stats_title'))}</span>
+              <span class="analytics-home-card-desc">${escHtml(t('analytics_seller_stats_desc'))}</span>
+            </button>
+            <button class="analytics-home-card" onclick="setAnalyticsView('commissions')">
+              <span class="analytics-home-card-icon">💰</span>
+              <span class="analytics-home-card-title">${escHtml(t('analytics_commissions_monthly_title'))}</span>
+              <span class="analytics-home-card-desc">${escHtml(t('analytics_commissions_desc'))}</span>
+            </button>
+            <button class="analytics-home-card" onclick="setAnalyticsView('clientBalances')">
+              <span class="analytics-home-card-icon">💳</span>
+              <span class="analytics-home-card-title">${escHtml(t('analytics_client_balances_title'))}</span>
+              <span class="analytics-home-card-desc">${escHtml(t('analytics_client_balances_desc'))}</span>
+            </button>
+            <button class="analytics-home-card" onclick="setAnalyticsView('supplierBalances')">
+              <span class="analytics-home-card-icon">🏭</span>
+              <span class="analytics-home-card-title">${escHtml(t('analytics_supplier_purchases'))}</span>
+              <span class="analytics-home-card-desc">${escHtml(t('analytics_supplier_desc'))}</span>
+            </button>
+            <button class="analytics-home-card" onclick="setAnalyticsView('companyProfit')">
+              <span class="analytics-home-card-icon">📈</span>
+              <span class="analytics-home-card-title">${escHtml(t('analytics_company_profit'))}</span>
+              <span class="analytics-home-card-desc">${escHtml(t('analytics_company_profit_desc'))}</span>
+            </button>
+          </div>`;
+        return;
+      }
+
+      // ── Shared helpers ────────────────────────────────────────────────────────
       const sales = Array.isArray(data) ? data : [];
       const usersById = new Map((state.allUsers || []).map(u => [String(u.id), u]));
+      const allSellers = (state.allUsers || []).filter(u => ['employee', 'manager'].includes(String(u.role || '').toLowerCase()));
+
+      function makeBackBtn(title) {
+        return `<div class="analytics-subview-header">
+          <button class="analytics-back-btn" onclick="setAnalyticsView('home')">${escHtml(t('analytics_back'))}</button>
+          <span class="analytics-subview-title">${title}</span>
+        </div>`;
+      }
+
+      // ── Seller stats view ─────────────────────────────────────────────────────
+      if (_analyticsView === 'sellerStats') {
+        const sellerOptions = [
+          `<option value="all" ${analyticsSellerUiState.sellerId === 'all' ? 'selected' : ''}>${escHtml(t('analytics_all_sellers'))}</option>`,
+          ...allSellers.map(u => `<option value="${escHtml(String(u.id || ''))}" ${analyticsSellerUiState.sellerId === String(u.id || '') ? 'selected' : ''}>${escHtml(u.full_name || u.email || '—')}</option>`)
+        ].join('');
+
+        let periodStart = analyticsSellerUiState.date;
+        let periodEnd = analyticsSellerUiState.date;
+        if (analyticsSellerUiState.periodType === 'week') {
+          const weekBounds = toWeekBounds(analyticsSellerUiState.date);
+          periodStart = weekBounds.start;
+          periodEnd = weekBounds.end;
+        } else if (analyticsSellerUiState.periodType === 'month') {
+          const monthBounds = toMonthBounds(analyticsSellerUiState.month);
+          periodStart = monthBounds.start;
+          periodEnd = monthBounds.end;
+        }
+        const periodStartDate = new Date(`${periodStart}T00:00:00`);
+        const periodEndDate = new Date(`${periodEnd}T23:59:59.999`);
+        const statsUsers = analyticsSellerUiState.sellerId === 'all'
+          ? allSellers
+          : allSellers.filter(u => String(u.id || '') === analyticsSellerUiState.sellerId);
+
+        const sellerStatsHtml = statsUsers.map((user) => {
+          const userSales = sales.filter((s) => {
+            if (String(s.created_by || '') !== String(user.id || '')) return false;
+            const d = new Date(s.created_at);
+            return d >= periodStartDate && d <= periodEndDate;
+          });
+          if (userSales.length === 0) {
+            return `<div class="settings-option" style="margin-bottom:8px;">
+              <div class="title">${escHtml(user.full_name || user.email || '—')}</div>
+              <div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>
+            </div>`;
+          }
+          const byCatStats = {};
+          const clientsServed = new Set();
+          let totalKg = 0;
+          let totalCa = 0;
+          userSales.forEach((s) => {
+            const category = String(s.category || '').trim() || t('wholesale_real_unknown_range');
+            const qty = Number(s.quantity || 0);
+            const amount = Number(s.total_price || 0);
+            if (!byCatStats[category]) byCatStats[category] = { qty: 0, amount: 0 };
+            byCatStats[category].qty += qty;
+            byCatStats[category].amount += amount;
+            totalKg += qty;
+            totalCa += amount;
+            const clientKey = String(s.client_id || s.client_name || '').trim();
+            if (clientKey) clientsServed.add(clientKey);
+          });
+          const detailRows = Object.entries(byCatStats)
+            .sort((a, b) => b[1].amount - a[1].amount)
+            .map(([category, statsCat]) => {
+              const badgeClass = CATEGORIES.includes(category) ? category : '';
+              return `<div class="adv-stat-row">
+              <span class="adv-stat-label"><span class="badge ${escHtml(badgeClass)}" style="margin:0 4px 0 0;padding:1px 5px;font-size:9px;">${escHtml(category)}</span>${formatQty(statsCat.qty)} kg</span>
+              <span class="adv-stat-val">${formatDh(statsCat.amount)}</span>
+            </div>`;
+            })
+            .join('');
+          return `<div class="settings-option" style="margin-bottom:8px;">
+            <div class="title" style="margin-bottom:6px;">${escHtml(user.full_name || user.email || '—')} — ${escHtml(periodStart === periodEnd ? periodStart : `${periodStart} → ${periodEnd}`)}</div>
+            <div class="title" style="font-size:12px;margin-bottom:5px;">${escHtml(t('analytics_detail_by_category'))}</div>
+            ${detailRows}
+            <div class="adv-stat-row" style="margin-top:6px;"><span class="adv-stat-label">${escHtml(t('analytics_total_kg_sold'))}</span><span class="adv-stat-val">${formatQty(totalKg)} kg</span></div>
+            <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_total_ca_sold'))}</span><span class="adv-stat-val">${formatDh(totalCa)}</span></div>
+            <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_sales_lines_count'))}</span><span class="adv-stat-val">${userSales.length}</span></div>
+            <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_clients_served'))}</span><span class="adv-stat-val">${clientsServed.size}</span></div>
+          </div>`;
+        }).join('');
+
+        content.innerHTML = makeBackBtn(t('analytics_seller_stats_title')) + `
+          <div class="settings-option" style="margin-bottom:10px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px;">
+              <div>
+                <label style="font-size:11px;">${escHtml(t('analytics_period'))}</label>
+                <select onchange="setAnalyticsSellerPeriodType(this.value)">
+                  <option value="day" ${analyticsSellerUiState.periodType === 'day' ? 'selected' : ''}>${escHtml(t('analytics_day'))}</option>
+                  <option value="week" ${analyticsSellerUiState.periodType === 'week' ? 'selected' : ''}>${escHtml(t('analytics_week'))}</option>
+                  <option value="month" ${analyticsSellerUiState.periodType === 'month' ? 'selected' : ''}>${escHtml(t('analytics_month'))}</option>
+                </select>
+              </div>
+              ${analyticsSellerUiState.periodType === 'month'
+                ? `<div><label style="font-size:11px;">${escHtml(t('analytics_month'))}</label><input type="month" value="${escHtml(analyticsSellerUiState.month)}" onchange="setAnalyticsSellerMonth(this.value)" /></div>`
+                : `<div><label style="font-size:11px;">${escHtml(t('analytics_date'))}</label><input type="date" value="${escHtml(analyticsSellerUiState.date)}" onchange="setAnalyticsSellerDate(this.value)" /></div>`
+              }
+              <div>
+                <label style="font-size:11px;">${escHtml(t('analytics_seller'))}</label>
+                <select onchange="setAnalyticsSellerId(this.value)">${sellerOptions}</select>
+              </div>
+            </div>
+            ${sellerStatsHtml || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
+          </div>`;
+        return;
+      }
+
+      // ── Commissions view ──────────────────────────────────────────────────────
+      if (_analyticsView === 'commissions') {
+        const sellerOptionsCommission = [
+          `<option value="all" ${analyticsSellerUiState.commissionSellerId === 'all' ? 'selected' : ''}>${escHtml(t('analytics_all_sellers'))}</option>`,
+          ...allSellers.map(u => `<option value="${escHtml(String(u.id || ''))}" ${analyticsSellerUiState.commissionSellerId === String(u.id || '') ? 'selected' : ''}>${escHtml(u.full_name || u.email || '—')}</option>`)
+        ].join('');
+
+        const commissionMonth = toMonthBounds(analyticsSellerUiState.commissionMonth);
+        const commissionUsers = analyticsSellerUiState.commissionSellerId === 'all'
+          ? allSellers
+          : allSellers.filter(u => String(u.id || '') === analyticsSellerUiState.commissionSellerId);
+        const monthEntriesByUser = {};
+        let commissionEntriesLoadWarning = '';
+        try {
+          const { data: entryRows, error: entriesError } = await supabase
+            .from('employee_balance_entries')
+            .select('employee_id, entry_type, amount')
+            .gte('created_at', `${commissionMonth.start}T00:00:00Z`)
+            .lte('created_at', `${commissionMonth.end}T23:59:59Z`);
+          if (entriesError) throw entriesError;
+          (entryRows || []).forEach((entry) => {
+            const uid = String(entry.employee_id || '');
+            if (!uid) return;
+            if (!monthEntriesByUser[uid]) monthEntriesByUser[uid] = { advances: 0, payments: 0 };
+            if (entry.entry_type === 'advance') monthEntriesByUser[uid].advances += Number(entry.amount || 0);
+            if (entry.entry_type === 'payment') monthEntriesByUser[uid].payments += Number(entry.amount || 0);
+          });
+        } catch (e) {
+          console.warn('[renderAnalytics] employee_balance_entries:', e?.message);
+          commissionEntriesLoadWarning = t('analytics_commission_entries_load_warn');
+        }
+
+        let totalCommissionsDue = 0;
+        const commissionHtml = commissionUsers.map((user) => {
+          const monthSales = sales.filter((s) => {
+            if (String(s.created_by || '') !== String(user.id || '')) return false;
+            const d = new Date(s.created_at);
+            return d >= new Date(`${commissionMonth.start}T00:00:00`) && d <= new Date(`${commissionMonth.end}T23:59:59.999`);
+          });
+          const result = calcCommissionForUser(user, sales, commissionMonth.start, commissionMonth.end);
+          const userEntries = monthEntriesByUser[String(user.id || '')] || { advances: 0, payments: 0 };
+          const paidAdvances = Number(userEntries.advances || 0) + Number(userEntries.payments || 0);
+          const remaining = result.totalCommission - paidAdvances;
+          totalCommissionsDue += Math.max(0, remaining);
+
+          const monthlyByCategory = {};
+          let totalKgMonth = 0;
+          let totalCaMonth = 0;
+          monthSales.forEach((s) => {
+            const category = String(s.category || '').trim() || t('wholesale_real_unknown_range');
+            const qty = Number(s.quantity || 0);
+            const amount = Number(s.total_price || 0);
+            if (!monthlyByCategory[category]) monthlyByCategory[category] = { qty: 0, amount: 0 };
+            monthlyByCategory[category].qty += qty;
+            monthlyByCategory[category].amount += amount;
+            totalKgMonth += qty;
+            totalCaMonth += amount;
+          });
+          const rows = Object.entries(monthlyByCategory)
+            .sort((a, b) => b[1].amount - a[1].amount)
+            .map(([category, catStats]) => {
+              const badgeClass = CATEGORIES.includes(category) ? category : '';
+              return `<div class="adv-stat-row">
+              <span class="adv-stat-label"><span class="badge ${escHtml(badgeClass)}" style="margin:0 4px 0 0;padding:1px 5px;font-size:9px;">${escHtml(category)}</span>${formatQty(catStats.qty)} kg</span>
+              <span class="adv-stat-val">${formatDh(catStats.amount)}</span>
+            </div>`;
+            })
+            .join('');
+          return `<div class="settings-option" style="margin-bottom:8px;">
+            <div class="title" style="margin-bottom:6px;">${escHtml(user.full_name || user.email || '—')} — ${escHtml(formatWholesaleMonthLabel(commissionMonth.month))}</div>
+            <div class="title" style="font-size:12px;margin-bottom:5px;">${escHtml(t('analytics_detail_by_category'))}</div>
+            ${rows || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
+            <div class="adv-stat-row" style="margin-top:6px;"><span class="adv-stat-label">${escHtml(t('analytics_total_kg_sold'))}</span><span class="adv-stat-val">${formatQty(totalKgMonth)} kg</span></div>
+            <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_total_ca_sold'))}</span><span class="adv-stat-val">${formatDh(totalCaMonth)}</span></div>
+            <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_commission_month'))}</span><span class="adv-stat-val" style="color:var(--color-success);">${formatDh(result.totalCommission)}</span></div>
+            <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_paid_advances'))}</span><span class="adv-stat-val">${formatDh(paidAdvances)}</span></div>
+            <div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:4px;margin-top:4px;">
+              <span class="adv-stat-label" style="font-weight:700;">${escHtml(t('analytics_remaining_commission'))}</span>
+              <span class="adv-stat-val" style="font-weight:700;color:${remaining > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatDh(remaining)}</span>
+            </div>
+          </div>`;
+        }).join('');
+
+        content.innerHTML = makeBackBtn(t('analytics_commissions_monthly_title')) + `
+          <div class="settings-option" style="margin-bottom:10px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px;">
+              <div>
+                <label style="font-size:11px;">${escHtml(t('analytics_month'))}</label>
+                <input type="month" value="${escHtml(analyticsSellerUiState.commissionMonth)}" onchange="setAnalyticsCommissionMonth(this.value)" />
+              </div>
+              <div>
+                <label style="font-size:11px;">${escHtml(t('analytics_seller'))}</label>
+                <select onchange="setAnalyticsCommissionSellerId(this.value)">${sellerOptionsCommission}</select>
+              </div>
+            </div>
+            ${commissionEntriesLoadWarning ? `<div class="muted" style="font-size:12px;margin-bottom:8px;color:var(--color-error);">${escHtml(commissionEntriesLoadWarning)}</div>` : ''}
+            ${commissionHtml || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
+            <div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:6px;margin-top:8px;">
+              <span class="adv-stat-label" style="font-weight:700;">${escHtml(t('analytics_total_commissions_due'))}</span>
+              <span class="adv-stat-val" style="font-weight:700;color:var(--color-error);">${formatDh(totalCommissionsDue)}</span>
+            </div>
+          </div>`;
+        return;
+      }
+
+      // ── Client balances view ──────────────────────────────────────────────────
+      if (_analyticsView === 'clientBalances') {
+        const clientMap = {};
+        sales.forEach((s) => {
+          const name = String(s.client_name || '').trim() || t('wholesale_real_unknown_client');
+          if (!clientMap[name]) clientMap[name] = { totalSold: 0, paid: 0, unpaid: 0 };
+          const amount = Number(s.total_price || 0);
+          clientMap[name].totalSold += amount;
+          if (s.paid) clientMap[name].paid += amount;
+          else clientMap[name].unpaid += amount;
+        });
+        const clientEntries = Object.entries(clientMap).map(([name, stats]) => ({ name, ...stats })).sort((a, b) => b.unpaid - a.unpaid);
+        const clientRows = clientEntries.map((entry) => `<tr>
+          <td>${escHtml(entry.name)}</td>
+          <td>${formatDh(entry.totalSold)}</td>
+          <td style="color:var(--color-success);">${formatDh(entry.paid)}</td>
+          <td style="${entry.unpaid > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(entry.unpaid)}</td>
+        </tr>`).join('');
+        const clientsTotal = clientEntries.reduce((acc, entry) => {
+          acc.sold += entry.totalSold;
+          acc.paid += entry.paid;
+          acc.unpaid += entry.unpaid;
+          return acc;
+        }, { sold: 0, paid: 0, unpaid: 0 });
+
+        content.innerHTML = makeBackBtn(t('analytics_client_balances_title')) + `
+          <div class="settings-option">
+            ${clientEntries.length === 0
+              ? `<div class="empty-state">${escHtml(t('analytics_no_sales_period'))}</div>`
+              : `<table class="analytics-table">
+                  <thead><tr><th>${escHtml(t('analytics_balance_client'))}</th><th>${escHtml(t('analytics_balance_total_ca'))}</th><th>${escHtml(t('analytics_balance_paid'))}</th><th>${escHtml(t('analytics_balance_remaining'))}</th></tr></thead>
+                  <tbody>
+                    ${clientRows}
+                    <tr class="analytics-total-row">
+                      <td>${escHtml(t('analytics_total_label'))}</td>
+                      <td>${formatDh(clientsTotal.sold)}</td>
+                      <td style="color:var(--color-success);">${formatDh(clientsTotal.paid)}</td>
+                      <td style="color:var(--color-error);font-weight:700;">${formatDh(clientsTotal.unpaid)}</td>
+                    </tr>
+                  </tbody>
+                </table>`
+            }
+          </div>`;
+        return;
+      }
+
+      // ── Supplier balances view ────────────────────────────────────────────────
+      if (_analyticsView === 'supplierBalances') {
+        const wholesaleGroups = buildWholesaleGroups();
+        const supplierRows = wholesaleGroups.map((group) => `<tr>
+          <td>${escHtml(formatWholesaleMonthLabel(group.month))}</td>
+          <td>${escHtml(group.supplier)}</td>
+          <td>${formatDh(Number(group.totalNet || 0))}</td>
+          <td style="color:var(--color-success);">${formatDh(Number(group.totalPaid || 0))}</td>
+          <td style="${Number(group.remaining || 0) > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(Number(group.remaining || 0))}</td>
+          <td><strong>${formatDh(Math.max(0, Number(group.remaining || 0)))}</strong></td>
+        </tr>`).join('');
+
+        content.innerHTML = makeBackBtn(t('analytics_supplier_purchases')) + `
+          <div class="settings-option">
+            ${wholesaleGroups.length === 0
+              ? `<div class="empty-state">${escHtml(t('analytics_no_supplier_balance'))}</div>`
+              : `<table class="analytics-table">
+                  <thead><tr><th>${escHtml(t('analytics_balance_month'))}</th><th>${escHtml(t('analytics_balance_supplier'))}</th><th>${escHtml(t('analytics_balance_net'))}</th><th>${escHtml(t('analytics_balance_paid'))}</th><th>${escHtml(t('analytics_balance_remaining'))}</th><th>${escHtml(t('analytics_balance_suggested_payment'))}</th></tr></thead>
+                  <tbody>${supplierRows}</tbody>
+                </table>`
+            }
+          </div>`;
+        return;
+      }
+
+      // ── Sales stats & Company profit: shared data computation ─────────────────
+      const groups = buildWholesaleGroups();
+      const wholesaleCostMap = buildWholesaleUnitCostMapByGroup(groups);
 
       function getSaleMonth(sale) {
         const createdAt = String(sale?.created_at || '');
@@ -9908,8 +10275,46 @@
         </table>`;
       }
 
+      function renderSalesTableRows(rows, options = {}) {
+        const entries = Object.values(rows || {});
+        if (entries.length === 0) {
+          return `<div class="empty-state">${escHtml(t('wholesale_real_no_sales'))}</div>`;
+        }
+        entries.sort((a, b) => b.revenue - a.revenue);
+        const tableRows = entries.map(entry => `<tr>
+          <td>${escHtml(entry.label)}</td>
+          <td>${formatQty(entry.qty)}</td>
+          <td>${formatDh(entry.revenue)}</td>
+        </tr>`).join('');
+        return `<table class="analytics-table">
+          <thead><tr><th>${escHtml(options.colTitle || '')}</th><th>${escHtml(t('sale_quantite'))}</th><th>${escHtml(t('wholesale_revenue'))}</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>`;
+      }
+
       const paidAmount = sales.filter(s => s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
       const unpaidAmount = sales.filter(s => !s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
+
+      // ── Sales stats view ────────────────────────────────────────────────────
+      if (_analyticsView === 'salesStats') {
+        content.innerHTML = makeBackBtn(t('analytics_sales_stats')) + `
+          <div class="settings-option">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px;">
+              <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_revenue'))}</span><span class="pchip-val">${formatDh(totalRevenue)}</span></div>
+              <div class="preview-chip"><span class="pchip-label">✅ ${escHtml(t('analytics_balance_paid'))}</span><span class="pchip-val" style="color:var(--color-success);">${formatDh(paidAmount)}</span></div>
+              <div class="preview-chip"><span class="pchip-label">❌ ${escHtml(t('analytics_balance_remaining'))}</span><span class="pchip-val" style="color:var(--color-error);">${formatDh(unpaidAmount)}</span></div>
+            </div>
+            <h4 style="margin:10px 0 6px;">${escHtml(t('wholesale_real_profit_by_range'))}</h4>
+            ${renderSalesTableRows(byRange, { colTitle: t('wholesale_real_profit_by_range') })}
+            <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_client'))}</h4>
+            ${renderSalesTableRows(byClient, { colTitle: t('wholesale_real_profit_by_client') })}
+            <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_commercial'))}</h4>
+            ${renderSalesTableRows(byCommercial, { colTitle: t('wholesale_real_profit_by_commercial') })}
+          </div>`;
+        return;
+      }
+
+      // ── Company profit view ─────────────────────────────────────────────────
       const totalProfitClass = totalProfit >= 0 ? 'margin-positive' : 'margin-negative';
       const hasRegularizedCost = totalRegularizedCost > 0;
       const hasEstimatedCost = totalEstimatedCost > 0;
@@ -9924,194 +10329,8 @@
           ? totalRegularizedCost
           : totalEstimatedCost;
 
-      const allSellers = (state.allUsers || []).filter(u => ['employee', 'manager'].includes(String(u.role || '').toLowerCase()));
-      const sellerOptions = [
-        `<option value="all" ${analyticsSellerUiState.sellerId === 'all' ? 'selected' : ''}>${escHtml(t('analytics_all_sellers'))}</option>`,
-        ...allSellers.map(u => `<option value="${escHtml(String(u.id || ''))}" ${analyticsSellerUiState.sellerId === String(u.id || '') ? 'selected' : ''}>${escHtml(u.full_name || u.email || '—')}</option>`)
-      ].join('');
-      const sellerOptionsCommission = [
-        `<option value="all" ${analyticsSellerUiState.commissionSellerId === 'all' ? 'selected' : ''}>${escHtml(t('analytics_all_sellers'))}</option>`,
-        ...allSellers.map(u => `<option value="${escHtml(String(u.id || ''))}" ${analyticsSellerUiState.commissionSellerId === String(u.id || '') ? 'selected' : ''}>${escHtml(u.full_name || u.email || '—')}</option>`)
-      ].join('');
-
-      let periodStart = analyticsSellerUiState.date;
-      let periodEnd = analyticsSellerUiState.date;
-      if (analyticsSellerUiState.periodType === 'week') {
-        const weekBounds = toWeekBounds(analyticsSellerUiState.date);
-        periodStart = weekBounds.start;
-        periodEnd = weekBounds.end;
-      } else if (analyticsSellerUiState.periodType === 'month') {
-        const monthBounds = toMonthBounds(analyticsSellerUiState.month);
-        periodStart = monthBounds.start;
-        periodEnd = monthBounds.end;
-      }
-      const periodStartDate = new Date(`${periodStart}T00:00:00`);
-      const periodEndDate = new Date(`${periodEnd}T23:59:59.999`);
-      const statsUsers = analyticsSellerUiState.sellerId === 'all'
-        ? allSellers
-        : allSellers.filter(u => String(u.id || '') === analyticsSellerUiState.sellerId);
-
-      const sellerStatsHtml = statsUsers.map((user) => {
-        const userSales = sales.filter((s) => {
-          if (String(s.created_by || '') !== String(user.id || '')) return false;
-          const d = new Date(s.created_at);
-          return d >= periodStartDate && d <= periodEndDate;
-        });
-        if (userSales.length === 0) {
-          return `<div class="settings-option" style="margin-bottom:8px;">
-            <div class="title">${escHtml(user.full_name || user.email || '—')}</div>
-            <div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>
-          </div>`;
-        }
-        const byCatStats = {};
-        const clientsServed = new Set();
-        let totalKg = 0;
-        let totalCa = 0;
-        userSales.forEach((s) => {
-          const category = String(s.category || '').trim() || t('wholesale_real_unknown_range');
-          const qty = Number(s.quantity || 0);
-          const amount = Number(s.total_price || 0);
-          if (!byCatStats[category]) byCatStats[category] = { qty: 0, amount: 0 };
-          byCatStats[category].qty += qty;
-          byCatStats[category].amount += amount;
-          totalKg += qty;
-          totalCa += amount;
-          const clientKey = String(s.client_id || s.client_name || '').trim();
-          if (clientKey) clientsServed.add(clientKey);
-        });
-        const detailRows = Object.entries(byCatStats)
-          .sort((a, b) => b[1].amount - a[1].amount)
-          .map(([category, statsCat]) => {
-            const badgeClass = CATEGORIES.includes(category) ? category : '';
-            return `<div class="adv-stat-row">
-            <span class="adv-stat-label"><span class="badge ${escHtml(badgeClass)}" style="margin:0 4px 0 0;padding:1px 5px;font-size:9px;">${escHtml(category)}</span>${formatQty(statsCat.qty)} kg</span>
-            <span class="adv-stat-val">${formatDh(statsCat.amount)}</span>
-          </div>`;
-          })
-          .join('');
-        return `<div class="settings-option" style="margin-bottom:8px;">
-          <div class="title" style="margin-bottom:6px;">${escHtml(user.full_name || user.email || '—')} — ${escHtml(periodStart === periodEnd ? periodStart : `${periodStart} → ${periodEnd}`)}</div>
-          <div class="title" style="font-size:12px;margin-bottom:5px;">${escHtml(t('analytics_detail_by_category'))}</div>
-          ${detailRows}
-          <div class="adv-stat-row" style="margin-top:6px;"><span class="adv-stat-label">${escHtml(t('analytics_total_kg_sold'))}</span><span class="adv-stat-val">${formatQty(totalKg)} kg</span></div>
-          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_total_ca_sold'))}</span><span class="adv-stat-val">${formatDh(totalCa)}</span></div>
-          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_sales_lines_count'))}</span><span class="adv-stat-val">${userSales.length}</span></div>
-          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_clients_served'))}</span><span class="adv-stat-val">${clientsServed.size}</span></div>
-        </div>`;
-      }).join('');
-
-      const commissionMonth = toMonthBounds(analyticsSellerUiState.commissionMonth);
-      const commissionUsers = analyticsSellerUiState.commissionSellerId === 'all'
-        ? allSellers
-        : allSellers.filter(u => String(u.id || '') === analyticsSellerUiState.commissionSellerId);
-      const monthEntriesByUser = {};
-      let commissionEntriesLoadWarning = '';
-      try {
-        const { data: entryRows, error: entriesError } = await supabase
-          .from('employee_balance_entries')
-          .select('employee_id, entry_type, amount')
-          .gte('created_at', `${commissionMonth.start}T00:00:00Z`)
-          .lte('created_at', `${commissionMonth.end}T23:59:59Z`);
-        if (entriesError) throw entriesError;
-        (entryRows || []).forEach((entry) => {
-          const uid = String(entry.employee_id || '');
-          if (!uid) return;
-          if (!monthEntriesByUser[uid]) monthEntriesByUser[uid] = { advances: 0, payments: 0 };
-          if (entry.entry_type === 'advance') monthEntriesByUser[uid].advances += Number(entry.amount || 0);
-          if (entry.entry_type === 'payment') monthEntriesByUser[uid].payments += Number(entry.amount || 0);
-        });
-      } catch (e) {
-        console.warn('[renderAnalytics] employee_balance_entries:', e?.message);
-        commissionEntriesLoadWarning = t('analytics_commission_entries_load_warn');
-      }
-
-      let totalCommissionsDue = 0;
-      const commissionHtml = commissionUsers.map((user) => {
-        const monthSales = sales.filter((s) => {
-          if (String(s.created_by || '') !== String(user.id || '')) return false;
-          const d = new Date(s.created_at);
-          return d >= new Date(`${commissionMonth.start}T00:00:00`) && d <= new Date(`${commissionMonth.end}T23:59:59.999`);
-        });
-        const result = calcCommissionForUser(user, sales, commissionMonth.start, commissionMonth.end);
-        const userEntries = monthEntriesByUser[String(user.id || '')] || { advances: 0, payments: 0 };
-        const paidAdvances = Number(userEntries.advances || 0) + Number(userEntries.payments || 0);
-        const remaining = result.totalCommission - paidAdvances;
-        totalCommissionsDue += Math.max(0, remaining);
-
-        const monthlyByCategory = {};
-        let totalKgMonth = 0;
-        let totalCaMonth = 0;
-        monthSales.forEach((s) => {
-          const category = String(s.category || '').trim() || t('wholesale_real_unknown_range');
-          const qty = Number(s.quantity || 0);
-          const amount = Number(s.total_price || 0);
-          if (!monthlyByCategory[category]) monthlyByCategory[category] = { qty: 0, amount: 0 };
-          monthlyByCategory[category].qty += qty;
-          monthlyByCategory[category].amount += amount;
-          totalKgMonth += qty;
-          totalCaMonth += amount;
-        });
-        const rows = Object.entries(monthlyByCategory)
-          .sort((a, b) => b[1].amount - a[1].amount)
-          .map(([category, catStats]) => {
-            const badgeClass = CATEGORIES.includes(category) ? category : '';
-            return `<div class="adv-stat-row">
-            <span class="adv-stat-label"><span class="badge ${escHtml(badgeClass)}" style="margin:0 4px 0 0;padding:1px 5px;font-size:9px;">${escHtml(category)}</span>${formatQty(catStats.qty)} kg</span>
-            <span class="adv-stat-val">${formatDh(catStats.amount)}</span>
-          </div>`;
-          })
-          .join('');
-        return `<div class="settings-option" style="margin-bottom:8px;">
-          <div class="title" style="margin-bottom:6px;">${escHtml(user.full_name || user.email || '—')} — ${escHtml(formatWholesaleMonthLabel(commissionMonth.month))}</div>
-          <div class="title" style="font-size:12px;margin-bottom:5px;">${escHtml(t('analytics_detail_by_category'))}</div>
-          ${rows || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
-          <div class="adv-stat-row" style="margin-top:6px;"><span class="adv-stat-label">${escHtml(t('analytics_total_kg_sold'))}</span><span class="adv-stat-val">${formatQty(totalKgMonth)} kg</span></div>
-          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_total_ca_sold'))}</span><span class="adv-stat-val">${formatDh(totalCaMonth)}</span></div>
-          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_commission_month'))}</span><span class="adv-stat-val" style="color:var(--color-success);">${formatDh(result.totalCommission)}</span></div>
-          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_paid_advances'))}</span><span class="adv-stat-val">${formatDh(paidAdvances)}</span></div>
-          <div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:4px;margin-top:4px;">
-            <span class="adv-stat-label" style="font-weight:700;">${escHtml(t('analytics_remaining_commission'))}</span>
-            <span class="adv-stat-val" style="font-weight:700;color:${remaining > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatDh(remaining)}</span>
-          </div>
-        </div>`;
-      }).join('');
-
-      const clientMap = {};
-      sales.forEach((s) => {
-        const name = String(s.client_name || '').trim() || t('wholesale_real_unknown_client');
-        if (!clientMap[name]) clientMap[name] = { totalSold: 0, paid: 0, unpaid: 0 };
-        const amount = Number(s.total_price || 0);
-        clientMap[name].totalSold += amount;
-        if (s.paid) clientMap[name].paid += amount;
-        else clientMap[name].unpaid += amount;
-      });
-      const clientEntries = Object.entries(clientMap).map(([name, stats]) => ({ name, ...stats })).sort((a, b) => b.unpaid - a.unpaid);
-      const clientRows = clientEntries.map((entry) => `<tr>
-        <td>${escHtml(entry.name)}</td>
-        <td>${formatDh(entry.totalSold)}</td>
-        <td style="color:var(--color-success);">${formatDh(entry.paid)}</td>
-        <td style="${entry.unpaid > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(entry.unpaid)}</td>
-      </tr>`).join('');
-      const clientsTotal = clientEntries.reduce((acc, entry) => {
-        acc.sold += entry.totalSold;
-        acc.paid += entry.paid;
-        acc.unpaid += entry.unpaid;
-        return acc;
-      }, { sold: 0, paid: 0, unpaid: 0 });
-
-      const wholesaleGroups = buildWholesaleGroups();
-      const supplierRows = wholesaleGroups.map((group) => `<tr>
-        <td>${escHtml(formatWholesaleMonthLabel(group.month))}</td>
-        <td>${escHtml(group.supplier)}</td>
-        <td>${formatDh(Number(group.totalNet || 0))}</td>
-        <td style="color:var(--color-success);">${formatDh(Number(group.totalPaid || 0))}</td>
-        <td style="${Number(group.remaining || 0) > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(Number(group.remaining || 0))}</td>
-        <td><strong>${formatDh(Math.max(0, Number(group.remaining || 0)))}</strong></td>
-      </tr>`).join('');
-
-      content.innerHTML = `
-        <div class="settings-option" style="margin-bottom:10px;">
-          <div class="title">${escHtml(t('analytics_stats_section'))}</div>
+      content.innerHTML = makeBackBtn(t('analytics_company_profit')) + `
+        <div class="settings-option">
           <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">${escHtml(t('wholesale_real_based_on_regulated_monthly_costs'))}</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px;">
             <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_revenue'))}</span><span class="pchip-val">${formatDh(totalRevenue)}</span></div>
@@ -10133,79 +10352,7 @@
             <div class="preview-chip" style="flex:1;"><span class="pchip-label">❌ ${escHtml(t('analytics_balance_remaining'))}</span><span class="pchip-val" style="color:var(--color-error);">${formatDh(unpaidAmount)}</span></div>
             <div class="preview-chip" style="flex:1;"><span class="pchip-label">${escHtml(t('wholesale_real_estimation'))}</span><span class="pchip-val">${formatDh(totalEstimatedCost)}</span></div>
           </div>
-        </div>
-
-        <div class="settings-option" style="margin-bottom:10px;">
-          <div class="title">${escHtml(t('analytics_seller_stats_title'))}</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px;">
-            <div>
-              <label style="font-size:11px;">${escHtml(t('analytics_period'))}</label>
-              <select onchange="setAnalyticsSellerPeriodType(this.value)">
-                <option value="day" ${analyticsSellerUiState.periodType === 'day' ? 'selected' : ''}>${escHtml(t('analytics_day'))}</option>
-                <option value="week" ${analyticsSellerUiState.periodType === 'week' ? 'selected' : ''}>${escHtml(t('analytics_week'))}</option>
-                <option value="month" ${analyticsSellerUiState.periodType === 'month' ? 'selected' : ''}>${escHtml(t('analytics_month'))}</option>
-              </select>
-            </div>
-            ${analyticsSellerUiState.periodType === 'month'
-              ? `<div><label style="font-size:11px;">${escHtml(t('analytics_month'))}</label><input type="month" value="${escHtml(analyticsSellerUiState.month)}" onchange="setAnalyticsSellerMonth(this.value)" /></div>`
-              : `<div><label style="font-size:11px;">${escHtml(t('analytics_date'))}</label><input type="date" value="${escHtml(analyticsSellerUiState.date)}" onchange="setAnalyticsSellerDate(this.value)" /></div>`
-            }
-            <div>
-              <label style="font-size:11px;">${escHtml(t('analytics_seller'))}</label>
-              <select onchange="setAnalyticsSellerId(this.value)">${sellerOptions}</select>
-            </div>
-          </div>
-          ${sellerStatsHtml || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
-        </div>
-
-        <div class="settings-option" style="margin-bottom:10px;">
-          <div class="title">${escHtml(t('analytics_commissions_monthly_title'))}</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px;">
-            <div>
-              <label style="font-size:11px;">${escHtml(t('analytics_month'))}</label>
-              <input type="month" value="${escHtml(analyticsSellerUiState.commissionMonth)}" onchange="setAnalyticsCommissionMonth(this.value)" />
-            </div>
-            <div>
-              <label style="font-size:11px;">${escHtml(t('analytics_seller'))}</label>
-              <select onchange="setAnalyticsCommissionSellerId(this.value)">${sellerOptionsCommission}</select>
-            </div>
-          </div>
-          ${commissionEntriesLoadWarning ? `<div class="muted" style="font-size:12px;margin-bottom:8px;color:var(--color-error);">${escHtml(commissionEntriesLoadWarning)}</div>` : ''}
-          ${commissionHtml || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
-          <div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:6px;margin-top:8px;">
-            <span class="adv-stat-label" style="font-weight:700;">${escHtml(t('analytics_total_commissions_due'))}</span>
-            <span class="adv-stat-val" style="font-weight:700;color:var(--color-error);">${formatDh(totalCommissionsDue)}</span>
-          </div>
-        </div>
-
-        <div class="settings-option">
-          <div class="title">${escHtml(t('analytics_balances_section'))}</div>
-          <h4 style="margin:10px 0 6px;">${escHtml(t('analytics_client_balances_title'))}</h4>
-          ${clientEntries.length === 0
-            ? `<div class="empty-state">${escHtml(t('analytics_no_sales_period'))}</div>`
-            : `<table class="analytics-table">
-                <thead><tr><th>${escHtml(t('analytics_balance_client'))}</th><th>${escHtml(t('analytics_balance_total_ca'))}</th><th>${escHtml(t('analytics_balance_paid'))}</th><th>${escHtml(t('analytics_balance_remaining'))}</th></tr></thead>
-                <tbody>
-                  ${clientRows}
-                  <tr class="analytics-total-row">
-                    <td>${escHtml(t('analytics_total_label'))}</td>
-                    <td>${formatDh(clientsTotal.sold)}</td>
-                    <td style="color:var(--color-success);">${formatDh(clientsTotal.paid)}</td>
-                    <td style="color:var(--color-error);font-weight:700;">${formatDh(clientsTotal.unpaid)}</td>
-                  </tr>
-                </tbody>
-              </table>`
-          }
-          <h4 style="margin:14px 0 6px;">${escHtml(t('analytics_supplier_balances_title'))}</h4>
-          ${wholesaleGroups.length === 0
-            ? `<div class="empty-state">${escHtml(t('analytics_no_supplier_balance'))}</div>`
-            : `<table class="analytics-table">
-                <thead><tr><th>${escHtml(t('analytics_balance_month'))}</th><th>${escHtml(t('analytics_balance_supplier'))}</th><th>${escHtml(t('analytics_balance_net'))}</th><th>${escHtml(t('analytics_balance_paid'))}</th><th>${escHtml(t('analytics_balance_remaining'))}</th><th>${escHtml(t('analytics_balance_suggested_payment'))}</th></tr></thead>
-                <tbody>${supplierRows}</tbody>
-              </table>`
-          }
-        </div>
-      `;
+        </div>`;
     }
 
     // ── Balance ──────────────────────────────────────────────────────────────────

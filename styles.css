@@ -1250,6 +1250,23 @@
     .activity-status.hours { color: var(--color-text-muted); }
     .activity-status.offline { color: var(--color-text-muted); opacity: 0.7; }
 
+    /* ── Analytics navigation home ── */
+    .analytics-home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 4px; }
+    .analytics-home-card { background: rgba(248,243,236,0.96); border: 1px solid rgba(0,0,0,0.07); border-radius: var(--radius-lg); padding: 16px 14px; cursor: pointer; text-align: left; width: 100%; transition: box-shadow 0.15s, transform 0.1s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .analytics-home-card:hover, .analytics-home-card:focus { box-shadow: 0 6px 20px rgba(0,0,0,0.12); transform: translateY(-2px); outline: none; }
+    .analytics-home-card:active { transform: translateY(0); }
+    .analytics-home-card-icon { font-size: 26px; margin-bottom: 6px; display: block; }
+    .analytics-home-card-title { font-size: 14px; font-weight: 700; color: var(--color-text); display: block; }
+    .analytics-home-card-desc { font-size: 11px; color: var(--color-text-muted); margin-top: 3px; display: block; line-height: 1.4; }
+    .analytics-subview-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--color-border); }
+    .analytics-back-btn { background: none; border: 1px solid rgba(0,0,0,0.1); cursor: pointer; font-size: 16px; padding: 4px 10px; border-radius: var(--radius-sm); color: var(--color-text); flex-shrink: 0; }
+    .analytics-back-btn:hover { background: rgba(0,0,0,0.06); }
+    .analytics-subview-title { font-size: 15px; font-weight: 700; color: var(--color-text); flex: 1; min-width: 0; }
+    body.dark .analytics-home-card { background: rgba(30,26,22,0.96); }
+    body.dark .analytics-back-btn { border-color: rgba(255,255,255,0.15); color: var(--color-text); }
+    html[dir="rtl"] .analytics-home-card { text-align: right; }
+    html[dir="rtl"] .analytics-back-btn { transform: scaleX(-1); }
+
     /* ── Analytics table ── */
     .analytics-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
     .analytics-table th { background: rgba(0,0,0,0.85); color: white; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
