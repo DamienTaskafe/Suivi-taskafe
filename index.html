@@ -146,6 +146,7 @@
         <button id="btnSales" class="tab-btn active" onclick="show('sales')" data-i18n="tab_sales">💰 Ventes</button>
         <button id="btnClients" class="tab-btn" onclick="show('clients')" data-i18n="tab_clients">👥 Clients</button>
         <button id="btnStock" class="tab-btn" onclick="show('stock')">📦 Stock <span id="stockAlert" class="tab-badge"></span></button>
+        <button id="btnVehicles" class="tab-btn" onclick="show('vehicles')" data-i18n="tab_vehicles">🚗 Véhicules</button>
       </div>
 
       <div id="sales" class="section-shell">
@@ -326,6 +327,11 @@
         <h3>📋 Historique des actions</h3>
         <div class="muted">Visible admin uniquement. Dernières 200 actions.</div>
         <div id="logsList"></div>
+      </div>
+
+      <div id="vehicles" class="section-shell hidden">
+        <h3 style="margin-bottom:var(--spacing-lg);" data-i18n="tab_vehicles">🚗 Véhicules</h3>
+        <div id="vehiclesList"></div>
       </div>
     </div>
   </div>
@@ -1264,7 +1270,7 @@
   <div id="fuelDeclarationModal" class="modal-backdrop" onclick="backdropClose(event, 'fuelDeclarationModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head">
-        <h3 data-i18n="fuel_declare_fill">⛽ Déclarer un plein</h3>
+        <h3>⛽ <span data-i18n="fuel_declare_fill">Déclarer un plein</span></h3>
         <button class="close-x" onclick="closeModal('fuelDeclarationModal')">✕</button>
       </div>
       <label for="fuelVehicleSelect" data-i18n="fuel_vehicle">Véhicule / immatriculation</label>
@@ -1279,8 +1285,12 @@
       <input id="fuelLitersInput" type="number" min="0.01" step="0.01" placeholder="0" />
       <label for="fuelAmountInput" style="margin-top:8px;" data-i18n="fuel_amount_paid">Montant payé (DHS)</label>
       <input id="fuelAmountInput" type="number" min="0" step="0.01" placeholder="0" />
-      <label for="fuelReceiptInput" style="margin-top:8px;" data-i18n="fuel_receipt_photo">Photo ticket/pompe (URL)</label>
-      <input id="fuelReceiptInput" type="url" placeholder="https://..." />
+      <label style="margin-top:8px;" data-i18n="fuel_receipt_photo">📸 Photo ticket/pompe</label>
+      <input id="fuelReceiptFile" type="file" accept="image/*" capture="environment" style="margin-bottom:4px;width:100%;" onchange="onFuelReceiptFileChange()" />
+      <div id="fuelReceiptPreview" style="display:none;margin-bottom:4px;text-align:center;">
+        <img id="fuelReceiptImg" alt="aperçu" style="max-width:100%;max-height:130px;border-radius:8px;border:1px solid var(--color-border);" />
+      </div>
+      <div id="fuelReceiptUploadStatus" style="font-size:11px;min-height:14px;color:var(--color-text-muted);"></div>
       <label for="fuelCommentInput" style="margin-top:8px;" data-i18n="fuel_comment_optional">Commentaire (optionnel)</label>
       <input id="fuelCommentInput" type="text" placeholder="..." />
       <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelDeclaration()">💾 <span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
@@ -1292,7 +1302,7 @@
   <div id="fuelVehiclesModal" class="modal-backdrop" onclick="backdropClose(event, 'fuelVehiclesModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head">
-        <h3 data-i18n="fuel_vehicle_settings">🚗 Réglages véhicules carburant</h3>
+        <h3 data-i18n="vehicles_settings">🚗 Réglages véhicules</h3>
         <button class="close-x" onclick="closeModal('fuelVehiclesModal')">✕</button>
       </div>
       <div id="fuelVehiclesList" style="max-height:220px;overflow:auto;margin-bottom:10px;">
@@ -1388,6 +1398,7 @@
         tab_clients: '👥 Clients',
         tab_stock: '📦 Stock',
         tab_balance: '⚖️ Balance',
+        tab_vehicles: '🚗 Véhicules',
         menu_compte: '👤 Compte',
         menu_travail: '💼 Travail',
         menu_equipe: '👥 Équipe',
@@ -1570,13 +1581,13 @@
         remu_enregistrement: '⏳ Enregistrement…',
         remu_saved: '✅ Rémunération configurée',
         fuel_vehicle: 'Véhicule / immatriculation',
-        fuel_vehicle_settings: '🚗 Réglages véhicules carburant',
+        fuel_vehicle_settings: 'Réglages véhicules carburant',
         fuel_assigned_employee: 'Employé affecté',
-        fuel_declare_fill: '⛽ Déclarer un plein',
+        fuel_declare_fill: 'Déclarer un plein',
         fuel_current_km: 'Kilométrage actuel',
         fuel_liters: 'Litres',
         fuel_amount_paid: 'Montant payé (DHS)',
-        fuel_receipt_photo: 'Photo ticket/pompe (URL)',
+        fuel_receipt_photo: '📸 Photo ticket/pompe',
         fuel_comment_optional: 'Commentaire (optionnel)',
         fuel_registration_optional: 'Immatriculation (optionnel)',
         fuel_monthly_reimbursement: '⏳ Remboursement prévu fin de mois',
@@ -1608,6 +1619,13 @@
         fuel_invalid_url: 'URL photo invalide (http/https)',
         fuel_declaration_saved: '✅ Plein déclaré',
         fuel_balance_entry_saved: '✅ Avance carburant enregistrée',
+        fuel_photo_uploading: '⏳ Envoi photo…',
+        fuel_photo_uploaded: '✅ Photo envoyée',
+        fuel_photo_error: '⚠️ Impossible d\'envoyer la photo',
+        fuel_view_photo: '📸 Voir photo',
+        vehicles_my_fills: 'Mes pleins',
+        vehicles_all_fills: 'Tous les pleins',
+        vehicles_settings: '🚗 Réglages véhicules',
         user_creer: 'Créer nouvel utilisateur',
         user_nom: '👤 Nom complet',
         user_nom_placeholder: 'Nom complet',
@@ -1873,6 +1891,7 @@
         tab_clients: '👥 العملاء',
         tab_stock: '📦 المخزون',
         tab_balance: '⚖️ الميزان',
+        tab_vehicles: '🚗 المركبات',
         menu_compte: '👤 الحساب',
         menu_travail: '💼 العمل',
         menu_equipe: '👥 الفريق',
@@ -2055,13 +2074,13 @@
         remu_enregistrement: '⏳ جارٍ الحفظ…',
         remu_saved: '✅ تم ضبط الأجر',
         fuel_vehicle: 'المركبة / رقم اللوحة',
-        fuel_vehicle_settings: '🚗 إعدادات مركبات الوقود',
+        fuel_vehicle_settings: 'إعدادات مركبات الوقود',
         fuel_assigned_employee: 'الموظف المكلّف',
-        fuel_declare_fill: '⛽ تصريح تعبئة الوقود',
+        fuel_declare_fill: 'تصريح تعبئة الوقود',
         fuel_current_km: 'الكيلومترات الحالية',
         fuel_liters: 'اللترات',
         fuel_amount_paid: 'المبلغ المدفوع (درهم)',
-        fuel_receipt_photo: 'صورة الوصل/المضخة (رابط)',
+        fuel_receipt_photo: '📸 صورة الوصل/المضخة',
         fuel_comment_optional: 'ملاحظة (اختياري)',
         fuel_registration_optional: 'رقم اللوحة (اختياري)',
         fuel_monthly_reimbursement: '⏳ التعويض متوقع نهاية الشهر',
@@ -2093,6 +2112,13 @@
         fuel_invalid_url: 'رابط الصورة غير صالح (http/https)',
         fuel_declaration_saved: '✅ تم تسجيل التعبئة',
         fuel_balance_entry_saved: '✅ تم تسجيل سلفة الوقود',
+        fuel_photo_uploading: '⏳ جارٍ رفع الصورة…',
+        fuel_photo_uploaded: '✅ تم رفع الصورة',
+        fuel_photo_error: '⚠️ تعذر رفع الصورة',
+        fuel_view_photo: '📸 عرض الصورة',
+        vehicles_my_fills: 'تعبئاتي',
+        vehicles_all_fills: 'كل التعبئات',
+        vehicles_settings: '🚗 إعدادات المركبات',
         user_creer: 'إنشاء مستخدم جديد',
         user_nom: '👤 الاسم الكامل',
         user_nom_placeholder: 'الاسم الكامل',
@@ -2358,6 +2384,7 @@
         tab_clients: '👥 Clients',
         tab_stock: '📦 Stock',
         tab_balance: '⚖️ Balance',
+        tab_vehicles: '🚗 Tomobilat',
         menu_compte: '👤 Compte',
         menu_travail: '💼 Khidma',
         menu_equipe: '👥 Ferqa',
@@ -2540,13 +2567,13 @@
         remu_enregistrement: '⏳ Tsajjel…',
         remu_saved: '✅ Khlass tsajjel',
         fuel_vehicle: 'Tomobil / numero',
-        fuel_vehicle_settings: '🚗 Réglages tomobilat carburant',
+        fuel_vehicle_settings: 'Réglages tomobilat carburant',
         fuel_assigned_employee: 'Khdam m3ayan',
-        fuel_declare_fill: '⛽ Sajjel plein',
+        fuel_declare_fill: 'Sajjel plein',
         fuel_current_km: 'Kilometrage daba',
         fuel_liters: 'Litres',
         fuel_amount_paid: 'Montant mkhalles (DHS)',
-        fuel_receipt_photo: 'Tsawir ticket/pompe (URL)',
+        fuel_receipt_photo: '📸 Tsawir ticket/pompe',
         fuel_comment_optional: 'Ta3liq (ikhtiyari)',
         fuel_registration_optional: 'Numero tomobil (ikhtiyari)',
         fuel_monthly_reimbursement: '⏳ Remboursement f akhir chhar',
@@ -2578,6 +2605,13 @@
         fuel_invalid_url: 'URL dyal tswira ma sahihach (http/https)',
         fuel_declaration_saved: '✅ Plein tsajjel',
         fuel_balance_entry_saved: '✅ Avance carburant tsajlat',
+        fuel_photo_uploading: '⏳ Tsawira kaytb3at…',
+        fuel_photo_uploaded: '✅ Tsawira twslat',
+        fuel_photo_error: '⚠️ Ma qdrnach ntsifto tsawira',
+        fuel_view_photo: '📸 Chof tsawira',
+        vehicles_my_fills: 'Pleins dyali',
+        vehicles_all_fills: 'Ga3 pleins',
+        vehicles_settings: '🚗 Réglages tomobilat',
         user_creer: 'Dir utilisateur jdid',
         user_nom: '👤 Smiya kamel',
         user_nom_placeholder: 'Smiya kamel',
@@ -4029,9 +4063,12 @@
         const pendingHint = entry.status === 'pending'
           ? `<div class="muted" style="font-size:11px;">${escHtml(t('fuel_monthly_reimbursement'))}</div>`
           : '';
-        const receiptHref = safeExternalUrl(entry.receipt_photo_url || '');
-        const receipt = receiptHref
-          ? `<a href="${escHtml(receiptHref)}" target="_blank" rel="noopener noreferrer" style="font-size:11px;">📎 ticket</a>`
+        const photoVal = entry.receipt_photo_url || '';
+        const isStoragePath = photoVal && !photoVal.startsWith('http');
+        const receipt = photoVal
+          ? (isStoragePath
+            ? `<button type="button" onclick="openFuelReceiptPhoto('${escHtml(photoVal)}')" style="font-size:11px;padding:2px 6px;background:none;box-shadow:none;color:var(--color-primary);border:1px solid var(--color-border);border-radius:5px;">${escHtml(t('fuel_view_photo'))}</button>`
+            : `<a href="${escHtml(safeExternalUrl(photoVal))}" target="_blank" rel="noopener noreferrer" style="font-size:11px;">📎 ticket</a>`)
           : '';
         let actions = '';
         if (isManagerOrAdmin()) {
@@ -4068,7 +4105,7 @@
         .filter(e => String(e.employee_id || '') === String(me || ''))
         .sort((a, b) => new Date(b.declared_at || b.created_at || 0) - new Date(a.declared_at || a.created_at || 0))
         .slice(0, 20);
-      return `<div class="stock-section-label" style="margin-top:20px;">⛽ ${escHtml(t('fuel_declare_fill'))}</div>
+      return `<div class="stock-section-label" style="margin-top:20px;">⛽ ${escHtml(t('vehicles_my_fills'))}</div>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <button type="button" style="flex:1;" onclick="openFuelDeclarationModal()">⛽ ${escHtml(t('fuel_declare_fill'))}</button>
         </div>
@@ -4105,12 +4142,12 @@
           ${alert}
         </div>`;
       }).join('');
-      return `<div class="stock-section-label" style="margin-top:20px;">⛽ Carburant</div>
+      return `<div class="stock-section-label" style="margin-top:20px;">⛽ ${escHtml(t('vehicles_all_fills'))}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
           <button type="button" style="flex:1;" onclick="openFuelDeclarationModal()">⛽ ${escHtml(t('fuel_declare_fill'))}</button>
-          <button type="button" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);" onclick="openFuelVehiclesModal()">🚗 ${escHtml(t('fuel_vehicle_settings'))}</button>
+          <button type="button" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);" onclick="openFuelVehiclesModal()">${escHtml(t('vehicles_settings'))}</button>
         </div>
-        ${vehicles.length ? `<details style="margin-bottom:8px;"><summary style="cursor:pointer;font-size:12px;">🚗 ${escHtml(t('fuel_vehicle_settings'))} (${vehicles.length})</summary><div style="margin-top:6px;">${vehiclesHtml}</div></details>` : ''}
+        ${vehicles.length ? `<details style="margin-bottom:8px;"><summary style="cursor:pointer;font-size:12px;">${escHtml(t('vehicles_settings'))} (${vehicles.length})</summary><div style="margin-top:6px;">${vehiclesHtml}</div></details>` : ''}
         ${renderFuelEntriesList(rows, true)}`;
     }
 
@@ -4148,7 +4185,6 @@
           <button onclick="openStockRequestModal()" style="flex:1;">📦 Demander du stock</button>
           <button onclick="openMyStockRequestsModal()" style="flex:1;background:rgba(0,0,0,0.07);color:var(--color-text);">📋 Mes demandes</button>
         </div>`;
-        html += renderFuelSectionForEmployee();
 
         list.innerHTML = html;
       } else {
@@ -4230,7 +4266,6 @@
         } else {
           html += `<p class="muted" style="margin-top:8px;font-size:12px;">Aucun stock commercial attribué pour l'instant.</p>`;
         }
-        html += renderFuelSectionForAdmin();
 
         list.innerHTML = html;
       }
@@ -4238,6 +4273,16 @@
       // Update Stock tab badge
       const tabBadge = document.getElementById('stockAlert');
       if (tabBadge) tabBadge.style.display = anyLow ? 'inline-block' : 'none';
+    }
+
+    function renderVehiclesSection() {
+      const list = document.getElementById('vehiclesList');
+      if (!list) return;
+      if (isManagerOrAdmin()) {
+        list.innerHTML = renderFuelSectionForAdmin();
+      } else {
+        list.innerHTML = renderFuelSectionForEmployee();
+      }
     }
 
     async function refreshFuelData() {
@@ -4281,11 +4326,46 @@
     window.openFuelDeclarationModal = async function () {
       await refreshFuelData();
       fillFuelVehicleSelectOptions('fuelVehicleSelect');
-      const fields = ['fuelVehicleRegistrationInput', 'fuelCurrentKmInput', 'fuelLitersInput', 'fuelAmountInput', 'fuelReceiptInput', 'fuelCommentInput'];
+      const fields = ['fuelVehicleRegistrationInput', 'fuelCurrentKmInput', 'fuelLitersInput', 'fuelAmountInput', 'fuelCommentInput'];
       fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      const fileEl = document.getElementById('fuelReceiptFile');
+      if (fileEl) fileEl.value = '';
+      const preview = document.getElementById('fuelReceiptPreview');
+      if (preview) preview.style.display = 'none';
+      const uploadStatus = document.getElementById('fuelReceiptUploadStatus');
+      if (uploadStatus) { uploadStatus.textContent = ''; }
       const statusEl = document.getElementById('fuelDeclarationStatus');
       if (statusEl) { statusEl.textContent = ''; statusEl.style.color = ''; }
       openModal('fuelDeclarationModal');
+    };
+
+    window.onFuelReceiptFileChange = function () {
+      const fileEl = document.getElementById('fuelReceiptFile');
+      const preview = document.getElementById('fuelReceiptPreview');
+      const img = document.getElementById('fuelReceiptImg');
+      const uploadStatus = document.getElementById('fuelReceiptUploadStatus');
+      if (!fileEl || !fileEl.files || !fileEl.files[0]) {
+        if (preview) preview.style.display = 'none';
+        return;
+      }
+      const file = fileEl.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (img) img.src = e.target.result;
+        if (preview) preview.style.display = '';
+        if (uploadStatus) uploadStatus.textContent = '';
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.openFuelReceiptPhoto = async function (storagePath) {
+      try {
+        const { data, error } = await supabase.storage.from('fuel-receipts').createSignedUrl(storagePath, 3600);
+        if (error) throw error;
+        if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+      } catch (e) {
+        showSessionStatus('❌ ' + shortSupabaseError(e, 120), 'error', 6000);
+      }
     };
 
     window.onFuelVehicleSelectChange = function () {
@@ -4304,21 +4384,42 @@
       const km = Number(document.getElementById('fuelCurrentKmInput')?.value || 0);
       const liters = Number(document.getElementById('fuelLitersInput')?.value || 0);
       const amount = Number(document.getElementById('fuelAmountInput')?.value || 0);
-      const receiptUrl = (document.getElementById('fuelReceiptInput')?.value || '').trim() || null;
       const comment = (document.getElementById('fuelCommentInput')?.value || '').trim() || null;
+      const fileEl = document.getElementById('fuelReceiptFile');
+      const receiptFile = fileEl?.files?.[0] || null;
       const statusEl = document.getElementById('fuelDeclarationStatus');
+      const uploadStatus = document.getElementById('fuelReceiptUploadStatus');
       if (km < 0 || liters <= 0 || amount < 0) {
         if (statusEl) { statusEl.textContent = `❌ ${t('fuel_invalid_data')}`; statusEl.style.color = '#e53935'; }
-        return;
-      }
-      const sanitizedReceiptUrl = receiptUrl ? safeExternalUrl(receiptUrl) : null;
-      if (receiptUrl && !sanitizedReceiptUrl) {
-        if (statusEl) { statusEl.textContent = `❌ ${t('fuel_invalid_url')}`; statusEl.style.color = '#e53935'; }
         return;
       }
       const userId = state.session?.user?.id;
       if (!userId) return;
       if (statusEl) { statusEl.textContent = t('remu_enregistrement'); statusEl.style.color = ''; }
+
+      // Upload receipt photo if provided
+      let receiptPhotoPath = null;
+      if (receiptFile) {
+        if (uploadStatus) { uploadStatus.textContent = t('fuel_photo_uploading'); }
+        try {
+          const ext = receiptFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+          const now = new Date();
+          const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+          const ts = Date.now();
+          const path = `${userId}/${ym}/${ts}.${ext}`;
+          const { error: upErr } = await supabase.storage.from('fuel-receipts').upload(path, receiptFile, {
+            contentType: receiptFile.type || 'image/jpeg',
+            upsert: false
+          });
+          if (upErr) throw upErr;
+          receiptPhotoPath = path;
+          if (uploadStatus) { uploadStatus.textContent = t('fuel_photo_uploaded'); }
+        } catch (e) {
+          if (uploadStatus) { uploadStatus.textContent = `${t('fuel_photo_error')}: ${shortSupabaseError(e, 80)}`; }
+          // Non-blocking: proceed with declaration without photo
+        }
+      }
+
       try {
         const vehicle = (state.fuelVehicles || []).find(v => String(v.id || '') === String(vehicleId || ''));
         let consumption = null;
@@ -4353,7 +4454,7 @@
             current_km: km,
             liters,
             amount,
-            receipt_photo_url: sanitizedReceiptUrl,
+            receipt_photo_url: receiptPhotoPath,
             comment,
             status: 'pending',
             consumption_l100: consumption,
@@ -4368,7 +4469,7 @@
         if (statusEl) { statusEl.textContent = t('fuel_declaration_saved'); statusEl.style.color = '#2e7d32'; }
         showSessionStatus(`${t('fuel_declaration_saved')} · ${t('fuel_monthly_reimbursement')}`, 'success', 6000);
         await refreshFuelData();
-        renderStock();
+        renderVehiclesSection();
         setTimeout(() => closeModal('fuelDeclarationModal'), 500);
       } catch (e) {
         if (statusEl) { statusEl.textContent = '❌ ' + shortSupabaseError(e, 120); statusEl.style.color = '#e53935'; }
@@ -4471,7 +4572,7 @@
         await refreshFuelData();
         renderFuelVehiclesListInModal();
         fillFuelVehicleSelectOptions('fuelVehicleSelect');
-        renderStock();
+        renderVehiclesSection();
       } catch (e) {
         if (statusEl) { statusEl.textContent = '❌ ' + shortSupabaseError(e, 120); statusEl.style.color = '#e53935'; }
       }
@@ -4485,7 +4586,7 @@
         if (error) throw error;
         await refreshFuelData();
         renderFuelVehiclesListInModal();
-        renderStock();
+        renderVehiclesSection();
       } catch (e) {
         showSessionStatus('❌ ' + shortSupabaseError(e, 120), 'error', 8000);
       }
@@ -4506,7 +4607,7 @@
         if (error) throw error;
         showSessionStatus(t('fuel_status_updated'), 'success');
         await refreshFuelData();
-        renderStock();
+        renderVehiclesSection();
       } catch (e) {
         showSessionStatus('❌ ' + shortSupabaseError(e, 120), 'error', 8000);
       }
@@ -11332,7 +11433,7 @@
       if (section !== 'sales' && typeof closeClientSales === 'function') {
         closeClientSales();
       }
-      const ids = ['sales', 'clients', 'stock', 'balance', 'logs'];
+      const ids = ['sales', 'clients', 'stock', 'balance', 'logs', 'vehicles'];
       ids.forEach(id => {
         const sectionEl = document.getElementById(id);
         const btnEl = document.getElementById('btn' + id.charAt(0).toUpperCase() + id.slice(1));
@@ -11345,6 +11446,10 @@
       // Re-render the clients list whenever the user navigates to the Clients tab so
       // that order counts reflect any sales that were added since the last render.
       if (section === 'clients') renderClients();
+      // Refresh and render the vehicles section when navigating to it
+      if (section === 'vehicles') {
+        refreshFuelData().then(() => renderVehiclesSection()).catch(e => console.warn('[show vehicles] refreshFuelData:', e?.message));
+      }
     };
 
     window.showLogsSection = async function() {
