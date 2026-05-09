@@ -1050,7 +1050,7 @@
         </div>
 
         <label for="wholesalePurchaseCategory" style="margin-top:8px;" data-i18n="wholesale_product_range">Gamme / produit</label>
-        <select id="wholesalePurchaseCategory">
+        <select id="wholesalePurchaseCategory" onchange="prefillWholesalePurchaseUnitPriceByCategory(true);">
           <option value="" data-i18n="wholesale_all_ranges">—</option>
           <option value="ORO">ORO</option>
           <option value="RIO">RIO</option>
@@ -1562,6 +1562,26 @@
         wholesale_saved_payment: '✅ Paiement enregistré',
         wholesale_error_required_fields: '❌ Champs requis manquants',
         wholesale_error_positive_values: '❌ Quantité, prix et montant doivent être > 0',
+        wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_last_payment_suggested: 'Dernier paiement suggéré',
+        wholesale_purchase_price_prefilled: 'Prix prérempli depuis la grille achat',
+        wholesale_real_profit_section_title: '📊 Bénéfice réel entreprise',
+        wholesale_revenue: 'Chiffre d’affaires',
+        wholesale_real_purchase_cost: 'Coût achat réel',
+        wholesale_real_purchase_cost_estimated: 'Coût achat provisoire',
+        wholesale_real_purchase_cost_regularized: 'Coût achat régularisé',
+        wholesale_real_profit_global: 'Bénéfice global',
+        wholesale_real_profit_by_range: 'Bénéfice par gamme',
+        wholesale_real_profit_by_client: 'Bénéfice par client',
+        wholesale_real_profit_by_commercial: 'Bénéfice par commercial',
+        wholesale_real_cost_missing: 'Coût manquant',
+        wholesale_real_data_incomplete: 'Données incomplètes',
+        wholesale_real_estimation: 'Estimation',
+        wholesale_real_based_on_regulated_monthly_costs: 'Basé sur coût achat mensuel réel (régularisé si palier atteint).',
+        wholesale_real_no_sales: 'Aucune vente sur la période active.',
+        wholesale_real_unknown_client: 'Client inconnu',
+        wholesale_real_unknown_commercial: 'Commercial inconnu',
+        wholesale_real_unknown_range: 'Gamme inconnue',
       },
       ar: {
         auth_subtitle: 'إدارة المبيعات السحابية الآمنة',
@@ -1866,6 +1886,26 @@
         wholesale_saved_payment: '✅ تم حفظ الدفعة',
         wholesale_error_required_fields: '❌ حقول مطلوبة ناقصة',
         wholesale_error_positive_values: '❌ يجب أن تكون الكمية والسعر والمبلغ أكبر من 0',
+        wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_last_payment_suggested: 'الدفعة الأخيرة المقترحة',
+        wholesale_purchase_price_prefilled: 'تم ملء السعر تلقائياً من جدول الشراء',
+        wholesale_real_profit_section_title: '📊 الربح الحقيقي للشركة',
+        wholesale_revenue: 'رقم المعاملات',
+        wholesale_real_purchase_cost: 'تكلفة الشراء الحقيقية',
+        wholesale_real_purchase_cost_estimated: 'تكلفة شراء تقديرية',
+        wholesale_real_purchase_cost_regularized: 'تكلفة شراء مُسوّاة',
+        wholesale_real_profit_global: 'الربح الإجمالي',
+        wholesale_real_profit_by_range: 'الربح حسب الصنف',
+        wholesale_real_profit_by_client: 'الربح حسب العميل',
+        wholesale_real_profit_by_commercial: 'الربح حسب المندوب',
+        wholesale_real_cost_missing: 'تكلفة غير متوفرة',
+        wholesale_real_data_incomplete: 'بيانات غير مكتملة',
+        wholesale_real_estimation: 'تقدير',
+        wholesale_real_based_on_regulated_monthly_costs: 'مبني على تكلفة شراء شهرية حقيقية (مع التسوية عند بلوغ الشريحة).',
+        wholesale_real_no_sales: 'لا توجد مبيعات في الفترة الحالية.',
+        wholesale_real_unknown_client: 'عميل غير معروف',
+        wholesale_real_unknown_commercial: 'مندوب غير معروف',
+        wholesale_real_unknown_range: 'صنف غير معروف',
       },
       darija: {
         auth_subtitle: 'Gestion dial ventes f cloud',
@@ -2170,6 +2210,26 @@
         wholesale_saved_payment: '✅ Versement ttsajjel',
         wholesale_error_required_fields: '❌ Kaynin champs khasrin',
         wholesale_error_positive_values: '❌ Kmiya w taman w montant khashom ykono > 0',
+        wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_last_payment_suggested: 'Akhir paiement m9tarah',
+        wholesale_purchase_price_prefilled: 'Taman t3ammar auto men grille dyal chri',
+        wholesale_real_profit_section_title: '📊 Rbe7 l7a9i9i dyal charika',
+        wholesale_revenue: 'Chiffre d’affaires',
+        wholesale_real_purchase_cost: 'Kout chri l7a9i9i',
+        wholesale_real_purchase_cost_estimated: 'Kout chri provisoire',
+        wholesale_real_purchase_cost_regularized: 'Kout chri mswwa',
+        wholesale_real_profit_global: 'Rbe7 l3am',
+        wholesale_real_profit_by_range: 'Rbe7 3la hsab gamme',
+        wholesale_real_profit_by_client: 'Rbe7 3la hsab client',
+        wholesale_real_profit_by_commercial: 'Rbe7 3la hsab commercial',
+        wholesale_real_cost_missing: 'Kout ma kaynch',
+        wholesale_real_data_incomplete: 'Données naqsin',
+        wholesale_real_estimation: 'T9dir',
+        wholesale_real_based_on_regulated_monthly_costs: 'Mabni 3la kout chri chahri l7a9i9i (m3a taswiya ila twssel palier).',
+        wholesale_real_no_sales: 'Ma kayn ta vente f période lkhadma.',
+        wholesale_real_unknown_client: 'Client majhoul',
+        wholesale_real_unknown_commercial: 'Commercial majhoul',
+        wholesale_real_unknown_range: 'Gamme majhoula',
       },
     };
 
@@ -7619,6 +7679,7 @@
     // ── Achats en gros fournisseur (admin/manager) ────────────────────────────
     const WHOLESALE_THRESHOLD_KG = 1000;
     const WHOLESALE_DISCOUNT_DH_PER_KG = 3;
+    const DEFAULT_WHOLESALE_SUPPLIER = 'Maison mère Taskafé';
     const LS_WHOLESALE_PURCHASES = 'wholesalePurchases';
     const LS_WHOLESALE_PAYMENTS = 'wholesalePayments';
 
@@ -7811,11 +7872,50 @@
       return groups;
     }
 
+    function buildWholesaleUnitCostMapByGroup(groups) {
+      const map = new Map();
+      (groups || []).forEach((group) => {
+        const key = `${String(group.supplier || '').toLowerCase()}__${group.month}`;
+        if (!key || !group.month) return;
+        const discountPerKg = group.tierReached ? WHOLESALE_DISCOUNT_DH_PER_KG : 0;
+        const categoryMap = {};
+        (group.purchases || []).forEach((purchase) => {
+          const cat = String(purchase.category || '').trim();
+          if (!cat) return;
+          const unitPrice = Number(purchase.unit_price_kg || 0);
+          if (!(unitPrice > 0)) return;
+          categoryMap[cat] = Math.max(0, unitPrice - discountPerKg);
+        });
+        map.set(key, {
+          supplier: group.supplier,
+          month: group.month,
+          tierReached: !!group.tierReached,
+          categoryCosts: categoryMap
+        });
+      });
+      return map;
+    }
+
     window.updateWholesalePurchaseTotalPreview = function() {
       const qty = Number(document.getElementById('wholesalePurchaseQtyKg')?.value || 0);
       const unit = Number(document.getElementById('wholesalePurchaseUnitPrice')?.value || 0);
       const previewEl = document.getElementById('wholesalePurchaseTotalGrossPreview');
       if (previewEl) previewEl.textContent = formatDh(qty * unit);
+    };
+
+    window.prefillWholesalePurchaseUnitPriceByCategory = function(showStatus = false) {
+      const categoryEl = document.getElementById('wholesalePurchaseCategory');
+      const unitEl = document.getElementById('wholesalePurchaseUnitPrice');
+      if (!categoryEl || !unitEl) return;
+      const category = String(categoryEl.value || '').trim();
+      if (!category) return;
+      const configuredPrice = Number(getProductPurchasePrice(category) || 0);
+      if (!(configuredPrice > 0)) return;
+      unitEl.value = configuredPrice;
+      window.updateWholesalePurchaseTotalPreview?.();
+      if (showStatus) {
+        setWholesaleStatus('wholesalePurchaseStatus', `ℹ️ ${t('wholesale_purchase_price_prefilled')}`, 'success');
+      }
     };
 
     window.prefillWholesalePaymentByGroup = function(index) {
@@ -7825,9 +7925,11 @@
       const supplierEl = document.getElementById('wholesalePaymentSupplier');
       const monthEl = document.getElementById('wholesalePaymentMonth');
       const dateEl = document.getElementById('wholesalePaymentDate');
+      const amountEl = document.getElementById('wholesalePaymentAmount');
       if (supplierEl) supplierEl.value = group.supplier;
       if (monthEl) monthEl.value = group.month;
       if (dateEl && !dateEl.value) dateEl.value = wholesaleNowDate();
+      if (amountEl) amountEl.value = Math.max(0, Number(group.remaining || 0)).toFixed(2);
     };
 
     window.saveWholesalePurchase = function() {
@@ -7841,11 +7943,19 @@
       const unitEl = document.getElementById('wholesalePurchaseUnitPrice');
       const noteEl = document.getElementById('wholesalePurchaseNote');
 
-      const supplier = normalizeWholesaleSupplier(supplierEl?.value);
+      const supplier = normalizeWholesaleSupplier(supplierEl?.value) || t('wholesale_default_supplier_name');
       const date = String(dateEl?.value || '').slice(0, 10);
       const month = normalizeWholesaleMonth(monthEl?.value, date);
       const quantity = Number(qtyEl?.value || 0);
-      const unitPrice = Number(unitEl?.value || 0);
+      let unitPrice = Number(unitEl?.value || 0);
+      if (!(unitPrice > 0)) {
+        const configuredPrice = Number(getProductPurchasePrice(categoryEl?.value || '') || 0);
+        if (configuredPrice > 0) {
+          unitPrice = configuredPrice;
+          if (unitEl) unitEl.value = configuredPrice;
+          window.updateWholesalePurchaseTotalPreview?.();
+        }
+      }
       const note = String(noteEl?.value || '').trim();
 
       if (!supplier || !month || !date) {
@@ -7888,7 +7998,7 @@
       const methodEl = document.getElementById('wholesalePaymentMethod');
       const noteEl = document.getElementById('wholesalePaymentNote');
 
-      const supplier = normalizeWholesaleSupplier(supplierEl?.value);
+      const supplier = normalizeWholesaleSupplier(supplierEl?.value) || t('wholesale_default_supplier_name');
       const month = String(monthEl?.value || '').slice(0, 7);
       const date = String(dateEl?.value || '').slice(0, 10);
       const amount = Number(amountEl?.value || 0);
@@ -7987,6 +8097,9 @@
           <div style="font-size:12px;">
             <strong>${escHtml(t('wholesale_real_remaining_to_pay'))}:</strong> ${formatDh(group.remaining)}
           </div>
+          <div style="font-size:12px;">
+            <strong>${escHtml(t('wholesale_last_payment_suggested'))}:</strong> ${formatDh(Math.max(0, Number(group.remaining || 0)))}
+          </div>
           <button type="button" onclick="prefillWholesalePaymentByGroup(${idx})" style="width:100%;margin-top:8px;">${escHtml(t('wholesale_group_payment_action'))}</button>
           <div style="margin-top:10px;">
             <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${escHtml(t('wholesale_purchase_history'))}</div>
@@ -8007,12 +8120,18 @@
       loadWholesaleData();
       const purchaseDateEl = document.getElementById('wholesalePurchaseDate');
       const purchaseMonthEl = document.getElementById('wholesalePurchaseMonth');
+      const purchaseSupplierEl = document.getElementById('wholesalePurchaseSupplier');
+      const purchaseCategoryEl = document.getElementById('wholesalePurchaseCategory');
       const paymentDateEl = document.getElementById('wholesalePaymentDate');
       const paymentMonthEl = document.getElementById('wholesalePaymentMonth');
+      const paymentSupplierEl = document.getElementById('wholesalePaymentSupplier');
       if (purchaseDateEl && !purchaseDateEl.value) purchaseDateEl.value = wholesaleNowDate();
       if (purchaseMonthEl && !purchaseMonthEl.value) purchaseMonthEl.value = wholesaleCurrentMonth();
+      if (purchaseSupplierEl && !purchaseSupplierEl.value) purchaseSupplierEl.value = t('wholesale_default_supplier_name');
       if (paymentDateEl && !paymentDateEl.value) paymentDateEl.value = wholesaleNowDate();
       if (paymentMonthEl && !paymentMonthEl.value) paymentMonthEl.value = wholesaleCurrentMonth();
+      if (paymentSupplierEl && !paymentSupplierEl.value) paymentSupplierEl.value = t('wholesale_default_supplier_name');
+      if (purchaseCategoryEl && purchaseCategoryEl.value) window.prefillWholesalePurchaseUnitPriceByCategory?.();
       setWholesaleStatus('wholesalePurchaseStatus', '');
       setWholesaleStatus('wholesalePaymentStatus', '');
       window.updateWholesalePurchaseTotalPreview?.();
@@ -8437,52 +8556,194 @@
       if (!content) return;
       if (!isManagerOrAdmin()) return;
 
-      const cats = CATEGORIES;
+      const groups = buildWholesaleGroups();
+      const wholesaleCostMap = buildWholesaleUnitCostMapByGroup(groups);
+      const defaultSupplierKeyPrefix = `${String(t('wholesale_default_supplier_name') || DEFAULT_WHOLESALE_SUPPLIER).toLowerCase()}__`;
+      const sales = Array.isArray(data) ? data : [];
+      const usersById = new Map((state.allUsers || []).map(u => [String(u.id), u]));
 
-      let rows = '';
-      let totQty = 0, totRevenu = 0, totAchat = 0, totMarge = 0;
+      function getSaleMonth(sale) {
+        const createdAt = String(sale?.created_at || '');
+        if (!createdAt) return '';
+        const d = new Date(createdAt);
+        if (Number.isNaN(d.getTime())) return '';
+        const yyyy = d.getUTCFullYear();
+        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}`;
+      }
 
-      cats.forEach(cat => {
-        const catSales = data.filter(s => s.category === cat);
-        if (catSales.length === 0) return;
-        const qty = catSales.reduce((s, x) => s + Number(x.quantity || 0), 0);
-        const revenu = catSales.reduce((s, x) => s + Number(x.total_price || 0), 0);
-        const purchaseUnit = getProductPurchasePrice(cat);
-        const achat = qty * purchaseUnit;
-        const marge = revenu - achat;
-        const margeClass = marge >= 0 ? 'margin-positive' : 'margin-negative';
-        totQty += qty; totRevenu += revenu; totAchat += achat; totMarge += marge;
+      function getSaleCommercialName(sale) {
+        const user = sale?.created_by ? usersById.get(String(sale.created_by)) : null;
+        return user?.full_name || user?.email || t('wholesale_real_unknown_commercial');
+      }
 
-        rows += `<tr>
-          <td><span class="badge ${cat}" style="margin:0;padding:3px 8px;font-size:10px;">${cat}</span></td>
-          <td>${formatQty(qty)}</td>
-          <td>${formatDh(achat)}</td>
-          <td>${formatDh(revenu)}</td>
-          <td class="${margeClass}">${formatDh(marge)}</td>
-        </tr>`;
+      function resolveSaleCostInfo(sale) {
+        const category = String(sale?.category || '').trim();
+        const qty = Number(sale?.quantity || 0);
+        if (!category || !(qty > 0)) {
+          return { qty, unitCost: null, totalCost: null, estimated: false, regularized: false, missing: true };
+        }
+        const saleMonth = getSaleMonth(sale);
+        if (!saleMonth) {
+          return { qty, unitCost: null, totalCost: null, estimated: false, regularized: false, missing: true };
+        }
+
+        const defaultSupplierKey = `${defaultSupplierKeyPrefix}${saleMonth}`;
+        const defaultSupplierGroup = wholesaleCostMap.get(defaultSupplierKey);
+        if (defaultSupplierGroup) {
+          const realUnit = Number(defaultSupplierGroup.categoryCosts?.[category] || 0);
+          if (realUnit > 0) {
+            return {
+              qty,
+              unitCost: realUnit,
+              totalCost: qty * realUnit,
+              estimated: false,
+              regularized: !!defaultSupplierGroup.tierReached,
+              missing: false
+            };
+          }
+        }
+
+        let fallbackGroup = null;
+        for (const group of wholesaleCostMap.values()) {
+          if (group?.month === saleMonth && Number(group.categoryCosts?.[category] || 0) > 0) {
+            fallbackGroup = group;
+            break;
+          }
+        }
+        if (fallbackGroup) {
+          const realUnit = Number(fallbackGroup.categoryCosts?.[category] || 0);
+          return {
+            qty,
+            unitCost: realUnit,
+            totalCost: qty * realUnit,
+            estimated: false,
+            regularized: !!fallbackGroup.tierReached,
+            missing: false
+          };
+        }
+
+        const configuredUnit = Number(getProductPurchasePrice(category) || 0);
+        if (configuredUnit > 0) {
+          return {
+            qty,
+            unitCost: configuredUnit,
+            totalCost: qty * configuredUnit,
+            estimated: true,
+            regularized: false,
+            missing: false
+          };
+        }
+
+        return { qty, unitCost: null, totalCost: null, estimated: false, regularized: false, missing: true };
+      }
+
+      function ensureBucket(map, key, label) {
+        if (!map[key]) {
+          map[key] = {
+            label,
+            qty: 0,
+            revenue: 0,
+            cost: 0,
+            profit: 0,
+            missingQty: 0
+          };
+        }
+        return map[key];
+      }
+
+      const byRange = {};
+      const byClient = {};
+      const byCommercial = {};
+      let totalRevenue = 0;
+      let totalCost = 0;
+      let totalProfit = 0;
+      let totalEstimatedCost = 0;
+      let totalRegularizedCost = 0;
+      let totalMissingQty = 0;
+
+      sales.forEach((sale) => {
+        const category = String(sale?.category || '').trim() || t('wholesale_real_unknown_range');
+        const clientName = String(sale?.client_name || '').trim() || t('wholesale_real_unknown_client');
+        const commercialName = getSaleCommercialName(sale);
+        const qty = Number(sale?.quantity || 0);
+        const revenue = Number(sale?.total_price || 0);
+        const costInfo = resolveSaleCostInfo(sale);
+        const rowCost = Number(costInfo.totalCost || 0);
+        const rowProfit = revenue - rowCost;
+
+        const rangeBucket = ensureBucket(byRange, category, category);
+        const clientBucket = ensureBucket(byClient, clientName, clientName);
+        const commercialBucket = ensureBucket(byCommercial, commercialName, commercialName);
+
+        [rangeBucket, clientBucket, commercialBucket].forEach((bucket) => {
+          bucket.qty += qty;
+          bucket.revenue += revenue;
+          bucket.cost += rowCost;
+          bucket.profit += rowProfit;
+          if (costInfo.missing) bucket.missingQty += qty;
+        });
+
+        totalRevenue += revenue;
+        totalCost += rowCost;
+        totalProfit += rowProfit;
+        if (costInfo.estimated) totalEstimatedCost += rowCost;
+        if (costInfo.regularized) totalRegularizedCost += rowCost;
+        if (costInfo.missing) totalMissingQty += qty;
       });
 
-      const totMargeClass = totMarge >= 0 ? 'margin-positive' : 'margin-negative';
-      rows += `<tr class="analytics-total-row">
-        <td>TOTAL</td>
-        <td>${formatQty(totQty)}</td>
-        <td>${formatDh(totAchat)}</td>
-        <td>${formatDh(totRevenu)}</td>
-        <td class="${totMargeClass}">${formatDh(totMarge)}</td>
-      </tr>`;
+      function renderProfitTableRows(rows, options = {}) {
+        const entries = Object.values(rows || {});
+        if (entries.length === 0) {
+          return `<div class="empty-state">${escHtml(t('wholesale_real_no_sales'))}</div>`;
+        }
+        entries.sort((a, b) => b.profit - a.profit);
 
-      const paidAmount = data.filter(s => s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
-      const unpaidAmount = data.filter(s => !s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
+        const tableRows = entries.map(entry => {
+          const marginClass = entry.profit >= 0 ? 'margin-positive' : 'margin-negative';
+          const missingText = entry.missingQty > 0
+            ? `<div class="muted" style="font-size:11px;">${escHtml(t('wholesale_real_cost_missing'))}: ${formatQty(entry.missingQty)} kg</div>`
+            : '';
+          return `<tr>
+            <td>${escHtml(entry.label)}</td>
+            <td>${formatQty(entry.qty)}</td>
+            <td>${formatDh(entry.cost)}</td>
+            <td>${formatDh(entry.revenue)}</td>
+            <td class="${marginClass}">${formatDh(entry.profit)}${missingText}</td>
+          </tr>`;
+        }).join('');
+
+        return `<table class="analytics-table">
+          <thead><tr><th>${escHtml(options.colTitle || t('wholesale_real_profit_by_range'))}</th><th>${escHtml(t('sale_quantite'))}</th><th>${escHtml(t('wholesale_real_purchase_cost'))}</th><th>${escHtml(t('wholesale_revenue'))}</th><th>${escHtml(t('wholesale_real_profit_global'))}</th></tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>`;
+      }
+
+      const paidAmount = sales.filter(s => s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
+      const unpaidAmount = sales.filter(s => !s.paid).reduce((s, x) => s + Number(x.total_price || 0), 0);
+      const totalProfitClass = totalProfit >= 0 ? 'margin-positive' : 'margin-negative';
+      const costModeText = totalRegularizedCost > 0 ? t('wholesale_real_purchase_cost_regularized') : t('wholesale_real_purchase_cost_estimated');
 
       content.innerHTML = `
-        <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">Basé sur les prix d'achat configurés. Filtres actifs.</div>
-        <table class="analytics-table">
-          <thead><tr><th>Gamme</th><th>Qté</th><th>Achat</th><th>Revente</th><th>Marge</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <h4 style="margin:0 0 8px;">${escHtml(t('wholesale_real_profit_section_title'))}</h4>
+        <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">${escHtml(t('wholesale_real_based_on_regulated_monthly_costs'))}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px;">
+          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_revenue'))}</span><span class="pchip-val">${formatDh(totalRevenue)}</span></div>
+          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_purchase_cost'))}</span><span class="pchip-val">${formatDh(totalCost)}</span></div>
+          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_profit_global'))}</span><span class="pchip-val ${totalProfitClass}">${formatDh(totalProfit)}</span></div>
+          <div class="preview-chip"><span class="pchip-label">${escHtml(costModeText)}</span><span class="pchip-val">${formatDh(totalRegularizedCost > 0 ? totalRegularizedCost : totalEstimatedCost)}</span></div>
+        </div>
+        ${totalMissingQty > 0 ? `<div class="muted" style="margin-bottom:8px;font-size:12px;">⚠️ ${escHtml(t('wholesale_real_data_incomplete'))} · ${escHtml(t('wholesale_real_cost_missing'))}: ${formatQty(totalMissingQty)} kg</div>` : ''}
+        <h4 style="margin:10px 0 6px;">${escHtml(t('wholesale_real_profit_by_range'))}</h4>
+        ${renderProfitTableRows(byRange, { colTitle: t('wholesale_real_profit_by_range') })}
+        <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_client'))}</h4>
+        ${renderProfitTableRows(byClient, { colTitle: t('wholesale_real_profit_by_client') })}
+        <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_commercial'))}</h4>
+        ${renderProfitTableRows(byCommercial, { colTitle: t('wholesale_real_profit_by_commercial') })}
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
           <div class="preview-chip" style="flex:1;"><span class="pchip-label">✅ Encaissé</span><span class="pchip-val" style="color:#148c37">${formatDh(paidAmount)}</span></div>
           <div class="preview-chip" style="flex:1;"><span class="pchip-label">❌ En attente</span><span class="pchip-val" style="color:#cc2d2d">${formatDh(unpaidAmount)}</span></div>
+          <div class="preview-chip" style="flex:1;"><span class="pchip-label">${escHtml(t('wholesale_real_estimation'))}</span><span class="pchip-val">${formatDh(totalEstimatedCost)}</span></div>
         </div>
       `;
     }
