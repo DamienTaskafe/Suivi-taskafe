@@ -777,19 +777,31 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3 data-i18n="notif_settings_title">🔔 Notifications & confirmations</h3><button class="close-x" onclick="closeModal('notifSettingsModal')">✕</button></div>
       <div class="settings-option">
-        <div class="title" data-i18n="confirm_status_change_label">Confirmation avant changement d'état</div>
-        <div class="muted" data-i18n="confirm_status_change_desc">Si activé, une confirmation est demandée avant les changements d’état sensibles.</div>
-        <label class="checkbox-line" style="margin-top:8px;">
-          <input id="confirmStatusChangeToggle" type="checkbox" onchange="toggleStatusChangeConfirmation(this.checked)" />
-          <span id="confirmStatusChangeState">—</span>
-        </label>
+        <div class="notif-setting-row">
+          <div class="notif-setting-copy">
+            <div class="title" data-i18n="confirm_status_change_label">✅ Confirmation changement d'état</div>
+            <div class="muted" data-i18n="confirm_status_change_desc">Demander confirmation avant les changements importants.</div>
+            <div id="confirmStatusChangeState" class="notif-setting-state">—</div>
+          </div>
+          <label class="perm-toggle notif-setting-toggle">
+            <input id="confirmStatusChangeToggle" type="checkbox" onchange="toggleStatusChangeConfirmation(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
       </div>
       <div class="settings-option">
-        <div class="title" data-i18n="push_notif_title">📱 Notifications téléphone</div>
-        <div class="muted" data-i18n="push_notif_desc">Recevoir une alerte sur le téléphone même appli fermée.</div>
-        <button id="pushEnableBtn" onclick="requestPushPermission()" data-i18n="push_enable_btn">🔔 Activer notifications téléphone</button>
-        <button id="pushDisableBtn" onclick="disablePushNotifications()" data-i18n="push_disable_btn" style="display:none;margin-top:6px;">🔕 Désactiver notifications téléphone</button>
-        <div id="pushStatusMsg" style="margin-top:6px;font-size:12px;min-height:16px;"></div>
+        <div class="notif-setting-row">
+          <div class="notif-setting-copy">
+            <div class="title" data-i18n="push_notif_title">📱 Notifications téléphone</div>
+            <div class="muted" data-i18n="push_notif_desc">Recevoir les alertes même appli fermée.</div>
+            <div id="pushNotifState" class="notif-setting-state">—</div>
+          </div>
+          <label class="perm-toggle notif-setting-toggle">
+            <input id="pushNotifToggle" type="checkbox" onchange="togglePhoneNotifications(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="pushStatusMsg" class="notif-setting-diagnostic"></div>
       </div>
     </div>
   </div>
@@ -1575,8 +1587,8 @@
         notif_stock_request_status_body: 'Nouveau statut : {status}',
         notif_stock_request_cancelled_body: 'La demande de stock a été annulée.',
         notif_stock_transfer_body: '{name} vous a transféré du stock.',
-        confirm_status_change_label: 'Confirmation avant changement d\'état',
-        confirm_status_change_desc: 'Si activé, une confirmation est demandée avant les changements d’état sensibles.',
+        confirm_status_change_label: '✅ Confirmation changement d\'état',
+        confirm_status_change_desc: 'Demander confirmation avant les changements importants.',
         confirm_status_change_on: 'Activé',
         confirm_status_change_off: 'Désactivé',
         confirm_status_change_enabled: '✅ Confirmation changement d’état activée',
@@ -1603,11 +1615,12 @@
         push_unsupported: 'Notifications non supportées sur cet appareil',
         push_not_installed: 'Installez l\'app sur l\'écran d\'accueil pour les notifications',
         push_notif_title: '📱 Notifications téléphone',
-        push_notif_desc: 'Recevoir une alerte sur le téléphone même appli fermée.',
+        push_notif_desc: 'Recevoir les alertes même appli fermée.',
         push_new_request: 'Nouvelle demande de stock',
         push_status_update: 'Statut demande mis à jour',
         push_enabling: '⏳ Activation en cours…',
         push_enable_error: '❌ Impossible d\'activer les notifications',
+        push_enable_error_short: 'Impossible d\'activer les notifications téléphone',
         push_request_sent_msg: 'a envoyé une demande de stock.',
         push_fulfilled_title: '✅ Stock remis',
         push_fulfilled_msg: 'Votre stock a été transféré dans votre stock voiture.',
@@ -1623,7 +1636,7 @@
         push_subscribe_timeout: 'Délai dépassé lors de la création de l\'abonnement. Réessayez.',
         push_disable_btn: '🔕 Désactiver notifications téléphone',
         push_disabling: '⏳ Désactivation en cours…',
-        push_disabled: 'Notifications désactivées ✅',
+        push_disabled: 'Notifications téléphone désactivées',
         push_disable_error: 'Impossible de désactiver les notifications. Réessayez.',
         push_disable_local_ok: 'Désactivation locale OK, mais nettoyage serveur impossible. Réessayez.',
         menu_clientsParCommercial: '👥 Clients par commercial',
@@ -2016,8 +2029,8 @@
         notif_stock_request_status_body: 'الحالة الجديدة: {status}',
         notif_stock_request_cancelled_body: 'تم إلغاء طلب المخزون.',
         notif_stock_transfer_body: '{name} قام بتحويل مخزون إليك.',
-        confirm_status_change_label: 'تأكيد قبل تغيير الحالة',
-        confirm_status_change_desc: 'عند التفعيل، يتم طلب تأكيد قبل تغييرات الحالة الحساسة.',
+        confirm_status_change_label: '✅ تأكيد تغيير الحالة',
+        confirm_status_change_desc: 'اطلب تأكيداً قبل التغييرات المهمة.',
         confirm_status_change_on: 'مفعّل',
         confirm_status_change_off: 'غير مفعّل',
         confirm_status_change_enabled: '✅ تم تفعيل تأكيد تغيير الحالة',
@@ -2044,11 +2057,12 @@
         push_unsupported: 'الإشعارات غير مدعومة على هذا الجهاز',
         push_not_installed: 'ثبّت التطبيق على الشاشة الرئيسية لتلقي الإشعارات',
         push_notif_title: '📱 إشعارات الهاتف',
-        push_notif_desc: 'استقبل تنبيهاً على الهاتف حتى لو التطبيق مغلق.',
+        push_notif_desc: 'استقبل التنبيهات حتى لو التطبيق مغلق.',
         push_new_request: 'طلب مخزون جديد',
         push_status_update: 'تحديث حالة الطلب',
         push_enabling: '⏳ جارٍ التفعيل…',
         push_enable_error: '❌ تعذّر تفعيل الإشعارات',
+        push_enable_error_short: 'تعذّر تفعيل إشعارات الهاتف',
         push_request_sent_msg: 'أرسل طلب مخزون.',
         push_fulfilled_title: '✅ تم تسليم المخزون',
         push_fulfilled_msg: 'تم نقل مخزونك إلى مخزون السيارة.',
@@ -2064,7 +2078,7 @@
         push_subscribe_timeout: 'انتهت مهلة إنشاء الاشتراك. أعد المحاولة.',
         push_disable_btn: '🔕 إلغاء إشعارات الهاتف',
         push_disabling: '⏳ جارٍ الإلغاء…',
-        push_disabled: 'تم إلغاء الإشعارات ✅',
+        push_disabled: 'تم إلغاء إشعارات الهاتف',
         push_disable_error: 'تعذّر إلغاء الإشعارات. أعد المحاولة.',
         push_disable_local_ok: 'تم الإلغاء محلياً لكن تعذّر التنظيف على الخادم. أعد المحاولة.',
         menu_clientsParCommercial: '👥 العملاء حسب المندوب',
@@ -2457,8 +2471,8 @@
         notif_stock_request_status_body: 'Statut jdid: {status}',
         notif_stock_request_cancelled_body: 'Talab stock tlgha.',
         notif_stock_transfer_body: '{name} 7wwel lik stock.',
-        confirm_status_change_label: 'Confirmation qbel tbdil statut',
-        confirm_status_change_desc: 'Ila mfer3la, katsowlek qbel tbdil statut lmohem.',
+        confirm_status_change_label: '✅ Confirmation dyal tbdil statut',
+        confirm_status_change_desc: 'Tleb confirmation qbel tbdilat lmohemin.',
         confirm_status_change_on: 'Mfer3la',
         confirm_status_change_off: 'Mtwqfa',
         confirm_status_change_enabled: '✅ Confirmation dyal tbdil statut tfer3lat',
@@ -2485,11 +2499,12 @@
         push_unsupported: 'Notifications ma msupportiinsh f had l\'appareil',
         push_not_installed: 'Installé l\'app f l\'écran principal bach tjib notifications',
         push_notif_title: '📱 Notifications telephone',
-        push_notif_desc: 'Jtib tenbih f telephone hatta wila l\'app msdaq.',
+        push_notif_desc: 'Jib tanbihat 7ta ila l\'app msdoda.',
         push_new_request: 'Talab stock jdid',
         push_status_update: 'Talab tbddel hal',
         push_enabling: '⏳ Kaytferm…',
         push_enable_error: '❌ Mchekla f tfermi notifications',
+        push_enable_error_short: 'Ma t9drch tf3el notifications dyal telephone',
         push_request_sent_msg: 'daz talab stock.',
         push_fulfilled_title: '✅ Stock tmessah',
         push_fulfilled_msg: 'Stock dyalek thwwel l stock tomobil.',
@@ -2505,7 +2520,7 @@
         push_subscribe_timeout: 'Wqt dial création abonnement fwwt. 3wed tjreb.',
         push_disable_btn: '🔕 Wqqef notifications telephone',
         push_disabling: '⏳ Kaytwaqqef…',
-        push_disabled: 'Notifications twaqqfu ✅',
+        push_disabled: 'Notifications dyal telephone twaqqfu',
         push_disable_error: 'Impossible twqqef notifications. 3wed tjreb.',
         push_disable_local_ok: 'Twqqef local OK, walakin nettoyage serveur mkan. 3wed tjreb.',
         menu_clientsParCommercial: '👥 Clients dial commercial',
@@ -4671,21 +4686,19 @@
       }
     }
 
-    // Updates the push settings button/status in the settings modal.
-    // "Notifications actives" is shown ONLY when a subscription was confirmed
-    // saved to Supabase this session (_pushSavedThisSession).  If the OS
-    // permission is granted but the DB save is unconfirmed, a "Réparer" button
-    // is shown instead — fixing the false-positive on iPhone PWA.
+    // Updates the push settings switch/status in the settings modal.
+    // The switch is considered active only when we confirmed an active
+    // subscription saved to Supabase in this session.
     function _refreshPushSettingsUI() {
-      const btn        = document.getElementById('pushEnableBtn');
-      const disableBtn = document.getElementById('pushDisableBtn');
+      const toggle     = document.getElementById('pushNotifToggle');
+      const stateEl    = document.getElementById('pushNotifState');
       const statusMsg  = document.getElementById('pushStatusMsg');
-      if (!btn) return;
+      if (!toggle) return;
 
       if (!_isPushSupported()) {
-        btn.disabled = true;
-        btn.textContent = t('push_unsupported');
-        if (disableBtn) disableBtn.style.display = 'none';
+        toggle.checked = false;
+        toggle.disabled = true;
+        if (stateEl) stateEl.textContent = t('confirm_status_change_off');
         if (statusMsg) statusMsg.textContent = t('push_unsupported');
         return;
       }
@@ -4693,51 +4706,50 @@
       const perm = Notification.permission;
       if (perm === 'granted') {
         if (_pushSavedThisSession) {
-          // Confirmed saved to DB this session → truly active
-          btn.disabled = true;
-          btn.textContent = '✅ ' + t('push_enabled');
-          if (disableBtn) { disableBtn.style.display = ''; disableBtn.disabled = false; disableBtn.textContent = t('push_disable_btn'); }
-          if (statusMsg) { statusMsg.textContent = t('push_enabled'); statusMsg.style.color = '#2e7d32'; }
+          toggle.checked = true;
+          toggle.disabled = false;
+          if (stateEl) stateEl.textContent = t('confirm_status_change_on');
+          if (statusMsg) statusMsg.textContent = '';
         } else {
-          // Permission exists but DB save unconfirmed → offer repair
-          btn.disabled = false;
-          btn.textContent = t('push_repair_btn');
-          if (disableBtn) disableBtn.style.display = 'none';
-          if (statusMsg) { statusMsg.textContent = t('push_repair_hint'); statusMsg.style.color = '#e65100'; }
+          toggle.checked = false;
+          toggle.disabled = false;
+          if (stateEl) stateEl.textContent = t('confirm_status_change_off');
+          if (statusMsg) statusMsg.textContent = '';
         }
       } else if (perm === 'denied') {
-        btn.disabled = true;
-        btn.textContent = '🚫 ' + t('push_blocked');
-        if (disableBtn) disableBtn.style.display = 'none';
+        toggle.checked = false;
+        toggle.disabled = true;
+        if (stateEl) stateEl.textContent = t('confirm_status_change_off');
         if (statusMsg) { statusMsg.textContent = t('push_blocked'); statusMsg.style.color = '#c62828'; }
       } else {
-        btn.disabled = false;
-        btn.textContent = t('push_enable_btn');
-        if (disableBtn) disableBtn.style.display = 'none';
+        toggle.checked = false;
+        toggle.disabled = false;
+        if (stateEl) stateEl.textContent = t('confirm_status_change_off');
         if (statusMsg) statusMsg.textContent = '';
       }
     }
 
-    // Called when user clicks "Activer" or "Réparer notifications" in settings.
-    // Handles both first-time activation (permission not yet granted) and repair
-    // (permission already granted on iOS/PWA but subscription not saved to DB).
-    // Each async step has an explicit timeout so the button is never stuck.
+    window.togglePhoneNotifications = async function(enabled) {
+      if (enabled) {
+        await requestPushPermission();
+      } else {
+        await disablePushNotifications();
+      }
+      _refreshPushSettingsUI();
+    };
+
     window.requestPushPermission = async function() {
-      const btn       = document.getElementById('pushEnableBtn');
+      const toggle    = document.getElementById('pushNotifToggle');
       const statusMsg = document.getElementById('pushStatusMsg');
 
       if (!_isPushSupported()) {
+        if (toggle) toggle.checked = false;
         if (statusMsg) { statusMsg.textContent = t('push_unsupported'); statusMsg.style.color = '#e65100'; }
+        showSessionStatus(t('push_enable_error_short'), 'error', 3500);
         return;
       }
 
-      // Determine if we're repairing an already-granted permission (iOS PWA case)
-      const alreadyGranted = Notification.permission === 'granted';
-
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = alreadyGranted ? t('push_repairing') : t('push_enabling');
-      }
+      if (toggle) toggle.disabled = true;
       if (statusMsg) { statusMsg.textContent = ''; statusMsg.style.color = ''; }
 
       try {
@@ -4751,6 +4763,8 @@
         }
         if (!VAPID_PUBLIC_KEY) {
           if (statusMsg) { statusMsg.textContent = t('push_vapid_missing'); statusMsg.style.color = '#e65100'; }
+          if (toggle) toggle.checked = false;
+          showSessionStatus(t('push_enable_error_short'), 'error', 3500);
           return;
         }
 
@@ -4767,6 +4781,8 @@
             reg = await _ensureServiceWorkerRegistration();
           } catch (e) {
             if (statusMsg) { statusMsg.textContent = t('push_sw_timeout'); statusMsg.style.color = '#c62828'; }
+            if (toggle) toggle.checked = false;
+            showSessionStatus(t('push_enable_error_short'), 'error', 3500);
             return;
           }
 
@@ -4787,6 +4803,8 @@
           } catch (e) {
             console.error('[push] subscribe error:', e?.message);
             if (statusMsg) { statusMsg.textContent = t('push_enable_error') + (e?.message ? ' : ' + e.message : ''); statusMsg.style.color = '#c62828'; }
+            if (toggle) toggle.checked = false;
+            showSessionStatus(t('push_enable_error_short'), 'error', 3500);
             return;
           }
 
@@ -4795,11 +4813,13 @@
           if (saved) {
             _pushSavedThisSession = true;
             _refreshPushSettingsUI();
-            const successMsg = alreadyGranted ? t('push_repaired') : '✅ ' + t('push_enabled');
+            const successMsg = t('push_enabled');
             if (statusMsg) { statusMsg.textContent = successMsg; statusMsg.style.color = '#2e7d32'; }
             showSessionStatus(successMsg, 'success', 3000);
           } else {
             if (statusMsg) { statusMsg.textContent = t('push_save_fail'); statusMsg.style.color = '#c62828'; }
+            if (toggle) toggle.checked = false;
+            showSessionStatus(t('push_enable_error_short'), 'error', 3500);
             console.warn('[push] subscription not saved to database');
           }
 
@@ -4809,30 +4829,28 @@
           showSessionStatus('🚫 ' + t('push_blocked'), 'info', 5000);
         } else {
           // dismissed — reset so user can try again
+          if (toggle) toggle.checked = false;
           if (statusMsg) { statusMsg.textContent = ''; }
         }
 
       } catch (e) {
         console.error('[push] requestPushPermission error:', e?.message);
         if (statusMsg) { statusMsg.textContent = t('push_enable_error'); statusMsg.style.color = '#c62828'; }
+        if (toggle) toggle.checked = false;
+        showSessionStatus(t('push_enable_error_short'), 'error', 3500);
       } finally {
-        // Always re-enable if button is still in a loading state
-        if (btn && (btn.textContent === t('push_enabling') || btn.textContent === t('push_repairing'))) {
-          btn.disabled = false;
-          btn.textContent = alreadyGranted ? t('push_repair_btn') : t('push_enable_btn');
-        }
+        if (toggle) toggle.disabled = false;
+        _refreshPushSettingsUI();
       }
     };
 
     // Unsubscribes from push notifications in the browser and deletes the
     // Supabase row for the current user/endpoint.
-    // Called when the user clicks "Désactiver notifications téléphone".
     window.disablePushNotifications = async function() {
-      const disableBtn = document.getElementById('pushDisableBtn');
-      const btn        = document.getElementById('pushEnableBtn');
+      const toggle     = document.getElementById('pushNotifToggle');
       const statusMsg  = document.getElementById('pushStatusMsg');
 
-      if (disableBtn) { disableBtn.disabled = true; disableBtn.textContent = t('push_disabling'); }
+      if (toggle) toggle.disabled = true;
       if (statusMsg) { statusMsg.textContent = ''; statusMsg.style.color = ''; }
 
       let endpoint = null;
@@ -4882,7 +4900,7 @@
             // Local unsubscribe may have succeeded but server cleanup failed
             _pushSavedThisSession = false;
             _refreshPushSettingsUI();
-            if (disableBtn) { disableBtn.disabled = false; disableBtn.textContent = t('push_disable_btn'); }
+            if (toggle) { toggle.disabled = false; toggle.checked = false; }
             if (statusMsg) { statusMsg.textContent = t('push_disable_local_ok'); statusMsg.style.color = '#e65100'; }
             return;
           }
@@ -4897,13 +4915,11 @@
       } catch (e) {
         console.error('[push] disablePushNotifications error:', e?.message);
         _pushSavedThisSession = false;
+        if (toggle) toggle.checked = false;
         _refreshPushSettingsUI();
         if (statusMsg) { statusMsg.textContent = t('push_disable_error'); statusMsg.style.color = '#c62828'; }
       } finally {
-        if (disableBtn && disableBtn.textContent === t('push_disabling')) {
-          disableBtn.disabled = false;
-          disableBtn.textContent = t('push_disable_btn');
-        }
+        if (toggle) toggle.disabled = false;
       }
     };
 
@@ -8200,7 +8216,7 @@
       return confirmed;
     }
 
-    // Opens the push notification settings modal (enable / repair / disable).
+    // Opens the push notification settings modal.
     window.openNotifSettingsModal = function () {
       _refreshStatusChangeSettingsUI();
       _refreshPushSettingsUI();

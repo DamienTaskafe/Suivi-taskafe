@@ -967,6 +967,11 @@
 
     .settings-option { background: rgba(248,243,236,0.96); border-radius: var(--radius-lg); padding: var(--spacing-lg); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 12px rgba(0,0,0,0.04); margin-bottom: var(--spacing-md); }
     .settings-option .title { font-weight: 700; color: var(--color-text); margin-bottom: var(--spacing-sm); font-size: 15px; }
+    .notif-setting-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--spacing-md); }
+    .notif-setting-copy { flex: 1; min-width: 0; }
+    .notif-setting-toggle { margin-top: 2px; }
+    .notif-setting-state { margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--color-text-muted); }
+    .notif-setting-diagnostic { margin-top: 8px; font-size: 12px; min-height: 16px; color: var(--color-text-muted); }
 
     .empty-state { text-align: center; padding: var(--spacing-xl); border-radius: var(--radius-lg); background: rgba(255,255,255,0.72); color: var(--color-text-muted); border: 1px dashed var(--color-border); font-size: 13px; }
 
@@ -993,6 +998,8 @@
       .modal-card { padding: var(--spacing-lg); }
       .user-row { flex-direction: row; align-items: center; }
       .user-row > button:not(.menu-btn) { width: 100%; }
+      .notif-setting-row { flex-direction: column; }
+      .notif-setting-toggle { align-self: flex-end; margin-top: 0; }
     }
 
     @media (max-width: 480px) {
