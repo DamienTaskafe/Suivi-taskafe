@@ -1616,6 +1616,8 @@
         push_not_installed: 'Installez l\'app sur l\'écran d\'accueil pour les notifications',
         push_notif_title: '📱 Notifications téléphone',
         push_notif_desc: 'Recevoir les alertes même appli fermée.',
+        push_state_on: 'Activé',
+        push_state_off: 'Désactivé',
         push_new_request: 'Nouvelle demande de stock',
         push_status_update: 'Statut demande mis à jour',
         push_enabling: '⏳ Activation en cours…',
@@ -2058,6 +2060,8 @@
         push_not_installed: 'ثبّت التطبيق على الشاشة الرئيسية لتلقي الإشعارات',
         push_notif_title: '📱 إشعارات الهاتف',
         push_notif_desc: 'استقبل التنبيهات حتى لو التطبيق مغلق.',
+        push_state_on: 'مفعّل',
+        push_state_off: 'غير مفعّل',
         push_new_request: 'طلب مخزون جديد',
         push_status_update: 'تحديث حالة الطلب',
         push_enabling: '⏳ جارٍ التفعيل…',
@@ -2500,6 +2504,8 @@
         push_not_installed: 'Installé l\'app f l\'écran principal bach tjib notifications',
         push_notif_title: '📱 Notifications telephone',
         push_notif_desc: 'Jib tanbihat 7ta ila l\'app msdoda.',
+        push_state_on: 'Mfer3la',
+        push_state_off: 'Mtwqfa',
         push_new_request: 'Talab stock jdid',
         push_status_update: 'Talab tbddel hal',
         push_enabling: '⏳ Kaytferm…',
@@ -4698,7 +4704,7 @@
       if (!_isPushSupported()) {
         toggle.checked = false;
         toggle.disabled = true;
-        if (stateEl) stateEl.textContent = t('confirm_status_change_off');
+        if (stateEl) stateEl.textContent = t('push_state_off');
         if (statusMsg) statusMsg.textContent = t('push_unsupported');
         return;
       }
@@ -4708,34 +4714,38 @@
         if (_pushSavedThisSession) {
           toggle.checked = true;
           toggle.disabled = false;
-          if (stateEl) stateEl.textContent = t('confirm_status_change_on');
+          if (stateEl) stateEl.textContent = t('push_state_on');
           if (statusMsg) statusMsg.textContent = '';
         } else {
           toggle.checked = false;
           toggle.disabled = false;
-          if (stateEl) stateEl.textContent = t('confirm_status_change_off');
+          if (stateEl) stateEl.textContent = t('push_state_off');
           if (statusMsg) statusMsg.textContent = '';
         }
       } else if (perm === 'denied') {
         toggle.checked = false;
         toggle.disabled = true;
-        if (stateEl) stateEl.textContent = t('confirm_status_change_off');
+        if (stateEl) stateEl.textContent = t('push_state_off');
         if (statusMsg) { statusMsg.textContent = t('push_blocked'); statusMsg.style.color = '#c62828'; }
       } else {
         toggle.checked = false;
         toggle.disabled = false;
-        if (stateEl) stateEl.textContent = t('confirm_status_change_off');
+        if (stateEl) stateEl.textContent = t('push_state_off');
         if (statusMsg) statusMsg.textContent = '';
       }
     }
 
     window.togglePhoneNotifications = async function(enabled) {
-      if (enabled) {
-        await requestPushPermission();
-      } else {
-        await disablePushNotifications();
+      try {
+        if (enabled) {
+          await requestPushPermission();
+        } else {
+          await disablePushNotifications();
+        }
+      } catch (e) {
+        console.warn('[push] togglePhoneNotifications error:', e?.message || e);
+        _refreshPushSettingsUI();
       }
-      _refreshPushSettingsUI();
     };
 
     window.requestPushPermission = async function() {
@@ -4745,6 +4755,7 @@
       if (!_isPushSupported()) {
         if (toggle) toggle.checked = false;
         if (statusMsg) { statusMsg.textContent = t('push_unsupported'); statusMsg.style.color = '#e65100'; }
+        _refreshPushSettingsUI();
         showSessionStatus(t('push_enable_error_short'), 'error', 3500);
         return;
       }
