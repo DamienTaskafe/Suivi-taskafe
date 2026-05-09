@@ -2231,7 +2231,7 @@
         wholesale_line_label: 'Ligne',
         wholesale_order_total_kg: 'Total commande (kg)',
         wholesale_order_total_gross: 'Total brut commande',
-        wholesale_save_order: '✅ Sajjjel commande',
+        wholesale_save_order: '✅ Sajjel commande',
         wholesale_saved_order: '✅ Commande ttsajjel',
         wholesale_order_no_price_configured: 'ℹ️ Ma kaynch taman m9awem l had gamme',
         wholesale_order_price_frozen: 'Taman kaytb9a majmmed mlli katsajjel',
@@ -2286,7 +2286,7 @@
         wholesale_settings_threshold_kg: 'Seuil palier kg',
         wholesale_settings_discount_dh_per_kg: 'Remise palier DH/kg',
         wholesale_settings_discount_enabled: 'Remise palier mfer3la',
-        wholesale_settings_save: '💾 Sajjjel réglages achats',
+        wholesale_settings_save: '💾 Sajjel réglages achats',
         wholesale_settings_saved: '✅ Réglages achats ttsajjlo',
         wholesale_last_payment_suggested: 'Akhir paiement m9tarah',
         wholesale_purchase_price_prefilled: 'Taman t3ammar auto men grille dyal chri',
@@ -7884,10 +7884,12 @@
           const month = normalizeWholesaleMonth(p.month, p.date);
           const quantity = Number(p.quantity_kg ?? 0);
           const unitPrice = Number(p.unit_price_kg ?? 0);
+          const orderId = p.order_id ? String(p.order_id) : '';
+          const orderLineIndexRaw = Number(p.order_line_index || 0);
           return {
             id: p.id || `wp_${genLocalId()}`,
-            order_id: p.order_id ? String(p.order_id) : '',
-            order_line_index: Number(p.order_line_index || 0),
+            order_id: orderId,
+            order_line_index: orderId ? Math.max(1, orderLineIndexRaw || 1) : 0,
             supplier,
             month,
             date: String(p.date || (month ? `${month}-01` : '')).slice(0, 10),
@@ -8100,7 +8102,7 @@
         <div style="border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:8px;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
             <strong style="font-size:12px;">${escHtml(t('wholesale_line_label'))} ${idx + 1}</strong>
-            <button type="button" onclick="removeWholesaleOrderLine(${idx})" style="padding:4px 8px;font-size:12px;background:rgba(0,0,0,0.05);color:var(--color-text);" ${_wholesaleOrderLines.length <= 1 ? 'disabled' : ''}>${escHtml(t('wholesale_remove_line'))}</button>
+            <button type="button" onclick="removeWholesaleOrderLine(${idx})" style="padding:4px 8px;font-size:12px;background:rgba(0,0,0,0.05);color:var(--color-text);" aria-label="${escHtml(t('wholesale_remove_line'))} ${idx + 1}" title="${escHtml(t('wholesale_remove_line'))} ${idx + 1}" ${_wholesaleOrderLines.length <= 1 ? 'disabled' : ''}>${escHtml(t('wholesale_remove_line'))}</button>
           </div>
           <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;">
             <select onchange="updateWholesaleOrderLineField(${idx}, 'category', this.value)">
@@ -8252,11 +8254,15 @@
         return;
       }
 
+      let autoFilledPriceCount = 0;
       const preparedLines = enteredLines.map((line) => {
         let unitPrice = Number(line.unit_price_kg || 0);
         if (!(unitPrice > 0)) {
           const configuredPrice = getConfiguredWholesaleCategoryUnitPrice(line.category);
-          if (configuredPrice > 0) unitPrice = configuredPrice;
+          if (configuredPrice > 0) {
+            unitPrice = configuredPrice;
+            autoFilledPriceCount += 1;
+          }
         }
         return {
           category: line.category,
@@ -8288,7 +8294,8 @@
         });
       });
       persistWholesaleData();
-      setWholesaleStatus('wholesalePurchaseStatus', `${t('wholesale_saved_order')} · ${preparedLines.length} ${t('wholesale_order_lines')}`);
+      const autoFillInfo = autoFilledPriceCount > 0 ? ` · ${autoFilledPriceCount} ${t('wholesale_purchase_price_prefilled')}` : '';
+      setWholesaleStatus('wholesalePurchaseStatus', `${t('wholesale_saved_order')} · ${preparedLines.length} ${t('wholesale_order_lines')}${autoFillInfo}`);
       if (noteEl) noteEl.value = '';
       _wholesaleOrderLines = [createWholesaleOrderLine()];
       renderWholesaleOrderLines();
