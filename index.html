@@ -7641,7 +7641,19 @@
 
     function wholesaleMonthFromDate(dateValue) {
       const date = String(dateValue || '').trim();
-      return date.length >= 7 ? date.slice(0, 7) : '';
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return '';
+      return date.slice(0, 7);
+    }
+
+    function normalizeWholesaleMonth(monthValue, dateValue) {
+      const month = String(monthValue || '').trim();
+      if (/^\d{4}-\d{2}$/.test(month)) return month;
+      return wholesaleMonthFromDate(dateValue) || wholesaleCurrentMonth();
+    }
+
+    function calculateWholesaleDiscount(totalKg) {
+      const kg = Number(totalKg || 0);
+      return kg > WHOLESALE_THRESHOLD_KG ? (kg * WHOLESALE_DISCOUNT_DH_PER_KG) : 0;
     }
 
     function loadWholesaleData() {
@@ -7651,7 +7663,7 @@
         const parsed = JSON.parse(localStorage.getItem(LS_WHOLESALE_PURCHASES) || '[]');
         _wholesalePurchases = Array.isArray(parsed) ? parsed.map((p, idx) => {
           const supplier = normalizeWholesaleSupplier(p.supplier);
-          const month = String(p.month || wholesaleMonthFromDate(p.date) || '').slice(0, 7);
+          const month = normalizeWholesaleMonth(p.month, p.date);
           const quantity = Number(p.quantity_kg ?? 0);
           const unitPrice = Number(p.unit_price_kg ?? 0);
           return {
@@ -7777,7 +7789,7 @@
       const groups = Array.from(groupsMap.values()).map(group => {
         group.purchases.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
         group.payments.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
-        const discount = group.totalKg > WHOLESALE_THRESHOLD_KG ? (group.totalKg * WHOLESALE_DISCOUNT_DH_PER_KG) : 0;
+        const discount = calculateWholesaleDiscount(group.totalKg);
         const totalNet = group.totalGross - discount;
         const remaining = totalNet - group.totalPaid;
         return {
@@ -7790,7 +7802,7 @@
         };
       });
 
-      groups.sort((a, b) => b.month.localeCompare(a.month) || a.supplier.localeCompare(b.supplier, 'fr', { sensitivity: 'base' }));
+      groups.sort((a, b) => b.month.localeCompare(a.month) || a.supplier.localeCompare(b.supplier, _currentLang === 'ar' ? 'ar' : 'fr', { sensitivity: 'base' }));
       return groups;
     }
 
@@ -7826,7 +7838,7 @@
 
       const supplier = normalizeWholesaleSupplier(supplierEl?.value);
       const date = String(dateEl?.value || '').slice(0, 10);
-      const month = String(monthEl?.value || wholesaleMonthFromDate(date) || wholesaleCurrentMonth()).slice(0, 7);
+      const month = normalizeWholesaleMonth(monthEl?.value, date);
       const quantity = Number(qtyEl?.value || 0);
       const unitPrice = Number(unitEl?.value || 0);
       const note = String(noteEl?.value || '').trim();
@@ -7841,7 +7853,7 @@
       }
 
       _wholesalePurchases.push({
-        id: `wp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+        id: `wp_${genLocalId()}`,
         supplier,
         month,
         date,
@@ -7888,7 +7900,7 @@
       }
 
       _wholesalePayments.push({
-        id: `wpay_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+        id: `wpay_${genLocalId()}`,
         supplier,
         month,
         date,
