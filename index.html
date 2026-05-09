@@ -1034,7 +1034,7 @@
       </div>
 
       <div class="settings-option" style="margin-bottom:12px;">
-        <h4 style="margin:0 0 10px;" data-i18n="wholesale_add_purchase">➕ Ajouter achat</h4>
+        <h4 style="margin:0 0 10px;" data-i18n="wholesale_order_title">🧾 Commande fournisseur</h4>
         <label for="wholesalePurchaseSupplier" data-i18n="wholesale_supplier">Fournisseur</label>
         <input id="wholesalePurchaseSupplier" type="text" data-i18n-placeholder="wholesale_supplier_placeholder" placeholder="Nom fournisseur" />
 
@@ -1049,38 +1049,50 @@
           </div>
         </div>
 
-        <label for="wholesalePurchaseCategory" style="margin-top:8px;" data-i18n="wholesale_product_range">Gamme / produit</label>
-        <select id="wholesalePurchaseCategory" onchange="prefillWholesalePurchaseUnitPriceByCategory(true);">
-          <option value="" data-i18n="wholesale_all_ranges">—</option>
-          <option value="ORO">ORO</option>
-          <option value="RIO">RIO</option>
-          <option value="ESPRESSO">ESPRESSO</option>
-          <option value="CLASSIC">CLASSIC</option>
-          <option value="SANTOS">SANTOS</option>
-          <option value="SUCRE">SUCRE</option>
-        </select>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-          <div>
-            <label for="wholesalePurchaseQtyKg" data-i18n="wholesale_quantity_kg">Quantité kg</label>
-            <input id="wholesalePurchaseQtyKg" type="number" min="0.01" step="0.01" placeholder="0" oninput="updateWholesalePurchaseTotalPreview()" />
-          </div>
-          <div>
-            <label for="wholesalePurchaseUnitPrice" data-i18n="wholesale_purchase_price_kg">Prix achat/kg</label>
-            <input id="wholesalePurchaseUnitPrice" type="number" min="0.01" step="0.01" placeholder="0" oninput="updateWholesalePurchaseTotalPreview()" />
-          </div>
-        </div>
+        <h5 style="margin:10px 0 6px;" data-i18n="wholesale_order_lines">Lignes commande</h5>
+        <div id="wholesaleOrderLinesList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <button type="button" onclick="addWholesaleOrderLine()" style="margin-top:8px;width:100%;" data-i18n="wholesale_add_line">➕ Ajouter une ligne</button>
 
         <div style="margin-top:8px;font-size:13px;">
-          <span class="muted" data-i18n="wholesale_line_total_gross">Total brut ligne</span>
-          <strong id="wholesalePurchaseTotalGrossPreview" style="margin-left:6px;">0.00 DHS</strong>
+          <span class="muted" data-i18n="wholesale_order_total_kg">Total commande (kg)</span>
+          <strong id="wholesaleOrderTotalKgPreview" style="margin-left:6px;">0 kg</strong>
+        </div>
+        <div style="margin-top:4px;font-size:13px;">
+          <span class="muted" data-i18n="wholesale_order_total_gross">Total brut commande</span>
+          <strong id="wholesaleOrderTotalGrossPreview" style="margin-left:6px;">0.00 DHS</strong>
         </div>
 
         <label for="wholesalePurchaseNote" style="margin-top:8px;" data-i18n="wholesale_note_optional">Note (optionnelle)</label>
         <input id="wholesalePurchaseNote" type="text" data-i18n-placeholder="wholesale_note_placeholder" placeholder="Note" />
 
-        <button type="button" onclick="saveWholesalePurchase()" style="margin-top:10px;width:100%;" data-i18n="wholesale_add_purchase">➕ Ajouter achat</button>
+        <button type="button" onclick="saveWholesaleOrder()" style="margin-top:10px;width:100%;" data-i18n="wholesale_save_order">✅ Enregistrer la commande</button>
         <div id="wholesalePurchaseStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
+      </div>
+
+      <div class="settings-option" style="margin-bottom:12px;">
+        <h4 style="margin:0 0 10px;" data-i18n="wholesale_purchase_settings_title">⚙️ Réglages achats</h4>
+        <label for="wholesaleSettingsDefaultSupplier" data-i18n="wholesale_settings_default_supplier">Fournisseur par défaut</label>
+        <input id="wholesaleSettingsDefaultSupplier" type="text" data-i18n-placeholder="wholesale_supplier_placeholder" placeholder="Nom fournisseur" />
+        <div style="margin-top:8px;">
+          <span style="font-size:12px;font-weight:600;" data-i18n="wholesale_settings_purchase_prices">Prix achat/kg par gamme</span>
+          <div class="price-scroll-row" id="wholesaleSettingsPriceGrid" style="margin-top:6px;flex-wrap:wrap;gap:10px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div>
+            <label for="wholesaleSettingsThresholdKg" data-i18n="wholesale_settings_threshold_kg">Seuil palier kg</label>
+            <input id="wholesaleSettingsThresholdKg" type="number" min="0" step="1" placeholder="1000" />
+          </div>
+          <div>
+            <label for="wholesaleSettingsDiscountDhPerKg" data-i18n="wholesale_settings_discount_dh_per_kg">Remise palier DH/kg</label>
+            <input id="wholesaleSettingsDiscountDhPerKg" type="number" min="0" step="0.01" placeholder="3" />
+          </div>
+        </div>
+        <div class="checkbox-line" style="margin-top:8px;">
+          <input id="wholesaleSettingsDiscountEnabled" type="checkbox" />
+          <label for="wholesaleSettingsDiscountEnabled" style="margin:0;flex:1;" data-i18n="wholesale_settings_discount_enabled">Remise palier activée</label>
+        </div>
+        <button type="button" onclick="saveWholesaleSettings()" style="margin-top:10px;width:100%;" data-i18n="wholesale_settings_save">💾 Enregistrer réglages achats</button>
+        <div id="wholesaleSettingsStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
       </div>
 
       <div class="settings-option" style="margin-bottom:12px;">
@@ -1518,6 +1530,17 @@
         client_par_commercial_aucun_match: 'Aucun résultat pour cette recherche.',
         menu_achatsGros: '🧾 Achats en gros',
         wholesale_title: '🧾 Achats en gros',
+        wholesale_order_title: '🧾 Commande fournisseur',
+        wholesale_order_lines: 'Lignes commande',
+        wholesale_add_line: '➕ Ajouter une ligne',
+        wholesale_remove_line: '🗑️ Supprimer ligne',
+        wholesale_line_label: 'Ligne',
+        wholesale_order_total_kg: 'Total commande (kg)',
+        wholesale_order_total_gross: 'Total brut commande',
+        wholesale_save_order: '✅ Enregistrer la commande',
+        wholesale_saved_order: '✅ Commande enregistrée',
+        wholesale_order_no_price_configured: 'ℹ️ Aucun prix réglé pour cette gamme',
+        wholesale_order_price_frozen: 'Prix figé à l’enregistrement',
         wholesale_add_purchase: '➕ Ajouter achat',
         wholesale_add_payment: '💳 Ajouter paiement',
         wholesale_supplier: 'Fournisseur',
@@ -1563,6 +1586,14 @@
         wholesale_error_required_fields: '❌ Champs requis manquants',
         wholesale_error_positive_values: '❌ Quantité, prix et montant doivent être > 0',
         wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_purchase_settings_title: '⚙️ Réglages achats',
+        wholesale_settings_default_supplier: 'Fournisseur par défaut',
+        wholesale_settings_purchase_prices: 'Prix achat/kg par gamme',
+        wholesale_settings_threshold_kg: 'Seuil palier kg',
+        wholesale_settings_discount_dh_per_kg: 'Remise palier DH/kg',
+        wholesale_settings_discount_enabled: 'Remise palier activée',
+        wholesale_settings_save: '💾 Enregistrer réglages achats',
+        wholesale_settings_saved: '✅ Réglages achats enregistrés',
         wholesale_last_payment_suggested: 'Dernier paiement suggéré',
         wholesale_purchase_price_prefilled: 'Prix prérempli depuis la grille achat',
         wholesale_real_profit_section_title: '📊 Bénéfice réel entreprise',
@@ -1846,6 +1877,17 @@
         client_par_commercial_aucun_match: 'لا توجد نتائج لهذا البحث.',
         menu_achatsGros: '🧾 مشتريات الجملة',
         wholesale_title: '🧾 مشتريات الجملة',
+        wholesale_order_title: '🧾 طلبية المورّد',
+        wholesale_order_lines: 'أسطر الطلبية',
+        wholesale_add_line: '➕ إضافة سطر',
+        wholesale_remove_line: '🗑️ حذف السطر',
+        wholesale_line_label: 'سطر',
+        wholesale_order_total_kg: 'إجمالي الطلبية (كغ)',
+        wholesale_order_total_gross: 'إجمالي الطلبية قبل الخصم',
+        wholesale_save_order: '✅ حفظ الطلبية',
+        wholesale_saved_order: '✅ تم حفظ الطلبية',
+        wholesale_order_no_price_configured: 'ℹ️ لا يوجد سعر مضبوط لهذا الصنف',
+        wholesale_order_price_frozen: 'السعر مُثبّت عند الحفظ',
         wholesale_add_purchase: '➕ إضافة عملية شراء',
         wholesale_add_payment: '💳 إضافة دفعة',
         wholesale_supplier: 'المورّد',
@@ -1891,6 +1933,14 @@
         wholesale_error_required_fields: '❌ حقول مطلوبة ناقصة',
         wholesale_error_positive_values: '❌ يجب أن تكون الكمية والسعر والمبلغ أكبر من 0',
         wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_purchase_settings_title: '⚙️ إعدادات المشتريات',
+        wholesale_settings_default_supplier: 'المورّد الافتراضي',
+        wholesale_settings_purchase_prices: 'سعر الشراء/كغ حسب الصنف',
+        wholesale_settings_threshold_kg: 'عتبة الشريحة بالكيلوغرام',
+        wholesale_settings_discount_dh_per_kg: 'خصم الشريحة درهم/كغ',
+        wholesale_settings_discount_enabled: 'تفعيل خصم الشريحة',
+        wholesale_settings_save: '💾 حفظ إعدادات المشتريات',
+        wholesale_settings_saved: '✅ تم حفظ إعدادات المشتريات',
         wholesale_last_payment_suggested: 'الدفعة الأخيرة المقترحة',
         wholesale_purchase_price_prefilled: 'تم ملء السعر تلقائياً من جدول الشراء',
         wholesale_real_profit_section_title: '📊 الربح الحقيقي للشركة',
@@ -2174,6 +2224,17 @@
         client_par_commercial_aucun_match: 'Ma kayn ta natija l had lbheth.',
         menu_achatsGros: '🧾 Chri b l3la',
         wholesale_title: '🧾 Chri b l3la',
+        wholesale_order_title: '🧾 Commande fournisseur',
+        wholesale_order_lines: 'Lignes commande',
+        wholesale_add_line: '➕ Zid ligne',
+        wholesale_remove_line: '🗑️ Hayed ligne',
+        wholesale_line_label: 'Ligne',
+        wholesale_order_total_kg: 'Total commande (kg)',
+        wholesale_order_total_gross: 'Total brut commande',
+        wholesale_save_order: '✅ Sajjel commande',
+        wholesale_saved_order: '✅ Commande ttsajjel',
+        wholesale_order_no_price_configured: 'ℹ️ Ma kaynch taman m9awem l had gamme',
+        wholesale_order_price_frozen: 'Taman kaytb9a majmmed mlli katsajjel',
         wholesale_add_purchase: '➕ Zid chri',
         wholesale_add_payment: '💳 Zid versement',
         wholesale_supplier: 'Fournisseur',
@@ -2219,6 +2280,14 @@
         wholesale_error_required_fields: '❌ Kaynin champs khasrin',
         wholesale_error_positive_values: '❌ Kmiya w taman w montant khashom ykono > 0',
         wholesale_default_supplier_name: 'Maison mère Taskafé',
+        wholesale_purchase_settings_title: '⚙️ Réglages achats',
+        wholesale_settings_default_supplier: 'Fournisseur par défaut',
+        wholesale_settings_purchase_prices: 'Taman chri/kg par gamme',
+        wholesale_settings_threshold_kg: 'Seuil palier kg',
+        wholesale_settings_discount_dh_per_kg: 'Remise palier DH/kg',
+        wholesale_settings_discount_enabled: 'Remise palier mfer3la',
+        wholesale_settings_save: '💾 Sajjel réglages achats',
+        wholesale_settings_saved: '✅ Réglages achats ttsajjlo',
         wholesale_last_payment_suggested: 'Akhir paiement m9tarah',
         wholesale_purchase_price_prefilled: 'Taman t3ammar auto men grille dyal chri',
         wholesale_real_profit_section_title: '📊 Rbe7 l7a9i9i dyal charika',
@@ -7689,8 +7758,8 @@
     };
 
     // ── Achats en gros fournisseur (admin/manager) ────────────────────────────
-    const WHOLESALE_THRESHOLD_KG = 1000;
-    const WHOLESALE_DISCOUNT_DH_PER_KG = 3;
+    const DEFAULT_WHOLESALE_THRESHOLD_KG = 1000;
+    const DEFAULT_WHOLESALE_DISCOUNT_DH_PER_KG = 3;
     const DEFAULT_WHOLESALE_SUPPLIER = 'Maison mère Taskafé';
     const WHOLESALE_GROUP_KEY_SEPARATOR = '__';
     const UNKNOWN_RANGE_KEY = '__UNKNOWN_RANGE__';
@@ -7698,10 +7767,20 @@
     const UNKNOWN_COMMERCIAL_KEY = '__UNKNOWN_COMMERCIAL__';
     const LS_WHOLESALE_PURCHASES = 'wholesalePurchases';
     const LS_WHOLESALE_PAYMENTS = 'wholesalePayments';
+    const LS_WHOLESALE_SETTINGS = 'wholesaleSettings';
+    const DEFAULT_WHOLESALE_SETTINGS = {
+      default_supplier: DEFAULT_WHOLESALE_SUPPLIER,
+      threshold_kg: DEFAULT_WHOLESALE_THRESHOLD_KG,
+      discount_dh_per_kg: DEFAULT_WHOLESALE_DISCOUNT_DH_PER_KG,
+      discount_enabled: true
+    };
 
     let _wholesalePurchases = [];
     let _wholesalePayments = [];
+    let _wholesaleSettings = { ...DEFAULT_WHOLESALE_SETTINGS };
+    let _wholesaleOrderLines = [];
     let _wholesaleLoaded = false;
+    let _wholesaleSettingsLoaded = false;
     let _wholesaleGroupsCache = [];
 
     function wholesaleNowDate() {
@@ -7744,9 +7823,55 @@
       return wholesaleMonthFromDate(dateValue) || wholesaleCurrentMonth();
     }
 
+    function sanitizeWholesaleSettings(raw) {
+      const defaultSupplier = normalizeWholesaleSupplier(raw?.default_supplier) || DEFAULT_WHOLESALE_SUPPLIER;
+      const threshold = Math.max(0, Number(raw?.threshold_kg ?? DEFAULT_WHOLESALE_THRESHOLD_KG) || 0);
+      const discount = Math.max(0, Number(raw?.discount_dh_per_kg ?? DEFAULT_WHOLESALE_DISCOUNT_DH_PER_KG) || 0);
+      return {
+        default_supplier: defaultSupplier,
+        threshold_kg: threshold,
+        discount_dh_per_kg: discount,
+        discount_enabled: raw?.discount_enabled !== false
+      };
+    }
+
+    function loadWholesaleSettings() {
+      if (_wholesaleSettingsLoaded) return;
+      _wholesaleSettingsLoaded = true;
+      try {
+        const parsed = JSON.parse(localStorage.getItem(LS_WHOLESALE_SETTINGS) || '{}');
+        _wholesaleSettings = sanitizeWholesaleSettings({ ...DEFAULT_WHOLESALE_SETTINGS, ...(parsed || {}) });
+      } catch (e) {
+        console.warn('[loadWholesaleSettings] parse error:', e?.message);
+        _wholesaleSettings = { ...DEFAULT_WHOLESALE_SETTINGS };
+      }
+    }
+
+    function getWholesaleSettings() {
+      loadWholesaleSettings();
+      return _wholesaleSettings;
+    }
+
+    function getWholesaleDefaultSupplier() {
+      return normalizeWholesaleSupplier(getWholesaleSettings().default_supplier) || DEFAULT_WHOLESALE_SUPPLIER;
+    }
+
+    function isWholesaleTierReached(totalKg) {
+      const settings = getWholesaleSettings();
+      const kg = Number(totalKg || 0);
+      return !!settings.discount_enabled && kg > Number(settings.threshold_kg || 0);
+    }
+
+    function getWholesaleDiscountPerKgForTotal(totalKg) {
+      if (!isWholesaleTierReached(totalKg)) return 0;
+      const settings = getWholesaleSettings();
+      return Math.max(0, Number(settings.discount_dh_per_kg || 0));
+    }
+
     function calculateWholesaleDiscount(totalKg) {
       const kg = Number(totalKg || 0);
-      return kg > WHOLESALE_THRESHOLD_KG ? (kg * WHOLESALE_DISCOUNT_DH_PER_KG) : 0;
+      const discountPerKg = getWholesaleDiscountPerKgForTotal(kg);
+      return discountPerKg > 0 ? (kg * discountPerKg) : 0;
     }
 
     function loadWholesaleData() {
@@ -7759,8 +7884,12 @@
           const month = normalizeWholesaleMonth(p.month, p.date);
           const quantity = Number(p.quantity_kg ?? 0);
           const unitPrice = Number(p.unit_price_kg ?? 0);
+          const orderId = p.order_id ? String(p.order_id) : '';
+          const orderLineIndexRaw = Number(p.order_line_index || 0);
           return {
             id: p.id || `wp_${genLocalId()}`,
+            order_id: orderId,
+            order_line_index: orderId ? Math.max(1, orderLineIndexRaw || 1) : 0,
             supplier,
             month,
             date: String(p.date || (month ? `${month}-01` : '')).slice(0, 10),
@@ -7882,6 +8011,7 @@
       const groups = Array.from(groupsMap.values()).map(group => {
         group.purchases.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
         group.payments.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+        const tierReached = isWholesaleTierReached(group.totalKg);
         const discount = calculateWholesaleDiscount(group.totalKg);
         const totalNet = group.totalGross - discount;
         const remaining = totalNet - group.totalPaid;
@@ -7890,7 +8020,7 @@
           discount,
           totalNet,
           remaining,
-          tierReached: group.totalKg > WHOLESALE_THRESHOLD_KG,
+          tierReached,
           statusKey: getWholesaleStatusKey(group.totalPaid, totalNet)
         };
       });
@@ -7905,7 +8035,7 @@
       (groups || []).forEach((group) => {
         const key = buildWholesaleSupplierMonthKey(group.supplier, group.month);
         if (!key || !group.month) return;
-        const discountPerKg = group.tierReached ? WHOLESALE_DISCOUNT_DH_PER_KG : 0;
+        const discountPerKg = getWholesaleDiscountPerKgForTotal(group.totalKg);
         // Accumulate qty and gross per category to compute weighted average unit price.
         const byCat = {};
         (group.purchases || []).forEach((purchase) => {
@@ -7939,30 +8069,144 @@
       return map;
     }
 
+    function createWholesaleOrderLine() {
+      return { category: '', quantity_kg: 0, unit_price_kg: 0 };
+    }
+
+    function ensureWholesaleOrderLines() {
+      if (!Array.isArray(_wholesaleOrderLines) || _wholesaleOrderLines.length === 0) {
+        _wholesaleOrderLines = [createWholesaleOrderLine()];
+      }
+    }
+
+    function buildWholesaleOrderLineOptions(selectedCategory) {
+      const selected = String(selectedCategory || '').trim();
+      const options = [`<option value="" ${selected ? '' : 'selected'}>${escHtml(t('wholesale_all_ranges'))}</option>`];
+      CATEGORIES.forEach((cat) => {
+        options.push(`<option value="${escHtml(cat)}" ${selected === cat ? 'selected' : ''}>${escHtml(cat)}</option>`);
+      });
+      return options.join('');
+    }
+
+    function getWholesaleOrderLineGross(line) {
+      const qty = Number(line?.quantity_kg || 0);
+      const unit = Number(line?.unit_price_kg || 0);
+      return qty * unit;
+    }
+
+    function renderWholesaleOrderLines() {
+      const listEl = document.getElementById('wholesaleOrderLinesList');
+      if (!listEl) return;
+      ensureWholesaleOrderLines();
+      listEl.innerHTML = _wholesaleOrderLines.map((line, idx) => `
+        <div style="border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+            <strong style="font-size:12px;">${escHtml(t('wholesale_line_label'))} ${idx + 1}</strong>
+            <button type="button" onclick="removeWholesaleOrderLine(${idx})" style="padding:4px 8px;font-size:12px;background:rgba(0,0,0,0.05);color:var(--color-text);" aria-label="${escHtml(t('wholesale_remove_line'))} ${idx + 1}" title="${escHtml(t('wholesale_remove_line'))} ${idx + 1}" ${_wholesaleOrderLines.length <= 1 ? 'disabled' : ''}>${escHtml(t('wholesale_remove_line'))}</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;">
+            <select onchange="updateWholesaleOrderLineField(${idx}, 'category', this.value)">
+              ${buildWholesaleOrderLineOptions(line.category)}
+            </select>
+            <input type="number" min="0.01" step="0.01" placeholder="0" value="${escHtml(line.quantity_kg > 0 ? String(line.quantity_kg) : '')}" oninput="updateWholesaleOrderLineField(${idx}, 'quantity_kg', this.value)" />
+            <input type="number" min="0.01" step="0.01" placeholder="0" value="${escHtml(line.unit_price_kg > 0 ? String(line.unit_price_kg) : '')}" oninput="updateWholesaleOrderLineField(${idx}, 'unit_price_kg', this.value)" />
+          </div>
+          <div class="muted" style="margin-top:6px;font-size:12px;">${escHtml(t('wholesale_line_total_gross'))}: <strong>${formatDh(getWholesaleOrderLineGross(line))}</strong></div>
+        </div>
+      `).join('');
+      window.updateWholesalePurchaseTotalPreview?.();
+    }
+
     window.updateWholesalePurchaseTotalPreview = function() {
-      const qty = Number(document.getElementById('wholesalePurchaseQtyKg')?.value || 0);
-      const unit = Number(document.getElementById('wholesalePurchaseUnitPrice')?.value || 0);
-      const previewEl = document.getElementById('wholesalePurchaseTotalGrossPreview');
-      if (previewEl) previewEl.textContent = formatDh(qty * unit);
+      const totalKg = _wholesaleOrderLines.reduce((sum, line) => sum + Number(line.quantity_kg || 0), 0);
+      const totalGross = _wholesaleOrderLines.reduce((sum, line) => sum + getWholesaleOrderLineGross(line), 0);
+      const totalKgEl = document.getElementById('wholesaleOrderTotalKgPreview');
+      const totalGrossEl = document.getElementById('wholesaleOrderTotalGrossPreview');
+      if (totalKgEl) totalKgEl.textContent = `${formatQty(totalKg)} kg`;
+      if (totalGrossEl) totalGrossEl.textContent = formatDh(totalGross);
     };
 
-    window.prefillWholesalePurchaseUnitPriceByCategory = function(showStatus = false) {
-      const categoryEl = document.getElementById('wholesalePurchaseCategory');
-      const unitEl = document.getElementById('wholesalePurchaseUnitPrice');
-      if (!categoryEl || !unitEl) return;
-      const category = String(categoryEl.value || '').trim();
-      if (!category) {
-        unitEl.value = '';
-        window.updateWholesalePurchaseTotalPreview?.();
-        return;
+    window.updateWholesaleOrderLineField = function(index, field, value) {
+      const line = _wholesaleOrderLines[index];
+      if (!line) return;
+      if (field === 'category') {
+        line.category = String(value || '').trim();
+        if (line.category) {
+          const configuredPrice = getConfiguredWholesaleCategoryUnitPrice(line.category);
+          if (configuredPrice > 0) {
+            line.unit_price_kg = configuredPrice;
+            setWholesaleStatus('wholesalePurchaseStatus', `ℹ️ ${t('wholesale_purchase_price_prefilled')}`, 'success');
+          } else {
+            setWholesaleStatus('wholesalePurchaseStatus', `ℹ️ ${t('wholesale_order_no_price_configured')}`, 'success');
+          }
+        }
+      } else if (field === 'quantity_kg') {
+        line.quantity_kg = Math.max(0, Number(value || 0));
+      } else if (field === 'unit_price_kg') {
+        line.unit_price_kg = Math.max(0, Number(value || 0));
       }
-      const configuredPrice = getConfiguredWholesaleCategoryUnitPrice(category);
-      if (!(configuredPrice > 0)) return;
-      unitEl.value = configuredPrice;
-      window.updateWholesalePurchaseTotalPreview?.();
-      if (showStatus) {
-        setWholesaleStatus('wholesalePurchaseStatus', `ℹ️ ${t('wholesale_purchase_price_prefilled')}`, 'success');
-      }
+      renderWholesaleOrderLines();
+    };
+
+    window.addWholesaleOrderLine = function() {
+      ensureWholesaleOrderLines();
+      _wholesaleOrderLines.push(createWholesaleOrderLine());
+      renderWholesaleOrderLines();
+    };
+
+    window.removeWholesaleOrderLine = function(index) {
+      ensureWholesaleOrderLines();
+      if (_wholesaleOrderLines.length <= 1) return;
+      _wholesaleOrderLines.splice(index, 1);
+      renderWholesaleOrderLines();
+    };
+
+    function hydrateWholesaleSettingsForm() {
+      const settings = getWholesaleSettings();
+      const supplierEl = document.getElementById('wholesaleSettingsDefaultSupplier');
+      const thresholdEl = document.getElementById('wholesaleSettingsThresholdKg');
+      const discountEl = document.getElementById('wholesaleSettingsDiscountDhPerKg');
+      const enabledEl = document.getElementById('wholesaleSettingsDiscountEnabled');
+      if (supplierEl) supplierEl.value = settings.default_supplier || DEFAULT_WHOLESALE_SUPPLIER;
+      if (thresholdEl) thresholdEl.value = Number(settings.threshold_kg || 0);
+      if (discountEl) discountEl.value = Number(settings.discount_dh_per_kg || 0);
+      if (enabledEl) enabledEl.checked = !!settings.discount_enabled;
+
+      CATEGORIES.forEach(cat => {
+        const el = document.getElementById('wspp' + cat);
+        if (el) el.value = _customPurchasePrices[cat] || 0;
+      });
+    }
+
+    function persistWholesaleSettings() {
+      localStorage.setItem(LS_WHOLESALE_SETTINGS, JSON.stringify(_wholesaleSettings));
+    }
+
+    window.saveWholesaleSettings = function() {
+      if (!requireManagerOrAdmin(t('wholesale_title'))) return;
+      const supplierEl = document.getElementById('wholesaleSettingsDefaultSupplier');
+      const thresholdEl = document.getElementById('wholesaleSettingsThresholdKg');
+      const discountEl = document.getElementById('wholesaleSettingsDiscountDhPerKg');
+      const enabledEl = document.getElementById('wholesaleSettingsDiscountEnabled');
+
+      const cats = CATEGORIES;
+      cats.forEach(cat => {
+        const el = document.getElementById('wspp' + cat);
+        if (el) _customPurchasePrices[cat] = Math.max(0, Number(el.value) || 0);
+      });
+      localStorage.setItem('productPurchasePrices', JSON.stringify(_customPurchasePrices));
+
+      _wholesaleSettings = sanitizeWholesaleSettings({
+        default_supplier: normalizeWholesaleSupplier(supplierEl?.value) || DEFAULT_WHOLESALE_SUPPLIER,
+        threshold_kg: Number(thresholdEl?.value || 0),
+        discount_dh_per_kg: Number(discountEl?.value || 0),
+        discount_enabled: !!enabledEl?.checked
+      });
+      persistWholesaleSettings();
+      setWholesaleStatus('wholesaleSettingsStatus', t('wholesale_settings_saved'));
+      renderWholesalePurchases();
+      renderAnalytics(_allSalesData);
+      renderWholesaleOrderLines();
     };
 
     window.prefillWholesalePaymentByGroup = function(index) {
@@ -7979,61 +8223,86 @@
       if (amountEl) amountEl.value = Math.max(0, Number(group.remaining || 0)).toFixed(2);
     };
 
-    window.saveWholesalePurchase = function() {
+    window.saveWholesaleOrder = function() {
       if (!requireManagerOrAdmin(t('wholesale_title'))) return;
       loadWholesaleData();
+      loadWholesaleSettings();
       const supplierEl = document.getElementById('wholesalePurchaseSupplier');
       const dateEl = document.getElementById('wholesalePurchaseDate');
       const monthEl = document.getElementById('wholesalePurchaseMonth');
-      const categoryEl = document.getElementById('wholesalePurchaseCategory');
-      const qtyEl = document.getElementById('wholesalePurchaseQtyKg');
-      const unitEl = document.getElementById('wholesalePurchaseUnitPrice');
       const noteEl = document.getElementById('wholesalePurchaseNote');
 
-      const supplier = normalizeWholesaleSupplier(supplierEl?.value) || DEFAULT_WHOLESALE_SUPPLIER;
+      const supplier = normalizeWholesaleSupplier(supplierEl?.value) || getWholesaleDefaultSupplier();
       const date = String(dateEl?.value || '').slice(0, 10);
       const month = normalizeWholesaleMonth(monthEl?.value, date);
-      const quantity = Number(qtyEl?.value || 0);
-      let unitPrice = Number(unitEl?.value || 0);
-      if (!(unitPrice > 0)) {
-        const configuredPrice = getConfiguredWholesaleCategoryUnitPrice(categoryEl?.value || '');
-        if (configuredPrice > 0) {
-          unitPrice = configuredPrice;
-          if (unitEl) unitEl.value = configuredPrice;
-          window.updateWholesalePurchaseTotalPreview?.();
-        }
-      }
       const note = String(noteEl?.value || '').trim();
 
       if (!supplier || !month || !date) {
         setWholesaleStatus('wholesalePurchaseStatus', t('wholesale_error_required_fields'), 'error');
         return;
       }
-      if (quantity <= 0 || unitPrice <= 0) {
+      ensureWholesaleOrderLines();
+      const enteredLines = _wholesaleOrderLines
+        .map(line => ({
+          category: String(line?.category || '').trim(),
+          quantity_kg: Number(line?.quantity_kg || 0),
+          unit_price_kg: Number(line?.unit_price_kg || 0)
+        }))
+        .filter(line => line.category || line.quantity_kg > 0 || line.unit_price_kg > 0);
+      if (enteredLines.length === 0) {
+        setWholesaleStatus('wholesalePurchaseStatus', t('wholesale_error_required_fields'), 'error');
+        return;
+      }
+
+      let autoFilledPriceCount = 0;
+      const preparedLines = enteredLines.map((line) => {
+        let unitPrice = Number(line.unit_price_kg || 0);
+        if (!(unitPrice > 0)) {
+          const configuredPrice = getConfiguredWholesaleCategoryUnitPrice(line.category);
+          if (configuredPrice > 0) {
+            unitPrice = configuredPrice;
+            autoFilledPriceCount += 1;
+          }
+        }
+        return {
+          category: line.category,
+          quantity_kg: Number(line.quantity_kg || 0),
+          unit_price_kg: unitPrice
+        };
+      });
+      const hasInvalidLine = preparedLines.some(line => !line.category || !(line.quantity_kg > 0) || !(line.unit_price_kg > 0));
+      if (hasInvalidLine) {
         setWholesaleStatus('wholesalePurchaseStatus', t('wholesale_error_positive_values'), 'error');
         return;
       }
 
-      _wholesalePurchases.push({
-        id: `wp_${genLocalId()}`,
-        supplier,
-        month,
-        date,
-        category: categoryEl?.value || '',
-        quantity_kg: quantity,
-        unit_price_kg: unitPrice,
-        total_gross: quantity * unitPrice,
-        note,
-        created_at: new Date().toISOString()
+      const orderId = `wo_${genLocalId()}`;
+      preparedLines.forEach((line, index) => {
+        _wholesalePurchases.push({
+          id: `wp_${genLocalId()}`,
+          order_id: orderId,
+          order_line_index: index + 1,
+          supplier,
+          month,
+          date,
+          category: line.category,
+          quantity_kg: line.quantity_kg,
+          unit_price_kg: line.unit_price_kg,
+          total_gross: line.quantity_kg * line.unit_price_kg,
+          note,
+          created_at: new Date().toISOString()
+        });
       });
       persistWholesaleData();
-      setWholesaleStatus('wholesalePurchaseStatus', t('wholesale_saved_purchase'));
-      if (qtyEl) qtyEl.value = '';
-      if (unitEl) unitEl.value = '';
+      const autoFillInfo = autoFilledPriceCount > 0 ? ` · ${autoFilledPriceCount} ${t('wholesale_purchase_price_prefilled')}` : '';
+      setWholesaleStatus('wholesalePurchaseStatus', `${t('wholesale_saved_order')} · ${preparedLines.length} ${t('wholesale_order_lines')}${autoFillInfo}`);
       if (noteEl) noteEl.value = '';
-      window.updateWholesalePurchaseTotalPreview?.();
+      _wholesaleOrderLines = [createWholesaleOrderLine()];
+      renderWholesaleOrderLines();
       renderWholesalePurchases();
     };
+
+    window.saveWholesalePurchase = window.saveWholesaleOrder;
 
     window.saveWholesalePayment = function() {
       if (!requireManagerOrAdmin(t('wholesale_title'))) return;
@@ -8045,7 +8314,7 @@
       const methodEl = document.getElementById('wholesalePaymentMethod');
       const noteEl = document.getElementById('wholesalePaymentNote');
 
-      const supplier = normalizeWholesaleSupplier(supplierEl?.value) || DEFAULT_WHOLESALE_SUPPLIER;
+      const supplier = normalizeWholesaleSupplier(supplierEl?.value) || getWholesaleDefaultSupplier();
       const month = String(monthEl?.value || '').slice(0, 7);
       const date = String(dateEl?.value || '').slice(0, 10);
       const amount = Number(amountEl?.value || 0);
@@ -8108,6 +8377,7 @@
               <div class="muted" style="font-size:11px;">
                 ${formatQty(p.quantity_kg)} kg × ${formatDh(p.unit_price_kg)} = ${formatDh(p.total_gross)}
               </div>
+              <div class="muted" style="font-size:11px;">ℹ️ ${escHtml(t('wholesale_order_price_frozen'))}</div>
               ${p.note ? `<div class="muted" style="font-size:11px;">${escHtml(p.note)}</div>` : ''}
             </div>`;
           }).join('')
@@ -8165,22 +8435,25 @@
       closeAllMenus();
       if (!requireManagerOrAdmin(t('wholesale_title'))) return;
       loadWholesaleData();
+      loadWholesaleSettings();
       const purchaseDateEl = document.getElementById('wholesalePurchaseDate');
       const purchaseMonthEl = document.getElementById('wholesalePurchaseMonth');
       const purchaseSupplierEl = document.getElementById('wholesalePurchaseSupplier');
-      const purchaseCategoryEl = document.getElementById('wholesalePurchaseCategory');
       const paymentDateEl = document.getElementById('wholesalePaymentDate');
       const paymentMonthEl = document.getElementById('wholesalePaymentMonth');
       const paymentSupplierEl = document.getElementById('wholesalePaymentSupplier');
       if (purchaseDateEl && !purchaseDateEl.value) purchaseDateEl.value = wholesaleNowDate();
       if (purchaseMonthEl && !purchaseMonthEl.value) purchaseMonthEl.value = wholesaleCurrentMonth();
-      if (purchaseSupplierEl && !purchaseSupplierEl.value) purchaseSupplierEl.value = DEFAULT_WHOLESALE_SUPPLIER;
+      if (purchaseSupplierEl && !purchaseSupplierEl.value) purchaseSupplierEl.value = getWholesaleDefaultSupplier();
       if (paymentDateEl && !paymentDateEl.value) paymentDateEl.value = wholesaleNowDate();
       if (paymentMonthEl && !paymentMonthEl.value) paymentMonthEl.value = wholesaleCurrentMonth();
-      if (paymentSupplierEl && !paymentSupplierEl.value) paymentSupplierEl.value = DEFAULT_WHOLESALE_SUPPLIER;
-      if (purchaseCategoryEl && purchaseCategoryEl.value) window.prefillWholesalePurchaseUnitPriceByCategory?.();
+      if (paymentSupplierEl && !paymentSupplierEl.value) paymentSupplierEl.value = getWholesaleDefaultSupplier();
+      ensureWholesaleOrderLines();
+      hydrateWholesaleSettingsForm();
       setWholesaleStatus('wholesalePurchaseStatus', '');
       setWholesaleStatus('wholesalePaymentStatus', '');
+      setWholesaleStatus('wholesaleSettingsStatus', '');
+      renderWholesaleOrderLines();
       window.updateWholesalePurchaseTotalPreview?.();
       renderWholesalePurchases();
       openModal('wholesalePurchasesModal');
@@ -8634,7 +8907,7 @@
           return { qty, unitCost: null, totalCost: null, estimated: false, regularized: false, missing: true };
         }
 
-        const defaultSupplierKey = buildWholesaleSupplierMonthKey(DEFAULT_WHOLESALE_SUPPLIER, saleMonth);
+        const defaultSupplierKey = buildWholesaleSupplierMonthKey(getWholesaleDefaultSupplier(), saleMonth);
         const defaultSupplierGroup = wholesaleCostMap.get(defaultSupplierKey);
         if (defaultSupplierGroup) {
           const realUnit = Number(defaultSupplierGroup.categoryCosts?.[category] || 0);
@@ -9045,6 +9318,10 @@
       // Product prices modal
       const ppGrid = document.querySelector('#productPricesModal .price-scroll-row');
       if (ppGrid) ppGrid.innerHTML = buildPriceSpinnersHTML('pp', purchaseDefaults, false);
+
+      // Wholesale settings purchase prices grid
+      const wsPpGrid = document.getElementById('wholesaleSettingsPriceGrid');
+      if (wsPpGrid) wsPpGrid.innerHTML = buildPriceSpinnersHTML('wspp', purchaseDefaults, false);
     }
 
     // ── Price spinners ───────────────────────────────────────────────────────────
