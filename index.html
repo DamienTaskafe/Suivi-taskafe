@@ -772,11 +772,20 @@
     </div>
   </div>
 
-  <!-- ── Notification settings modal (push enable/disable/repair) ────────────── -->
+  <!-- ── Notification settings modal (simple confirmation + push) ────────────── -->
   <div id="notifSettingsModal" class="modal-backdrop" onclick="backdropClose(event, 'notifSettingsModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3 data-i18n="push_notif_title">📱 Notifications téléphone</h3><button class="close-x" onclick="closeModal('notifSettingsModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="notif_settings_title">🔔 Notifications & confirmations</h3><button class="close-x" onclick="closeModal('notifSettingsModal')">✕</button></div>
       <div class="settings-option">
+        <div class="title" data-i18n="confirm_status_change_label">Confirmation avant changement d'état</div>
+        <div class="muted" data-i18n="confirm_status_change_desc">Si activé, une confirmation est demandée avant les changements d’état sensibles.</div>
+        <label class="checkbox-line" style="margin-top:8px;">
+          <input id="confirmStatusChangeToggle" type="checkbox" onchange="toggleStatusChangeConfirmation(this.checked)" />
+          <span id="confirmStatusChangeState">—</span>
+        </label>
+      </div>
+      <div class="settings-option">
+        <div class="title" data-i18n="push_notif_title">📱 Notifications téléphone</div>
         <div class="muted" data-i18n="push_notif_desc">Recevoir une alerte sur le téléphone même appli fermée.</div>
         <button id="pushEnableBtn" onclick="requestPushPermission()" data-i18n="push_enable_btn">🔔 Activer notifications téléphone</button>
         <button id="pushDisableBtn" onclick="disablePushNotifications()" data-i18n="push_disable_btn" style="display:none;margin-top:6px;">🔕 Désactiver notifications téléphone</button>
@@ -1540,6 +1549,35 @@
         notif_clearing: '⏳ Effacement…',
         notif_cleared: '✅ Notifications effacées',
         notif_clear_error: '❌ Impossible d’effacer les notifications',
+        notif_settings_title: '🔔 Notifications & confirmations',
+        notif_empty: '🔔 Aucune notification pour l\'instant.',
+        notif_now: 'À l\'instant',
+        notif_min_ago: 'Il y a {count} min',
+        notif_hour_ago: 'Il y a {count}h',
+        notif_stock_request_title: '📦 Demande de stock',
+        notif_stock_request_sent_title: '📤 Demande envoyée',
+        notif_stock_request_status_title: '📦 Mise à jour de la demande',
+        notif_stock_request_cancelled_title: '🚫 Demande annulée',
+        notif_stock_transfer_title: '📦 Stock reçu',
+        notif_stock_request_body: '{name} a envoyé une demande de stock.',
+        notif_stock_request_sent_body: 'Votre demande a été envoyée.',
+        notif_stock_request_status_body: 'Nouveau statut : {status}',
+        notif_stock_request_cancelled_body: 'La demande de stock a été annulée.',
+        notif_stock_transfer_body: '{name} vous a transféré du stock.',
+        confirm_status_change_label: 'Confirmation avant changement d\'état',
+        confirm_status_change_desc: 'Si activé, une confirmation est demandée avant les changements d’état sensibles.',
+        confirm_status_change_on: 'Activé',
+        confirm_status_change_off: 'Désactivé',
+        confirm_status_change_enabled: '✅ Confirmation changement d’état activée',
+        confirm_status_change_disabled: '✅ Confirmation changement d’état désactivée',
+        status_change_confirm_prompt: 'Confirmer le changement d’état vers : {status} ?',
+        action_cancelled: 'ℹ️ Action annulée',
+        stock_status_pending: '⏳ Envoyée',
+        stock_status_preparing: '📦 En préparation',
+        stock_status_ready_pickup: '✅ Prêt à récupérer',
+        stock_status_fulfilled: '✅ Remis / transféré',
+        stock_status_rejected: '❌ Refusée',
+        stock_status_cancelled: '🚫 Annulée',
         stock_requests_load_error: '❌ Impossible de charger les demandes. Réessayez.',
         stock_request_timeout: '❌ Délai dépassé — réessayez.',
         lang_fr: 'Français',
@@ -1941,6 +1979,35 @@
         notif_clearing: '⏳ جارٍ المسح…',
         notif_cleared: '✅ تم مسح الإشعارات',
         notif_clear_error: '❌ تعذّر مسح الإشعارات',
+        notif_settings_title: '🔔 الإشعارات والتأكيدات',
+        notif_empty: '🔔 لا توجد إشعارات حالياً.',
+        notif_now: 'الآن',
+        notif_min_ago: 'منذ {count} دقيقة',
+        notif_hour_ago: 'منذ {count} ساعة',
+        notif_stock_request_title: '📦 طلب مخزون',
+        notif_stock_request_sent_title: '📤 تم إرسال الطلب',
+        notif_stock_request_status_title: '📦 تحديث حالة الطلب',
+        notif_stock_request_cancelled_title: '🚫 تم إلغاء الطلب',
+        notif_stock_transfer_title: '📦 تم استلام المخزون',
+        notif_stock_request_body: '{name} أرسل طلب مخزون.',
+        notif_stock_request_sent_body: 'تم إرسال طلب المخزون الخاص بك.',
+        notif_stock_request_status_body: 'الحالة الجديدة: {status}',
+        notif_stock_request_cancelled_body: 'تم إلغاء طلب المخزون.',
+        notif_stock_transfer_body: '{name} قام بتحويل مخزون إليك.',
+        confirm_status_change_label: 'تأكيد قبل تغيير الحالة',
+        confirm_status_change_desc: 'عند التفعيل، يتم طلب تأكيد قبل تغييرات الحالة الحساسة.',
+        confirm_status_change_on: 'مفعّل',
+        confirm_status_change_off: 'غير مفعّل',
+        confirm_status_change_enabled: '✅ تم تفعيل تأكيد تغيير الحالة',
+        confirm_status_change_disabled: '✅ تم تعطيل تأكيد تغيير الحالة',
+        status_change_confirm_prompt: 'تأكيد تغيير الحالة إلى: {status}؟',
+        action_cancelled: 'ℹ️ تم إلغاء العملية',
+        stock_status_pending: '⏳ تم الإرسال',
+        stock_status_preparing: '📦 قيد التحضير',
+        stock_status_ready_pickup: '✅ جاهز للاستلام',
+        stock_status_fulfilled: '✅ تم التسليم / التحويل',
+        stock_status_rejected: '❌ مرفوض',
+        stock_status_cancelled: '🚫 مُلغى',
         stock_requests_load_error: '❌ تعذّر تحميل الطلبات. أعد المحاولة.',
         stock_request_timeout: '❌ انتهت المهلة — أعد المحاولة.',
         lang_fr: 'Français',
@@ -2342,6 +2409,35 @@
         notif_clearing: '⏳ Kaytms7…',
         notif_cleared: '✅ Notifications tmshaw',
         notif_clear_error: '❌ Ma t9darch tmse7 notifications',
+        notif_settings_title: '🔔 Notifications w confirmations',
+        notif_empty: '🔔 Mazal ma kayn ta notification.',
+        notif_now: 'Daba',
+        notif_min_ago: 'Mn qbl {count} d9i9a',
+        notif_hour_ago: 'Mn qbl {count} sa3a',
+        notif_stock_request_title: '📦 Talab stock',
+        notif_stock_request_sent_title: '📤 Talab tsift',
+        notif_stock_request_status_title: '📦 Tbdil 7alat talab',
+        notif_stock_request_cancelled_title: '🚫 Talab tlgha',
+        notif_stock_transfer_title: '📦 Stock twsl',
+        notif_stock_request_body: '{name} sift talab stock.',
+        notif_stock_request_sent_body: 'Talab stock dyalek tsift.',
+        notif_stock_request_status_body: 'Statut jdid: {status}',
+        notif_stock_request_cancelled_body: 'Talab stock tlgha.',
+        notif_stock_transfer_body: '{name} 7wwel lik stock.',
+        confirm_status_change_label: 'Confirmation qbel tbdil statut',
+        confirm_status_change_desc: 'Ila mfer3la, katsowlek qbel tbdil statut lmohem.',
+        confirm_status_change_on: 'Mfer3la',
+        confirm_status_change_off: 'Mtwqfa',
+        confirm_status_change_enabled: '✅ Confirmation dyal tbdil statut tfer3lat',
+        confirm_status_change_disabled: '✅ Confirmation dyal tbdil statut twaqfat',
+        status_change_confirm_prompt: 'T2kked bghiti tbdel statut l: {status} ?',
+        action_cancelled: 'ℹ️ L\'action tlghat',
+        stock_status_pending: '⏳ Tsiftat',
+        stock_status_preparing: '📦 Kaytwejjed',
+        stock_status_ready_pickup: '✅ Wjdat bach tkhodha',
+        stock_status_fulfilled: '✅ Ttslmat / t7ewlat',
+        stock_status_rejected: '❌ Trfdat',
+        stock_status_cancelled: '🚫 Tlghat',
         stock_requests_load_error: '❌ Ma t7emmlouch talabats. 3awed jarrab.',
         stock_request_timeout: '❌ Tal l waqt — 3awed jarrab.',
         lang_fr: 'Français',
@@ -2555,6 +2651,13 @@
         window.updateWholesalePurchaseTotalPreview?.();
       }
 
+      if (document.getElementById('notificationsModal')?.classList.contains('show')) {
+        renderNotificationsPanel();
+      }
+      if (document.getElementById('notifSettingsModal')?.classList.contains('show')) {
+        _refreshStatusChangeSettingsUI();
+      }
+
       localStorage.setItem('preferred_language', lang);
     }
 
@@ -2741,6 +2844,7 @@
     const LS_LOW_STOCK_ENABLED = 'lowStockEnabled';
     const LS_LOW_STOCK_THRESHOLD = 'lowStockThreshold';
     const LS_ITEM_ALERTS = 'stockAlertPerItem';
+    const LS_CONFIRM_STATUS_CHANGE = 'confirmStatusChangeEnabled';
     const LOW_STOCK_DEFAULT = 5;
 
     const rememberCheckbox = document.getElementById('rememberSession');
@@ -4085,11 +4189,73 @@
       const now = new Date();
       const diffMs = now - d;
       const diffMin = Math.floor(diffMs / 60000);
-      if (diffMin < 1)  return 'À l\'instant';
-      if (diffMin < 60) return `Il y a ${diffMin} min`;
+      if (diffMin < 1)  return t('notif_now');
+      if (diffMin < 60) return t('notif_min_ago').replace('{count}', String(diffMin));
       const diffH = Math.floor(diffMin / 60);
-      if (diffH < 24)   return `Il y a ${diffH}h`;
-      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+      if (diffH < 24)   return t('notif_hour_ago').replace('{count}', String(diffH));
+      const locale = _currentLang === 'ar' ? 'ar-MA' : 'fr-FR';
+      return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function _resolveNotifUserName(userId) {
+      const user = (state.allUsers || []).find(u => String(u.id) === String(userId));
+      return user ? (user.full_name || user.email || '') : '';
+    }
+
+    function _formatNotifItems(items) {
+      if (!Array.isArray(items) || items.length === 0) return '';
+      return items.map(it => `- ${it?.category || '—'} : ${formatStockValue(it?.category, it?.quantity ?? 0)}`).join('\n');
+    }
+
+    function _notifTemplate(key, vars = {}) {
+      return Object.entries(vars).reduce((text, [name, value]) => (
+        String(text).replace(new RegExp(`\\{${name}\\}`, 'g'), String(value ?? ''))
+      ), t(key));
+    }
+
+    function _getLocalizedNotificationContent(notif) {
+      const type = String(notif?.type || '').toLowerCase();
+      const payload = (notif?.payload && typeof notif.payload === 'object') ? notif.payload : {};
+      const fallbackTitle = String(notif?.title || 'TASKAFÉ');
+      const fallbackMessage = String(notif?.message || '');
+      const actorName = String(
+        payload.employee_name ||
+        payload.creator_name ||
+        payload.creator ||
+        _resolveNotifUserName(payload.employee_id) ||
+        ''
+      ).trim();
+      const itemsText = _formatNotifItems(payload.items);
+
+      if (type === 'stock_request' || type === 'new_stock_request') {
+        const title = t('notif_stock_request_title');
+        let message = _notifTemplate('notif_stock_request_body', { name: actorName || '—' });
+        if (itemsText) message += `\n${itemsText}`;
+        return { title, message };
+      }
+      if (type === 'stock_request_sent') {
+        const title = t('notif_stock_request_sent_title');
+        let message = t('notif_stock_request_sent_body');
+        if (itemsText) message += `\n${itemsText}`;
+        return { title, message };
+      }
+      if (type === 'stock_request_status') {
+        const title = t('notif_stock_request_status_title');
+        const statusLabel = _stockReqStatusLabel(payload.status || '');
+        let message = _notifTemplate('notif_stock_request_status_body', { status: statusLabel || '—' });
+        if (payload.admin_notes) message += `\n📝 ${payload.admin_notes}`;
+        return { title, message };
+      }
+      if (type === 'stock_request_cancelled') {
+        return { title: t('notif_stock_request_cancelled_title'), message: t('notif_stock_request_cancelled_body') };
+      }
+      if (type === 'stock_transfer') {
+        const title = t('notif_stock_transfer_title');
+        let message = _notifTemplate('notif_stock_transfer_body', { name: actorName || '—' });
+        if (itemsText) message += `\n${itemsText}`;
+        return { title, message };
+      }
+      return { title: fallbackTitle, message: fallbackMessage };
     }
 
     window.openNotificationsModal = async function() {
@@ -4108,14 +4274,15 @@
       if (!content) return;
       const notifs = state.notifications || [];
       if (notifs.length === 0) {
-        content.innerHTML = '<div class="empty-state">🔔 Aucune notification pour l\'instant.</div>';
+        content.innerHTML = `<div class="empty-state">${escHtml(t('notif_empty'))}</div>`;
         return;
       }
       content.innerHTML = notifs.map(n => {
         const isUnread = !n.read_at;
+        const localized = _getLocalizedNotificationContent(n);
         return `<div class="notif-item ${isUnread ? 'unread' : ''}" id="notif-${escHtml(n.id)}" style="cursor:pointer;" data-notif-id="${escHtml(n.id)}">
-          <div class="notif-item-title">${escHtml(n.title)}</div>
-          <div class="notif-item-msg">${escHtml(n.message)}</div>
+          <div class="notif-item-title">${escHtml(localized.title)}</div>
+          <div class="notif-item-msg">${escHtml(localized.message)}</div>
           <div class="notif-item-date">${_formatNotifDate(n.created_at)}</div>
         </div>`;
       }).join('');
@@ -4309,7 +4476,8 @@
 
       // Toast / banner
       const first = newUnread[0];
-      showSessionStatus(`🔔 ${first.title}`, 'info', 4000);
+      const localized = _getLocalizedNotificationContent(first);
+      showSessionStatus(`🔔 ${localized.title}`, 'info', 4000);
 
       // Refresh bell badge
       renderNotificationBell();
@@ -4705,7 +4873,7 @@
 
     // Sends a push notification through the /api/send-push serverless function.
     // Failures are soft — never blocks the UI or throws to callers.
-    async function _triggerPush({ type, title, message, url, employee_id }) {
+    async function _triggerPush({ type, title, message, url, employee_id, payload }) {
       const session = state.session;
       if (!session?.access_token) return;
       try {
@@ -4715,7 +4883,7 @@
             'Content-Type':  'application/json',
             'Authorization': `Bearer ${session.access_token}`
           },
-          body: JSON.stringify({ type, title, message, url: url || '/', employee_id })
+          body: JSON.stringify({ type, title, message, url: url || '/', employee_id, payload })
         });
       } catch (e) {
         console.warn('[push] triggerPush error:', e?.message);
@@ -4940,7 +5108,13 @@
           type:    'new_stock_request',
           title:   '📦 ' + t('push_new_request'),
           message: (state.profile?.full_name || state.session?.user?.email || '') + ' ' + t('push_request_sent_msg'),
-          url:     reqId ? `/?view=stock&request_id=${reqId}` : '/?view=stock'
+          url:     reqId ? `/?view=stock&request_id=${reqId}` : '/?view=stock',
+          payload: {
+            request_id: reqId || null,
+            employee_id: state.session?.user?.id || null,
+            employee_name: state.profile?.full_name || state.session?.user?.email || '',
+            items
+          }
         });
         setTimeout(() => closeModal('stockRequestModal'), 1800);
       } catch (err) {
@@ -4951,12 +5125,12 @@
 
     function _stockReqStatusLabel(status) {
       const map = {
-        pending:      '⏳ Envoyée',
-        preparing:    '📦 En préparation',
-        ready_pickup: '✅ Prêt à récupérer',
-        fulfilled:    '✅ Remis / transféré',
-        rejected:     '❌ Refusée',
-        cancelled:    '🚫 Annulée'
+        pending:      t('stock_status_pending'),
+        preparing:    t('stock_status_preparing'),
+        ready_pickup: t('stock_status_ready_pickup'),
+        fulfilled:    t('stock_status_fulfilled'),
+        rejected:     t('stock_status_rejected'),
+        cancelled:    t('stock_status_cancelled')
       };
       return map[status] || status;
     }
@@ -5015,6 +5189,7 @@
     window.cancelMyStockRequest = async function(reqId, btn) {
       if (btn && btn.disabled) return;
       if (!navigator.onLine) { showSessionStatus('❌ Connexion requise', 'error'); return; }
+      if (!_confirmStatusChange(_stockReqStatusLabel('cancelled'))) return;
       const origText = btn ? btn.textContent : null;
       if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
       try {
@@ -5027,7 +5202,13 @@
           type:    'stock_request_cancelled',
           title:   '🚫 Demande annulée',
           message: (state.profile?.full_name || state.session?.user?.email || '') + ' a annulé sa demande de stock.',
-          url:     reqId ? `/?view=stock&request_id=${reqId}` : '/?view=stock'
+          url:     reqId ? `/?view=stock&request_id=${reqId}` : '/?view=stock',
+          payload: {
+            request_id: reqId,
+            employee_id: state.session?.user?.id || null,
+            employee_name: state.profile?.full_name || state.session?.user?.email || '',
+            status: 'cancelled'
+          }
         });
       } catch (err) {
         showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
@@ -5080,16 +5261,16 @@
               buttons = `
                 <button onclick="adminSetReqStatus('${safeId}','preparing',null,this)" style="font-size:12px;padding:4px 8px;">📦 Préparer</button>
                 <button onclick="adminSetReqStatus('${safeId}','ready_pickup',null,this)" style="font-size:12px;padding:4px 8px;">✅ Prêt à récupérer</button>
-                <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
+                <button onclick="handleFulfillRequestAction('${safeId}', this)" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
                 <button onclick="adminSetReqStatus('${safeId}','rejected',null,this)" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
             } else if (req.status === 'preparing') {
               buttons = `
                 <button onclick="adminSetReqStatus('${safeId}','ready_pickup',null,this)" style="font-size:12px;padding:4px 8px;">✅ Prêt à récupérer</button>
-                <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
+                <button onclick="handleFulfillRequestAction('${safeId}', this)" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
                 <button onclick="adminSetReqStatus('${safeId}','rejected',null,this)" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
             } else if (req.status === 'ready_pickup') {
               buttons = `
-                <button onclick="openFulfillRequestModal('${safeId}')" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
+                <button onclick="handleFulfillRequestAction('${safeId}', this)" style="font-size:12px;padding:4px 8px;background:linear-gradient(180deg,#27ae60,#1e8449);color:#fff;border:none;">✅ Remis à l'employé</button>
                 <button onclick="adminSetReqStatus('${safeId}','rejected',null,this)" style="font-size:12px;padding:4px 8px;background:rgba(180,50,0,0.08);color:var(--color-error,#c0392b);">❌ Refuser</button>`;
             }
 
@@ -5114,6 +5295,7 @@
     window.adminSetReqStatus = async function(reqId, newStatus, adminNotes, btn) {
       if (btn && btn.disabled) return;
       if (!isManagerOrAdmin() || !navigator.onLine) return;
+      if (!_confirmStatusChange(_stockReqStatusLabel(newStatus))) return;
       const origText = btn ? btn.textContent : null;
       if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
       try {
@@ -5140,7 +5322,8 @@
             title:       '📦 ' + t('push_status_update'),
             message:     _stockReqStatusLabel(newStatus),
             url:         reqId ? `/?view=stock&request_id=${reqId}` : '/?view=stock',
-            employee_id: reqData.employee_id
+            employee_id: reqData.employee_id,
+            payload:     { request_id: reqId, status: newStatus, admin_notes: adminNotes || null }
           });
         }
       } catch (err) {
@@ -5184,6 +5367,45 @@
       }
     };
 
+    async function _fulfillStockRequestById(requestId) {
+      const { data: reqData } = await supabase
+        .from('stock_requests').select('employee_id').eq('id', requestId).single();
+
+      const { error } = await supabase.rpc('fulfill_stock_request', {
+        p_request_id: requestId
+      });
+      if (error) throw error;
+
+      if (reqData?.employee_id) {
+        _triggerPush({
+          type:        'stock_request_status',
+          title:       t('push_fulfilled_title'),
+          message:     t('push_fulfilled_msg'),
+          url:         requestId ? `/?view=stock&request_id=${requestId}` : '/?view=stock',
+          employee_id: reqData.employee_id,
+          payload:     { request_id: requestId, status: 'fulfilled' }
+        });
+      }
+    }
+
+    window.handleFulfillRequestAction = async function(reqId, btn) {
+      if (!isManagerOrAdmin() || !navigator.onLine || !reqId) return;
+      if (isStatusChangeConfirmationEnabled()) {
+        openFulfillRequestModal(reqId);
+        return;
+      }
+      const origText = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
+      try {
+        await _fulfillStockRequestById(reqId);
+        await refreshAdminStockRequests();
+        showSessionStatus("✅ Stock remis à l'employé et transféré.", 'success', 5000);
+      } catch (err) {
+        showSessionStatus('❌ ' + getFriendlyErrorMessage(err), 'error', 4000);
+        if (btn) { btn.disabled = false; btn.textContent = origText; }
+      }
+    };
+
     window.confirmFulfillRequest = async function() {
       if (!isManagerOrAdmin() || !navigator.onLine || !_pendingFulfillRequestId) return;
       const btn      = document.getElementById('confirmFulfillBtn');
@@ -5193,29 +5415,11 @@
       if (statusEl) statusEl.textContent = '⏳ Transfert en cours…';
 
       try {
-        // Fetch employee_id before fulfilling so we can send push after
-        const { data: reqData } = await supabase
-          .from('stock_requests').select('employee_id').eq('id', _pendingFulfillRequestId).single();
-
-        const { error } = await supabase.rpc('fulfill_stock_request', {
-          p_request_id: _pendingFulfillRequestId
-        });
-        if (error) throw error;
+        await _fulfillStockRequestById(_pendingFulfillRequestId);
 
         closeModal('fulfillRequestModal');
         closeModal('adminStockRequestsModal');
         showSessionStatus("✅ Stock remis à l'employé et transféré.", 'success', 5000);
-
-        // Trigger push to employee (non-blocking)
-        if (reqData?.employee_id) {
-          _triggerPush({
-            type:        'stock_request_status',
-            title:       t('push_fulfilled_title'),
-            message:     t('push_fulfilled_msg'),
-            url:         _pendingFulfillRequestId ? `/?view=stock&request_id=${_pendingFulfillRequestId}` : '/?view=stock',
-            employee_id: reqData.employee_id
-          });
-        }
 
         _pendingFulfillRequestId = null;
         refreshStockData().then(() => { renderStock(); loadNotifications().then(() => renderNotificationBell()).catch(() => {}); }).catch(e => console.warn('[fulfill] refresh:', e?.message));
@@ -7935,8 +8139,34 @@
     };
 
     // ── Notification settings ─────────────────────────────────────────────────
+    function isStatusChangeConfirmationEnabled() {
+      return localStorage.getItem(LS_CONFIRM_STATUS_CHANGE) !== 'false';
+    }
+
+    function _refreshStatusChangeSettingsUI() {
+      const toggle = document.getElementById('confirmStatusChangeToggle');
+      const stateEl = document.getElementById('confirmStatusChangeState');
+      const enabled = isStatusChangeConfirmationEnabled();
+      if (toggle) toggle.checked = enabled;
+      if (stateEl) stateEl.textContent = enabled ? t('confirm_status_change_on') : t('confirm_status_change_off');
+    }
+
+    window.toggleStatusChangeConfirmation = function(enabled) {
+      localStorage.setItem(LS_CONFIRM_STATUS_CHANGE, enabled ? 'true' : 'false');
+      _refreshStatusChangeSettingsUI();
+      showSessionStatus(enabled ? t('confirm_status_change_enabled') : t('confirm_status_change_disabled'), 'success', 2500);
+    };
+
+    function _confirmStatusChange(label) {
+      if (!isStatusChangeConfirmationEnabled()) return true;
+      const confirmed = confirm(t('status_change_confirm_prompt').replace('{status}', label || '—'));
+      if (!confirmed) showSessionStatus(t('action_cancelled'), 'info', 2200);
+      return confirmed;
+    }
+
     // Opens the push notification settings modal (enable / repair / disable).
     window.openNotifSettingsModal = function () {
+      _refreshStatusChangeSettingsUI();
       _refreshPushSettingsUI();
       openModal('notifSettingsModal');
     };
