@@ -5777,6 +5777,8 @@
       updateDarkModeBtn();
       initAccordions();
       loadProductPrices();
+      // Cloud sync for wholesale data — non-blocking, admin/manager only, once per session
+      if (isManagerOrAdmin()) initWholesaleCloudSync().catch(e => console.warn('[paintApp] wholesale sync:', e?.message));
     }
 
     // ── Shared token-retrieval helper ────────────────────────────────────────
@@ -6308,6 +6310,7 @@
 
     window.logout = async function () {
       _loggedOut = true; // block any boot re-entry triggered by auth state change
+      _wholesaleCloudSyncDone = false; // allow cloud sync on next login
       closeAllMenus();
       if (_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
       stopPermRefresh();
@@ -8011,6 +8014,8 @@
     function persistWholesaleData() {
       localStorage.setItem(LS_WHOLESALE_PURCHASES, JSON.stringify(_wholesalePurchases));
       localStorage.setItem(LS_WHOLESALE_PAYMENTS, JSON.stringify(_wholesalePayments));
+      pushWholesalePurchasesToCloud().catch(() => {});
+      pushWholesalePaymentsToCloud().catch(() => {});
     }
 
     function setWholesaleStatus(id, message, type = 'success') {
@@ -8264,6 +8269,7 @@
 
     function persistWholesaleSettings() {
       localStorage.setItem(LS_WHOLESALE_SETTINGS, JSON.stringify(_wholesaleSettings));
+      pushWholesaleSettingsToCloud().catch(() => {});
     }
 
     window.saveWholesaleSettings = function() {
@@ -8279,6 +8285,7 @@
         if (el) _customPurchasePrices[cat] = Math.max(0, Number(el.value) || 0);
       });
       localStorage.setItem('productPurchasePrices', JSON.stringify(_customPurchasePrices));
+      pushProductPurchasePricesToCloud().catch(() => {});
 
       _wholesaleSettings = sanitizeWholesaleSettings({
         default_supplier: normalizeWholesaleSupplier(supplierEl?.value) || DEFAULT_WHOLESALE_SUPPLIER,
@@ -9160,6 +9167,145 @@
       return _customPurchasePrices[cat] || DEFAULT_PURCHASE_PRICES[cat] || 0;
     }
 
+    // ── Wholesale cloud sync (admin/manager only) ─────────────────────────────
+    // Uses the app_settings table (key-value JSONB) to persist wholesale data.
+    // All operations are non-blocking: localStorage is updated first, then the
+    // cloud is updated asynchronously.  If the cloud is unavailable, localStorage
+    // continues to work as the fallback source of truth.
+
+    const _APP_SETTINGS_PURCHASES = 'wholesalePurchases';
+    const _APP_SETTINGS_PAYMENTS  = 'wholesalePayments';
+    const _APP_SETTINGS_SETTINGS  = 'wholesaleSettings';
+    const _APP_SETTINGS_PRICES    = 'productPurchasePrices';
+    let _wholesaleCloudSyncDone   = false;
+
+    async function cloudSetAppSetting(key, value) {
+      try {
+        if (!navigator.onLine || !state.session?.user) return;
+        const { error } = await supabase
+          .from('app_settings')
+          .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+        if (error) console.warn(`[cloudSetAppSetting] ${key}:`, error.message);
+      } catch (e) {
+        console.warn(`[cloudSetAppSetting] ${key} exception:`, e?.message);
+      }
+    }
+
+    async function pushWholesalePurchasesToCloud() {
+      if (!isManagerOrAdmin()) return;
+      await cloudSetAppSetting(_APP_SETTINGS_PURCHASES, _wholesalePurchases);
+    }
+
+    async function pushWholesalePaymentsToCloud() {
+      if (!isManagerOrAdmin()) return;
+      await cloudSetAppSetting(_APP_SETTINGS_PAYMENTS, _wholesalePayments);
+    }
+
+    async function pushWholesaleSettingsToCloud() {
+      if (!isManagerOrAdmin()) return;
+      await cloudSetAppSetting(_APP_SETTINGS_SETTINGS, _wholesaleSettings);
+    }
+
+    async function pushProductPurchasePricesToCloud() {
+      if (!isManagerOrAdmin()) return;
+      await cloudSetAppSetting(_APP_SETTINGS_PRICES, _customPurchasePrices);
+    }
+
+    // Merge two arrays by id: cloud wins for same id, local-only items are appended.
+    function mergeWholesaleById(cloudItems, localItems) {
+      if (!Array.isArray(cloudItems)) cloudItems = [];
+      if (!Array.isArray(localItems)) localItems = [];
+      const merged = [...cloudItems];
+      const cloudIds = new Set(cloudItems.map(i => String(i.id || '')).filter(Boolean));
+      for (const item of localItems) {
+        if (!cloudIds.has(String(item.id || ''))) merged.push(item);
+      }
+      return merged;
+    }
+
+    // Initialize wholesale cloud sync — called once per session after login for admin/manager.
+    // Strategy:
+    //   1. Load both cloud and local data.
+    //   2. Merge: cloud wins for same id; local-only items are appended.
+    //   3. Push merged result to cloud when local had items missing in cloud.
+    //   4. Update localStorage with merged result for offline fallback.
+    async function initWholesaleCloudSync() {
+      if (_wholesaleCloudSyncDone) return;
+      if (!isManagerOrAdmin()) return;
+      if (!navigator.onLine || !state.session?.user) return;
+      _wholesaleCloudSyncDone = true;
+
+      try {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('key, value')
+          .in('key', [
+            _APP_SETTINGS_PURCHASES,
+            _APP_SETTINGS_PAYMENTS,
+            _APP_SETTINGS_SETTINGS,
+            _APP_SETTINGS_PRICES
+          ]);
+
+        if (error) {
+          console.warn('[initWholesaleCloudSync] load error:', error.message);
+          return;
+        }
+
+        const cloudMap = {};
+        (data || []).forEach(row => { cloudMap[row.key] = row.value; });
+
+        // Ensure local data is loaded before merging
+        loadWholesaleData();
+        loadWholesaleSettings();
+        loadProductPrices();
+
+        // ── Purchases ──────────────────────────────────────────────────────
+        const cloudPurchases = Array.isArray(cloudMap[_APP_SETTINGS_PURCHASES])
+          ? cloudMap[_APP_SETTINGS_PURCHASES] : [];
+        const mergedPurchases = mergeWholesaleById(cloudPurchases, _wholesalePurchases);
+        _wholesalePurchases = mergedPurchases;
+        localStorage.setItem(LS_WHOLESALE_PURCHASES, JSON.stringify(_wholesalePurchases));
+        // Push only when local had items missing in cloud (merged is larger than cloud)
+        if (mergedPurchases.length > cloudPurchases.length) {
+          pushWholesalePurchasesToCloud().catch(() => {});
+        }
+
+        // ── Payments ───────────────────────────────────────────────────────
+        const cloudPayments = Array.isArray(cloudMap[_APP_SETTINGS_PAYMENTS])
+          ? cloudMap[_APP_SETTINGS_PAYMENTS] : [];
+        const mergedPayments = mergeWholesaleById(cloudPayments, _wholesalePayments);
+        _wholesalePayments = mergedPayments;
+        localStorage.setItem(LS_WHOLESALE_PAYMENTS, JSON.stringify(_wholesalePayments));
+        // Push only when local had items missing in cloud (merged is larger than cloud)
+        if (mergedPayments.length > cloudPayments.length) {
+          pushWholesalePaymentsToCloud().catch(() => {});
+        }
+
+        // ── Wholesale settings ─────────────────────────────────────────────
+        const cloudSettings = cloudMap[_APP_SETTINGS_SETTINGS];
+        if (cloudSettings && typeof cloudSettings === 'object' && !Array.isArray(cloudSettings)) {
+          _wholesaleSettings = sanitizeWholesaleSettings({ ...DEFAULT_WHOLESALE_SETTINGS, ...cloudSettings });
+          _wholesaleSettingsLoaded = true;
+          localStorage.setItem(LS_WHOLESALE_SETTINGS, JSON.stringify(_wholesaleSettings));
+        } else if (!cloudSettings) {
+          pushWholesaleSettingsToCloud().catch(() => {});
+        }
+
+        // ── Product purchase prices ────────────────────────────────────────
+        const cloudPrices = cloudMap[_APP_SETTINGS_PRICES];
+        if (cloudPrices && typeof cloudPrices === 'object' && !Array.isArray(cloudPrices)) {
+          // Cloud wins entirely; keep defaults for any category absent from cloud
+          _customPurchasePrices = { ...DEFAULT_PURCHASE_PRICES, ...cloudPrices };
+          localStorage.setItem('productPurchasePrices', JSON.stringify(_customPurchasePrices));
+        } else if (!cloudPrices) {
+          pushProductPurchasePricesToCloud().catch(() => {});
+        }
+
+      } catch (e) {
+        console.warn('[initWholesaleCloudSync] exception:', e?.message);
+      }
+    }
+
     window.openProductPricesModal = function() {
       closeAllMenus();
       if (!isManagerOrAdmin()) return;
@@ -9178,6 +9324,7 @@
         if (el) _customPurchasePrices[cat] = Math.max(1, parseInt(el.value, 10) || 1);
       });
       localStorage.setItem('productPurchasePrices', JSON.stringify(_customPurchasePrices));
+      pushProductPurchasePricesToCloud().catch(() => {});
       closeModal('productPricesModal');
       renderAnalytics(_allSalesData);
       showSessionStatus('✅ Prix produits enregistrés', 'success');
