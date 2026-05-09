@@ -122,9 +122,9 @@
             <span id="menuUserRole">—</span>
           </div>
           <!-- ── Stats & Balance ──────────────────────────────────────────── -->
-          <button id="statsBalanceMenuBtn" type="button" onclick="openStatsBalanceModal()" data-i18n="menu_statsBalance">📊 Stats &amp; Balance</button>
+          <button id="statsBalanceMenuBtn" type="button" onclick="openStatsBalanceModal()" data-i18n="menu_statsBalance">📊 Statistiques &amp; 💰 Balances</button>
           <!-- ── Dépenses ─────────────────────────────────────────────────── -->
-          <button id="depensesMenuBtn" type="button" onclick="openDepensesModal()" data-i18n="menu_depenses">💸 Dépenses</button>
+          <button id="depensesMenuBtn" class="hidden" type="button" onclick="openDepensesModal()" data-i18n="menu_depenses">💸 Dépenses</button>
           <!-- ── Employés (manager/admin only) ───────────────────────────── -->
           <button type="button" id="employesMenuBtn" onclick="openEmployesModal()" class="hidden" data-i18n="menu_employes">👥 Employés</button>
           <!-- ── Clients par commercial (manager/admin only) ─────────────── -->
@@ -406,7 +406,7 @@
         <div class="muted" data-i18n="settings_modifier_mdp">Modifier ton mot de passe.</div>
         <button onclick="closeModal('settingsHubModal'); openPasswordModal();" data-i18n="settings_changer_mdp">Changer mot de passe</button>
       </div>
-      <div id="settingsExportCloudOption" class="settings-option">
+      <div id="settingsExportCloudOption" class="settings-option hidden">
         <div class="title" data-i18n="settings_export_cloud">☁️ Export cloud</div>
         <div class="muted" data-i18n="settings_export_desc">Télécharger une sauvegarde JSON complète.</div>
         <button onclick="exportData()" data-i18n="settings_exporter_btn">📥 Exporter données</button>
@@ -1325,10 +1325,43 @@
         menu_remuEmployes: '💰 Rémunérations employés',
         menu_logs: '📋 Logs',
         menu_langue: '🌍 Langue',
-        menu_statsBalance: '📊 Stats & Balance',
+        menu_statsBalance: '📊 Statistiques & 💰 Balances',
         menu_depenses: '💸 Dépenses',
         menu_employes: '👥 Employés',
         menu_notificationsReglages: '🔔 Notifications',
+        analytics_stats_section: '📊 Statistiques',
+        analytics_balances_section: '💰 Balances',
+        analytics_seller_stats_title: '👤 Stats vendeurs',
+        analytics_commissions_monthly_title: '💰 Paiement commissions vendeurs',
+        analytics_period: 'Période',
+        analytics_day: 'Jour',
+        analytics_week: 'Semaine',
+        analytics_month: 'Mois',
+        analytics_date: 'Date',
+        analytics_seller: 'Vendeur',
+        analytics_all_sellers: 'Tous les vendeurs',
+        analytics_total_kg_sold: 'Total kg vendu',
+        analytics_total_ca_sold: 'CA total vendu',
+        analytics_detail_by_category: 'Détail par gamme',
+        analytics_sales_lines_count: 'Nombre de ventes/lignes',
+        analytics_clients_served: 'Clients servis',
+        analytics_no_sales_period: 'Aucune vente pour cette période.',
+        analytics_commission_month: 'Commission du mois',
+        analytics_paid_advances: 'Déjà payé / avances',
+        analytics_remaining_commission: 'Reste commission à payer',
+        analytics_total_commissions_due: 'Total commissions à payer',
+        analytics_client_balances_title: '💳 Balances clients',
+        analytics_supplier_balances_title: '🏭 Balances fournisseurs',
+        analytics_balance_client: 'Client',
+        analytics_balance_total_ca: 'CA total',
+        analytics_balance_paid: 'Encaissé',
+        analytics_balance_remaining: 'Reste à payer',
+        analytics_balance_month: 'Mois',
+        analytics_balance_supplier: 'Fournisseur',
+        analytics_balance_net: 'Net fournisseur',
+        analytics_balance_suggested_payment: 'Dernier paiement suggéré',
+        analytics_no_supplier_balance: 'Aucune balance fournisseur.',
+        analytics_total_label: 'TOTAL',
         sale_title: '💵 Nouvelle vente',
         sale_selectClient: 'Sélectionner un client',
         sale_searchClient: '🔎 Rechercher un client...',
@@ -1692,10 +1725,43 @@
         menu_remuEmployes: '💰 أجور الموظفين',
         menu_logs: '📋 السجلات',
         menu_langue: '🌍 اللغة',
-        menu_statsBalance: '📊 إحصائيات وميزان',
+        menu_statsBalance: '📊 إحصائيات و 💰 الأرصدة',
         menu_depenses: '💸 المصاريف',
         menu_employes: '👥 الموظفون',
         menu_notificationsReglages: '🔔 الإشعارات',
+        analytics_stats_section: '📊 الإحصائيات',
+        analytics_balances_section: '💰 الأرصدة',
+        analytics_seller_stats_title: '👤 إحصائيات البائعين',
+        analytics_commissions_monthly_title: '💰 دفع عمولات البائعين',
+        analytics_period: 'الفترة',
+        analytics_day: 'اليوم',
+        analytics_week: 'الأسبوع',
+        analytics_month: 'الشهر',
+        analytics_date: 'التاريخ',
+        analytics_seller: 'البائع',
+        analytics_all_sellers: 'كل البائعين',
+        analytics_total_kg_sold: 'إجمالي الكيلوغرام المباع',
+        analytics_total_ca_sold: 'إجمالي رقم المعاملات',
+        analytics_detail_by_category: 'التفصيل حسب الصنف',
+        analytics_sales_lines_count: 'عدد المبيعات/السطور',
+        analytics_clients_served: 'العملاء المخدومون',
+        analytics_no_sales_period: 'لا توجد مبيعات لهذه الفترة.',
+        analytics_commission_month: 'عمولة الشهر',
+        analytics_paid_advances: 'مدفوع سابقاً / سلفات',
+        analytics_remaining_commission: 'باقي العمولة للدفع',
+        analytics_total_commissions_due: 'إجمالي العمولات المستحقة',
+        analytics_client_balances_title: '💳 أرصدة العملاء',
+        analytics_supplier_balances_title: '🏭 أرصدة الموردين',
+        analytics_balance_client: 'العميل',
+        analytics_balance_total_ca: 'إجمالي رقم المعاملات',
+        analytics_balance_paid: 'المقبوض',
+        analytics_balance_remaining: 'المتبقي للدفع',
+        analytics_balance_month: 'الشهر',
+        analytics_balance_supplier: 'المورد',
+        analytics_balance_net: 'الصافي للمورد',
+        analytics_balance_suggested_payment: 'آخر دفعة مقترحة',
+        analytics_no_supplier_balance: 'لا توجد أرصدة موردين.',
+        analytics_total_label: 'المجموع',
         sale_title: '💵 بيع جديد',
         sale_selectClient: 'اختر زبوناً',
         sale_searchClient: '🔎 ابحث عن زبون...',
@@ -2059,10 +2125,43 @@
         menu_remuEmployes: '💰 Khlass dyal lkhdama',
         menu_logs: '📋 Logs',
         menu_langue: '🌍 Lgha',
-        menu_statsBalance: '📊 Stats & Balance',
+        menu_statsBalance: '📊 Stats & 💰 Balances',
         menu_depenses: '💸 Masaref',
         menu_employes: '👥 Khdama',
         menu_notificationsReglages: '🔔 Notifications',
+        analytics_stats_section: '📊 Statistiques',
+        analytics_balances_section: '💰 Balances',
+        analytics_seller_stats_title: '👤 Stats vendeurs',
+        analytics_commissions_monthly_title: '💰 Khlass commissions vendeurs',
+        analytics_period: 'Période',
+        analytics_day: 'Nhar',
+        analytics_week: 'Simana',
+        analytics_month: 'Chhar',
+        analytics_date: 'Tarikh',
+        analytics_seller: 'Vendeur',
+        analytics_all_sellers: 'Ga3 vendeurs',
+        analytics_total_kg_sold: 'Total kg mabi3',
+        analytics_total_ca_sold: 'CA total mabi3',
+        analytics_detail_by_category: 'Tafsil 7asab gamme',
+        analytics_sales_lines_count: '3adad ventes/lignes',
+        analytics_clients_served: 'Clients tkhddmo',
+        analytics_no_sales_period: 'Ma kaynach ventes f had période.',
+        analytics_commission_month: 'Commission dyal chhar',
+        analytics_paid_advances: 'Mkhalles / avances',
+        analytics_remaining_commission: 'Baqi commission tkheless',
+        analytics_total_commissions_due: 'Total commissions khas tkhless',
+        analytics_client_balances_title: '💳 Balances clients',
+        analytics_supplier_balances_title: '🏭 Balances fournisseurs',
+        analytics_balance_client: 'Client',
+        analytics_balance_total_ca: 'CA total',
+        analytics_balance_paid: 'Mkhalles',
+        analytics_balance_remaining: 'Baqi',
+        analytics_balance_month: 'Chhar',
+        analytics_balance_supplier: 'Fournisseur',
+        analytics_balance_net: 'Net fournisseur',
+        analytics_balance_suggested_payment: 'Akher paiement suggéré',
+        analytics_no_supplier_balance: 'Ma kaynach balance fournisseur.',
+        analytics_total_label: 'TOTAL',
         sale_title: '💵 Tbi3a jdida',
         sale_selectClient: 'Khtar client',
         sale_searchClient: '🔎 Qelleb 3la client...',
@@ -5771,8 +5870,6 @@
       document.getElementById('sectionFinance')?.classList.toggle('hidden', !isManagerOrAdmin());
       const hideEmployeeOnly = String(state.profile?.role || '').toLowerCase() === 'employee';
       document.getElementById('statsBalanceMenuBtn')?.classList.toggle('hidden', hideEmployeeOnly);
-      document.getElementById('depensesMenuBtn')?.classList.toggle('hidden', hideEmployeeOnly);
-      document.getElementById('settingsExportCloudOption')?.classList.toggle('hidden', hideEmployeeOnly);
 
       updateDarkModeBtn();
       initAccordions();
@@ -9331,7 +9428,65 @@
     };
 
     // ── Analytics ───────────────────────────────────────────────────────────────
-    function renderAnalytics(data) {
+    const analyticsSellerUiState = {
+      periodType: 'month',
+      date: new Date().toISOString().slice(0, 10),
+      month: new Date().toISOString().slice(0, 7),
+      sellerId: 'all',
+      commissionMonth: new Date().toISOString().slice(0, 7),
+      commissionSellerId: 'all'
+    };
+
+    function toMonthBounds(monthValue) {
+      const safeMonth = /^\d{4}-\d{2}$/.test(String(monthValue || '').trim())
+        ? String(monthValue).trim()
+        : new Date().toISOString().slice(0, 7);
+      const start = `${safeMonth}-01`;
+      const [yyyy, mm] = safeMonth.split('-').map(Number);
+      const lastDay = new Date(yyyy, mm, 0).getDate();
+      const end = `${safeMonth}-${String(lastDay).padStart(2, '0')}`;
+      return { month: safeMonth, start, end };
+    }
+
+    function toWeekBounds(dateValue) {
+      const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(String(dateValue || '').trim())
+        ? String(dateValue).trim()
+        : new Date().toISOString().slice(0, 10);
+      const current = new Date(`${safeDate}T12:00:00`);
+      const weekday = (current.getDay() + 6) % 7;
+      const startDate = new Date(current);
+      startDate.setDate(current.getDate() - weekday);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      return { start: toYMD(startDate), end: toYMD(endDate) };
+    }
+
+    window.setAnalyticsSellerPeriodType = function (periodType) {
+      analyticsSellerUiState.periodType = ['day', 'week', 'month'].includes(periodType) ? periodType : 'month';
+      renderAnalytics(_allSalesData);
+    };
+    window.setAnalyticsSellerDate = function (dateValue) {
+      analyticsSellerUiState.date = /^\d{4}-\d{2}-\d{2}$/.test(String(dateValue || '')) ? String(dateValue) : analyticsSellerUiState.date;
+      renderAnalytics(_allSalesData);
+    };
+    window.setAnalyticsSellerMonth = function (monthValue) {
+      analyticsSellerUiState.month = /^\d{4}-\d{2}$/.test(String(monthValue || '')) ? String(monthValue) : analyticsSellerUiState.month;
+      renderAnalytics(_allSalesData);
+    };
+    window.setAnalyticsSellerId = function (sellerId) {
+      analyticsSellerUiState.sellerId = String(sellerId || 'all');
+      renderAnalytics(_allSalesData);
+    };
+    window.setAnalyticsCommissionMonth = function (monthValue) {
+      analyticsSellerUiState.commissionMonth = /^\d{4}-\d{2}$/.test(String(monthValue || '')) ? String(monthValue) : analyticsSellerUiState.commissionMonth;
+      renderAnalytics(_allSalesData);
+    };
+    window.setAnalyticsCommissionSellerId = function (sellerId) {
+      analyticsSellerUiState.commissionSellerId = String(sellerId || 'all');
+      renderAnalytics(_allSalesData);
+    };
+
+    async function renderAnalytics(data) {
       const analyticsBtn = document.getElementById('analyticsBtn');
       if (analyticsBtn) analyticsBtn.classList.toggle('hidden', !isManagerOrAdmin());
 
@@ -9533,28 +9688,283 @@
           ? totalRegularizedCost
           : totalEstimatedCost;
 
+      const allSellers = (state.allUsers || []).filter(u => ['employee', 'manager'].includes(String(u.role || '').toLowerCase()));
+      const sellerOptions = [
+        `<option value="all" ${analyticsSellerUiState.sellerId === 'all' ? 'selected' : ''}>${escHtml(t('analytics_all_sellers'))}</option>`,
+        ...allSellers.map(u => `<option value="${escHtml(String(u.id || ''))}" ${analyticsSellerUiState.sellerId === String(u.id || '') ? 'selected' : ''}>${escHtml(u.full_name || u.email || '—')}</option>`)
+      ].join('');
+      const sellerOptionsCommission = [
+        `<option value="all" ${analyticsSellerUiState.commissionSellerId === 'all' ? 'selected' : ''}>${escHtml(t('analytics_all_sellers'))}</option>`,
+        ...allSellers.map(u => `<option value="${escHtml(String(u.id || ''))}" ${analyticsSellerUiState.commissionSellerId === String(u.id || '') ? 'selected' : ''}>${escHtml(u.full_name || u.email || '—')}</option>`)
+      ].join('');
+
+      let periodStart = analyticsSellerUiState.date;
+      let periodEnd = analyticsSellerUiState.date;
+      if (analyticsSellerUiState.periodType === 'week') {
+        const weekBounds = toWeekBounds(analyticsSellerUiState.date);
+        periodStart = weekBounds.start;
+        periodEnd = weekBounds.end;
+      } else if (analyticsSellerUiState.periodType === 'month') {
+        const monthBounds = toMonthBounds(analyticsSellerUiState.month);
+        periodStart = monthBounds.start;
+        periodEnd = monthBounds.end;
+      }
+      const periodStartDate = new Date(`${periodStart}T00:00:00`);
+      const periodEndDate = new Date(`${periodEnd}T23:59:59.999`);
+      const statsUsers = analyticsSellerUiState.sellerId === 'all'
+        ? allSellers
+        : allSellers.filter(u => String(u.id || '') === analyticsSellerUiState.sellerId);
+
+      const sellerStatsHtml = statsUsers.map((user) => {
+        const userSales = sales.filter((s) => {
+          if (String(s.created_by || '') !== String(user.id || '')) return false;
+          const d = new Date(s.created_at);
+          return d >= periodStartDate && d <= periodEndDate;
+        });
+        if (userSales.length === 0) {
+          return `<div class="settings-option" style="margin-bottom:8px;">
+            <div class="title">${escHtml(user.full_name || user.email || '—')}</div>
+            <div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>
+          </div>`;
+        }
+        const byCatStats = {};
+        const clientsServed = new Set();
+        let totalKg = 0;
+        let totalCa = 0;
+        userSales.forEach((s) => {
+          const category = String(s.category || '').trim() || t('wholesale_real_unknown_range');
+          const qty = Number(s.quantity || 0);
+          const amount = Number(s.total_price || 0);
+          if (!byCatStats[category]) byCatStats[category] = { qty: 0, amount: 0 };
+          byCatStats[category].qty += qty;
+          byCatStats[category].amount += amount;
+          totalKg += qty;
+          totalCa += amount;
+          const clientKey = String(s.client_id || s.client_name || '').trim();
+          if (clientKey) clientsServed.add(clientKey);
+        });
+        const detailRows = Object.entries(byCatStats)
+          .sort((a, b) => b[1].amount - a[1].amount)
+          .map(([category, statsCat]) => {
+            const badgeClass = CATEGORIES.includes(category) ? category : '';
+            return `<div class="adv-stat-row">
+            <span class="adv-stat-label"><span class="badge ${escHtml(badgeClass)}" style="margin:0 4px 0 0;padding:1px 5px;font-size:9px;">${escHtml(category)}</span>${formatQty(statsCat.qty)} kg</span>
+            <span class="adv-stat-val">${formatDh(statsCat.amount)}</span>
+          </div>`;
+          })
+          .join('');
+        return `<div class="settings-option" style="margin-bottom:8px;">
+          <div class="title" style="margin-bottom:6px;">${escHtml(user.full_name || user.email || '—')} — ${escHtml(periodStart === periodEnd ? periodStart : `${periodStart} → ${periodEnd}`)}</div>
+          <div class="title" style="font-size:12px;margin-bottom:5px;">${escHtml(t('analytics_detail_by_category'))}</div>
+          ${detailRows}
+          <div class="adv-stat-row" style="margin-top:6px;"><span class="adv-stat-label">${escHtml(t('analytics_total_kg_sold'))}</span><span class="adv-stat-val">${formatQty(totalKg)} kg</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_total_ca_sold'))}</span><span class="adv-stat-val">${formatDh(totalCa)}</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_sales_lines_count'))}</span><span class="adv-stat-val">${userSales.length}</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_clients_served'))}</span><span class="adv-stat-val">${clientsServed.size}</span></div>
+        </div>`;
+      }).join('');
+
+      const commissionMonth = toMonthBounds(analyticsSellerUiState.commissionMonth);
+      const commissionUsers = analyticsSellerUiState.commissionSellerId === 'all'
+        ? allSellers
+        : allSellers.filter(u => String(u.id || '') === analyticsSellerUiState.commissionSellerId);
+      const monthEntriesByUser = {};
+      try {
+        const { data: entryRows, error: entriesError } = await supabase
+          .from('employee_balance_entries')
+          .select('employee_id, entry_type, amount')
+          .gte('created_at', `${commissionMonth.start}T00:00:00Z`)
+          .lte('created_at', `${commissionMonth.end}T23:59:59Z`);
+        if (entriesError) throw entriesError;
+        (entryRows || []).forEach((entry) => {
+          const uid = String(entry.employee_id || '');
+          if (!uid) return;
+          if (!monthEntriesByUser[uid]) monthEntriesByUser[uid] = { advances: 0, payments: 0 };
+          if (entry.entry_type === 'advance') monthEntriesByUser[uid].advances += Number(entry.amount || 0);
+          if (entry.entry_type === 'payment') monthEntriesByUser[uid].payments += Number(entry.amount || 0);
+        });
+      } catch (e) {
+        console.warn('[renderAnalytics] employee_balance_entries:', e?.message);
+      }
+
+      let totalCommissionsDue = 0;
+      const commissionHtml = commissionUsers.map((user) => {
+        const monthSales = sales.filter((s) => {
+          if (String(s.created_by || '') !== String(user.id || '')) return false;
+          const d = new Date(s.created_at);
+          return d >= new Date(`${commissionMonth.start}T00:00:00`) && d <= new Date(`${commissionMonth.end}T23:59:59.999`);
+        });
+        const result = calcCommissionForUser(user, sales, commissionMonth.start, commissionMonth.end);
+        const userEntries = monthEntriesByUser[String(user.id || '')] || { advances: 0, payments: 0 };
+        const paidAdvances = Number(userEntries.advances || 0) + Number(userEntries.payments || 0);
+        const remaining = result.totalCommission - paidAdvances;
+        totalCommissionsDue += Math.max(0, remaining);
+
+        const monthlyByCategory = {};
+        let totalKgMonth = 0;
+        let totalCaMonth = 0;
+        monthSales.forEach((s) => {
+          const category = String(s.category || '').trim() || t('wholesale_real_unknown_range');
+          const qty = Number(s.quantity || 0);
+          const amount = Number(s.total_price || 0);
+          if (!monthlyByCategory[category]) monthlyByCategory[category] = { qty: 0, amount: 0 };
+          monthlyByCategory[category].qty += qty;
+          monthlyByCategory[category].amount += amount;
+          totalKgMonth += qty;
+          totalCaMonth += amount;
+        });
+        const rows = Object.entries(monthlyByCategory)
+          .sort((a, b) => b[1].amount - a[1].amount)
+          .map(([category, catStats]) => {
+            const badgeClass = CATEGORIES.includes(category) ? category : '';
+            return `<div class="adv-stat-row">
+            <span class="adv-stat-label"><span class="badge ${escHtml(badgeClass)}" style="margin:0 4px 0 0;padding:1px 5px;font-size:9px;">${escHtml(category)}</span>${formatQty(catStats.qty)} kg</span>
+            <span class="adv-stat-val">${formatDh(catStats.amount)}</span>
+          </div>`;
+          })
+          .join('');
+        return `<div class="settings-option" style="margin-bottom:8px;">
+          <div class="title" style="margin-bottom:6px;">${escHtml(user.full_name || user.email || '—')} — ${escHtml(formatWholesaleMonthLabel(commissionMonth.month))}</div>
+          <div class="title" style="font-size:12px;margin-bottom:5px;">${escHtml(t('analytics_detail_by_category'))}</div>
+          ${rows || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
+          <div class="adv-stat-row" style="margin-top:6px;"><span class="adv-stat-label">${escHtml(t('analytics_total_kg_sold'))}</span><span class="adv-stat-val">${formatQty(totalKgMonth)} kg</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_total_ca_sold'))}</span><span class="adv-stat-val">${formatDh(totalCaMonth)}</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_commission_month'))}</span><span class="adv-stat-val" style="color:var(--color-success);">${formatDh(result.totalCommission)}</span></div>
+          <div class="adv-stat-row"><span class="adv-stat-label">${escHtml(t('analytics_paid_advances'))}</span><span class="adv-stat-val">${formatDh(paidAdvances)}</span></div>
+          <div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:4px;margin-top:4px;">
+            <span class="adv-stat-label" style="font-weight:700;">${escHtml(t('analytics_remaining_commission'))}</span>
+            <span class="adv-stat-val" style="font-weight:700;color:${remaining > 0 ? 'var(--color-error)' : 'var(--color-success)'};">${formatDh(remaining)}</span>
+          </div>
+        </div>`;
+      }).join('');
+
+      const clientMap = {};
+      sales.forEach((s) => {
+        const name = String(s.client_name || '').trim() || t('wholesale_real_unknown_client');
+        if (!clientMap[name]) clientMap[name] = { totalSold: 0, paid: 0, unpaid: 0 };
+        const amount = Number(s.total_price || 0);
+        clientMap[name].totalSold += amount;
+        if (s.paid) clientMap[name].paid += amount;
+        else clientMap[name].unpaid += amount;
+      });
+      const clientEntries = Object.entries(clientMap).map(([name, stats]) => ({ name, ...stats })).sort((a, b) => b.unpaid - a.unpaid);
+      const clientRows = clientEntries.map((entry) => `<tr>
+        <td>${escHtml(entry.name)}</td>
+        <td>${formatDh(entry.totalSold)}</td>
+        <td style="color:#148c37;">${formatDh(entry.paid)}</td>
+        <td style="${entry.unpaid > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(entry.unpaid)}</td>
+      </tr>`).join('');
+      const clientsTotal = clientEntries.reduce((acc, entry) => {
+        acc.sold += entry.totalSold;
+        acc.paid += entry.paid;
+        acc.unpaid += entry.unpaid;
+        return acc;
+      }, { sold: 0, paid: 0, unpaid: 0 });
+
+      const wholesaleGroups = buildWholesaleGroups();
+      const supplierRows = wholesaleGroups.map((group) => `<tr>
+        <td>${escHtml(formatWholesaleMonthLabel(group.month))}</td>
+        <td>${escHtml(group.supplier)}</td>
+        <td>${formatDh(Number(group.totalNet || 0))}</td>
+        <td style="color:#148c37;">${formatDh(Number(group.totalPaid || 0))}</td>
+        <td style="${Number(group.remaining || 0) > 0 ? 'color:var(--color-error);font-weight:700;' : ''}">${formatDh(Number(group.remaining || 0))}</td>
+        <td><strong>${formatDh(Math.max(0, Number(group.remaining || 0)))}</strong></td>
+      </tr>`).join('');
+
       content.innerHTML = `
-        <h4 style="margin:0 0 8px;">${escHtml(t('wholesale_real_profit_section_title'))}</h4>
-        <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">${escHtml(t('wholesale_real_based_on_regulated_monthly_costs'))}</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px;">
-          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_revenue'))}</span><span class="pchip-val">${formatDh(totalRevenue)}</span></div>
-          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_revenue_calculable'))}</span><span class="pchip-val">${formatDh(totalRevenue - totalMissingRevenue)}</span></div>
-          ${totalMissingRevenue > 0 ? `<div class="preview-chip"><span class="pchip-label">⚠️ ${escHtml(t('wholesale_real_revenue_missing_cost'))}</span><span class="pchip-val" style="color:#cc7700">${formatDh(totalMissingRevenue)}</span></div>` : ''}
-          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_purchase_cost'))}</span><span class="pchip-val">${formatDh(totalCost)}</span></div>
-          <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_profit_calculable'))}</span><span class="pchip-val ${totalProfitClass}">${formatDh(totalProfit)}</span></div>
-          <div class="preview-chip"><span class="pchip-label">${escHtml(costModeText)}</span><span class="pchip-val">${formatDh(displayedCostAmount)}</span></div>
+        <div class="settings-option" style="margin-bottom:10px;">
+          <div class="title">${escHtml(t('analytics_stats_section'))}</div>
+          <div style="margin-bottom:8px;font-size:11px;color:var(--color-text-muted);">${escHtml(t('wholesale_real_based_on_regulated_monthly_costs'))}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:12px;">
+            <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_revenue'))}</span><span class="pchip-val">${formatDh(totalRevenue)}</span></div>
+            <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_revenue_calculable'))}</span><span class="pchip-val">${formatDh(totalRevenue - totalMissingRevenue)}</span></div>
+            ${totalMissingRevenue > 0 ? `<div class="preview-chip"><span class="pchip-label">⚠️ ${escHtml(t('wholesale_real_revenue_missing_cost'))}</span><span class="pchip-val" style="color:#cc7700">${formatDh(totalMissingRevenue)}</span></div>` : ''}
+            <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_purchase_cost'))}</span><span class="pchip-val">${formatDh(totalCost)}</span></div>
+            <div class="preview-chip"><span class="pchip-label">${escHtml(t('wholesale_real_profit_calculable'))}</span><span class="pchip-val ${totalProfitClass}">${formatDh(totalProfit)}</span></div>
+            <div class="preview-chip"><span class="pchip-label">${escHtml(costModeText)}</span><span class="pchip-val">${formatDh(displayedCostAmount)}</span></div>
+          </div>
+          ${totalMissingQty > 0 ? `<div class="muted" style="margin-bottom:8px;font-size:12px;">⚠️ ${escHtml(t('wholesale_real_data_incomplete'))} · ${escHtml(t('wholesale_real_cost_missing'))}: ${formatQty(totalMissingQty)} kg · ${formatDh(totalMissingRevenue)}</div>` : ''}
+          <h4 style="margin:10px 0 6px;">${escHtml(t('wholesale_real_profit_by_range'))}</h4>
+          ${renderProfitTableRows(byRange, { colTitle: t('wholesale_real_profit_by_range') })}
+          <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_client'))}</h4>
+          ${renderProfitTableRows(byClient, { colTitle: t('wholesale_real_profit_by_client') })}
+          <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_commercial'))}</h4>
+          ${renderProfitTableRows(byCommercial, { colTitle: t('wholesale_real_profit_by_commercial') })}
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+            <div class="preview-chip" style="flex:1;"><span class="pchip-label">✅ ${escHtml(t('analytics_balance_paid'))}</span><span class="pchip-val" style="color:#148c37">${formatDh(paidAmount)}</span></div>
+            <div class="preview-chip" style="flex:1;"><span class="pchip-label">❌ ${escHtml(t('analytics_balance_remaining'))}</span><span class="pchip-val" style="color:#cc2d2d">${formatDh(unpaidAmount)}</span></div>
+            <div class="preview-chip" style="flex:1;"><span class="pchip-label">${escHtml(t('wholesale_real_estimation'))}</span><span class="pchip-val">${formatDh(totalEstimatedCost)}</span></div>
+          </div>
         </div>
-        ${totalMissingQty > 0 ? `<div class="muted" style="margin-bottom:8px;font-size:12px;">⚠️ ${escHtml(t('wholesale_real_data_incomplete'))} · ${escHtml(t('wholesale_real_cost_missing'))}: ${formatQty(totalMissingQty)} kg · ${formatDh(totalMissingRevenue)}</div>` : ''}
-        <h4 style="margin:10px 0 6px;">${escHtml(t('wholesale_real_profit_by_range'))}</h4>
-        ${renderProfitTableRows(byRange, { colTitle: t('wholesale_real_profit_by_range') })}
-        <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_client'))}</h4>
-        ${renderProfitTableRows(byClient, { colTitle: t('wholesale_real_profit_by_client') })}
-        <h4 style="margin:14px 0 6px;">${escHtml(t('wholesale_real_profit_by_commercial'))}</h4>
-        ${renderProfitTableRows(byCommercial, { colTitle: t('wholesale_real_profit_by_commercial') })}
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-          <div class="preview-chip" style="flex:1;"><span class="pchip-label">✅ Encaissé</span><span class="pchip-val" style="color:#148c37">${formatDh(paidAmount)}</span></div>
-          <div class="preview-chip" style="flex:1;"><span class="pchip-label">❌ En attente</span><span class="pchip-val" style="color:#cc2d2d">${formatDh(unpaidAmount)}</span></div>
-          <div class="preview-chip" style="flex:1;"><span class="pchip-label">${escHtml(t('wholesale_real_estimation'))}</span><span class="pchip-val">${formatDh(totalEstimatedCost)}</span></div>
+
+        <div class="settings-option" style="margin-bottom:10px;">
+          <div class="title">${escHtml(t('analytics_seller_stats_title'))}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px;">
+            <div>
+              <label style="font-size:11px;">${escHtml(t('analytics_period'))}</label>
+              <select onchange="setAnalyticsSellerPeriodType(this.value)">
+                <option value="day" ${analyticsSellerUiState.periodType === 'day' ? 'selected' : ''}>${escHtml(t('analytics_day'))}</option>
+                <option value="week" ${analyticsSellerUiState.periodType === 'week' ? 'selected' : ''}>${escHtml(t('analytics_week'))}</option>
+                <option value="month" ${analyticsSellerUiState.periodType === 'month' ? 'selected' : ''}>${escHtml(t('analytics_month'))}</option>
+              </select>
+            </div>
+            ${analyticsSellerUiState.periodType === 'month'
+              ? `<div><label style="font-size:11px;">${escHtml(t('analytics_month'))}</label><input type="month" value="${escHtml(analyticsSellerUiState.month)}" onchange="setAnalyticsSellerMonth(this.value)" /></div>`
+              : `<div><label style="font-size:11px;">${escHtml(t('analytics_date'))}</label><input type="date" value="${escHtml(analyticsSellerUiState.date)}" onchange="setAnalyticsSellerDate(this.value)" /></div>`
+            }
+            <div>
+              <label style="font-size:11px;">${escHtml(t('analytics_seller'))}</label>
+              <select onchange="setAnalyticsSellerId(this.value)">${sellerOptions}</select>
+            </div>
+          </div>
+          ${sellerStatsHtml || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
+        </div>
+
+        <div class="settings-option" style="margin-bottom:10px;">
+          <div class="title">${escHtml(t('analytics_commissions_monthly_title'))}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px;">
+            <div>
+              <label style="font-size:11px;">${escHtml(t('analytics_month'))}</label>
+              <input type="month" value="${escHtml(analyticsSellerUiState.commissionMonth)}" onchange="setAnalyticsCommissionMonth(this.value)" />
+            </div>
+            <div>
+              <label style="font-size:11px;">${escHtml(t('analytics_seller'))}</label>
+              <select onchange="setAnalyticsCommissionSellerId(this.value)">${sellerOptionsCommission}</select>
+            </div>
+          </div>
+          ${commissionHtml || `<div class="muted" style="font-size:12px;">${escHtml(t('analytics_no_sales_period'))}</div>`}
+          <div class="adv-stat-row" style="border-top:1px solid var(--color-border);padding-top:6px;margin-top:8px;">
+            <span class="adv-stat-label" style="font-weight:700;">${escHtml(t('analytics_total_commissions_due'))}</span>
+            <span class="adv-stat-val" style="font-weight:700;color:var(--color-error);">${formatDh(totalCommissionsDue)}</span>
+          </div>
+        </div>
+
+        <div class="settings-option">
+          <div class="title">${escHtml(t('analytics_balances_section'))}</div>
+          <h4 style="margin:10px 0 6px;">${escHtml(t('analytics_client_balances_title'))}</h4>
+          ${clientEntries.length === 0
+            ? `<div class="empty-state">${escHtml(t('analytics_no_sales_period'))}</div>`
+            : `<table class="analytics-table">
+                <thead><tr><th>${escHtml(t('analytics_balance_client'))}</th><th>${escHtml(t('analytics_balance_total_ca'))}</th><th>${escHtml(t('analytics_balance_paid'))}</th><th>${escHtml(t('analytics_balance_remaining'))}</th></tr></thead>
+                <tbody>
+                  ${clientRows}
+                  <tr class="analytics-total-row">
+                    <td>${escHtml(t('analytics_total_label'))}</td>
+                    <td>${formatDh(clientsTotal.sold)}</td>
+                    <td style="color:#148c37">${formatDh(clientsTotal.paid)}</td>
+                    <td style="color:var(--color-error);font-weight:700;">${formatDh(clientsTotal.unpaid)}</td>
+                  </tr>
+                </tbody>
+              </table>`
+          }
+          <h4 style="margin:14px 0 6px;">${escHtml(t('analytics_supplier_balances_title'))}</h4>
+          ${wholesaleGroups.length === 0
+            ? `<div class="empty-state">${escHtml(t('analytics_no_supplier_balance'))}</div>`
+            : `<table class="analytics-table">
+                <thead><tr><th>${escHtml(t('analytics_balance_month'))}</th><th>${escHtml(t('analytics_balance_supplier'))}</th><th>${escHtml(t('analytics_balance_net'))}</th><th>${escHtml(t('analytics_balance_paid'))}</th><th>${escHtml(t('analytics_balance_remaining'))}</th><th>${escHtml(t('analytics_balance_suggested_payment'))}</th></tr></thead>
+                <tbody>${supplierRows}</tbody>
+              </table>`
+          }
         </div>
       `;
     }
