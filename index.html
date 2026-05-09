@@ -4402,7 +4402,9 @@
       if (receiptFile) {
         if (uploadStatus) { uploadStatus.textContent = t('fuel_photo_uploading'); }
         try {
-          const ext = receiptFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+          const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'];
+          const rawExt = (receiptFile.name.split('.').pop() || '').toLowerCase();
+          const ext = ALLOWED_EXTS.includes(rawExt) ? rawExt : 'jpg';
           const now = new Date();
           const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
           const ts = Date.now();
@@ -4415,7 +4417,8 @@
           receiptPhotoPath = path;
           if (uploadStatus) { uploadStatus.textContent = t('fuel_photo_uploaded'); }
         } catch (e) {
-          if (uploadStatus) { uploadStatus.textContent = `${t('fuel_photo_error')}: ${shortSupabaseError(e, 80)}`; }
+          if (uploadStatus) { uploadStatus.textContent = t('fuel_photo_error'); }
+          console.warn('[saveFuelDeclaration] photo upload failed:', e?.message);
           // Non-blocking: proceed with declaration without photo
         }
       }
