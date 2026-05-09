@@ -61,7 +61,11 @@ function statusLabel(lang, status) {
 function formatItems(items = []) {
   if (!Array.isArray(items) || items.length === 0) return '';
   return items
-    .map((it) => `- ${it?.category || '—'} : ${Number(it?.quantity ?? 0) || 0}`)
+    .map((it) => {
+      const rawQty = Number(it?.quantity ?? 0);
+      const qty = Number.isFinite(rawQty) ? Math.round(rawQty * 100) / 100 : 0;
+      return `- ${it?.category || '—'} : ${qty}`;
+    })
     .join('\n');
 }
 
@@ -158,7 +162,7 @@ module.exports = async function handler(req, res) {
     const { type, title, message, url, employee_id, user_ids, payload } = body;
 
     if (!type) {
-      return res.status(400).json({ error: 'Champ obligatoire : type' });
+      return res.status(400).json({ error: 'Missing required field: type' });
     }
 
     let targetUserIds = [];

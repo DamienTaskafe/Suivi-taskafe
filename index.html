@@ -4193,7 +4193,8 @@
       if (diffMin < 60) return t('notif_min_ago').replace('{count}', String(diffMin));
       const diffH = Math.floor(diffMin / 60);
       if (diffH < 24)   return t('notif_hour_ago').replace('{count}', String(diffH));
-      const locale = _currentLang === 'ar' ? 'ar-MA' : 'fr-FR';
+      const localeMap = { fr: 'fr-FR', ar: 'ar-MA', darija: 'fr-MA' };
+      const locale = localeMap[_currentLang] || 'fr-FR';
       return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
     }
 
