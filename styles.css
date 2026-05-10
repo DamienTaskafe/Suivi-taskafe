@@ -855,13 +855,13 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 12px 10px 14px;
-      background: rgba(0,0,0,0.03);
-      border-bottom: 1px solid rgba(0,0,0,0.06);
+      padding: 11px 12px 11px 14px;
+      background: rgba(0,0,0,0.06);
+      border-bottom: 2px solid rgba(0,0,0,0.10);
     }
     body.dark .client-card-header {
-      background: rgba(255,255,255,0.04);
-      border-bottom-color: rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.08);
+      border-bottom-color: rgba(255,255,255,0.12);
     }
     /* Menu-wrap inside client-card-header uses flex alignment, not absolute */
     .client-card-header .menu-wrap { position: static; flex-shrink: 0; }
@@ -890,8 +890,9 @@
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.35px;
-      color: var(--color-text-muted);
-      margin-top: 2px;
+      color: var(--color-primary);
+      margin-top: 4px;
+      opacity: 0.85;
     }
 
     .client-info-row {
@@ -1099,12 +1100,18 @@
     }
     .ncp-body { padding: var(--spacing-lg); }
     .client-form-section-title {
-      margin: 2px 0 8px;
+      margin: 14px 0 8px;
       font-size: 11px;
       font-weight: 800;
-      color: var(--color-text-muted);
+      color: var(--color-primary);
       text-transform: uppercase;
       letter-spacing: 0.45px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      padding-top: 10px;
+      opacity: 0.9;
+    }
+    body.dark .client-form-section-title {
+      border-top-color: rgba(255,255,255,0.10);
     }
     /* Single-field rows */
     .ncp-field { margin-bottom: var(--spacing-sm); }
@@ -1520,6 +1527,25 @@
       border-color: transparent;
       box-shadow: none;
     }
+
+    /* ── Prix par gamme: section wrapper ── */
+    .client-prix-section {
+      margin-top: 16px;
+      padding: 12px 14px 10px;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: var(--radius-md);
+    }
+    body.dark .client-prix-section {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.10);
+    }
+    .client-prix-section h4 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    html[dir="rtl"] .client-prix-section { text-align: right; }
 
     /* ── Prix par gamme: 2-row grid layout ── */
     #clients .price-scroll-row,

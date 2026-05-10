@@ -280,7 +280,7 @@
 
             <div class="ncp-field">
               <label for="clientPhone" data-i18n="client_telephone">📞 Téléphone</label>
-              <input id="clientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" data-i18n-placeholder="client_telephone_placeholder" />
+              <input id="clientPhone" type="tel" placeholder="Saisir téléphone" data-i18n-placeholder="client_telephone_placeholder" />
             </div>
 
             <div class="client-form-section-title" data-i18n="client_delivery_section">🚚 Livraison</div>
@@ -290,14 +290,16 @@
               <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()" data-i18n="client_gpsActuel">📍 Utiliser ma position pour la livraison</button>
               <div class="gps-inline-actions">
                 <button type="button" class="gps-btn" id="openGpsMapBtn" onclick="openClientDeliveryMaps('create')" data-i18n="client_open_maps_delivery" disabled>🗺️ Ouvrir Maps</button>
-                <button type="button" class="gps-btn" id="shareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('create')" data-i18n="client_share_whatsapp_delivery" disabled>💬 Partager WhatsApp</button>
+                <button type="button" class="gps-btn" id="shareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('create')" data-i18n="client_share_whatsapp_delivery" disabled>📍 GPS WhatsApp</button>
               </div>
               <div id="gpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
             </div>
 
-            <h4 data-i18n="client_prix_custom">💰 Prix personnalisés par gamme</h4>
-            <div class="price-scroll-row"></div>
-            <div class="muted" data-i18n="client_prix_hint">Laisse vide pour utiliser les prix standard.</div>
+            <div id="clientPrixSection" class="client-prix-section">
+              <h4 data-i18n="client_prix_custom">💰 Prix personnalisés par gamme</h4>
+              <div class="price-scroll-row"></div>
+              <div class="muted" data-i18n="client_prix_hint">Laisse vide pour utiliser les prix standard.</div>
+            </div>
             <button id="addClientBtn" onclick="addClient()" data-i18n="client_creer">✅ Créer client</button>
           </div>
         </div>
@@ -605,7 +607,7 @@
       </div>
       <div class="ncp-field">
         <label for="editClientPhone" data-i18n="client_telephone">📞 Téléphone</label>
-        <input id="editClientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" data-i18n-placeholder="client_telephone_placeholder" />
+        <input id="editClientPhone" type="tel" placeholder="Saisir téléphone" data-i18n-placeholder="client_telephone_placeholder" />
       </div>
       <div class="client-form-section-title" data-i18n="client_delivery_section">🚚 Livraison</div>
       <div class="ncp-field">
@@ -613,7 +615,7 @@
         <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()" data-i18n="client_gps_update">📍 Mettre à jour le point GPS de livraison (ma position)</button>
         <div class="gps-inline-actions">
           <button type="button" class="gps-btn" id="editOpenGpsMapBtn" onclick="openClientDeliveryMaps('edit')" data-i18n="client_open_maps_delivery" disabled>🗺️ Ouvrir Maps</button>
-          <button type="button" class="gps-btn" id="editShareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('edit')" data-i18n="client_share_whatsapp_delivery" disabled>💬 Partager WhatsApp</button>
+          <button type="button" class="gps-btn" id="editShareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('edit')" data-i18n="client_share_whatsapp_delivery" disabled>📍 GPS WhatsApp</button>
         </div>
         <div id="editGpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
       </div>
@@ -626,9 +628,11 @@
           <option value="lost" data-i18n="client_perdu">Perdu</option>
         </select>
       </div>
-      <h4 data-i18n="client_prix_custom">💰 Prix personnalisés par gamme</h4>
-      <div class="price-scroll-row"></div>
-      <div class="muted" data-i18n="client_prix_hint">Laisse vide pour utiliser les prix standard.</div>
+      <div id="editClientPrixSection" class="client-prix-section">
+        <h4 data-i18n="client_prix_custom">💰 Prix personnalisés par gamme</h4>
+        <div class="price-scroll-row"></div>
+        <div class="muted" data-i18n="client_prix_hint">Laisse vide pour utiliser les prix standard.</div>
+      </div>
       <button id="saveEditClientBtn" onclick="saveEditClient()" data-i18n="sale_enregistrer">💾 Enregistrer</button>
     </div>
   </div>
@@ -1278,7 +1282,7 @@
         <option value="">—</option>
       </select>
       <label for="fuelVehicleRegistrationInput" style="margin-top:8px;" data-i18n="fuel_registration_optional">Immatriculation (optionnel)</label>
-      <input id="fuelVehicleRegistrationInput" type="text" placeholder="AA-123-BB" />
+      <input id="fuelVehicleRegistrationInput" type="text" placeholder="N° plaque" />
       <label for="fuelCurrentKmInput" style="margin-top:8px;" data-i18n="fuel_current_km">Kilométrage actuel</label>
       <input id="fuelCurrentKmInput" type="number" min="0" step="1" placeholder="0" />
       <label for="fuelLitersInput" style="margin-top:8px;" data-i18n="fuel_liters">Litres</label>
@@ -1310,19 +1314,19 @@
       </div>
       <input type="hidden" id="fuelVehicleEditId" />
       <label for="fuelVehicleRegistration" data-i18n="fuel_vehicle">Véhicule / immatriculation</label>
-      <input id="fuelVehicleRegistration" type="text" placeholder="AA-123-BB" />
+      <input id="fuelVehicleRegistration" type="text" placeholder="N° plaque" />
       <label for="fuelVehicleEmployee" style="margin-top:8px;" data-i18n="fuel_assigned_employee">Employé affecté</label>
       <select id="fuelVehicleEmployee"></select>
       <label for="fuelVehicleNormalConso" style="margin-top:8px;" data-i18n="fuel_normal_consumption">Consommation normale (L/100 km)</label>
-      <input id="fuelVehicleNormalConso" type="number" min="0" step="0.01" placeholder="5.5" />
+      <input id="fuelVehicleNormalConso" type="number" min="0" step="0.01" placeholder="L/100 km" />
       <label for="fuelVehicleTolerance" style="margin-top:8px;" data-i18n="fuel_tolerance">Tolérance (L/100 km)</label>
-      <input id="fuelVehicleTolerance" type="number" min="0" step="0.01" placeholder="0.5" />
+      <input id="fuelVehicleTolerance" type="number" min="0" step="0.01" placeholder="L/100 km" />
       <label for="fuelVehicleInterval" style="margin-top:8px;" data-i18n="fuel_maintenance_interval">Intervalle entretien (km)</label>
-      <input id="fuelVehicleInterval" type="number" min="0" step="1" placeholder="10000" />
+      <input id="fuelVehicleInterval" type="number" min="0" step="1" placeholder="en km" />
       <label for="fuelVehicleLastMaintenance" style="margin-top:8px;" data-i18n="fuel_last_maintenance_km">Dernier entretien (km)</label>
-      <input id="fuelVehicleLastMaintenance" type="number" min="0" step="1" placeholder="80000" />
+      <input id="fuelVehicleLastMaintenance" type="number" min="0" step="1" placeholder="en km" />
       <label for="fuelVehicleCurrentKm" style="margin-top:8px;" data-i18n="fuel_current_km">Kilométrage actuel</label>
-      <input id="fuelVehicleCurrentKm" type="number" min="0" step="1" placeholder="0" />
+      <input id="fuelVehicleCurrentKm" type="number" min="0" step="1" placeholder="en km" />
       <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelVehicle()">💾 <span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
       <div id="fuelVehicleStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
@@ -1427,8 +1431,8 @@
         menu_notificationsReglages: '🔔 Notifications',
         analytics_stats_section: '📊 Statistiques',
         analytics_balances_section: '💰 Balances',
-        analytics_seller_stats_title: '👤 Stats vendeurs',
-        analytics_commissions_monthly_title: '💰 Paiement commissions vendeurs',
+        analytics_seller_stats_title: 'Stats vendeurs',
+        analytics_commissions_monthly_title: 'Paiement commissions vendeurs',
         analytics_period: 'Période',
         analytics_day: 'Jour',
         analytics_week: 'Semaine',
@@ -1446,8 +1450,8 @@
         analytics_paid_advances: 'Déjà payé / avances',
         analytics_remaining_commission: 'Reste commission à payer',
         analytics_total_commissions_due: 'Total commissions à payer',
-        analytics_client_balances_title: '💳 Balances clients',
-        analytics_supplier_balances_title: '🏭 Balances fournisseurs',
+        analytics_client_balances_title: 'Balances clients',
+        analytics_supplier_balances_title: 'Balances fournisseurs',
         analytics_balance_client: 'Client',
         analytics_balance_total_ca: 'CA total',
         analytics_balance_paid: 'Encaissé',
@@ -1461,14 +1465,14 @@
         analytics_commission_entries_load_warn: '⚠️ Impossible de charger les avances/paiements. Les restes commission peuvent être incomplets.',
         analytics_back: '← Retour',
         analytics_choose_section: 'Choisir une rubrique',
-        analytics_sales_stats: '📊 Statistiques ventes',
+        analytics_sales_stats: 'Statistiques ventes',
         analytics_sales_stats_desc: 'Voir les ventes et performances',
         analytics_seller_stats_desc: 'Suivre les vendeurs par période',
         analytics_commissions_desc: 'Préparer le paiement mensuel',
         analytics_client_balances_desc: 'Suivre les restes clients',
-        analytics_supplier_purchases: '🏭 Fournisseurs / achats',
+        analytics_supplier_purchases: 'Fournisseurs / achats',
         analytics_supplier_desc: 'Suivre achats et dettes fournisseurs',
-        analytics_company_profit: '📈 Bénéfice entreprise',
+        analytics_company_profit: 'Bénéfice entreprise',
         analytics_company_profit_desc: 'Analyser bénéfice réel',
         sale_title: '💵 Nouvelle vente',
         sale_selectClient: 'Sélectionner un client',
@@ -1501,7 +1505,7 @@
         client_nom: 'Nom du client',
         client_nom_placeholder: 'Nom du client',
         client_telephone: '📞 Téléphone',
-        client_telephone_placeholder: 'Ex : 06 12 34 56 78',
+        client_telephone_placeholder: 'Saisir téléphone',
         client_adresse: 'Adresse (facturation)',
         client_nom_voie: 'Nom de voie',
         client_ville: 'Ville',
@@ -1539,8 +1543,7 @@
         client_billing_section: '🧾 Infos client / facturation',
         client_delivery_section: '🚚 Livraison',
         client_open_maps_delivery: '🗺️ Ouvrir Maps',
-        client_share_whatsapp_delivery: '💬 Partager WhatsApp',
-        client_share_missing_gps: 'Impossible de partager : aucun point GPS de livraison disponible.',
+        client_share_whatsapp_delivery: '📍 GPS WhatsApp',
         client_maps_missing_gps: 'Impossible d’ouvrir Maps : aucun point GPS de livraison disponible.',
         client_wa_delivery_intro_line: 'Voici le point de livraison de {client}',
         client_wa_phone_label: 'Téléphone',
@@ -1920,8 +1923,8 @@
         menu_notificationsReglages: '🔔 الإشعارات',
         analytics_stats_section: '📊 الإحصائيات',
         analytics_balances_section: '💰 الأرصدة',
-        analytics_seller_stats_title: '👤 إحصائيات البائعين',
-        analytics_commissions_monthly_title: '💰 دفع عمولات البائعين',
+        analytics_seller_stats_title: 'إحصائيات البائعين',
+        analytics_commissions_monthly_title: 'دفع عمولات البائعين',
         analytics_period: 'الفترة',
         analytics_day: 'اليوم',
         analytics_week: 'الأسبوع',
@@ -1939,8 +1942,8 @@
         analytics_paid_advances: 'مدفوع سابقاً / سلفات',
         analytics_remaining_commission: 'باقي العمولة للدفع',
         analytics_total_commissions_due: 'إجمالي العمولات المستحقة',
-        analytics_client_balances_title: '💳 أرصدة العملاء',
-        analytics_supplier_balances_title: '🏭 أرصدة الموردين',
+        analytics_client_balances_title: 'أرصدة العملاء',
+        analytics_supplier_balances_title: 'أرصدة الموردين',
         analytics_balance_client: 'العميل',
         analytics_balance_total_ca: 'إجمالي رقم المعاملات',
         analytics_balance_paid: 'المقبوض',
@@ -1954,14 +1957,14 @@
         analytics_commission_entries_load_warn: '⚠️ تعذر تحميل السلفات/المدفوعات. قد تكون مبالغ العمولة المتبقية غير مكتملة.',
         analytics_back: '→ رجوع',
         analytics_choose_section: 'اختر قسماً',
-        analytics_sales_stats: '📊 إحصائيات المبيعات',
+        analytics_sales_stats: 'إحصائيات المبيعات',
         analytics_sales_stats_desc: 'عرض المبيعات والأداء',
         analytics_seller_stats_desc: 'متابعة البائعين حسب الفترة',
         analytics_commissions_desc: 'تحضير الدفع الشهري',
         analytics_client_balances_desc: 'متابعة المبالغ المتبقية للعملاء',
-        analytics_supplier_purchases: '🏭 الموردون / المشتريات',
+        analytics_supplier_purchases: 'الموردون / المشتريات',
         analytics_supplier_desc: 'متابعة المشتريات وديون الموردين',
-        analytics_company_profit: '📈 أرباح الشركة',
+        analytics_company_profit: 'أرباح الشركة',
         analytics_company_profit_desc: 'تحليل الربح الحقيقي',
         sale_title: '💵 بيع جديد',
         sale_selectClient: 'اختر زبوناً',
@@ -1994,8 +1997,7 @@
         client_nom: 'اسم الزبون',
         client_nom_placeholder: 'اسم الزبون',
         client_telephone: '📞 الهاتف',
-        client_telephone_placeholder: '06 xx xx xx xx',
-        client_adresse: 'عنوان الفوترة',
+        client_telephone_placeholder: 'أدخل الهاتف',
         client_nom_voie: 'اسم الشارع',
         client_ville: 'المدينة',
         client_ville_placeholder: 'المدينة (بحث…)',
@@ -2032,7 +2034,7 @@
         client_billing_section: '🧾 معلومات الزبون / الفوترة',
         client_delivery_section: '🚚 التوصيل',
         client_open_maps_delivery: '🗺️ فتح الخرائط',
-        client_share_whatsapp_delivery: '💬 مشاركة واتساب',
+        client_share_whatsapp_delivery: '📍 GPS واتساب',
         client_share_missing_gps: 'تعذر المشاركة: لا توجد نقطة GPS للتوصيل.',
         client_maps_missing_gps: 'تعذر فتح الخرائط: لا توجد نقطة GPS للتوصيل.',
         client_wa_delivery_intro_line: 'هذه نقطة التوصيل الخاصة بـ {client}',
@@ -2413,8 +2415,8 @@
         menu_notificationsReglages: '🔔 Notifications',
         analytics_stats_section: '📊 Statistiques',
         analytics_balances_section: '💰 Balances',
-        analytics_seller_stats_title: '👤 Stats vendeurs',
-        analytics_commissions_monthly_title: '💰 Khlass commissions vendeurs',
+        analytics_seller_stats_title: 'Stats vendeurs',
+        analytics_commissions_monthly_title: 'Khlass commissions vendeurs',
         analytics_period: 'Période',
         analytics_day: 'Nhar',
         analytics_week: 'Simana',
@@ -2432,8 +2434,8 @@
         analytics_paid_advances: 'Mkhalles / avances',
         analytics_remaining_commission: 'Baqi commission tkheless',
         analytics_total_commissions_due: 'Total commissions khas tkhless',
-        analytics_client_balances_title: '💳 Balances clients',
-        analytics_supplier_balances_title: '🏭 Balances fournisseurs',
+        analytics_client_balances_title: 'Balances clients',
+        analytics_supplier_balances_title: 'Balances fournisseurs',
         analytics_balance_client: 'Client',
         analytics_balance_total_ca: 'CA total',
         analytics_balance_paid: 'Mkhalles',
@@ -2447,14 +2449,14 @@
         analytics_commission_entries_load_warn: '⚠️ Ma qdrnach njibou avances/paiements. B9a commission y9dr ykoun naqess.',
         analytics_back: '← Rje3',
         analytics_choose_section: 'Khtar rubrique',
-        analytics_sales_stats: '📊 Stats ventes',
+        analytics_sales_stats: 'Stats ventes',
         analytics_sales_stats_desc: 'Chuf ventes w performance',
         analytics_seller_stats_desc: 'Tbi3 vendeurs 7asab période',
         analytics_commissions_desc: 'Thadir dfa3 dyal chhar',
         analytics_client_balances_desc: 'Tbi3 lbaqi dyal clients',
-        analytics_supplier_purchases: '🏭 Fournisseurs / achats',
+        analytics_supplier_purchases: 'Fournisseurs / achats',
         analytics_supplier_desc: 'Tbi3 achats w dioun fournisseurs',
-        analytics_company_profit: '📈 Rbe7 sharika',
+        analytics_company_profit: 'Rbe7 sharika',
         analytics_company_profit_desc: 'Analize rbe7 el 7qi9i',
         sale_title: '💵 Tbi3a jdida',
         sale_selectClient: 'Khtar client',
@@ -2487,8 +2489,7 @@
         client_nom: 'Smiyat client',
         client_nom_placeholder: 'Smiyat client',
         client_telephone: '📞 Telephone',
-        client_telephone_placeholder: '06 xx xx xx xx',
-        client_adresse: 'Adresse (facturation)',
+        client_telephone_placeholder: 'Saisir téléphone',
         client_nom_voie: 'Smiyat zzanka',
         client_ville: 'Mdina',
         client_ville_placeholder: 'Mdina (qelleb…)',
@@ -2525,7 +2526,7 @@
         client_billing_section: '🧾 Infos client / facturation',
         client_delivery_section: '🚚 Livraison',
         client_open_maps_delivery: '🗺️ 7ell Maps',
-        client_share_whatsapp_delivery: '💬 Partaji WhatsApp',
+        client_share_whatsapp_delivery: '📍 GPS WhatsApp',
         client_share_missing_gps: 'Mymkench tpartaji: ma kayn ta point GPS dyal livraison.',
         client_maps_missing_gps: 'Mymkench t7ell Maps: ma kayn ta point GPS dyal livraison.',
         client_wa_delivery_intro_line: 'Hada point dyal livraison dyal {client}',
@@ -3819,7 +3820,7 @@
               <div class="client-info-group">
                 <div class="client-info-group-title">${escHtml(t('client_delivery_section'))}</div>
                 ${(c.latitude != null && c.longitude != null)
-                  ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(t('client_gps'))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
+                  ? `<div class="client-info-row"><span>${escHtml(t('client_gps'))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
                   : `<div class="client-info-row client-info-empty">${escHtml(t('client_gpsNone'))}</div>`
                 }
               </div>
@@ -6830,6 +6831,8 @@
       document.getElementById('sectionFinance')?.classList.toggle('hidden', !isManagerOrAdmin());
       const hideEmployeeOnly = String(state.profile?.role || '').toLowerCase() === 'employee';
       document.getElementById('statsBalanceMenuBtn')?.classList.toggle('hidden', hideEmployeeOnly);
+      document.getElementById('clientPrixSection')?.classList.toggle('hidden', !isManagerOrAdmin());
+      document.getElementById('editClientPrixSection')?.classList.toggle('hidden', !isManagerOrAdmin());
 
       updateDarkModeBtn();
       initAccordions();
@@ -7821,14 +7824,14 @@
         phone: phone || null,
         latitude: _newClientLat,
         longitude: _newClientLng,
-        prices: {
+        prices: isManagerOrAdmin() ? {
           ORO: readCustomPrice('priceORO'),
           RIO: readCustomPrice('priceRIO'),
           ESPRESSO: readCustomPrice('priceESPRESSO'),
           CLASSIC: readCustomPrice('priceCLASSIC'),
           SANTOS: readCustomPrice('priceSANTOS'),
           SUCRE: readCustomPrice('priceSUCRE')
-        },
+        } : {},
         // Assignment: employees are auto-assigned to the client they create.
         // Managers/admins create unassigned clients (they can reassign later).
         client_status: 'prospect',
@@ -8376,6 +8379,7 @@
         }
       }
       updateDeliveryActionButtons('edit');
+      document.getElementById('editClientPrixSection')?.classList.toggle('hidden', !isManagerOrAdmin());
 
       openModal('editClientModal');
     };
@@ -8418,12 +8422,18 @@
       }
       // ─────────────────────────────────────────────────────────────────────
 
-      const prices = {};
-      CATEGORIES.forEach(cat => {
-        const el = document.getElementById('editPrice' + cat);
-        const v = el ? parseInt(el.value, 10) : null;
-        prices[cat] = (v > 0) ? v : null;
-      });
+      // Only admin/manager can modify custom prices; employees preserve existing prices
+      let prices;
+      if (isManagerOrAdmin()) {
+        prices = {};
+        CATEGORIES.forEach(cat => {
+          const el = document.getElementById('editPrice' + cat);
+          const v = el ? parseInt(el.value, 10) : null;
+          prices[cat] = (v > 0) ? v : null;
+        });
+      } else {
+        prices = existingClient?.prices || {};
+      }
 
       // Read client_status from the form (falls back to current value if field absent)
       const statusEl = document.getElementById('editClientStatus');
@@ -8823,7 +8833,7 @@
                   : `<div class="client-info-row client-info-empty">${escHtml(t('client_no_info'))}</div>`
                 }
                 ${hasGps
-                  ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(t('client_gps'))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
+                  ? `<div class="client-info-row"><span>${escHtml(t('client_gps'))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
                   : `<div class="client-info-row client-info-empty">${escHtml(t('client_gpsNone'))}</div>`
                 }
               </div>
