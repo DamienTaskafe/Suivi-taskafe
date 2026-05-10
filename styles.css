@@ -99,7 +99,6 @@
     .hidden { display: none !important; }
 
     input[type="text"],
-    input[type="tel"],
     input[type="email"],
     input[type="password"],
     input[type="number"],
@@ -1100,30 +1099,12 @@
     }
     .ncp-body { padding: var(--spacing-lg); }
     .client-form-section-title {
-      margin: 10px 0 8px;
-      padding: 8px 10px;
-      font-size: 12px;
+      margin: 2px 0 8px;
+      font-size: 11px;
       font-weight: 800;
-      color: #2d2119;
+      color: var(--color-text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border: 1px solid rgba(0,0,0,0.12);
-      border-left: 3px solid rgba(0,0,0,0.45);
-      border-radius: 10px;
-      background: rgba(0,0,0,0.04);
-    }
-    body.dark .client-form-section-title {
-      color: #efe4d4;
-      border-color: rgba(255,255,255,0.16);
-      border-left-color: rgba(255,255,255,0.55);
-      background: rgba(255,255,255,0.06);
-    }
-    .client-form-section-title-strong {
-      margin-top: 14px;
-    }
-    .client-price-section {
-      margin-top: 6px;
-      margin-bottom: 10px;
+      letter-spacing: 0.45px;
     }
     /* Single-field rows */
     .ncp-field { margin-bottom: var(--spacing-sm); }
@@ -1250,7 +1231,7 @@
     body.dark::after { background: linear-gradient(to bottom, rgba(0,0,0,0.03), rgba(0,0,0,0.08)); }
     body.dark .section-shell { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
     body.dark .card { background: rgba(30,26,22,0.98); border-color: rgba(255,255,255,0.07); }
-    body.dark input[type="text"], body.dark input[type="tel"], body.dark input[type="email"], body.dark input[type="password"], body.dark input[type="number"], body.dark input[type="date"], body.dark input[type="month"], body.dark input[type="datetime-local"], body.dark select, body.dark textarea { background: rgba(30,26,22,0.95); color: var(--color-text); border-color: rgba(255,255,255,0.1); }
+    body.dark input[type="text"], body.dark input[type="email"], body.dark input[type="password"], body.dark input[type="number"], body.dark input[type="date"], body.dark input[type="month"], body.dark input[type="datetime-local"], body.dark select, body.dark textarea { background: rgba(30,26,22,0.95); color: var(--color-text); border-color: rgba(255,255,255,0.1); }
     body.dark .accordion { background: rgba(255,255,255,0.04); }
     body.dark .menu, body.dark .header-menu { background: rgba(25,22,18,0.98); border-color: rgba(255,255,255,0.08); }
     body.dark .menu button, body.dark .header-menu button { color: var(--color-text); }
@@ -1950,7 +1931,7 @@
     html[dir="rtl"] .modal-head { direction: rtl; }
     html[dir="rtl"] .modal-head h3 { text-align: right; }
     html[dir="rtl"] label { text-align: right; display: block; }
-    html[dir="rtl"] input[type="text"], html[dir="rtl"] input[type="tel"], html[dir="rtl"] input[type="email"],
+    html[dir="rtl"] input[type="text"], html[dir="rtl"] input[type="email"],
     html[dir="rtl"] input[type="password"], html[dir="rtl"] input[type="number"],
     html[dir="rtl"] select, html[dir="rtl"] textarea { direction: rtl; text-align: right; }
     html[dir="rtl"] .ncp-header { text-align: right; }
