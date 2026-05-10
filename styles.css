@@ -866,15 +866,17 @@
     /* Menu-wrap inside client-card-header uses flex alignment, not absolute */
     .client-card-header .menu-wrap { position: static; flex-shrink: 0; }
     .client-card-name {
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 16px;
+      font-weight: 800;
       color: var(--color-text);
       flex: 1;
       min-width: 0;
+      line-height: 1.25;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    body.dark .client-card-name { color: #f7ede0; }
 
     .client-card-info {
       display: flex;
@@ -886,11 +888,11 @@
     body.dark .client-card-info { border-bottom-color: rgba(255,255,255,0.07); }
     .client-info-group { display: grid; gap: 4px; }
     .client-info-group-title {
-      font-size: 10px;
-      font-weight: 800;
+      font-size: 11px;
+      font-weight: 900;
       text-transform: uppercase;
       letter-spacing: 0.35px;
-      color: var(--color-text-muted);
+      color: var(--color-text);
       margin-top: 2px;
     }
 
@@ -1068,7 +1070,13 @@
 
     /* Clients section label for "Fiches clients" */
     .clients-list-header { margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md); display: flex; align-items: center; gap: var(--spacing-md); }
-    .clients-list-header h3 { margin: 0; }
+    .clients-list-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--color-text);
+      letter-spacing: 0.2px;
+    }
 
     /* ── Fiches clients search bar ── */
     .clients-search-bar { margin-bottom: var(--spacing-md); }
@@ -1100,9 +1108,9 @@
     .ncp-body { padding: var(--spacing-lg); }
     .client-form-section-title {
       margin: 2px 0 8px;
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--color-text-muted);
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--color-text);
       text-transform: uppercase;
       letter-spacing: 0.45px;
     }
@@ -1809,6 +1817,8 @@
       text-align: center;
       justify-content: center;
       padding: 8px 10px;
+      white-space: normal;
+      line-height: 1.25;
     }
 
     .gps-status {
@@ -1828,6 +1838,7 @@
     .client-contact-actions {
       display: flex;
       flex-wrap: wrap;
+      align-items: stretch;
       gap: 6px;
       padding: 10px 14px;
       border-bottom: 1px solid rgba(0,0,0,0.05);
@@ -1836,6 +1847,7 @@
     .client-action-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 4px;
       padding: 6px 11px;
       border-radius: 20px;
@@ -1845,7 +1857,9 @@
       background: rgba(0,0,0,0.06);
       color: var(--color-text);
       border: 1px solid rgba(0,0,0,0.10);
-      white-space: nowrap;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.25;
       transition: background 0.15s;
     }
     .client-action-btn:active,
@@ -1939,6 +1953,15 @@
     html[dir="rtl"] .auth-card { direction: rtl; }
     html[dir="rtl"] .auth-brand { direction: rtl; }
     html[dir="rtl"] .checkbox-line { direction: rtl; }
+    html[dir="rtl"] .client-card-name { text-align: right; }
+    html[dir="rtl"] .client-status-badge { margin-left: 0; margin-right: 6px; }
+    html[dir="rtl"] .client-contact-actions { direction: rtl; }
+    html[dir="rtl"] .gps-btn { text-align: right; }
+    html[dir="rtl"] .gps-inline-actions .gps-btn { text-align: center; }
+
+    @media (max-width: 520px) {
+      .gps-inline-actions { grid-template-columns: 1fr; }
+    }
 
     /* ── Stock request deep-link highlight ───────────────────────────────────── */
     @keyframes stockReqDeeplinkPulse {
