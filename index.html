@@ -8422,8 +8422,8 @@
       if (!name) return showSessionStatus('❌ Nom client obligatoire', 'error');
 
       // Capture the old name before any mutation so we can propagate a rename to sales
-      const existingClient = state.clients.find(c => c.id === clientId);
-      const oldName = existingClient?.name || null;
+      const currentClient = state.clients.find(c => c.id === clientId);
+      const oldName = currentClient?.name || null;
       const nameChanged = oldName && oldName !== name;
 
       let addrParts = [];
@@ -8443,7 +8443,7 @@
       }
       // ─────────────────────────────────────────────────────────────────────
 
-      const existingPrices = existingClient?.prices ?? (state.clients.find(c => c.id === clientId)?.prices || null);
+      const existingPrices = currentClient?.prices || null;
       const prices = canManageClientCustomPrices()
         ? CATEGORIES.reduce((acc, cat) => {
           const el = document.getElementById('editPrice' + cat);
@@ -8455,7 +8455,7 @@
 
       // Read client_status from the form (falls back to current value if field absent)
       const statusEl = document.getElementById('editClientStatus');
-      const client_status = statusEl ? statusEl.value : (state.clients.find(c => c.id === clientId)?.client_status || 'active');
+      const client_status = statusEl ? statusEl.value : (currentClient?.client_status || 'active');
 
       const origBtnText = btn ? btn.textContent : '💾 Enregistrer';
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Enregistrement…'; }
@@ -11319,10 +11319,14 @@
 
     function syncClientCustomPriceAccess() {
       const canManage = canManageClientCustomPrices();
-      document.getElementById('newClientPriceSection')?.classList.toggle('hidden', !canManage);
-      document.getElementById('editClientPriceSection')?.classList.toggle('hidden', !canManage);
+      const newSection = document.getElementById('newClientPriceSection');
+      const editSection = document.getElementById('editClientPriceSection');
+      if (newSection) newSection.classList.toggle('hidden', !canManage);
+      if (editSection) editSection.classList.toggle('hidden', !canManage);
+      const categories = (typeof CATEGORIES !== 'undefined' && Array.isArray(CATEGORIES)) ? CATEGORIES : [];
+      if (categories.length === 0) return;
       ['price', 'editPrice'].forEach(prefix => {
-        CATEGORIES.forEach(cat => {
+        categories.forEach(cat => {
           const input = document.getElementById(prefix + cat);
           if (input) {
             input.disabled = !canManage;
