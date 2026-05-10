@@ -72,6 +72,28 @@
       <circle class="ptr-arc" id="pullArc" cx="22" cy="22" r="16" transform="rotate(-90 22 22)"/>
     </svg>
   </div>
+  <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden;">
+    <symbol id="icon-whatsapp" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="11" fill="#25D366"/>
+      <path fill="#fff" d="M16.8 14.5c-.2.6-1.1 1.1-1.8 1.2-.5.1-1.1.1-3.3-.9-2.8-1.2-4.6-4.1-4.8-4.4-.2-.3-1.1-1.5-1.1-2.9 0-1.4.7-2.1 1-2.4.2-.2.5-.4.8-.4h.6c.2 0 .5-.1.8.6.2.6.8 2 .8 2.2 0 .2 0 .4-.1.6-.1.2-.2.3-.4.5-.2.2-.4.4-.2.7.1.3.7 1.1 1.4 1.8 1 .9 1.9 1.2 2.2 1.3.3.1.5.1.7-.1.2-.2.8-.9 1-1.2.2-.3.4-.2.7-.1.3.1 1.8.8 2.1 1 .3.2.5.2.5.3 0 .2 0 .9-.2 1.4Z"/>
+      <path fill="#25D366" d="M12 3.8a8.2 8.2 0 0 0-7 12.6L4 20l3.7-1a8.2 8.2 0 1 0 4.3-15.2Zm0 14.9a6.7 6.7 0 0 1-3.4-.9l-.2-.1-2.2.6.6-2.1-.1-.2A6.7 6.7 0 1 1 12 18.7Z"/>
+    </symbol>
+    <symbol id="icon-google-maps" viewBox="0 0 24 24">
+      <path fill="#34A853" d="M12 2.2c-3.7 0-6.8 3-6.8 6.8 0 4.8 6.8 12.7 6.8 12.7S18.8 13.8 18.8 9c0-3.8-3.1-6.8-6.8-6.8Z"/>
+      <path fill="#EA4335" d="M12 2.2C8.3 2.2 5.2 5.2 5.2 9c0 1.8 1 4 2.3 6.1L12 9.4V2.2Z"/>
+      <path fill="#FBBC04" d="M12 2.2v7.2l4.5 5.7c1.3-2.1 2.3-4.3 2.3-6.1 0-3.8-3.1-6.8-6.8-6.8Z"/>
+      <circle cx="12" cy="9" r="2.5" fill="#4285F4"/>
+    </symbol>
+    <symbol id="icon-waze" viewBox="0 0 24 24">
+      <path fill="#33CCFF" d="M12 3.2C6.9 3.2 3 6.9 3 11.7c0 2.4 1 4.4 2.7 5.9-.1.6-.5 1.6-1.4 2.5-.2.2-.2.4-.1.6.1.2.3.3.5.3 1.7-.1 3-.7 3.8-1.3 1 .3 2.1.5 3.3.5 5.1 0 9-3.7 9-8.5s-3.9-8.5-8.8-8.5Z"/>
+      <circle cx="9.3" cy="12" r="1.2" fill="#fff"/>
+      <circle cx="14.8" cy="12" r="1.2" fill="#fff"/>
+      <path fill="#fff" d="M8.1 14.3c.7 1.1 1.9 1.7 3.2 1.7s2.5-.6 3.2-1.7a.8.8 0 0 0-1.4-.7c-.4.6-1.1 1-1.8 1s-1.4-.4-1.8-1a.8.8 0 1 0-1.4.7Z"/>
+      <circle cx="7.2" cy="17.3" r="1.1" fill="#33CCFF"/>
+      <circle cx="10.3" cy="18.6" r="1.1" fill="#33CCFF"/>
+      <circle cx="13.5" cy="19" r="1.1" fill="#33CCFF"/>
+    </symbol>
+  </svg>
 
   <div id="authScreen" class="auth-screen">
     <div class="auth-card">
@@ -240,7 +262,7 @@
         <div class="nouveau-client-panel">
           <div class="ncp-header" data-i18n="client_nouveau">➕ Nouveau client</div>
           <div class="ncp-body">
-            <div class="client-form-section-title" data-i18n="client_billing_section">🧾 Infos client / facturation</div>
+            <div class="client-form-section-title section-rubric-title" data-i18n="client_billing_section">🧾 Infos client / facturation</div>
 
             <div class="ncp-field">
               <label for="clientName" data-i18n="client_nom">Nom du client</label>
@@ -283,15 +305,11 @@
               <input id="clientPhone" type="tel" placeholder="Saisir téléphone" data-i18n-placeholder="client_telephone_placeholder" />
             </div>
 
-            <div class="client-form-section-title" data-i18n="client_delivery_section">🚚 Livraison</div>
+            <div class="client-form-section-title section-rubric-title" data-i18n="client_delivery_section">🚚 Livraison</div>
 
             <div class="ncp-field">
               <label data-i18n="client_gps">📍 Point GPS de livraison</label>
               <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()" data-i18n="client_gpsActuel">📍 Utiliser ma position pour la livraison</button>
-              <div class="gps-inline-actions">
-                <button type="button" class="gps-btn" id="openGpsMapBtn" onclick="openClientDeliveryMaps('create')" data-i18n="client_open_maps_delivery" disabled>🗺️ Itinéraire Google Maps</button>
-                <button type="button" class="gps-btn" id="shareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('create')" data-i18n="client_share_whatsapp_delivery" disabled>💬 Partager sur WhatsApp</button>
-              </div>
               <div id="gpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
             </div>
 
@@ -314,7 +332,7 @@
       </div>
 
       <div id="stock" class="section-shell hidden">
-        <h3 style="margin-bottom:var(--spacing-lg);" data-i18n="stock_gestion">📦 Gestion du stock</h3>
+        <h3 class="section-rubric-title" style="margin-bottom:var(--spacing-lg);" data-i18n="stock_gestion">📦 Gestion du stock</h3>
         <div id="stockList"></div>
       </div>
 
@@ -570,7 +588,7 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <div class="modal-head"><h3 data-i18n="client_modifier">✏️ Modifier le client</h3><button class="close-x" onclick="closeModal('editClientModal')">✕</button></div>
       <input type="hidden" id="editClientId" />
-      <div class="client-form-section-title" data-i18n="client_billing_section">🧾 Infos client / facturation</div>
+      <div class="client-form-section-title section-rubric-title" data-i18n="client_billing_section">🧾 Infos client / facturation</div>
 
       <div class="ncp-field">
         <label for="editClientName" data-i18n="client_nom">Nom du client</label>
@@ -607,13 +625,13 @@
         <label for="editClientPhone" data-i18n="client_telephone">📞 Téléphone</label>
         <input id="editClientPhone" type="tel" placeholder="Saisir téléphone" data-i18n-placeholder="client_telephone_placeholder" />
       </div>
-      <div class="client-form-section-title" data-i18n="client_delivery_section">🚚 Livraison</div>
+      <div class="client-form-section-title section-rubric-title" data-i18n="client_delivery_section">🚚 Livraison</div>
       <div class="ncp-field">
         <label data-i18n="client_gps">📍 Point GPS de livraison</label>
         <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()" data-i18n="client_gps_update">📍 Mettre à jour le point GPS de livraison (ma position)</button>
         <div class="gps-inline-actions">
-          <button type="button" class="gps-btn" id="editOpenGpsMapBtn" onclick="openClientDeliveryMaps('edit')" data-i18n="client_open_maps_delivery" disabled>🗺️ Itinéraire Google Maps</button>
-          <button type="button" class="gps-btn" id="editShareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('edit')" data-i18n="client_share_whatsapp_delivery" disabled>💬 Partager sur WhatsApp</button>
+          <button type="button" class="gps-btn" id="editOpenGpsMapBtn" onclick="openClientDeliveryMaps('edit')" disabled><svg class="client-action-brand-icon" aria-hidden="true" focusable="false"><use href="#icon-google-maps"></use></svg><span data-i18n="client_open_maps_delivery">Itinéraire Google Maps</span></button>
+          <button type="button" class="gps-btn" id="editShareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('edit')" disabled><svg class="client-action-brand-icon" aria-hidden="true" focusable="false"><use href="#icon-whatsapp"></use></svg><span data-i18n="client_share_whatsapp_delivery">Partager sur WhatsApp</span></button>
         </div>
         <div id="editGpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
       </div>
@@ -1425,10 +1443,10 @@
         menu_depenses: '💸 Dépenses',
         menu_employes: '👥 Employés',
         menu_notificationsReglages: '🔔 Notifications',
-        analytics_stats_section: '📊 Statistiques',
-        analytics_balances_section: '💰 Balances',
-        analytics_seller_stats_title: '👤 Stats vendeurs',
-        analytics_commissions_monthly_title: '💰 Paiement commissions vendeurs',
+        analytics_stats_section: 'Statistiques',
+        analytics_balances_section: 'Balances',
+        analytics_seller_stats_title: 'Stats vendeurs',
+        analytics_commissions_monthly_title: 'Paiement commissions vendeurs',
         analytics_period: 'Période',
         analytics_day: 'Jour',
         analytics_week: 'Semaine',
@@ -1446,8 +1464,8 @@
         analytics_paid_advances: 'Déjà payé / avances',
         analytics_remaining_commission: 'Reste commission à payer',
         analytics_total_commissions_due: 'Total commissions à payer',
-        analytics_client_balances_title: '💳 Balances clients',
-        analytics_supplier_balances_title: '🏭 Balances fournisseurs',
+        analytics_client_balances_title: 'Balances clients',
+        analytics_supplier_balances_title: 'Balances fournisseurs',
         analytics_balance_client: 'Client',
         analytics_balance_total_ca: 'CA total',
         analytics_balance_paid: 'Encaissé',
@@ -1461,14 +1479,14 @@
         analytics_commission_entries_load_warn: '⚠️ Impossible de charger les avances/paiements. Les restes commission peuvent être incomplets.',
         analytics_back: '← Retour',
         analytics_choose_section: 'Choisir une rubrique',
-        analytics_sales_stats: '📊 Statistiques ventes',
+        analytics_sales_stats: 'Statistiques ventes',
         analytics_sales_stats_desc: 'Voir les ventes et performances',
         analytics_seller_stats_desc: 'Suivre les vendeurs par période',
         analytics_commissions_desc: 'Préparer le paiement mensuel',
         analytics_client_balances_desc: 'Suivre les restes clients',
-        analytics_supplier_purchases: '🏭 Fournisseurs / achats',
+        analytics_supplier_purchases: 'Fournisseurs / achats',
         analytics_supplier_desc: 'Suivre achats et dettes fournisseurs',
-        analytics_company_profit: '📈 Bénéfice entreprise',
+        analytics_company_profit: 'Bénéfice entreprise',
         analytics_company_profit_desc: 'Analyser bénéfice réel',
         sale_title: '💵 Nouvelle vente',
         sale_selectClient: 'Sélectionner un client',
@@ -1520,12 +1538,12 @@
         client_inactif: 'Inactif',
         client_perdu: 'Perdu',
         client_appeler: '📞 Appeler',
-        client_whatsapp: '💬 Appeler WhatsApp',
-        client_gmaps: '🗺️ Itinéraire Google Maps',
-        client_waze: '🧭 Itinéraire Waze',
+        client_whatsapp: 'Appeler WhatsApp',
+        client_gmaps: 'Itinéraire Google Maps',
+        client_waze: 'Itinéraire Waze',
         client_view_sheet: '👁️ Voir fiche',
         client_edit_short: '✏️ Modifier',
-        client_share_whatsapp_gps: '💬 Partager GPS sur WhatsApp',
+        client_share_whatsapp_gps: 'Partager GPS sur WhatsApp',
         client_no_info: 'Aucune information renseignée',
         client_unassigned: 'Non assigné',
         client_total_unpaid: 'Total non payé',
@@ -1535,11 +1553,12 @@
         client_all_clients: 'Tous les clients',
         client_gpsActuel: '📍 Utiliser ma position pour la livraison',
         client_gpsOk: '✅ Point GPS de livraison enregistré',
+        client_gps_captured: '✅ Point GPS enregistré',
         client_gpsNone: '📍 Aucun point GPS de livraison',
         client_billing_section: '🧾 Infos client / facturation',
         client_delivery_section: '🚚 Livraison',
-        client_open_maps_delivery: '🗺️ Itinéraire Google Maps',
-        client_share_whatsapp_delivery: '💬 Partager sur WhatsApp',
+        client_open_maps_delivery: 'Itinéraire Google Maps',
+        client_share_whatsapp_delivery: 'Partager sur WhatsApp',
         client_share_missing_gps: 'Impossible de partager : aucun point GPS de livraison disponible.',
         client_maps_missing_gps: 'Impossible d’ouvrir Maps : aucun point GPS de livraison disponible.',
         client_wa_delivery_intro_line: 'Voici le point de livraison de {client}',
@@ -1924,10 +1943,10 @@
         menu_depenses: '💸 المصاريف',
         menu_employes: '👥 الموظفون',
         menu_notificationsReglages: '🔔 الإشعارات',
-        analytics_stats_section: '📊 الإحصائيات',
-        analytics_balances_section: '💰 الأرصدة',
-        analytics_seller_stats_title: '👤 إحصائيات البائعين',
-        analytics_commissions_monthly_title: '💰 دفع عمولات البائعين',
+        analytics_stats_section: 'الإحصائيات',
+        analytics_balances_section: 'الأرصدة',
+        analytics_seller_stats_title: 'إحصائيات البائعين',
+        analytics_commissions_monthly_title: 'دفع عمولات البائعين',
         analytics_period: 'الفترة',
         analytics_day: 'اليوم',
         analytics_week: 'الأسبوع',
@@ -1945,8 +1964,8 @@
         analytics_paid_advances: 'مدفوع سابقاً / سلفات',
         analytics_remaining_commission: 'باقي العمولة للدفع',
         analytics_total_commissions_due: 'إجمالي العمولات المستحقة',
-        analytics_client_balances_title: '💳 أرصدة العملاء',
-        analytics_supplier_balances_title: '🏭 أرصدة الموردين',
+        analytics_client_balances_title: 'أرصدة العملاء',
+        analytics_supplier_balances_title: 'أرصدة الموردين',
         analytics_balance_client: 'العميل',
         analytics_balance_total_ca: 'إجمالي رقم المعاملات',
         analytics_balance_paid: 'المقبوض',
@@ -1960,14 +1979,14 @@
         analytics_commission_entries_load_warn: '⚠️ تعذر تحميل السلفات/المدفوعات. قد تكون مبالغ العمولة المتبقية غير مكتملة.',
         analytics_back: '→ رجوع',
         analytics_choose_section: 'اختر قسماً',
-        analytics_sales_stats: '📊 إحصائيات المبيعات',
+        analytics_sales_stats: 'إحصائيات المبيعات',
         analytics_sales_stats_desc: 'عرض المبيعات والأداء',
         analytics_seller_stats_desc: 'متابعة البائعين حسب الفترة',
         analytics_commissions_desc: 'تحضير الدفع الشهري',
         analytics_client_balances_desc: 'متابعة المبالغ المتبقية للعملاء',
-        analytics_supplier_purchases: '🏭 الموردون / المشتريات',
+        analytics_supplier_purchases: 'الموردون / المشتريات',
         analytics_supplier_desc: 'متابعة المشتريات وديون الموردين',
-        analytics_company_profit: '📈 أرباح الشركة',
+        analytics_company_profit: 'أرباح الشركة',
         analytics_company_profit_desc: 'تحليل الربح الحقيقي',
         sale_title: '💵 بيع جديد',
         sale_selectClient: 'اختر زبوناً',
@@ -2019,12 +2038,12 @@
         client_inactif: 'غير نشط',
         client_perdu: 'مفقود',
         client_appeler: '📞 اتصال',
-        client_whatsapp: '💬 اتصال عبر واتساب',
-        client_gmaps: '🗺️ اتجاه Google Maps',
-        client_waze: '🧭 اتجاه Waze',
+        client_whatsapp: 'اتصال عبر واتساب',
+        client_gmaps: 'اتجاه Google Maps',
+        client_waze: 'اتجاه Waze',
         client_view_sheet: '👁️ عرض البطاقة',
         client_edit_short: '✏️ تعديل',
-        client_share_whatsapp_gps: '💬 مشاركة GPS عبر واتساب',
+        client_share_whatsapp_gps: 'مشاركة GPS عبر واتساب',
         client_no_info: 'لا توجد معلومات مُدخلة',
         client_unassigned: 'غير مُعيَّن',
         client_total_unpaid: 'إجمالي غير مدفوع',
@@ -2034,11 +2053,12 @@
         client_all_clients: 'جميع الزبائن',
         client_gpsActuel: '📍 استخدام موقعي للتوصيل',
         client_gpsOk: '✅ تم تسجيل نقطة GPS للتوصيل',
+        client_gps_captured: '✅ تم حفظ نقطة GPS',
         client_gpsNone: '📍 لا توجد نقطة GPS للتوصيل',
         client_billing_section: '🧾 معلومات الزبون / الفوترة',
         client_delivery_section: '🚚 التوصيل',
-        client_open_maps_delivery: '🗺️ اتجاه Google Maps',
-        client_share_whatsapp_delivery: '💬 مشاركة عبر واتساب',
+        client_open_maps_delivery: 'اتجاه Google Maps',
+        client_share_whatsapp_delivery: 'مشاركة عبر واتساب',
         client_share_missing_gps: 'تعذر المشاركة: لا توجد نقطة GPS للتوصيل.',
         client_maps_missing_gps: 'تعذر فتح الخرائط: لا توجد نقطة GPS للتوصيل.',
         client_wa_delivery_intro_line: 'هذه نقطة التوصيل الخاصة بـ {client}',
@@ -2423,10 +2443,10 @@
         menu_depenses: '💸 Masaref',
         menu_employes: '👥 Khdama',
         menu_notificationsReglages: '🔔 Notifications',
-        analytics_stats_section: '📊 Statistiques',
-        analytics_balances_section: '💰 Balances',
-        analytics_seller_stats_title: '👤 Stats vendeurs',
-        analytics_commissions_monthly_title: '💰 Khlass commissions vendeurs',
+        analytics_stats_section: 'Statistiques',
+        analytics_balances_section: 'Balances',
+        analytics_seller_stats_title: 'Stats vendeurs',
+        analytics_commissions_monthly_title: 'Khlass commissions vendeurs',
         analytics_period: 'Période',
         analytics_day: 'Nhar',
         analytics_week: 'Simana',
@@ -2444,8 +2464,8 @@
         analytics_paid_advances: 'Mkhalles / avances',
         analytics_remaining_commission: 'Baqi commission tkheless',
         analytics_total_commissions_due: 'Total commissions khas tkhless',
-        analytics_client_balances_title: '💳 Balances clients',
-        analytics_supplier_balances_title: '🏭 Balances fournisseurs',
+        analytics_client_balances_title: 'Balances clients',
+        analytics_supplier_balances_title: 'Balances fournisseurs',
         analytics_balance_client: 'Client',
         analytics_balance_total_ca: 'CA total',
         analytics_balance_paid: 'Mkhalles',
@@ -2459,14 +2479,14 @@
         analytics_commission_entries_load_warn: '⚠️ Ma qdrnach njibou avances/paiements. B9a commission y9dr ykoun naqess.',
         analytics_back: '← Rje3',
         analytics_choose_section: 'Khtar rubrique',
-        analytics_sales_stats: '📊 Stats ventes',
+        analytics_sales_stats: 'Stats ventes',
         analytics_sales_stats_desc: 'Chuf ventes w performance',
         analytics_seller_stats_desc: 'Tbi3 vendeurs 7asab période',
         analytics_commissions_desc: 'Thadir dfa3 dyal chhar',
         analytics_client_balances_desc: 'Tbi3 lbaqi dyal clients',
-        analytics_supplier_purchases: '🏭 Fournisseurs / achats',
+        analytics_supplier_purchases: 'Fournisseurs / achats',
         analytics_supplier_desc: 'Tbi3 achats w dioun fournisseurs',
-        analytics_company_profit: '📈 Rbe7 sharika',
+        analytics_company_profit: 'Rbe7 sharika',
         analytics_company_profit_desc: 'Analize rbe7 el 7qi9i',
         sale_title: '💵 Tbi3a jdida',
         sale_selectClient: 'Khtar client',
@@ -2518,12 +2538,12 @@
         client_inactif: 'Inactif',
         client_perdu: 'Mfqoud',
         client_appeler: '📞 Tlessn',
-        client_whatsapp: '💬 Appeler WhatsApp',
-        client_gmaps: '🗺️ Itinéraire Google Maps',
-        client_waze: '🧭 Itinéraire Waze',
+        client_whatsapp: 'Appeler WhatsApp',
+        client_gmaps: 'Itinéraire Google Maps',
+        client_waze: 'Itinéraire Waze',
         client_view_sheet: '👁️ Chof fiche',
         client_edit_short: '✏️ Bdel',
-        client_share_whatsapp_gps: '💬 Partaji GPS f WhatsApp',
+        client_share_whatsapp_gps: 'Partaji GPS f WhatsApp',
         client_no_info: 'Ma tzadat ta ma3louma.',
         client_unassigned: 'Machi m3ayyen',
         client_total_unpaid: 'Majmou3 ma mdfo3ch',
@@ -2533,11 +2553,12 @@
         client_all_clients: 'Ga3 lclients',
         client_gpsActuel: '📍 Khdem position dyal telephone llivraison',
         client_gpsOk: '✅ Point GPS dyal livraison tsajjal',
+        client_gps_captured: '✅ Point GPS tsajjal',
         client_gpsNone: '📍 Ma kayn ta point GPS dyal livraison',
         client_billing_section: '🧾 Infos client / facturation',
         client_delivery_section: '🚚 Livraison',
-        client_open_maps_delivery: '🗺️ Itinéraire Google Maps',
-        client_share_whatsapp_delivery: '💬 Partaji 3la WhatsApp',
+        client_open_maps_delivery: 'Itinéraire Google Maps',
+        client_share_whatsapp_delivery: 'Partaji 3la WhatsApp',
         client_share_missing_gps: 'Mymkench tpartaji: ma kayn ta point GPS dyal livraison.',
         client_maps_missing_gps: 'Mymkench t7ell Maps: ma kayn ta point GPS dyal livraison.',
         client_wa_delivery_intro_line: 'Hada point dyal livraison dyal {client}',
@@ -3512,6 +3533,15 @@
       return p;
     }
 
+    function stripLeadingGpsPin(text) {
+      return String(text || '').replace(/^📍\s*/, '').trim();
+    }
+
+    function renderClientActionLabel(iconId, label) {
+      if (!iconId) return `<span class="client-action-label">${escHtml(label)}</span>`;
+      return `<svg class="client-action-brand-icon" aria-hidden="true" focusable="false"><use href="#${escHtml(iconId)}"></use></svg><span class="client-action-label">${escHtml(label)}</span>`;
+    }
+
     function isAdmin() {
       return String(state.profile?.role || '').toLowerCase() === 'admin';
     }
@@ -3837,7 +3867,7 @@
               <div class="client-info-group">
                 <div class="client-info-group-title">${escHtml(t('client_delivery_section'))}</div>
                 ${(c.latitude != null && c.longitude != null)
-                  ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(t('client_gps'))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
+                  ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(stripLeadingGpsPin(t('client_gps')))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
                   : `<div class="client-info-row client-info-empty">${escHtml(t('client_gpsNone'))}</div>`
                 }
               </div>
@@ -3846,10 +3876,10 @@
             ${(c.phone || (c.latitude != null && c.longitude != null)) ? `
             <div class="client-contact-actions">
               ${c.phone ? `<a href="tel:${escHtml(normalizePhoneForTel(c.phone))}" class="client-action-btn">${escHtml(t('client_appeler'))}</a>` : ''}
-              ${c.phone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_whatsapp'))}</a>` : ''}
-              ${(c.latitude != null && c.longitude != null) ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_gmaps'))}</a>` : ''}
-              ${(c.latitude != null && c.longitude != null) ? `<a href="https://waze.com/ul?ll=${encodeURIComponent(c.latitude + ',' + c.longitude)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_waze'))}</a>` : ''}
-              ${(c.latitude != null && c.longitude != null) ? `<button class="client-action-btn" data-action="client-share-delivery-whatsapp" data-id="${c.id}">${escHtml(t('client_share_whatsapp_delivery'))}</button>` : ''}
+              ${c.phone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">${renderClientActionLabel('icon-whatsapp', t('client_whatsapp'))}</a>` : ''}
+              ${(c.latitude != null && c.longitude != null) ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">${renderClientActionLabel('icon-google-maps', t('client_gmaps'))}</a>` : ''}
+              ${(c.latitude != null && c.longitude != null) ? `<a href="https://waze.com/ul?ll=${encodeURIComponent(c.latitude + ',' + c.longitude)}&navigate=yes" class="client-action-btn" target="_blank" rel="noopener">${renderClientActionLabel('icon-waze', t('client_waze'))}</a>` : ''}
+              ${(c.latitude != null && c.longitude != null) ? `<button class="client-action-btn" data-action="client-share-delivery-whatsapp" data-id="${c.id}">${renderClientActionLabel('icon-whatsapp', t('client_share_whatsapp_delivery'))}</button>` : ''}
             </div>` : ''}
 
             <div class="client-stat-row">
@@ -4207,7 +4237,7 @@
         list.innerHTML = html;
       } else {
         // ── Admin / manager view: central stock + employee stocks + transfer UI ──
-        let html = `<div class="stock-section-label">🏭 Stock central</div>`;
+        let html = `<div class="stock-section-label section-rubric-title">🏭 Stock central</div>`;
         html += `<div class="stock-grid">`;
         Object.keys(DEFAULT_STOCKS).forEach(cat => {
           const alertSettings = getItemAlertSettings(cat);
@@ -4240,7 +4270,7 @@
         </div>`;
 
         // Per-employee commercial stocks
-        html += `<div class="stock-section-label" style="margin-top:20px;">🚚 Stocks commerciaux</div>`;
+        html += `<div class="stock-section-label section-rubric-title" style="margin-top:20px;">🚚 Stocks commerciaux</div>`;
         if (state.allCommercialStocks.length > 0) {
           // Group rows by user_id
           const userMap = {};
@@ -7677,7 +7707,7 @@
         (pos) => {
           _newClientLat = pos.coords.latitude;
           _newClientLng = pos.coords.longitude;
-          document.getElementById('gpsStatus').textContent = `${t('client_gpsOk')} (${_newClientLat.toFixed(GPS_COORDINATE_PRECISION)}, ${_newClientLng.toFixed(GPS_COORDINATE_PRECISION)})`;
+          document.getElementById('gpsStatus').textContent = t('client_gps_captured');
           document.getElementById('gpsStatus').className = 'gps-status gps-ok';
           updateDeliveryActionButtons('create');
           if (btn) { btn.disabled = false; btn.textContent = t('client_gpsActuel'); }
@@ -8841,7 +8871,7 @@
                   : `<div class="client-info-row client-info-empty">${escHtml(t('client_no_info'))}</div>`
                 }
                 ${hasGps
-                  ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(t('client_gps'))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
+                  ? `<div class="client-info-row"><span class="client-info-icon">📍</span><span>${escHtml(stripLeadingGpsPin(t('client_gps')))}: ${escHtml(Number(c.latitude).toFixed(GPS_COORDINATE_PRECISION))}, ${escHtml(Number(c.longitude).toFixed(GPS_COORDINATE_PRECISION))}</span></div>`
                   : `<div class="client-info-row client-info-empty">${escHtml(t('client_gpsNone'))}</div>`
                 }
               </div>
@@ -8850,9 +8880,9 @@
               <button type="button" class="client-action-btn" onclick='openClientSheetFromCommercial(${JSON.stringify(clientId)})'>${escHtml(t('client_view_sheet'))}</button>
               ${hasPermission('clients.edit') ? `<button type="button" class="client-action-btn" onclick='openEditClientFromCommercial(${JSON.stringify(clientId)})'>${escHtml(t('client_edit_short'))}</button>` : ''}
               ${hasPhone ? `<a href="tel:${escHtml(normalizePhoneForTel(c.phone))}" class="client-action-btn">${escHtml(t('client_appeler'))}</a>` : ''}
-              ${hasPhone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_whatsapp'))}</a>` : ''}
-              ${hasGps ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">${escHtml(t('client_open_maps_delivery'))}</a>` : ''}
-              ${hasGps ? `<button type="button" class="client-action-btn" onclick='shareClientDeliveryWhatsApp(${JSON.stringify(clientId)})'>${escHtml(t('client_share_whatsapp_gps'))}</button>` : ''}
+              ${hasPhone ? `<a href="https://wa.me/${escHtml(normalizePhoneForWhatsApp(c.phone))}" class="client-action-btn" target="_blank" rel="noopener">${renderClientActionLabel('icon-whatsapp', t('client_whatsapp'))}</a>` : ''}
+              ${hasGps ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.latitude + ',' + c.longitude)}" class="client-action-btn" target="_blank" rel="noopener">${renderClientActionLabel('icon-google-maps', t('client_open_maps_delivery'))}</a>` : ''}
+              ${hasGps ? `<button type="button" class="client-action-btn" onclick='shareClientDeliveryWhatsApp(${JSON.stringify(clientId)})'>${renderClientActionLabel('icon-whatsapp', t('client_share_whatsapp_gps'))}</button>` : ''}
             </div>
           </div>`;
       }
@@ -10557,7 +10587,7 @@
       function makeBackBtn(title) {
         return `<div class="analytics-subview-header">
           <button class="analytics-back-btn" onclick="setAnalyticsView('home')">${escHtml(t('analytics_back'))}</button>
-          <span class="analytics-subview-title">${title}</span>
+          <span class="analytics-subview-title section-rubric-title">${title}</span>
         </div>`;
       }
 
