@@ -1882,7 +1882,7 @@
       transition: background 0.15s;
     }
     .client-action-label { display: inline-block; }
-    .client-action-brand-icon { width: 18px; height: 18px; flex-shrink: 0; display: inline-block; }
+    .client-action-brand-icon { width: 18px; height: 18px; flex-shrink: 0; display: block; overflow: hidden; }
     .client-action-btn:active,
     .client-action-btn:hover { background: rgba(0,0,0,0.13); }
     body.dark .client-action-btn { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.12); color: var(--color-text); }

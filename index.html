@@ -630,8 +630,8 @@
         <label data-i18n="client_gps">📍 Point GPS de livraison</label>
         <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()" data-i18n="client_gps_update">📍 Mettre à jour le point GPS de livraison (ma position)</button>
         <div class="gps-inline-actions">
-          <button type="button" class="gps-btn" id="editOpenGpsMapBtn" onclick="openClientDeliveryMaps('edit')" disabled><svg class="client-action-brand-icon" aria-hidden="true" focusable="false"><use href="#icon-google-maps"></use></svg><span data-i18n="client_open_maps_delivery">Itinéraire Google Maps</span></button>
-          <button type="button" class="gps-btn" id="editShareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('edit')" disabled><svg class="client-action-brand-icon" aria-hidden="true" focusable="false"><use href="#icon-whatsapp"></use></svg><span data-i18n="client_share_whatsapp_delivery">Partager sur WhatsApp</span></button>
+          <button type="button" class="gps-btn" id="editOpenGpsMapBtn" onclick="openClientDeliveryMaps('edit')" disabled><svg class="client-action-brand-icon" aria-hidden="true" focusable="false" width="18" height="18"><use href="#icon-google-maps"></use></svg><span data-i18n="client_open_maps_delivery">Itinéraire Google Maps</span></button>
+          <button type="button" class="gps-btn" id="editShareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('edit')" disabled><svg class="client-action-brand-icon" aria-hidden="true" focusable="false" width="18" height="18"><use href="#icon-whatsapp"></use></svg><span data-i18n="client_share_whatsapp_delivery">Partager sur WhatsApp</span></button>
         </div>
         <div id="editGpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
       </div>
@@ -3539,7 +3539,7 @@
 
     function renderClientActionLabel(iconId, label) {
       if (!iconId) return `<span class="client-action-label">${escHtml(label)}</span>`;
-      return `<svg class="client-action-brand-icon" aria-hidden="true" focusable="false"><use href="#${escHtml(iconId)}"></use></svg><span class="client-action-label">${escHtml(label)}</span>`;
+      return `<svg class="client-action-brand-icon" aria-hidden="true" focusable="false" width="18" height="18"><use href="#${escHtml(iconId)}"></use></svg><span class="client-action-label">${escHtml(label)}</span>`;
     }
 
     function isAdmin() {
