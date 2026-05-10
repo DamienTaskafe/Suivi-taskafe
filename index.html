@@ -1311,7 +1311,7 @@
       <div id="fuelReceiptUploadStatus" style="font-size:11px;min-height:14px;color:var(--color-text-muted);"></div>
       <label for="fuelCommentInput" style="margin-top:8px;" data-i18n="fuel_comment_optional">Commentaire (optionnel)</label>
       <input id="fuelCommentInput" type="text" placeholder="..." />
-      <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelDeclaration()">💾 <span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
+      <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelDeclaration()"><span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
       <div id="fuelDeclarationStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
   </div>
@@ -1341,7 +1341,7 @@
       <input id="fuelVehicleLastMaintenance" type="number" min="0" step="1" placeholder="Saisir le dernier entretien (km)" data-i18n-placeholder="fuel_last_maintenance_placeholder" />
       <label for="fuelVehicleCurrentKm" style="margin-top:8px;" data-i18n="fuel_current_km">Kilométrage actuel</label>
       <input id="fuelVehicleCurrentKm" type="number" min="0" step="1" placeholder="Saisir le kilométrage" data-i18n-placeholder="fuel_current_km_placeholder" />
-      <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelVehicle()">💾 <span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
+      <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelVehicle()"><span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
       <div id="fuelVehicleStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
   </div>
@@ -1402,7 +1402,7 @@
     let _pushSavedThisSession = false;
 
     const DEFAULT_STOCKS = { ORO: 0, RIO: 0, ESPRESSO: 0, CLASSIC: 0, SANTOS: 0, SUCRE: 0 };
-    const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
+    const BASE_PRICES = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 145, SANTOS: 180, SUCRE: 100 };
     const CATEGORIES = ['ORO', 'RIO', 'ESPRESSO', 'CLASSIC', 'SANTOS', 'SUCRE'];
 
     // ── i18n ──────────────────────────────────────────────────────────────────
@@ -7908,7 +7908,7 @@
         const gpsStatus = document.getElementById('gpsStatus');
         if (gpsStatus) { gpsStatus.textContent = t('client_gpsNone'); gpsStatus.className = 'gps-status gps-none'; }
         updateDeliveryActionButtons('create');
-        const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 150, priceSANTOS: 180, priceSUCRE: 100 };
+        const defaults = { priceORO: 130, priceRIO: 135, priceESPRESSO: 140, priceCLASSIC: 145, priceSANTOS: 180, priceSUCRE: 100 };
         Object.entries(defaults).forEach(([id, val]) => { document.getElementById(id).value = val; });
       }
 
@@ -8396,7 +8396,7 @@
       document.getElementById('editClientAddrCity').value = addrCity;
 
       // Load custom prices (or defaults)
-      const defaults = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
+      const defaults = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 145, SANTOS: 180, SUCRE: 100 };
       CATEGORIES.forEach(cat => {
         const el = document.getElementById('editPrice' + cat);
         if (el) el.value = (client.prices?.[cat] > 0) ? client.prices[cat] : defaults[cat];
@@ -11334,7 +11334,7 @@
     }
 
     function initPriceSpinners() {
-      const clientDefaults = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 150, SANTOS: 180, SUCRE: 100 };
+      const clientDefaults = { ORO: 130, RIO: 135, ESPRESSO: 140, CLASSIC: 145, SANTOS: 180, SUCRE: 100 };
       const purchaseDefaults = { ORO: 110, RIO: 112, ESPRESSO: 115, CLASSIC: 120, SANTOS: 145, SUCRE: 75 };
 
       // New client panel
