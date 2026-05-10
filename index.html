@@ -62,47 +62,18 @@
       }
     })();
 
-    // Startup diagnostics shared with the module boot script.
-    // If the module crashes before window.login is attached, we keep the raw
-    // error here so the login fallback can show a useful diagnostic.
-    window.__appStartupDiagnostics = { initialized: false, fatalError: '' };
-    window.addEventListener('error', function(event) {
-      if (window.__appStartupDiagnostics.initialized) return;
-      var message = '';
-      if (event && event.error && event.error.message) message = event.error.message;
-      else if (event && event.message) message = event.message;
-      else if (event && event.reason && event.reason.message) message = event.reason.message;
-      window.__appStartupDiagnostics.fatalError = String(message || 'Erreur JavaScript au chargement');
-    });
-    window.addEventListener('unhandledrejection', function(event) {
-      if (window.__appStartupDiagnostics.initialized) return;
-      var reason = event ? event.reason : null;
-      var message = '';
-      if (reason && reason.message) message = reason.message;
-      else message = String(reason || '');
-      window.__appStartupDiagnostics.fatalError = String(message || 'Promesse rejetée au démarrage');
-    });
-
     // Login fallback usable even if the module script fails before listeners attach.
     window.triggerLogin = function() {
       if (typeof window.login === 'function') {
         return window.login();
       }
       var errorBox = document.getElementById('authError');
-      var startup = window.__appStartupDiagnostics || {};
-      var fatal = String(startup.fatalError || '').trim();
-      var message = fatal
-        ? ("Impossible de lancer l'application. Détail technique: " + fatal)
-        : "Initialisation de l'application en cours. Réessayez dans quelques secondes.";
+      var message = "Impossible de démarrer l'application. Rechargez la page (vider le cache si besoin).";
       if (errorBox) {
         errorBox.textContent = message;
         errorBox.style.display = 'block';
       }
-      if (fatal) {
-        console.error('[auth] window.login indisponible, erreur de démarrage détectée:', fatal);
-      } else {
-        console.warn('[auth] window.login indisponible: initialisation en cours ou script principal non prêt');
-      }
+      console.error('[auth] window.login indisponible: script principal non initialisé');
     };
   </script>
   <div id="offlineBanner" class="offline-banner" style="display:none;">
@@ -7452,7 +7423,6 @@
         _showAuthError(_translateLoginError(e?.message || ''));
       }
     };
-    window.__appStartupDiagnostics.initialized = true;
 
     window.logout = async function () {
       _loggedOut = true; // block any boot re-entry triggered by auth state change
