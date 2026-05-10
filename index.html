@@ -61,20 +61,6 @@
         document.documentElement.classList.add('lang-ar', 'lang-rtl');
       }
     })();
-
-    // Login fallback usable even if the module script fails before listeners attach.
-    window.triggerLogin = function() {
-      if (typeof window.login === 'function') {
-        return window.login();
-      }
-      var errorBox = document.getElementById('authError');
-      var message = "Impossible de démarrer l'application. Rechargez la page (vider le cache si besoin).";
-      if (errorBox) {
-        errorBox.textContent = message;
-        errorBox.style.display = 'block';
-      }
-      console.error('[auth] window.login indisponible: script principal non initialisé');
-    };
   </script>
   <div id="offlineBanner" class="offline-banner" style="display:none;">
     <span id="offlineBannerText">📶 Hors ligne&ensp;</span><span id="offlinePendingCount"></span>
@@ -109,7 +95,7 @@
         <label for="rememberSession" style="margin: 0; flex: 1;" data-i18n="auth_remember">Rester connecté</label>
       </div>
 
-      <button id="loginBtn" type="button" onclick="triggerLogin()" data-i18n="auth_login">Se connecter</button>
+      <button id="loginBtn" type="button" data-i18n="auth_login">Se connecter</button>
       <div id="authError" class="auth-error"></div>
     </div>
   </div>
@@ -1383,9 +1369,8 @@
 
     // Register service worker early so it is ready before push activation is needed.
     // Non-blocking — failures are only logged and never affect login or app startup.
-    const SW_SCRIPT_URL = '/service-worker.js?v=20260510-login-fix';
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register(SW_SCRIPT_URL)
+      navigator.serviceWorker.register('/service-worker.js')
         .catch(e => console.warn('[sw] startup registration failed:', e?.message));
     }
 
@@ -5335,7 +5320,7 @@
       let reg = await navigator.serviceWorker.getRegistration('/');
       if (!reg) {
         try {
-          reg = await navigator.serviceWorker.register(SW_SCRIPT_URL);
+          reg = await navigator.serviceWorker.register('/service-worker.js');
         } catch (e) {
           throw new Error(t('push_sw_timeout'));
         }
@@ -7089,19 +7074,10 @@
     // Shows the login screen and hides the app shell — used as a last-resort
     // fallback whenever a critical boot error would otherwise leave the user
     // on a blank page or stuck on the splash screen.
-    function showLoginFallback(message = '') {
+    function showLoginFallback() {
       try {
         document.getElementById('authScreen').classList.remove('hidden');
         document.getElementById('appShell').classList.add('hidden');
-        if (message) {
-          const errorBox = document.getElementById('authError');
-          if (errorBox) {
-            errorBox.textContent = message;
-            errorBox.style.display = 'block';
-          } else {
-            showSessionStatus(message, 'error', 7000);
-          }
-        }
       } catch (domErr) {
         console.warn('[showLoginFallback] DOM error:', domErr);
       }
@@ -7238,19 +7214,10 @@
           // that the identity is unconfirmed without blocking the session.
           showSessionStatus('⚠️ Profil non disponible — accès restreint', 'error', 7000);
         }
-        const postLoginTasks = [
-          ['last_seen', () => updateLastSeen()],
-          ['last_seen_heartbeat', () => startLastSeenHeartbeat()],
-          ['perm_refresh', () => startPermRefresh()],
-          ['realtime_sync', () => startRealtimeSync()]
-        ];
-        for (const [taskName, taskFn] of postLoginTasks) {
-          try {
-            await taskFn();
-          } catch (taskErr) {
-            console.warn(`[bootFromSession] post-login task "${taskName}" failed:`, taskErr);
-          }
-        }
+        updateLastSeen();
+        startLastSeenHeartbeat();
+        startPermRefresh();
+        startRealtimeSync();
 
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('appShell').classList.remove('hidden');
@@ -7339,7 +7306,7 @@
         // Unexpected error before the app shell was shown — fall back to the
         // login screen so the user is never left on a blank / splash state.
         console.error('[bootFromSession] Erreur critique, retour login:', fatalErr);
-        showLoginFallback(`❌ Démarrage échoué après connexion: ${fatalErr?.message || 'erreur inattendue'}`);
+        showLoginFallback();
       } finally {
         _bootInProgress = false;
       }
@@ -13941,7 +13908,7 @@
       }, { passive: true });
     });
 
-    document.getElementById('loginBtn')?.addEventListener('click', () => window.triggerLogin());
+    document.getElementById('loginBtn')?.addEventListener('click', () => window.login());
     document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
     document.getElementById('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') window.login(); });
 
@@ -13984,7 +13951,7 @@
       await bootFromSession(initial.session);
     } catch (bootErr) {
       console.error('[boot] Erreur critique au démarrage, affichage login:', bootErr);
-      showLoginFallback('❌ Échec du démarrage de session. Rechargez la page puis reconnectez-vous.');
+      showLoginFallback();
     }
     supabase.auth.onAuthStateChange(async (event, session) => {
       // TOKEN_REFRESHED is fired by refreshSession() inside deleteUser —
