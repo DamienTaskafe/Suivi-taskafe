@@ -7847,14 +7847,12 @@
         phone: phone || null,
         latitude: _newClientLat,
         longitude: _newClientLng,
-        prices: canManageClientCustomPrices() ? {
-          ORO: readCustomPrice('priceORO'),
-          RIO: readCustomPrice('priceRIO'),
-          ESPRESSO: readCustomPrice('priceESPRESSO'),
-          CLASSIC: readCustomPrice('priceCLASSIC'),
-          SANTOS: readCustomPrice('priceSANTOS'),
-          SUCRE: readCustomPrice('priceSUCRE')
-        } : null,
+        prices: canManageClientCustomPrices()
+          ? CATEGORIES.reduce((acc, cat) => {
+            acc[cat] = readCustomPrice('price' + cat);
+            return acc;
+          }, {})
+          : null,
         // Assignment: employees are auto-assigned to the client they create.
         // Managers/admins create unassigned clients (they can reassign later).
         client_status: 'prospect',
@@ -8445,6 +8443,7 @@
       }
       // ─────────────────────────────────────────────────────────────────────
 
+      const existingPrices = existingClient?.prices ?? (state.clients.find(c => c.id === clientId)?.prices || null);
       const prices = canManageClientCustomPrices()
         ? CATEGORIES.reduce((acc, cat) => {
           const el = document.getElementById('editPrice' + cat);
@@ -8452,7 +8451,7 @@
           acc[cat] = (v > 0) ? v : null;
           return acc;
         }, {})
-        : (existingClient?.prices || null);
+        : existingPrices;
 
       // Read client_status from the form (falls back to current value if field absent)
       const statusEl = document.getElementById('editClientStatus');
@@ -11325,7 +11324,10 @@
       ['price', 'editPrice'].forEach(prefix => {
         CATEGORIES.forEach(cat => {
           const input = document.getElementById(prefix + cat);
-          if (input) input.disabled = !canManage;
+          if (input) {
+            input.disabled = !canManage;
+            input.setAttribute('aria-disabled', String(!canManage));
+          }
         });
       });
     }
