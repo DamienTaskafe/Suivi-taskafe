@@ -122,7 +122,7 @@
             <span id="menuUserRole">—</span>
           </div>
           <!-- ── Stats & Balance ──────────────────────────────────────────── -->
-          <button id="statsBalanceMenuBtn" type="button" onclick="openStatsBalanceModal()" data-i18n="menu_statsBalance">📊 Statistiques &amp; 💰 Balances</button>
+          <button id="statsBalanceMenuBtn" type="button" onclick="openStatsBalanceModal()" data-i18n="menu_statsBalance">📊 Statistiques &amp; Balances</button>
           <!-- ── Employés (manager/admin only) ───────────────────────────── -->
           <button type="button" id="employesMenuBtn" onclick="openEmployesModal()" class="hidden" data-i18n="menu_employes">👥 Employés</button>
           <!-- ── Clients par commercial (manager/admin only) ─────────────── -->
@@ -280,7 +280,7 @@
 
             <div class="ncp-field">
               <label for="clientPhone" data-i18n="client_telephone">📞 Téléphone</label>
-              <input id="clientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" data-i18n-placeholder="client_telephone_placeholder" />
+              <input id="clientPhone" type="tel" placeholder="Saisir téléphone" data-i18n-placeholder="client_telephone_placeholder" />
             </div>
 
             <div class="client-form-section-title" data-i18n="client_delivery_section">🚚 Livraison</div>
@@ -289,8 +289,8 @@
               <label data-i18n="client_gps">📍 Point GPS de livraison</label>
               <button type="button" class="gps-btn" id="captureGpsBtn" onclick="captureClientGps()" data-i18n="client_gpsActuel">📍 Utiliser ma position pour la livraison</button>
               <div class="gps-inline-actions">
-                <button type="button" class="gps-btn" id="openGpsMapBtn" onclick="openClientDeliveryMaps('create')" data-i18n="client_open_maps_delivery" disabled>🗺️ Ouvrir Maps</button>
-                <button type="button" class="gps-btn" id="shareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('create')" data-i18n="client_share_whatsapp_delivery" disabled>💬 Partager WhatsApp</button>
+                <button type="button" class="gps-btn" id="openGpsMapBtn" onclick="openClientDeliveryMaps('create')" data-i18n="client_open_maps_delivery" disabled>🗺️ Itinéraire Google Maps</button>
+                <button type="button" class="gps-btn" id="shareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('create')" data-i18n="client_share_whatsapp_delivery" disabled>💬 Partager sur WhatsApp</button>
               </div>
               <div id="gpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
             </div>
@@ -605,15 +605,15 @@
       </div>
       <div class="ncp-field">
         <label for="editClientPhone" data-i18n="client_telephone">📞 Téléphone</label>
-        <input id="editClientPhone" type="tel" placeholder="Ex : 06 12 34 56 78" data-i18n-placeholder="client_telephone_placeholder" />
+        <input id="editClientPhone" type="tel" placeholder="Saisir téléphone" data-i18n-placeholder="client_telephone_placeholder" />
       </div>
       <div class="client-form-section-title" data-i18n="client_delivery_section">🚚 Livraison</div>
       <div class="ncp-field">
         <label data-i18n="client_gps">📍 Point GPS de livraison</label>
         <button type="button" class="gps-btn" id="editCaptureGpsBtn" onclick="captureEditClientGps()" data-i18n="client_gps_update">📍 Mettre à jour le point GPS de livraison (ma position)</button>
         <div class="gps-inline-actions">
-          <button type="button" class="gps-btn" id="editOpenGpsMapBtn" onclick="openClientDeliveryMaps('edit')" data-i18n="client_open_maps_delivery" disabled>🗺️ Ouvrir Maps</button>
-          <button type="button" class="gps-btn" id="editShareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('edit')" data-i18n="client_share_whatsapp_delivery" disabled>💬 Partager WhatsApp</button>
+          <button type="button" class="gps-btn" id="editOpenGpsMapBtn" onclick="openClientDeliveryMaps('edit')" data-i18n="client_open_maps_delivery" disabled>🗺️ Itinéraire Google Maps</button>
+          <button type="button" class="gps-btn" id="editShareGpsWhatsappBtn" onclick="shareDraftClientDeliveryWhatsApp('edit')" data-i18n="client_share_whatsapp_delivery" disabled>💬 Partager sur WhatsApp</button>
         </div>
         <div id="editGpsStatus" class="gps-status gps-none" data-i18n="client_gpsNone">📍 Aucun point GPS de livraison</div>
       </div>
@@ -699,7 +699,7 @@
 
   <div id="analyticsModal" class="modal-backdrop" onclick="backdropClose(event, 'analyticsModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <div class="modal-head"><h3 data-i18n="menu_statsBalance">📊 Statistiques &amp; 💰 Balances</h3><button class="close-x" onclick="closeModal('analyticsModal')">✕</button></div>
+      <div class="modal-head"><h3 data-i18n="menu_statsBalance">📊 Statistiques &amp; Balances</h3><button class="close-x" onclick="closeModal('analyticsModal')">✕</button></div>
       <div id="analyticsContent"></div>
     </div>
   </div>
@@ -1310,19 +1310,19 @@
       </div>
       <input type="hidden" id="fuelVehicleEditId" />
       <label for="fuelVehicleRegistration" data-i18n="fuel_vehicle">Véhicule / immatriculation</label>
-      <input id="fuelVehicleRegistration" type="text" placeholder="AA-123-BB" />
+      <input id="fuelVehicleRegistration" type="text" placeholder="Saisir l'immatriculation" data-i18n-placeholder="fuel_vehicle_registration_placeholder" />
       <label for="fuelVehicleEmployee" style="margin-top:8px;" data-i18n="fuel_assigned_employee">Employé affecté</label>
       <select id="fuelVehicleEmployee"></select>
       <label for="fuelVehicleNormalConso" style="margin-top:8px;" data-i18n="fuel_normal_consumption">Consommation normale (L/100 km)</label>
-      <input id="fuelVehicleNormalConso" type="number" min="0" step="0.01" placeholder="5.5" />
+      <input id="fuelVehicleNormalConso" type="number" min="0" step="0.01" placeholder="Saisir la consommation normale" data-i18n-placeholder="fuel_normal_consumption_placeholder" />
       <label for="fuelVehicleTolerance" style="margin-top:8px;" data-i18n="fuel_tolerance">Tolérance (L/100 km)</label>
-      <input id="fuelVehicleTolerance" type="number" min="0" step="0.01" placeholder="0.5" />
+      <input id="fuelVehicleTolerance" type="number" min="0" step="0.01" placeholder="Saisir la tolérance" data-i18n-placeholder="fuel_tolerance_placeholder" />
       <label for="fuelVehicleInterval" style="margin-top:8px;" data-i18n="fuel_maintenance_interval">Intervalle entretien (km)</label>
-      <input id="fuelVehicleInterval" type="number" min="0" step="1" placeholder="10000" />
+      <input id="fuelVehicleInterval" type="number" min="0" step="1" placeholder="Saisir l'intervalle d'entretien" data-i18n-placeholder="fuel_maintenance_interval_placeholder" />
       <label for="fuelVehicleLastMaintenance" style="margin-top:8px;" data-i18n="fuel_last_maintenance_km">Dernier entretien (km)</label>
-      <input id="fuelVehicleLastMaintenance" type="number" min="0" step="1" placeholder="80000" />
+      <input id="fuelVehicleLastMaintenance" type="number" min="0" step="1" placeholder="Saisir le dernier entretien (km)" data-i18n-placeholder="fuel_last_maintenance_placeholder" />
       <label for="fuelVehicleCurrentKm" style="margin-top:8px;" data-i18n="fuel_current_km">Kilométrage actuel</label>
-      <input id="fuelVehicleCurrentKm" type="number" min="0" step="1" placeholder="0" />
+      <input id="fuelVehicleCurrentKm" type="number" min="0" step="1" placeholder="Saisir le kilométrage" data-i18n-placeholder="fuel_current_km_placeholder" />
       <button type="button" style="margin-top:14px;width:100%;" onclick="saveFuelVehicle()">💾 <span data-i18n="sale_enregistrer">✅ Enregistrer</span></button>
       <div id="fuelVehicleStatus" style="margin-top:8px;font-size:13px;min-height:18px;"></div>
     </div>
@@ -1421,7 +1421,7 @@
         menu_remuEmployes: '💰 Rémunérations employés',
         menu_logs: '📋 Logs',
         menu_langue: '🌍 Langue',
-        menu_statsBalance: '📊 Statistiques & 💰 Balances',
+        menu_statsBalance: '📊 Statistiques & Balances',
         menu_depenses: '💸 Dépenses',
         menu_employes: '👥 Employés',
         menu_notificationsReglages: '🔔 Notifications',
@@ -1501,7 +1501,7 @@
         client_nom: 'Nom du client',
         client_nom_placeholder: 'Nom du client',
         client_telephone: '📞 Téléphone',
-        client_telephone_placeholder: 'Ex : 06 12 34 56 78',
+        client_telephone_placeholder: 'Saisir téléphone',
         client_adresse: 'Adresse (facturation)',
         client_nom_voie: 'Nom de voie',
         client_ville: 'Ville',
@@ -1520,12 +1520,12 @@
         client_inactif: 'Inactif',
         client_perdu: 'Perdu',
         client_appeler: '📞 Appeler',
-        client_whatsapp: '💬 WhatsApp',
-        client_gmaps: '🗺️ Google Maps',
-        client_waze: '🧭 Waze',
+        client_whatsapp: '💬 Appeler WhatsApp',
+        client_gmaps: '🗺️ Itinéraire Google Maps',
+        client_waze: '🧭 Itinéraire Waze',
         client_view_sheet: '👁️ Voir fiche',
         client_edit_short: '✏️ Modifier',
-        client_share_whatsapp_gps: '📍💬 Partager GPS WhatsApp',
+        client_share_whatsapp_gps: '💬 Partager GPS sur WhatsApp',
         client_no_info: 'Aucune information renseignée',
         client_unassigned: 'Non assigné',
         client_total_unpaid: 'Total non payé',
@@ -1538,8 +1538,8 @@
         client_gpsNone: '📍 Aucun point GPS de livraison',
         client_billing_section: '🧾 Infos client / facturation',
         client_delivery_section: '🚚 Livraison',
-        client_open_maps_delivery: '🗺️ Ouvrir Maps',
-        client_share_whatsapp_delivery: '💬 Partager WhatsApp',
+        client_open_maps_delivery: '🗺️ Itinéraire Google Maps',
+        client_share_whatsapp_delivery: '💬 Partager sur WhatsApp',
         client_share_missing_gps: 'Impossible de partager : aucun point GPS de livraison disponible.',
         client_maps_missing_gps: 'Impossible d’ouvrir Maps : aucun point GPS de livraison disponible.',
         client_wa_delivery_intro_line: 'Voici le point de livraison de {client}',
@@ -1599,10 +1599,16 @@
         fuel_reject: '❌ Refuser',
         fuel_mark_paid: '💳 Marquer payé',
         fuel_normal_consumption: 'Consommation normale (L/100 km)',
+        fuel_normal_consumption_placeholder: 'Saisir la consommation normale',
         fuel_tolerance: 'Tolérance (L/100 km)',
+        fuel_tolerance_placeholder: 'Saisir la tolérance',
         fuel_abnormal_consumption: '⚠️ Consommation anormale',
         fuel_maintenance_interval: 'Intervalle entretien (km)',
+        fuel_maintenance_interval_placeholder: 'Saisir l\'intervalle d\'entretien',
         fuel_last_maintenance_km: 'Dernier entretien (km)',
+        fuel_last_maintenance_placeholder: 'Saisir le dernier entretien (km)',
+        fuel_current_km_placeholder: 'Saisir le kilométrage',
+        fuel_vehicle_registration_placeholder: 'Saisir l\'immatriculation',
         fuel_maintenance_soon: '⚠️ Entretien bientôt',
         fuel_maintenance_overdue: '⛔ Entretien dépassé',
         fuel_validated_total: 'Total carburant validé',
@@ -1914,7 +1920,7 @@
         menu_remuEmployes: '💰 أجور الموظفين',
         menu_logs: '📋 السجلات',
         menu_langue: '🌍 اللغة',
-        menu_statsBalance: '📊 إحصائيات و 💰 الأرصدة',
+        menu_statsBalance: '📊 إحصائيات والأرصدة',
         menu_depenses: '💸 المصاريف',
         menu_employes: '👥 الموظفون',
         menu_notificationsReglages: '🔔 الإشعارات',
@@ -1994,7 +2000,7 @@
         client_nom: 'اسم الزبون',
         client_nom_placeholder: 'اسم الزبون',
         client_telephone: '📞 الهاتف',
-        client_telephone_placeholder: '06 xx xx xx xx',
+        client_telephone_placeholder: 'Saisir téléphone',
         client_adresse: 'عنوان الفوترة',
         client_nom_voie: 'اسم الشارع',
         client_ville: 'المدينة',
@@ -2013,12 +2019,12 @@
         client_inactif: 'غير نشط',
         client_perdu: 'مفقود',
         client_appeler: '📞 اتصال',
-        client_whatsapp: '💬 واتساب',
-        client_gmaps: '🗺️ خرائط جوجل',
-        client_waze: '🧭 ويز',
+        client_whatsapp: '💬 اتصال عبر واتساب',
+        client_gmaps: '🗺️ اتجاه Google Maps',
+        client_waze: '🧭 اتجاه Waze',
         client_view_sheet: '👁️ عرض البطاقة',
         client_edit_short: '✏️ تعديل',
-        client_share_whatsapp_gps: '📍💬 مشاركة GPS واتساب',
+        client_share_whatsapp_gps: '💬 مشاركة GPS عبر واتساب',
         client_no_info: 'لا توجد معلومات مُدخلة',
         client_unassigned: 'غير مُعيَّن',
         client_total_unpaid: 'إجمالي غير مدفوع',
@@ -2031,8 +2037,8 @@
         client_gpsNone: '📍 لا توجد نقطة GPS للتوصيل',
         client_billing_section: '🧾 معلومات الزبون / الفوترة',
         client_delivery_section: '🚚 التوصيل',
-        client_open_maps_delivery: '🗺️ فتح الخرائط',
-        client_share_whatsapp_delivery: '💬 مشاركة واتساب',
+        client_open_maps_delivery: '🗺️ اتجاه Google Maps',
+        client_share_whatsapp_delivery: '💬 مشاركة عبر واتساب',
         client_share_missing_gps: 'تعذر المشاركة: لا توجد نقطة GPS للتوصيل.',
         client_maps_missing_gps: 'تعذر فتح الخرائط: لا توجد نقطة GPS للتوصيل.',
         client_wa_delivery_intro_line: 'هذه نقطة التوصيل الخاصة بـ {client}',
@@ -2092,10 +2098,16 @@
         fuel_reject: '❌ رفض',
         fuel_mark_paid: '💳 تعليم كمدفوع',
         fuel_normal_consumption: 'الاستهلاك العادي (ل/100 كم)',
+        fuel_normal_consumption_placeholder: 'أدخل الاستهلاك العادي',
         fuel_tolerance: 'الهامش',
+        fuel_tolerance_placeholder: 'أدخل هامش الاستهلاك',
         fuel_abnormal_consumption: '⚠️ استهلاك غير عادي',
         fuel_maintenance_interval: 'فاصل الصيانة (كم)',
+        fuel_maintenance_interval_placeholder: 'أدخل فاصل الصيانة',
         fuel_last_maintenance_km: 'آخر صيانة (كم)',
+        fuel_last_maintenance_placeholder: 'أدخل آخر صيانة (كم)',
+        fuel_current_km_placeholder: 'أدخل الكيلومترات الحالية',
+        fuel_vehicle_registration_placeholder: 'أدخل رقم اللوحة',
         fuel_maintenance_soon: '⚠️ صيانة قريبًا',
         fuel_maintenance_overdue: '⛔ صيانة متجاوزة',
         fuel_validated_total: 'إجمالي الوقود المقبول',
@@ -2407,7 +2419,7 @@
         menu_remuEmployes: '💰 Khlass dyal lkhdama',
         menu_logs: '📋 Logs',
         menu_langue: '🌍 Lgha',
-        menu_statsBalance: '📊 Stats & 💰 Balances',
+        menu_statsBalance: '📊 Stats & Balances',
         menu_depenses: '💸 Masaref',
         menu_employes: '👥 Khdama',
         menu_notificationsReglages: '🔔 Notifications',
@@ -2487,7 +2499,7 @@
         client_nom: 'Smiyat client',
         client_nom_placeholder: 'Smiyat client',
         client_telephone: '📞 Telephone',
-        client_telephone_placeholder: '06 xx xx xx xx',
+        client_telephone_placeholder: 'Saisir téléphone',
         client_adresse: 'Adresse (facturation)',
         client_nom_voie: 'Smiyat zzanka',
         client_ville: 'Mdina',
@@ -2506,12 +2518,12 @@
         client_inactif: 'Inactif',
         client_perdu: 'Mfqoud',
         client_appeler: '📞 Tlessn',
-        client_whatsapp: '💬 WhatsApp',
-        client_gmaps: '🗺️ Google Maps',
-        client_waze: '🧭 Waze',
+        client_whatsapp: '💬 Appeler WhatsApp',
+        client_gmaps: '🗺️ Itinéraire Google Maps',
+        client_waze: '🧭 Itinéraire Waze',
         client_view_sheet: '👁️ Chof fiche',
         client_edit_short: '✏️ Bdel',
-        client_share_whatsapp_gps: '📍💬 Partaji GPS WhatsApp',
+        client_share_whatsapp_gps: '💬 Partaji GPS f WhatsApp',
         client_no_info: 'Ma tzadat ta ma3louma.',
         client_unassigned: 'Machi m3ayyen',
         client_total_unpaid: 'Majmou3 ma mdfo3ch',
@@ -2524,8 +2536,8 @@
         client_gpsNone: '📍 Ma kayn ta point GPS dyal livraison',
         client_billing_section: '🧾 Infos client / facturation',
         client_delivery_section: '🚚 Livraison',
-        client_open_maps_delivery: '🗺️ 7ell Maps',
-        client_share_whatsapp_delivery: '💬 Partaji WhatsApp',
+        client_open_maps_delivery: '🗺️ Itinéraire Google Maps',
+        client_share_whatsapp_delivery: '💬 Partaji 3la WhatsApp',
         client_share_missing_gps: 'Mymkench tpartaji: ma kayn ta point GPS dyal livraison.',
         client_maps_missing_gps: 'Mymkench t7ell Maps: ma kayn ta point GPS dyal livraison.',
         client_wa_delivery_intro_line: 'Hada point dyal livraison dyal {client}',
@@ -2585,10 +2597,16 @@
         fuel_reject: '❌ Rfd',
         fuel_mark_paid: '💳 7ettou mkhalles',
         fuel_normal_consumption: 'Consommation normale (L/100 km)',
+        fuel_normal_consumption_placeholder: 'Dkhel consommation normale',
         fuel_tolerance: 'Tolérance',
+        fuel_tolerance_placeholder: 'Dkhel tolérance',
         fuel_abnormal_consumption: '⚠️ Consommation mashi 3adiya',
         fuel_maintenance_interval: 'Intervalle entretien (km)',
+        fuel_maintenance_interval_placeholder: 'Dkhel intervalle entretien',
         fuel_last_maintenance_km: 'Akher entretien (km)',
+        fuel_last_maintenance_placeholder: 'Dkhel akher entretien (km)',
+        fuel_current_km_placeholder: 'Dkhel kilometrage',
+        fuel_vehicle_registration_placeholder: 'Dkhel numero tomobil',
         fuel_maintenance_soon: '⚠️ Entretien qarib',
         fuel_maintenance_overdue: '⛔ Entretien fat l7ed',
         fuel_validated_total: 'Total carburant mtsade9',
