@@ -1,11 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL_FALLBACK = 'https://ogjljdjphawcminawtlv.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
-  'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9namxqZGpwaGF3Y21pbmF3dGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzQ5MjUsImV4cCI6MjA5MTk1MDkyNX0.' +
-  'WVgrgx8Q1c9j_1UyNX7e2ilvttMBSHY2vnrBw_Ga05A';
-
 function setCors(req, res) {
   const origin = req.headers.origin || '*';
   res.setHeader('Access-Control-Allow-Origin', origin);
@@ -26,8 +20,15 @@ function handleOptions(req, res) {
 }
 
 function getConfig() {
-  const supabaseUrl = (process.env.SUPABASE_URL || SUPABASE_URL_FALLBACK).trim().replace(/\/+$/, '');
+  const supabaseUrl = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
   const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const anonKey = (process.env.SUPABASE_ANON_KEY || '').trim();
+
+  if (!supabaseUrl) {
+    const err = new Error('Configuration serveur manquante (SUPABASE_URL)');
+    err.status = 500;
+    throw err;
+  }
 
   if (!serviceRoleKey) {
     const err = new Error('Configuration serveur manquante (SUPABASE_SERVICE_ROLE_KEY)');
@@ -35,7 +36,13 @@ function getConfig() {
     throw err;
   }
 
-  return { supabaseUrl, serviceRoleKey };
+  if (!anonKey) {
+    const err = new Error('Configuration serveur manquante (SUPABASE_ANON_KEY)');
+    err.status = 500;
+    throw err;
+  }
+
+  return { supabaseUrl, serviceRoleKey, anonKey };
 }
 
 function parseBody(req) {
@@ -70,18 +77,17 @@ function createAdminClient(supabaseUrl, serviceRoleKey) {
   });
 }
 
-function createAnonClient(supabaseUrl, token) {
-  return createClient(supabaseUrl, SUPABASE_ANON_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-    global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+function createAnonClient(supabaseUrl, anonKey) {
+  return createClient(supabaseUrl, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
   });
 }
 
-async function getCaller(supabaseAdmin, supabaseUrl, token) {
+async function getCaller(supabaseAdmin, supabaseUrl, anonKey, token) {
   const first = await supabaseAdmin.auth.getUser(token);
   if (first.data?.user && !first.error) return first.data.user;
 
-  const supabaseAnon = createAnonClient(supabaseUrl);
+  const supabaseAnon = createAnonClient(supabaseUrl, anonKey);
   const second = await supabaseAnon.auth.getUser(token);
   if (second.data?.user && !second.error) return second.data.user;
 
@@ -90,7 +96,7 @@ async function getCaller(supabaseAdmin, supabaseUrl, token) {
   throw err;
 }
 
-async function resolveCallerRole({ supabaseAdmin, supabaseUrl, caller, token }) {
+async function resolveCallerRole({ supabaseAdmin, supabaseUrl, anonKey, caller, token }) {
   // Fast path: after logout/login, Supabase JWT carries app_metadata.role.
   const metadataRole = String(caller.app_metadata?.role || '').toLowerCase();
   if (metadataRole) return metadataRole;
@@ -120,7 +126,7 @@ async function resolveCallerRole({ supabaseAdmin, supabaseUrl, caller, token }) 
   }
 
   // Last fallback with the user's own token, useful if service-role profile read fails.
-  const supabaseAsUser = createAnonClient(supabaseUrl, token);
+  const supabaseAsUser = createAnonClient(supabaseUrl, anonKey);
   const asUser = await supabaseAsUser
     .from('profiles')
     .select('role')
@@ -136,10 +142,10 @@ async function resolveCallerRole({ supabaseAdmin, supabaseUrl, caller, token }) 
 
 async function requireAdmin(req, res) {
   const token = getBearerToken(req);
-  const { supabaseUrl, serviceRoleKey } = getConfig();
+  const { supabaseUrl, serviceRoleKey, anonKey } = getConfig();
   const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey);
-  const caller = await getCaller(supabaseAdmin, supabaseUrl, token);
-  const callerRole = await resolveCallerRole({ supabaseAdmin, supabaseUrl, caller, token });
+  const caller = await getCaller(supabaseAdmin, supabaseUrl, anonKey, token);
+  const callerRole = await resolveCallerRole({ supabaseAdmin, supabaseUrl, anonKey, caller, token });
 
   if (callerRole !== 'admin') {
     const err = new Error(
@@ -170,6 +176,7 @@ module.exports = {
   getBearerToken,
   getConfig,
   createAdminClient,
+  createAnonClient,
   getCaller,
   resolveCallerRole
 };
