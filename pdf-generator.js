@@ -31,7 +31,7 @@ export async function generateMonthlyPDF(client, monthlySales, monthLabel, thisM
     await new Promise(resolve => {
       logoImg.onload = resolve;
       logoImg.onerror = resolve;
-      logoImg.src = 'icon-512.png.PNG';
+      logoImg.src = 'icon-512.png';
     });
     if (logoImg.complete && logoImg.naturalWidth > 0) {
       const canvas = document.createElement('canvas');
@@ -97,7 +97,7 @@ export async function generateMonthlyPDF(client, monthlySales, monthLabel, thisM
 
   y += 36;
 
-  // ── Table header ─────────────────────────────────────────────────────────
+  // ── Table header ────────────────────────────────────────────────────────
   doc.setFillColor(...colBlack);
   doc.rect(margin, y, pageW - margin * 2, 9, 'F');
 
@@ -118,7 +118,7 @@ export async function generateMonthlyPDF(client, monthlySales, monthLabel, thisM
 
   y += 9;
 
-  // ── Table rows ────────────────────────────────────────────────────────────
+  // ── Table rows ─────────────────────────────────────────────────────────
   let grandTotal = 0;
   monthlySales.forEach((s, idx) => {
     if (y > pageH - 50) {
@@ -148,7 +148,7 @@ export async function generateMonthlyPDF(client, monthlySales, monthLabel, thisM
   doc.line(margin, y + 2, pageW - margin, y + 2);
   y += 8;
 
-  // ── Totals block ──────────────────────────────────────────────────────────
+  // ── Totals block ────────────────────────────────────────────────────────
   const totW = 80;
   const totX = pageW - margin - totW;
   doc.setFillColor(...colLight);
@@ -163,7 +163,7 @@ export async function generateMonthlyPDF(client, monthlySales, monthLabel, thisM
 
   y += 26;
 
-  // ── Footer ────────────────────────────────────────────────────────────────
+  // ── Footer ──────────────────────────────────────────────────────────
   doc.setDrawColor(...colLight);
   doc.line(margin, y, pageW - margin, y);
   y += 5;

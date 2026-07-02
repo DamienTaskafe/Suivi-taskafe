@@ -63,9 +63,8 @@ self.addEventListener("push", (event) => {
 
   const title   = data.title   || "TASKAFÉ";
   const body    = data.body    || "";
-  // icon-512.png.PNG is the actual filename in this repository (see manifest.json)
-  const iconUrl = data.icon    || "/icon-512.png.PNG";
-  const badgeUrl= data.badge   || "/icon-512.png.PNG";
+  const iconUrl = data.icon    || "/icon-512.png";
+  const badgeUrl= data.badge   || "/icon-512.png";
   const tag     = data.tag     || "taskafe-notif";
   const urlPath = data.url     || "/";
   const vibrate = data.vibrate || [200, 100, 200];
@@ -84,7 +83,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// ── Notification click handler ────────────────────────────────────────────────
+// ── Notification click handler ──────────────��─────────────────────────────────
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || "/";
